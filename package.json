@@ -16,6 +16,7 @@
 		"@playwright/test": "1.25.0",
 		"@sveltejs/adapter-auto": "next",
 		"@sveltejs/kit": "next",
+		"@types/papaparse": "^5.3.5",
 		"@typescript-eslint/eslint-plugin": "^5.27.0",
 		"@typescript-eslint/parser": "^5.27.0",
 		"eslint": "^8.16.0",
@@ -33,6 +34,7 @@
 	"type": "module",
 	"dependencies": {
 		"@muonw/powertable": "github:muonw/powertable",
+		"papaparse": "^5.3.2",
 		"pretty-bytes": "^6.0.0"
 	}
 }

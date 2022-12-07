@@ -1,23 +1,33 @@
 <script lang="ts">
 	import { PowerTable } from '@muonw/powertable';
 	import type { Options } from '@muonw/powertable/package/components/PowerTable.svelte';
+	// import '@muonw/powertable/package/dist/power-table.css'; //file doesnt seem to exist?
 
 	export var recordList: any[] = [];
 	var ptOptions: Options = {
 		footerFilters: false,
 		footerLoadingBar: false,
 		headerLoadingBar: false,
-		isDataRemote: false	
-	}
+		footerText: false,
+		isDataRemote: false
+	};
+
+	
 </script>
 
-<PowerTable
-    ptData={recordList}
-    on:rowClicked="{(d) => console.log('click', d)}"
-    on:rowDblClicked="{(d) => console.log('dblclick', d)}"
-	ptOptions={ptOptions}
-/>
+<div class="PowerTable">
+	<PowerTable
+		ptData={recordList}
+		on:rowClicked={(d) => console.log('click', d)}
+		on:rowDblClicked={(d) => console.log('dblclick', d)}
+		{ptOptions}
+	/>
+</div>
 
-<style>
-	@import '../../node_modules/@muonw/powertable/package/dist/power-table.css';
+<style global>
+	/* powertable */
+	div.PowerTable > div > div > div > table > thead > tr > th > button,
+	div.PowerTable > div > div > div > table > thead > tr > th > input {
+		width: 100%;
+	}
 </style>
