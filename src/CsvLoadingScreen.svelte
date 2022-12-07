@@ -3,7 +3,9 @@
 	import prettyBytes from 'pretty-bytes';
 	export var selectedFile: File;
 	var downloadDebug = false;
+	var identifier = "csvParse.legacy."+new Date().getTime();
 
+	performance.mark(identifier+'.start')
 	var fileContents: string;
 	selectedFile.text().then((_text) => {
 		console.log('File selected, reading...');
@@ -25,21 +27,19 @@
 			});
 			recordList.push(obj);
 			loadedRows = recordList.length;
-			if (recordList.length % 1000 == 0) {
+			/*if (recordList.length % 1000 == 0) {
 				console.log(`Loaded ${recordList.length} rows...`);
-			}
+			}*/
 		});
 		console.log(`Loaded ${recordList.length} rows...`);
 		//debug
-		if (downloadDebug) {
-			var a = document.createElement('a');
-			a.setAttribute('download', 'data_dbg.json');
-			a.setAttribute('href', 'data:text/json,' + JSON.stringify(recordList));
-			document.body.appendChild(a);
-			a.click();
-		}
 		isLoaded = true;
+		performance.mark(identifier+'.end')
+		performance.measure(identifier, identifier+'.start', identifier+'.end')
+		console.log({parseTime: `${performance.getEntriesByName(identifier)[0].duration} ms`, name: performance.getEntriesByName(identifier)[0].name, perf: performance.getEntriesByName(identifier)});
+		loadedRows = rows.length;
 	});
+	
 	var rowCount = 0;
 	export var recordList: any[] = [];
 	export var isLoaded: boolean = false;
