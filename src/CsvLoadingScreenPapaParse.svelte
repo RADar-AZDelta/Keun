@@ -4,12 +4,22 @@
 	import papa from 'papaparse';
 	export var selectedFile: File;
 	//random update interval, makes page feel more responsive
-	var showProgress = false;
+	var showProgress = true;
 	var minInterval = 5000;
 	var maxInterval = 15000;
 	var random = Math.floor(Math.random() * (maxInterval - minInterval + 1) + minInterval);
 	//download json on end, if implemented
 	var downloadDebug = false;
+
+
+	//variables
+
+	var rowCount = 0;
+	var displayedRows = 0;
+	export var recordList: any[] = [];
+	export var isLoaded: boolean = false;
+	var error: string = '';
+	var loadedRows = 0;
 
 	//read file
 	performance.mark('csvParse.papaparse.start');
@@ -33,6 +43,7 @@
 			console.log(results);
 			isLoaded = true;
 			//recordList = results.data;
+			recordList = recordList;
 		},
 		error: function (_error: any) {
 			console.log('Error:', _error);
@@ -52,12 +63,6 @@
 		}
 	});
 
-	var rowCount = 0;
-	var displayedRows = 0;
-	export var recordList: any[] = [];
-	export var isLoaded: boolean = false;
-	var error: string = '';
-	var loadedRows = 0;
 </script>
 
 {#if rowCount == 0}
@@ -67,7 +72,4 @@
 	<p>{error}</p>
 {:else}
 	<p>Loaded {displayedRows} rows</p>
-	{#if isLoaded}
-		<p>Done! {performance.getEntriesByName('csvParse.papaparse')[0].duration} ms</p>
-	{/if}
 {/if}

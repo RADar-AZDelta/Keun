@@ -5,7 +5,7 @@
 
 	//dependencies
 	import prettyBytes from 'pretty-bytes';
-	import { browser } from '$app/environment'
+	import { browser } from '$app/environment';
 
 	//elements
 	var _parser;
@@ -13,14 +13,16 @@
 	import CsvLoadingScreen from '../CsvLoadingScreen.svelte';
 	import CsvLoadingScreenPapaParse from '../CsvLoadingScreenPapaParse.svelte';
 	import RecordList from '../RecordList.svelte';
+	import CsvLoadingScreenCsvParse from '../CsvLoadingScreenCsvParse.svelte';
 
 	export let selectedFile: File;
 	export let recordList: any[] = [];
 
 	let isLoaded: boolean = false;
 
-
 	//debug
+	let debugInfo: string[] = [];
+
 	let benchmarkResults: any[] = [];
 	let memoryUsage: any = 0;
 	if (isBenchmarking)
@@ -36,20 +38,26 @@
 						x.name
 					).duration
 				}));
-				
-				memoryUsage = browser && prettyBytes(performance.memory?.usedJSHeapSize);
+			// ignore error, chrome-only api, does not break compatibility with firefox
+			memoryUsage = browser && prettyBytes(performance.memory?.usedJSHeapSize);
+			debugInfo = [];
+			debugInfo.push(
+				`Memory usage: ${memoryUsage}, browser: ${browser}, ${recordList.length} records`
+			);
 		}, 100);
 
 	let loaderTypes = [
-		{ name: 'Simple (string based)', component: CsvLoadingScreen },
-		{ name: 'PapaParse (stream)', component: CsvLoadingScreenPapaParse }
+		{ name: 'Simple (string based, sync)', component: CsvLoadingScreen },
+		{ name: 'PapaParse (stream, sync)', component: CsvLoadingScreenPapaParse },
+		{ name: 'CSV-Parse (string, sync)', component: CsvLoadingScreenCsvParse }
 	];
 </script>
 
 <h1>Keun</h1>
 {#if isDebug}
-	<p>Memory usage: {memoryUsage}, browser: {browser}, {recordList.length} records</p>
-
+	{#each debugInfo as info}
+		<p>{info}</p>
+	{/each}
 {/if}
 {#if !selectedFile}
 	<FileDropZone
@@ -73,7 +81,7 @@
 		{/each}
 		{#each loaderTypes as type}
 			<h1>{type.name}</h1>
-			{#each Array(3) as _}
+			{#each Array(1) as _}
 				<svelte:component this={type.component} {selectedFile} />
 			{/each}
 		{/each}
