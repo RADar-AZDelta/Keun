@@ -9,7 +9,8 @@
 		footerLoadingBar: false,
 		headerLoadingBar: false,
 		footerText: false,
-		isDataRemote: false
+		isDataRemote: false,
+		
 	};
 
 	
