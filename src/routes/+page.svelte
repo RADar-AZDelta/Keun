@@ -60,5 +60,5 @@
 	<script>
 		console.log('[Flow] Showing record list...');
 	</script>
-	<RecordList {recordList} />
+	<RecordList {recordList} verbose={isDebug} />
 {/if}

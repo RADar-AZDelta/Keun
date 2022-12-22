@@ -1,7 +1,6 @@
 <script lang="ts">
 	//dependencies
 	import prettyBytes from 'pretty-bytes';
-	export var selectedFile: File;
 	var downloadDebug = false;
 	var identifier = "csvParse.legacy."+new Date().getTime();
 

@@ -36,7 +36,7 @@
 		}
 	}
 	function dragOverHandler(ev: Event) {
-		console.log('File(s) in drop zone');
+		//console.log('File(s) in drop zone');
 
 		// Prevent default behavior (Prevent file from being opened)
 		ev.preventDefault();
