@@ -1,64 +1,29 @@
 <script lang="ts">
-	//config
-	let isDebug = true;
-	let isBenchmarking: boolean = false;
+	import { writable } from 'svelte/store';
+	import { mappedTable, workerMess, showPopup } from '$lib/store';
+	import DataTableRendererCsr from '$lib/components/DataTable/DataTableRendererCSR.svelte';
+	import DragAndDrop from '$lib/components/Extra/DragAndDrop.svelte';
+	import Modal from '$lib/components/Extra/Modal.svelte';
 
-	//dependencies
-	import prettyBytes from 'pretty-bytes';
-	import { browser } from '$app/environment';
-
-	//elements
-	import FileDropZone from '../FileDropZone.svelte';
-	import CsvLoadingScreenPapaParse from '../CsvLoadingScreenPapaParse.svelte';
-	import RecordList from '../RecordList.svelte';
-
-	import CsvLoadingBenchmark from '../CsvLoadingBenchmark.svelte';
-
-	export let selectedFile: File;
-	export let recordList: any[] = [];
-
-	let isLoaded: boolean = false;
-
-	//debug
-	let debugInfo: string[] = [];
-
-	let memoryUsage: any = 0;
-	if (isBenchmarking)
-		setInterval(() => {
-			// ignore error, chrome-only api, does not break compatibility with firefox
-			memoryUsage = browser && prettyBytes(performance.memory?.usedJSHeapSize);
-			debugInfo = [];
-			debugInfo.push(
-				`Memory usage: ${memoryUsage}, browser: ${browser}, ${recordList.length} records`
-			);
-		}, 100);
+	const file = writable<File | null>(null);
+	const delimiter: string = ',';
 </script>
 
 <h1>Keun</h1>
-{#if isDebug}
-	{#each debugInfo as info}
-		<p>{info}</p>
-	{/each}
+
+<DragAndDrop {file} fileExtension="csv" />
+{#if $file != null}
+	<DataTableRendererCsr file={$file} dataType="csv" {delimiter} />
 {/if}
-{#if !selectedFile}
-	<FileDropZone
-		requiredFileExtension=".csv"
-		bind:selectedFile
-		text="Drag a Usagi-compatible CSV file into this box!"
-	/>
-{:else if !isLoaded || isBenchmarking}
-	<p>Selected file: {selectedFile.name} ({prettyBytes(selectedFile.size)})</p>
-	{#if isBenchmarking}
-		<CsvLoadingBenchmark {selectedFile} />
-	{:else}
-		<script>
-			console.log('[Flow] Loading csv...');
-		</script>
-		<CsvLoadingScreenPapaParse {selectedFile} bind:recordList bind:isLoaded />
-	{/if}
-{:else}
-	<script>
-		console.log('[Flow] Showing record list...');
-	</script>
-	<RecordList {recordList} verbose={isDebug} />
-{/if}
+
+<Modal show={$showPopup}>
+	<h1 class="title">Mapping data</h1>
+</Modal>
+
+<style>
+	.title {
+		font-size: 1.5rem;
+		font-weight: 700;
+		text-align: center;
+	}
+</style>
