@@ -140,8 +140,8 @@ section[data-component='modal-container'] {
     background-color: white;
     border-radius: 5px;
 
-    button {
-      margin: 1rem 0 0 1rem;
+    button[data-component='close'] {
+      padding: 1rem 0 0 1rem;
       border: none;
       background-color: inherit;
       cursor: pointer;
