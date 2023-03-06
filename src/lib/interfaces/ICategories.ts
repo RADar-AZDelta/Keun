@@ -1,4 +1,4 @@
 export default interface ICategories {
-    name: string,
-    options: string[]
+  name: string
+  options: string[]
 }
