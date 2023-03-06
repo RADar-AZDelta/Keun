@@ -1,7 +1,6 @@
 import { writable } from 'svelte/store'
-import type ITableData from './interfaces/ITableData'
 
-const mappedTable = writable<ITableData>()
+const mappedTable = writable<any>()
 
 const showPopup = writable<boolean>(false)
 

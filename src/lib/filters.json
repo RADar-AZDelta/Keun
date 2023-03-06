@@ -529,9 +529,6 @@
   },
   {
     "name": "Validity",
-    "options": [
-        "Valid",
-        "Invalid"
-    ]
+    "options": ["Valid", "Invalid"]
   }
 ]

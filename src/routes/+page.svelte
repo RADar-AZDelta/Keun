@@ -6,12 +6,14 @@
   import type IQueryFilter from '$lib/interfaces/IQueryFilter'
   import type ICategories from '$lib/interfaces/ICategories'
   import DataTableRendererCSR from 'DataTable'
-  import DragAndDrop from 'DataTAble/DragAndDrop.svelte'
+  import DragAndDrop from 'DataTable/DragAndDrop.svelte'
+  import type { RequestHandler } from '@sveltejs/kit'
 
   const show = writable<string>()
   const activatedFilters = writable<IQueryFilter[]>([])
   const categoriesFilter = writable<ICategories[]>([])
   const originalFilterStore = writable<ICategories[]>(filtersJSON)
+  const athenaData = writable<any>()
 
   const updatePopup = async (value: boolean) => {
     $showPopup = value
@@ -50,17 +52,6 @@
     console.log($categoriesFilter)
   }
 
-  const addFilterCategorie = async (filter: any) => {
-    categoriesFilter.update((oldFilters): any => {
-      for (let f of oldFilters) {
-        if (f.name == filter) {
-          f.options = $originalFilterStore.filter(obj => obj.name == filter)[0].options
-        }
-      }
-      return oldFilters
-    })
-  }
-
   const removeFilterCategorie = async (filter: any) => {
     categoriesFilter.update((oldFilters): any => {
       for (let f of oldFilters) {
@@ -72,6 +63,49 @@
       return oldFilters
     })
     // console.log($filtersStore)
+  }
+
+  const updateAPIFilters = async (event: Event, filter: string, option: string) => {
+    let chosenFilter = $activatedFilters.filter(f => f.name.toLowerCase() == filter.toLowerCase())[0]
+    if (chosenFilter != undefined) {
+      // @ts-ignore
+      if (event.target?.checked == true) chosenFilter.values.push(option)
+      else {
+        if (chosenFilter.values.length == 1) $activatedFilters.splice($activatedFilters.indexOf(chosenFilter), 1)
+        else chosenFilter.values.splice(chosenFilter.values.indexOf(option), 1)
+      }
+
+      $activatedFilters.filter(f => f.name == option)[0] = chosenFilter
+    } else {
+      $activatedFilters.push({
+        name: filter,
+        values: [option],
+      })
+    }
+    fetchAPI()
+  }
+
+  const fetchAPI = async () => {
+    let URL = `https://athena.ohdsi.org/api/v1/concepts?pageSize=15`
+    for (let filter of $activatedFilters) {
+      let substring: string = ''
+      for (let option of filter.values) {
+        substring += `&${filter.name.toLowerCase()}=${option}`
+      }
+      URL += substring
+    }
+    const data = fetch(encodeURI(URL), {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        "Access-Control-Allow-Origin": "*"
+      },
+    })
+      .then(response => console.log(response))
+      // .then(data => {
+      //   athenaData.set(data)
+      // })
+    console.log($athenaData)
   }
 
   const fetchOptionsCSV = {
@@ -87,8 +121,10 @@
   const file = writable<File | null>(null)
   const delimiter: string = ','
 
+  let test: any
+
   $: {
-    console.log($originalFilterStore)
+    console.log($activatedFilters)
   }
 
   // Encode url's before calling API --> space becomes %20
@@ -96,10 +132,12 @@
 
 <h1>Keun</h1>
 
-<DragAndDrop {file} fileExtension="csv" />
+<!-- <DragAndDrop {file} fileExtension="csv" />
 {#if $file != null}
   <DataTableRendererCSR file={$file} dataType="csv" {delimiter} />
-{/if}
+{/if} -->
+
+<DataTableRendererCSR url={urlCSV} fetchOptions={fetchOptionsCSV} dataType="CSV" {delimiter} rowEvent={updatePopup} />
 
 <Modal {updatePopup} show={$showPopup}>
   <h1 class="title">Mapping data</h1>
@@ -142,14 +180,22 @@
             {#if $categoriesFilter.length > 0 && $categoriesFilter.filter(f => f.name == filter.name)[0].options.length > 0}
               {#each $categoriesFilter.filter(f => f.name == filter.name)[0].options as option}
                 <div class="filter-option">
-                  <input type="checkbox" />
+                  <input
+                    type="checkbox"
+                    on:change={event => {
+                      console.log(event)
+                    }}
+                  />
                   <p>{option}</p>
                 </div>
               {/each}
             {:else}
               {#each filter.options as option}
                 <div class="filter-option">
-                  <input type="checkbox" />
+                  <input
+                    type="checkbox"
+                    on:change={() => (event != undefined ? updateAPIFilters(event, filter.name, option) : null)}
+                  />
                   <p>{option}</p>
                 </div>
               {/each}
