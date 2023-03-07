@@ -135,8 +135,8 @@ section[data-component='modal-container'] {
   z-index: 100;
 
   div[data-component='modal'] {
-    width: 75%;
-    height: 75%;
+    width: 90%;
+    height: 90%;
     background-color: white;
     border-radius: 5px;
 
@@ -146,6 +146,96 @@ section[data-component='modal-container'] {
       background-color: inherit;
       cursor: pointer;
       position: absolute;
+    }
+  }
+}
+div[data-component='modal-content'] {
+  h1 {
+    font-size: 1.5rem;
+    padding: 700;
+    text-align: center;
+  }
+
+  div[data-component='pop-up-container'] {
+    display: flex;
+    width: 100%;
+  }
+
+  section[data-component='filters-container'] {
+    width: 20%;
+    height: 80%;
+    padding-left: 1rem;
+
+    h2 {
+      font-size: 1.5rem;
+      padding: 0.5rem 0;
+    }
+
+    div[data-component='filters'] {
+      position: relative;
+      height: 70%;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+
+      button {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      p {
+        font-weight: 700;
+      }
+
+      .scroll {
+        overflow-y: scroll;
+      }
+
+      div[data-component='filter-item'] {
+        padding: 1rem;
+        display: block;
+        height: 10rem;
+
+        div[data-component='filter-input'] {
+          display: flex;
+          align-items: center;
+
+          input {
+            padding: 0.5rem 1rem;
+            width: max-content;
+          }
+
+          button {
+            position: relative;
+            display: flex;
+            align-self: center;
+            right: 2.5rem;
+            top: 0;
+            border: none;
+            background-color: inherit;
+            cursor: pointer;
+          }
+        }
+        div[data-component='filter-option'] {
+          display: flex;
+          gap: 1rem;
+        }
+      }
+    }
+  }
+}
+
+section[data-component='table-pop-up'] {
+  width: 70vw;
+  height: 70vh;
+  overflow-x: scroll;
+  overflow-y: scroll;
+  div[data-component='tablerenderer'] {
+    table {
+      width: 30%;
+      border-spacing: 0;
     }
   }
 }

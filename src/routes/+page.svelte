@@ -6,8 +6,9 @@
   import type IQueryFilter from '$lib/interfaces/IQueryFilter'
   import type ICategories from '$lib/interfaces/ICategories'
   import DataTableRendererCSR from '../../libs/RADar-DataTable/src/lib/components/DataTable/DataTableRendererCSR.svelte'
+  import DataTableRendererJS from '../../libs/RADar-DataTable/src/lib/components/DataTable/DataTableRendererJS.svelte'
   import DragAndDrop from '../../libs/RADar-DataTable/src/lib/components/Extra/DragAndDrop.svelte'
-  import { onMount } from 'svelte'
+  import '$lib/styles/table.scss'
 
   const show = writable<string>()
   const activatedFilters = writable<IQueryFilter[]>([])
@@ -15,9 +16,17 @@
   const categoriesInput = writable<any>({})
   const originalFilterStore = writable<ICategories[]>(filtersJSON)
   const athenaData = writable<any>()
+  const athenaColumns = writable<any>()
+
+  let update = 0
+
+  const updateTable = async () => {
+    update = update + 1
+  }
 
   const updatePopup = async (value: boolean) => {
     $showPopup = value
+    fetchAPI()
   }
 
   const showCategories = async (name: string) => {
@@ -98,8 +107,36 @@
     URL += '&page=1&query='
     let res = await fetch(encodeURI(URL))
     let data = await res.json()
-    console.log(data.content)
-    athenaData.set(data.content)
+    // console.log("URL ", URL, "and data ", data.content)
+    transpileDataAPI(data.content)
+  }
+
+  const transpileDataAPI = async (data: any) => {
+    let columns = []
+    let filteredData = []
+    for (let item of Object.keys(data[0])) {
+      if (item == 'id') {
+        columns.push({
+          column: item,
+          type: 1,
+        })
+      } else {
+        columns.push({
+          column: item,
+          type: 0,
+        })
+      }
+    }
+    for (let item of data) {
+      let row = []
+      for (let col of Object.keys(item)) {
+        row.push([col, item[col]])
+      }
+      filteredData.push(row)
+    }
+    $athenaData = filteredData
+    $athenaColumns = columns
+    updateTable()
   }
 
   const fetchOptionsCSV = {
@@ -115,19 +152,6 @@
   const file = writable<File | null>(null)
   const delimiter: string = ','
 
-  let test: any
-
-  $: {
-    console.log($categoriesInput)
-  }
-
-  // Encode url's before calling API --> space becomes %20
-
-  onMount(async () => {
-    let res = await fetch('https://athena.ohdsi.org/api/v1/concepts?pageSize=15&page=1&query=bmi')
-    let data = await res.json()
-    console.log(data)
-  })
 </script>
 
 <h1>Keun</h1>
@@ -140,145 +164,81 @@
 <DataTableRendererCSR url={urlCSV} fetchOptions={fetchOptionsCSV} dataType="CSV" {delimiter} rowEvent={updatePopup} />
 
 <Modal {updatePopup} show={$showPopup}>
-  <h1 class="title">Mapping data</h1>
-  <section class="filters-container">
-    <h2 class="filters-title">Filters</h2>
-    <div class="filters">
-      {#each $originalFilterStore as filter}
-        <button class="filter-button" on:click={() => showCategories(filter.name)}>
-          <p class="filter-name">{filter.name}</p>
-          <img src="/descending-sort.svg" alt="Arrow down icon" />
-        </button>
-        {#if $show == filter.name}
-          <div
-            class={`filter-show ${
-              $categoriesFilter.length > 0
-                ? $categoriesFilter.filter(f => f.name == filter.name)[0].options.length > 7
-                  ? 'scroll'
+  <h1>Mapping data</h1>
+  <div data-component="pop-up-container">
+    <section data-component="filters-container">
+      <h2>Filters</h2>
+      <div data-component="filters">
+        {#each $originalFilterStore as filter}
+          <button on:click={() => showCategories(filter.name)}>
+            <p>{filter.name}</p>
+            <img src="/descending-sort.svg" alt="Arrow down icon" />
+          </button>
+          {#if $show == filter.name}
+            <div
+              data-component="filter-item"
+              class={`${
+                $categoriesFilter.length > 0
+                  ? $categoriesFilter.filter(f => f.name == filter.name)[0].options.length > 7
+                    ? 'scroll'
+                    : filter.options.length > 7
+                    ? 'scroll'
+                    : null
                   : filter.options.length > 7
                   ? 'scroll'
                   : null
-                : filter.options.length > 7
-                ? 'scroll'
-                : null
-            }`}
-          >
-            <div class="filter-input-container">
-              <input
-                type="text"
-                placeholder="filter"
-                class="filter-input"
-                data-component={filter.name}
-                bind:value={$categoriesInput[filter.name]}
-                on:change={event => {
-                  filterCategories(event, filter.name)
-                }}
-              />
-              <button class="filter-remove" on:click={() => removeFilterCategorie(filter.name)}>
-                <img src="/x.svg" alt="Remove filter button" />
-              </button>
+              }`}
+            >
+              <div data-component="filter-input">
+                <input
+                  type="text"
+                  placeholder="filter"
+                  data-component={filter.name}
+                  bind:value={$categoriesInput[filter.name]}
+                  on:change={event => {
+                    filterCategories(event, filter.name)
+                  }}
+                />
+                <button on:click={() => removeFilterCategorie(filter.name)}>
+                  <img src="/x.svg" alt="Remove filter button" />
+                </button>
+              </div>
+              {#if $categoriesFilter.length > 0 && $categoriesFilter.filter(f => f.name == filter.name)[0].options.length > 0}
+                {#each $categoriesFilter.filter(f => f.name == filter.name)[0].options as option}
+                  <div data-component="filter-option">
+                    <input
+                      type="checkbox"
+                      on:change={event => {
+                        console.log(event)
+                      }}
+                    />
+                    <p>{option}</p>
+                  </div>
+                {/each}
+              {:else}
+                {#each filter.options as option}
+                  <div data-component="filter-option">
+                    <input
+                      type="checkbox"
+                      on:change={() => (event != undefined ? updateAPIFilters(event, filter.name, option) : null)}
+                    />
+                    <p>{option}</p>
+                  </div>
+                {/each}
+              {/if}
             </div>
-            {#if $categoriesFilter.length > 0 && $categoriesFilter.filter(f => f.name == filter.name)[0].options.length > 0}
-              {#each $categoriesFilter.filter(f => f.name == filter.name)[0].options as option}
-                <div class="filter-option">
-                  <input
-                    type="checkbox"
-                    on:change={event => {
-                      console.log(event)
-                    }}
-                  />
-                  <p>{option}</p>
-                </div>
-              {/each}
-            {:else}
-              {#each filter.options as option}
-                <div class="filter-option">
-                  <input
-                    type="checkbox"
-                    on:change={() => (event != undefined ? updateAPIFilters(event, filter.name, option) : null)}
-                  />
-                  <p>{option}</p>
-                </div>
-              {/each}
-            {/if}
-          </div>
-        {:else}
-          <div />
-        {/if}
-      {/each}
-    </div>
-  </section>
+          {:else}
+            <div />
+          {/if}
+        {/each}
+      </div>
+    </section>
+    <section data-component="table-pop-up">
+      {#if $athenaData != null && $athenaColumns != null}
+        <key update>
+          <DataTableRendererJS data={$athenaData} columns={$athenaColumns} />
+        </key>
+      {/if}
+    </section>
+  </div>
 </Modal>
-
-<style>
-  .title {
-    font-size: 1.5rem;
-    font-weight: 700;
-    text-align: center;
-  }
-
-  .filters-container {
-    width: 20%;
-    height: 80%;
-    padding-left: 1rem;
-  }
-
-  .filters {
-    position: relative;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .filter-button {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
-  .filter-name {
-    font-weight: 700;
-  }
-
-  .filter-option {
-    display: flex;
-    gap: 1rem;
-  }
-
-  .filter-hidden {
-    display: none;
-  }
-
-  .filter-show {
-    padding: 1rem;
-    display: block;
-    min-height: 30%;
-    max-height: 60%;
-  }
-
-  .filter-input-container {
-    display: flex;
-    align-items: center;
-  }
-
-  .filter-input {
-    padding: 0.5rem 1rem;
-  }
-
-  .scroll {
-    overflow-y: scroll;
-  }
-
-  .filter-remove {
-    position: relative;
-    display: flex;
-    align-self: center;
-    right: 2.5rem;
-    top: 0;
-    border: none;
-    background-color: inherit;
-    cursor: pointer;
-  }
-</style>

@@ -12,7 +12,7 @@
           updatePopup(false)
         }}><img src="x.svg" alt="Close button" /></button
       >
-      <slot />
+      <div data-component="modal-content"><slot/></div >
     </div>
   </section>
 {/if}
