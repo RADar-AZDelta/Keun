@@ -38,9 +38,7 @@
   "type": "module",
   "dependencies": {
     "arquero": "^5.1.0",
-    "cors": "^2.8.5",
-    "DataTable": "file:libs/RADar-DataTable",
-    "express": "^4.18.2"
+    "DataTable": "file:libs/RADar-DataTable"
   },
   "files": [
     "custom-adapter.js"

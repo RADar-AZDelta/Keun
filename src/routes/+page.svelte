@@ -7,11 +7,12 @@
   import type ICategories from '$lib/interfaces/ICategories'
   import DataTableRendererCSR from 'DataTable'
   import DragAndDrop from 'DataTable/DragAndDrop.svelte'
-  import type { RequestHandler } from '@sveltejs/kit'
+  import { onMount } from 'svelte'
 
   const show = writable<string>()
   const activatedFilters = writable<IQueryFilter[]>([])
   const categoriesFilter = writable<ICategories[]>([])
+  const categoriesInput = writable<any>({})
   const originalFilterStore = writable<ICategories[]>(filtersJSON)
   const athenaData = writable<any>()
 
@@ -49,6 +50,7 @@
       }
       return oldFilters
     })
+    $categoriesInput[filter]
     console.log($categoriesFilter)
   }
 
@@ -56,13 +58,12 @@
     categoriesFilter.update((oldFilters): any => {
       for (let f of oldFilters) {
         if (f.name == filter) {
-          console.log($originalFilterStore)
           f.options = $originalFilterStore.filter(obj => obj.name == filter)[0].options
         }
       }
       return oldFilters
     })
-    // console.log($filtersStore)
+    $categoriesInput[filter] = ''
   }
 
   const updateAPIFilters = async (event: Event, filter: string, option: string) => {
@@ -94,18 +95,11 @@
       }
       URL += substring
     }
-    const data = fetch(encodeURI(URL), {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        "Access-Control-Allow-Origin": "*"
-      },
-    })
-      .then(response => console.log(response))
-      // .then(data => {
-      //   athenaData.set(data)
-      // })
-    console.log($athenaData)
+    URL += '&page=1&query='
+    let res = await fetch(encodeURI(URL))
+    let data = await res.json()
+    console.log(data.content)
+    athenaData.set(data.content)
   }
 
   const fetchOptionsCSV = {
@@ -124,10 +118,16 @@
   let test: any
 
   $: {
-    console.log($activatedFilters)
+    console.log($categoriesInput)
   }
 
   // Encode url's before calling API --> space becomes %20
+
+  onMount(async () => {
+    let res = await fetch('https://athena.ohdsi.org/api/v1/concepts?pageSize=15&page=1&query=bmi')
+    let data = await res.json()
+    console.log(data)
+  })
 </script>
 
 <h1>Keun</h1>
@@ -169,6 +169,7 @@
                 placeholder="filter"
                 class="filter-input"
                 data-component={filter.name}
+                bind:value={$categoriesInput[filter.name]}
                 on:change={event => {
                   filterCategories(event, filter.name)
                 }}
