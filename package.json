@@ -39,7 +39,7 @@
   "type": "module",
   "dependencies": {
     "arquero": "^5.1.0",
-    "DataTable": "file:libs/RADar-DataTable"
+    "radar-datatable": "file:libs\\RADar-DataTable"
   },
   "files": [
     "custom-adapter.js"

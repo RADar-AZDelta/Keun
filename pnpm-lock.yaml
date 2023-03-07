@@ -18,6 +18,7 @@ importers:
       eslint-plugin-svelte3: ^4.0.0
       prettier: ^2.8.0
       prettier-plugin-svelte: ^2.8.1
+      radar-datatable: file:libs\RADar-DataTable
       sass: ^1.58.3
       sirv: ^2.0.2
       svelte: ^3.54.0
@@ -30,6 +31,7 @@ importers:
     dependencies:
       DataTable: file:libs/RADar-DataTable
       arquero: 5.1.0
+      radar-datatable: file:libs/RADar-DataTable
     devDependencies:
       '@playwright/test': 1.31.1
       '@sveltejs/adapter-auto': 2.0.0_@sveltejs+kit@1.9.2

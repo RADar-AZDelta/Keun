@@ -5,8 +5,8 @@
   import Modal from '$lib/components/Extra/Modal.svelte'
   import type IQueryFilter from '$lib/interfaces/IQueryFilter'
   import type ICategories from '$lib/interfaces/ICategories'
-  import DataTableRendererCSR from 'DataTable'
-  import DragAndDrop from 'DataTable/DragAndDrop.svelte'
+  import DataTableRendererCSR from '../../libs/RADar-DataTable/src/lib/components/DataTable/DataTableRendererCSR.svelte'
+  import DragAndDrop from '../../libs/RADar-DataTable/src/lib/components/Extra/DragAndDrop.svelte'
   import { onMount } from 'svelte'
 
   const show = writable<string>()
