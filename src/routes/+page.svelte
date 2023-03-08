@@ -161,7 +161,7 @@
   <DataTableRendererCSR file={$file} dataType="csv" {delimiter} />
 {/if} -->
 
-<DataTableRendererCSR url={urlCSV} fetchOptions={fetchOptionsCSV} dataType="CSV" {delimiter} rowEvent={updatePopup} />
+<DataTableRendererCSR url={urlCSV} fetchOptions={fetchOptionsCSV} dataType="CSV" {delimiter} rowEvent={updatePopup} editable={true}/>
 
 <Modal {updatePopup} show={$showPopup}>
   <h1>Mapping data</h1>
