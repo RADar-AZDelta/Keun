@@ -9,6 +9,8 @@
   import DataTableRendererJS from '../../libs/RADar-DataTable/src/lib/components/DataTable/DataTableRendererJS.svelte'
   import DragAndDrop from '../../libs/RADar-DataTable/src/lib/components/Extra/DragAndDrop.svelte'
   import '$lib/styles/table.scss'
+  import Equivalence from '$lib/components/Mapping/Equivalence.svelte'
+  import type IMapping from '$lib/interfaces/IMapping'
 
   const show = writable<string>()
   const activatedFilters = writable<IQueryFilter[]>([])
@@ -17,6 +19,7 @@
   const originalFilterStore = writable<ICategories[]>(filtersJSON)
   const athenaData = writable<any>()
   const athenaColumns = writable<any>()
+  const chosenRowMapping = writable<number>()
 
   let update = 0
 
@@ -24,7 +27,25 @@
     update = update + 1
   }
 
-  const updatePopup = async (value: boolean) => {
+  const updatePopup = async (event: any, value: boolean = false) => {
+    if (event != null) {
+      let id: string
+      if (event.srcElement.id == '') {
+        if (event.srcElement.firstChild.id == '') {
+          if (event.srcElement.firstChild.firstChild.id == '') {
+            id = event.srcElement.firstChild.firstChild.firstChild.id
+          } else {
+            id = event.srcElement.firstChild.firstChild.id
+          }
+        } else {
+          id = event.srcElement.firstChild.id
+        }
+      } else {
+        id = event.srcElement.id
+      }
+      const indexes = id.split('-')
+      $chosenRowMapping = Number(indexes[0])
+    }
     $showPopup = value
     fetchAPI()
   }
@@ -43,7 +64,6 @@
             if (option.toLowerCase().includes(event.target.value.toLowerCase())) return option
           })
         chosenFilter.options = options
-        console.log(chosenFilter)
         oldFilters.push(chosenFilter)
       } else {
         const options = $originalFilterStore
@@ -60,7 +80,6 @@
       return oldFilters
     })
     $categoriesInput[filter]
-    console.log($categoriesFilter)
   }
 
   const removeFilterCategorie = async (filter: any) => {
@@ -107,7 +126,6 @@
     URL += '&page=1&query='
     let res = await fetch(encodeURI(URL))
     let data = await res.json()
-    // console.log("URL ", URL, "and data ", data.content)
     transpileDataAPI(data.content)
   }
 
@@ -146,12 +164,44 @@
     },
   }
 
+  // const urlCSV =
+  //   'https://raw.githubusercontent.com/RADar-AZDelta/AZDelta-OMOP-CDM/main/observation/observation_concept_id/mzg_usagi.csv'
+
   const urlCSV =
-    'https://raw.githubusercontent.com/RADar-AZDelta/AZDelta-OMOP-CDM/main/observation/observation_concept_id/mzg_usagi.csv'
+    'https://raw.githubusercontent.com/RADar-AZDelta/AZDelta-OMOP-CDM/main/location/country_concept_id/countries.csv'
 
   const file = writable<File | null>(null)
   const delimiter: string = ','
 
+  let equivalence: string = 'EQUAL'
+
+  let mapping: IMapping
+
+  const mapped = async (event: any) => {
+    let id: string
+    if (event.srcElement.id == '') {
+      if (event.srcElement.firstChild.id == '') {
+        if (event.srcElement.firstChild.firstChild.id == '') {
+          id = event.srcElement.firstChild.firstChild.firstChild.id
+        } else {
+          id = event.srcElement.firstChild.firstChild.id
+        }
+      } else {
+        id = event.srcElement.firstChild.id
+      }
+    } else {
+      id = event.srcElement.id
+    }
+    const indexes = id.split('-')
+    const row = Number(indexes[0])
+    const rowValues = $athenaData[row]
+    mapping = {
+      row: $chosenRowMapping, //get the row that was clicked
+      columns: $athenaColumns,
+      data: rowValues,
+      equivalence: equivalence,
+    }
+  }
 </script>
 
 <h1>Keun</h1>
@@ -161,7 +211,15 @@
   <DataTableRendererCSR file={$file} dataType="csv" {delimiter} />
 {/if} -->
 
-<DataTableRendererCSR url={urlCSV} fetchOptions={fetchOptionsCSV} dataType="CSV" {delimiter} rowEvent={updatePopup} editable={true}/>
+<DataTableRendererCSR
+  url={urlCSV}
+  fetchOptions={fetchOptionsCSV}
+  dataType="CSV"
+  {delimiter}
+  rowEvent={updatePopup}
+  editable={true}
+  {mapping}
+/>
 
 <Modal {updatePopup} show={$showPopup}>
   <h1>Mapping data</h1>
@@ -206,12 +264,7 @@
               {#if $categoriesFilter.length > 0 && $categoriesFilter.filter(f => f.name == filter.name)[0].options.length > 0}
                 {#each $categoriesFilter.filter(f => f.name == filter.name)[0].options as option}
                   <div data-component="filter-option">
-                    <input
-                      type="checkbox"
-                      on:change={event => {
-                        console.log(event)
-                      }}
-                    />
+                    <input type="checkbox" />
                     <p>{option}</p>
                   </div>
                 {/each}
@@ -236,9 +289,10 @@
     <section data-component="table-pop-up">
       {#if $athenaData != null && $athenaColumns != null}
         <key update>
-          <DataTableRendererJS data={$athenaData} columns={$athenaColumns} />
+          <DataTableRendererJS data={$athenaData} columns={$athenaColumns} rowEvent={mapped} />
         </key>
       {/if}
     </section>
   </div>
+  <Equivalence bind:Eq={equivalence} />
 </Modal>
