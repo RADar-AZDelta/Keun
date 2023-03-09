@@ -11,6 +11,7 @@
   import '$lib/styles/table.scss'
   import Equivalence from '$lib/components/Mapping/Equivalence.svelte'
   import type IMapping from '$lib/interfaces/IMapping'
+  import { onMount } from 'svelte'
 
   const show = writable<string>()
   const activatedFilters = writable<IQueryFilter[]>([])
@@ -111,6 +112,34 @@
         values: [option],
       })
     }
+    if (localStorage.getItem('AthenaFilters') == null || localStorage.getItem('AthenaFilters') == undefined) {
+      let filters = []
+      filters.push({
+        name: filter,
+        values: [option],
+      })
+      localStorage.setItem('AthenaFilters', JSON.stringify(filters))
+    } else {
+      let filters = JSON.parse(localStorage.getItem('AthenaFilters')!)
+      let existingFilter = filters.filter((f: any) => f.name == filter)[0]
+      if (existingFilter) {
+        // @ts-ignore
+        if (event.target.checked == false) {
+          existingFilter.values.splice(existingFilter.values.indexOf(option), 1)
+          if (existingFilter.values.length == 0) filters.splice(filters.indexOf(existingFilter), 1)
+        } else {
+          filters.splice(filters.indexOf(existingFilter), 1)
+          existingFilter.values.push(option)
+          filters.push(existingFilter)
+        }
+      } else {
+        filters.push({
+          name: filter,
+          values: [option],
+        })
+      }
+      localStorage.setItem('AthenaFilters', JSON.stringify(filters))
+    }
     fetchAPI()
   }
 
@@ -202,6 +231,17 @@
       equivalence: equivalence,
     }
   }
+
+  onMount(() => {
+    const filters =
+      localStorage.getItem('AthenaFilters') == null ? '' : JSON.parse(localStorage.getItem('AthenaFilters')!)
+    for (let filter of filters) {
+      $activatedFilters.push({
+        name: filter.name,
+        values: filter.values,
+      })
+    }
+  })
 </script>
 
 <h1>Keun</h1>
@@ -237,7 +277,9 @@
               data-component="filter-item"
               class={`${
                 $categoriesFilter.length > 0
-                  ? $categoriesFilter.filter(f => f.name == filter.name)[0].options.length > 7
+                  ? $categoriesFilter.filter(f => f.name == filter.name).length == 0
+                    ? null
+                    : $categoriesFilter.filter(f => f.name == filter.name)[0].options.length > 7
                     ? 'scroll'
                     : filter.options.length > 7
                     ? 'scroll'
@@ -261,10 +303,24 @@
                   <img src="/x.svg" alt="Remove filter button" />
                 </button>
               </div>
-              {#if $categoriesFilter.length > 0 && $categoriesFilter.filter(f => f.name == filter.name)[0].options.length > 0}
+              {#if $categoriesFilter.length > 0 && $categoriesFilter.filter(f => f.name == filter.name).length > 0}
                 {#each $categoriesFilter.filter(f => f.name == filter.name)[0].options as option}
                   <div data-component="filter-option">
-                    <input type="checkbox" />
+                    <input
+                      type="checkbox"
+                      checked={localStorage.getItem('AthenaFilters') == null
+                        ? false
+                        : JSON.parse(String(localStorage.getItem('AthenaFilters'))).filter(
+                            obj => obj.name == filter.name
+                          ).length == 0
+                        ? false
+                        : JSON.parse(String(localStorage.getItem('AthenaFilters')))
+                            .filter(obj => obj.name == filter.name)[0]
+                            .values.includes(option)
+                        ? true
+                        : false}
+                      on:change={() => (event != undefined ? updateAPIFilters(event, filter.name, option) : null)}
+                    />
                     <p>{option}</p>
                   </div>
                 {/each}
@@ -273,6 +329,17 @@
                   <div data-component="filter-option">
                     <input
                       type="checkbox"
+                      checked={localStorage.getItem('AthenaFilters') == null
+                        ? false
+                        : JSON.parse(String(localStorage.getItem('AthenaFilters'))).filter(
+                            obj => obj.name == filter.name
+                          ).length == 0
+                        ? false
+                        : JSON.parse(String(localStorage.getItem('AthenaFilters')))
+                            .filter(obj => obj.name == filter.name)[0]
+                            .values.includes(option)
+                        ? true
+                        : false}
                       on:change={() => (event != undefined ? updateAPIFilters(event, filter.name, option) : null)}
                     />
                     <p>{option}</p>
@@ -288,9 +355,9 @@
     </section>
     <section data-component="table-pop-up">
       {#if $athenaData != null && $athenaColumns != null}
-        <key update>
+        {#key update}
           <DataTableRendererJS data={$athenaData} columns={$athenaColumns} rowEvent={mapped} />
-        </key>
+        {/key}
       {/if}
     </section>
   </div>
