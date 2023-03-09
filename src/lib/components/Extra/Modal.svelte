@@ -9,7 +9,7 @@
       <button
         data-component="close"
         on:click={() => {
-          updatePopup(false)
+          updatePopup(null, false)
         }}><img src="x.svg" alt="Close button" /></button
       >
       <div data-component="modal-content"><slot/></div >
