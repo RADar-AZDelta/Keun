@@ -1,6 +1,6 @@
 <script lang="ts">
   import { writable } from 'svelte/store'
-  import { showPopup } from '$lib/store'
+  import { showPopup, showAuthor } from '$lib/store'
   import filtersJSON from '$lib/filters.json'
   import Modal from '$lib/components/Extra/Modal.svelte'
   import type IQueryFilter from '$lib/interfaces/IQueryFilter'
@@ -12,8 +12,10 @@
   import Equivalence from '$lib/components/Mapping/Equivalence.svelte'
   import type IMapping from '$lib/interfaces/IMapping'
   import { onMount } from 'svelte'
+  import SmallModal from '$lib/components/Extra/SmallModal.svelte'
 
   const show = writable<string>()
+  const author = writable<string>()
   const activatedFilters = writable<IQueryFilter[]>([])
   const categoriesFilter = writable<ICategories[]>([])
   const categoriesInput = writable<any>({})
@@ -26,6 +28,11 @@
 
   const updateTable = async () => {
     update = update + 1
+  }
+
+  const modalAuthor = async (value: boolean) => {
+    $showAuthor = value
+    localStorage.setItem('author', $author)
   }
 
   const updatePopup = async (event: any, value: boolean = false) => {
@@ -193,11 +200,11 @@
     },
   }
 
-  const urlCSV =
-    'https://raw.githubusercontent.com/RADar-AZDelta/AZDelta-OMOP-CDM/main/observation/observation_concept_id/mzg_usagi.csv'
-
   // const urlCSV =
-  ;('https://raw.githubusercontent.com/RADar-AZDelta/AZDelta-OMOP-CDM/main/location/country_concept_id/countries.csv')
+  //   'https://raw.githubusercontent.com/RADar-AZDelta/AZDelta-OMOP-CDM/main/observation/observation_concept_id/mzg_usagi.csv'
+
+  const urlCSV =
+    'https://raw.githubusercontent.com/RADar-AZDelta/AZDelta-OMOP-CDM/main/location/country_concept_id/countries.csv'
 
   const file = writable<File | null>(null)
   const delimiter: string = ','
@@ -229,6 +236,7 @@
       columns: $athenaColumns,
       data: rowValues,
       equivalence: equivalence,
+      author: $author,
     }
   }
 
@@ -242,16 +250,25 @@
       })
     }
   })
+
+  onMount(() => {
+    localStorage.getItem('author') == null ? showAuthor.set(true) : ($author = String(localStorage.getItem('author')))
+  })
 </script>
+
+<SmallModal bind:show={$showAuthor} saveFunction={modalAuthor}>
+  <label for="author">Who is the author?</label>
+  <input id="author" type="text" placeholder="John Wick" bind:value={$author} />
+</SmallModal>
 
 <img src="/Keun.png" alt="The logo of POC-Keun" height="113" width="332" data-component="title-image" />
 
-<DragAndDrop {file} fileExtension="csv" text={`DROP YOUR CSV FILE HERE`} />
+<!-- <DragAndDrop {file} fileExtension="csv" text={`DROP YOUR CSV FILE HERE`} />
 {#if $file != null}
   <DataTableRendererCSR file={$file} dataType="csv" {delimiter} />
-{/if}
+{/if} -->
 
-<!-- <DataTableRendererCSR
+<DataTableRendererCSR
   url={urlCSV}
   fetchOptions={fetchOptionsCSV}
   dataType="CSV"
@@ -259,7 +276,7 @@
   rowEvent={updatePopup}
   editable={true}
   {mapping}
-/> -->
+/>
 
 <Modal {updatePopup} show={$showPopup}>
   <div data-component="pop-up-container">
