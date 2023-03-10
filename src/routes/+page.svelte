@@ -193,11 +193,11 @@
     },
   }
 
-  // const urlCSV =
-  //   'https://raw.githubusercontent.com/RADar-AZDelta/AZDelta-OMOP-CDM/main/observation/observation_concept_id/mzg_usagi.csv'
-
   const urlCSV =
-    'https://raw.githubusercontent.com/RADar-AZDelta/AZDelta-OMOP-CDM/main/location/country_concept_id/countries.csv'
+    'https://raw.githubusercontent.com/RADar-AZDelta/AZDelta-OMOP-CDM/main/observation/observation_concept_id/mzg_usagi.csv'
+
+  // const urlCSV =
+  ;('https://raw.githubusercontent.com/RADar-AZDelta/AZDelta-OMOP-CDM/main/location/country_concept_id/countries.csv')
 
   const file = writable<File | null>(null)
   const delimiter: string = ','
@@ -244,14 +244,14 @@
   })
 </script>
 
-<h1>Keun</h1>
+<img src="/Keun.png" alt="The logo of POC-Keun" height="113" width="332" data-component="title-image" />
 
-<!-- <DragAndDrop {file} fileExtension="csv" />
+<DragAndDrop {file} fileExtension="csv" text={`DROP YOUR CSV FILE HERE`} />
 {#if $file != null}
   <DataTableRendererCSR file={$file} dataType="csv" {delimiter} />
-{/if} -->
+{/if}
 
-<DataTableRendererCSR
+<!-- <DataTableRendererCSR
   url={urlCSV}
   fetchOptions={fetchOptionsCSV}
   dataType="CSV"
@@ -259,18 +259,20 @@
   rowEvent={updatePopup}
   editable={true}
   {mapping}
-/>
+/> -->
 
 <Modal {updatePopup} show={$showPopup}>
-  <h1>Mapping data</h1>
   <div data-component="pop-up-container">
     <section data-component="filters-container">
       <h2>Filters</h2>
       <div data-component="filters">
         {#each $originalFilterStore as filter}
-          <button on:click={() => showCategories(filter.name)}>
+          <button
+            on:click={() => showCategories(filter.name)}
+            class={`${$show == filter.name ? 'border-radius-top' : null}`}
+          >
             <p>{filter.name}</p>
-            <img src="/descending-sort.svg" alt="Arrow down icon" />
+            <img src="/chevron-down.svg" alt="Arrow down icon" />
           </button>
           {#if $show == filter.name}
             <div
@@ -354,12 +356,17 @@
       </div>
     </section>
     <section data-component="table-pop-up">
-      {#if $athenaData != null && $athenaColumns != null}
-        {#key update}
-          <DataTableRendererJS data={$athenaData} columns={$athenaColumns} rowEvent={mapped} />
-        {/key}
-      {/if}
+      <div data-component="table-head">
+        <h2>Athena data</h2>
+        <Equivalence bind:Eq={equivalence} />
+      </div>
+      <div data-component="table">
+        {#if $athenaData != null && $athenaColumns != null}
+          {#key update}
+            <DataTableRendererJS data={$athenaData} columns={$athenaColumns} rowEvent={mapped} />
+          {/key}
+        {/if}
+      </div>
     </section>
   </div>
-  <Equivalence bind:Eq={equivalence} />
 </Modal>

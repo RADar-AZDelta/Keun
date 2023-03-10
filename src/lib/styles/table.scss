@@ -1,5 +1,9 @@
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
 div[data-component='tablerenderer'] {
-  padding: 4rem 1rem 2rem;
+  margin: 1rem;
 
   h2 {
     font-size: 2rem;
@@ -11,11 +15,12 @@ div[data-component='tablerenderer'] {
   }
 
   td {
-    padding: 1rem;
+    padding: 0.5rem 1rem;
   }
 
   th {
     width: max-content;
+    padding-right: 40px;
   }
 
   tr:nth-child(2n) {
@@ -29,12 +34,14 @@ div[data-component='tablerenderer'] {
   div[data-component='filter'] {
     display: flex;
     align-items: center;
+    margin: 0;
+    min-width: max-content;
 
     input {
-      width: 80%;
+      width: 100%;
       display: flex;
       align-self: flex-start;
-      padding: 0.5rem;
+      padding: 0.5rem 0 0.5rem 0.5rem;
       margin-bottom: 0.5rem;
       border-radius: 5px;
       border: 1px solid black;
@@ -42,9 +49,11 @@ div[data-component='tablerenderer'] {
 
     button {
       position: relative;
+      width: 0;
+      padding: 0;
       display: flex;
       align-items: center;
-      right: 2.5rem;
+      right: 2rem;
       top: -0.25rem;
       border: none;
       background-color: inherit;
@@ -96,15 +105,17 @@ div[data-component='tablerenderer'] {
   }
 
   div[data-component='sort'] {
-    width: 80%;
+    width: 100%;
     display: flex;
     align-items: center;
     gap: 2rem;
 
     button {
+      padding: 0;
+      width: 100%;
       display: flex;
       align-items: center;
-      padding: 0.5rem 0.5rem 0;
+      justify-content: space-between;
       gap: 0.5rem;
       border: none;
       background-color: inherit;
@@ -133,12 +144,13 @@ section[data-component='modal-container'] {
   left: 0;
   background-color: rgba(0, 0, 0, 0.5);
   z-index: 100;
+  filter: drop-shadow(12, 12, 10, rgba(0, 0, 0, 1));
 
   div[data-component='modal'] {
     width: 90%;
     height: 90%;
     background-color: white;
-    border-radius: 5px;
+    border-radius: 10px;
 
     button[data-component='close'] {
       padding: 1rem 0 0 1rem;
@@ -146,29 +158,29 @@ section[data-component='modal-container'] {
       background-color: inherit;
       cursor: pointer;
       position: absolute;
+      right: 6.5vw;
     }
   }
 }
 div[data-component='modal-content'] {
-  h1 {
-    font-size: 1.5rem;
-    padding: 700;
-    text-align: center;
-  }
+  height: 100%;
 
   div[data-component='pop-up-container'] {
     display: flex;
     width: 100%;
+    height: 100%;
   }
 
   section[data-component='filters-container'] {
-    width: 20%;
-    height: 80%;
-    padding-left: 1rem;
+    min-width: 16.66%;
+    max-width: 16.66%;
+    padding: 2.5rem 1.5rem 0 2.5rem;
+    border-right: 1px solid #999999;
 
     h2 {
       font-size: 1.5rem;
-      padding: 0.5rem 0;
+      margin: 0;
+      padding-bottom: 2rem;
     }
 
     div[data-component='filters'] {
@@ -176,13 +188,26 @@ div[data-component='modal-content'] {
       height: 70%;
       display: flex;
       flex-direction: column;
-      gap: 0.5rem;
 
       button {
         width: 100%;
         display: flex;
         align-items: center;
         justify-content: space-between;
+        background-color: #e3e3e3;
+        border: 1px solid #999999;
+        border-radius: 5px;
+        margin-bottom: 1rem;
+      }
+
+      .border-radius-top {
+        border-radius: 5px 5px 0 0;
+        border-bottom: none;
+        margin-bottom: 0;
+      }
+
+      img {
+        filter: invert(46%) sepia(5%) saturate(5%) hue-rotate(12deg) brightness(93%) contrast(90%);
       }
 
       p {
@@ -194,33 +219,40 @@ div[data-component='modal-content'] {
       }
 
       div[data-component='filter-item'] {
-        padding: 1rem;
+        padding: 0 1rem;
         display: block;
-        height: 10rem;
+        min-height: 10rem;
+        border: 1px solid #999999;
+        margin-bottom: 2rem;
+        border-radius: 0 0 5px 5px;
+        overflow-x: hidden;
 
         div[data-component='filter-input'] {
           display: flex;
           align-items: center;
+          padding: 1rem 0 0 0;
 
           input {
             padding: 0.5rem 1rem;
-            width: max-content;
+            max-width: 80%;
           }
 
           button {
             position: relative;
             display: flex;
             align-self: center;
-            right: 2.5rem;
+            right: 2rem;
             top: 0;
             border: none;
             background-color: inherit;
             cursor: pointer;
+            margin-bottom: 0;
           }
         }
         div[data-component='filter-option'] {
           display: flex;
           gap: 1rem;
+          font-size: 10px;
         }
       }
     }
@@ -228,14 +260,74 @@ div[data-component='modal-content'] {
 }
 
 section[data-component='table-pop-up'] {
-  width: 70vw;
-  height: 70vh;
-  overflow-x: scroll;
-  overflow-y: scroll;
-  div[data-component='tablerenderer'] {
-    table {
-      width: 30%;
-      border-spacing: 0;
+  min-width: 75%;
+  max-width: 75%;
+
+  div[data-component='table-head'] {
+    display: flex;
+    justify-content: space-between;
+
+    h2 {
+      font-size: 1.5rem;
+      margin: 0;
+      padding: 2.5rem 0 2.5rem 2.5rem;
+    }
+
+    div[data-component='equivalence'] {
+      height: min-content;
+      padding: 2.5rem;
+
+      select {
+        padding: 0.5rem 1rem;
+        margin-right: 1.5rem;
+        border: 1px solid #999999;
+        border-radius: 5px;
+      }
     }
   }
+
+  div[data-component='table'] {
+    overflow: scroll;
+    height: 80%;
+
+    div[data-component='tablerenderer'] {
+      table {
+        width: 30%;
+        border-spacing: 0;
+      }
+    }
+  }
+}
+
+img[data-component='title-image'] {
+  padding: 1rem;
+}
+
+div[data-component='drop'] {
+  width: 100%;
+  background-color: #e3e3e3;
+  text-align: center;
+  font-weight: 700;
+  font-size: 1.5rem;
+  height: 70vh;
+  border-radius: 5px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  p {
+    color: #707070;
+  }
+
+  img {
+    width: 150px;
+    height: 150px;
+  }
+}
+
+.hidden {
+  display: none;
+  height: 0;
+  width: 0;
 }
