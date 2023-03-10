@@ -23,6 +23,7 @@
   const athenaData = writable<any>()
   const athenaColumns = writable<any>()
   const chosenRowMapping = writable<number>()
+  const map = writable<boolean>()
 
   let update = 0
 
@@ -232,12 +233,13 @@
     const row = Number(indexes[0])
     const rowValues = $athenaData[row]
     mapping = {
-      row: $chosenRowMapping, //get the row that was clicked
+      row: $chosenRowMapping,
       columns: $athenaColumns,
       data: rowValues,
       equivalence: equivalence,
       author: $author,
     }
+    $map = true
   }
 
   onMount(() => {
@@ -276,6 +278,7 @@
   rowEvent={updatePopup}
   editable={true}
   {mapping}
+  bind:map={$map}
 />
 
 <Modal {updatePopup} show={$showPopup}>
