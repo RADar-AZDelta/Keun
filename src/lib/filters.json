@@ -1,6 +1,7 @@
 [
   {
     "name": "Domain",
+    "altName": "domain",
     "options": [
       "Condition",
       "Condition Status",
@@ -48,10 +49,12 @@
   },
   {
     "name": "Concept",
+    "altName": "standardConcept",
     "options": ["Classification", "Non-standard", "Standard"]
   },
   {
     "name": "Class",
+    "altName": "conceptClass",
     "options": [
       "10th level",
       "11-digit NDC",
@@ -404,6 +407,7 @@
   },
   {
     "name": "Vocab",
+    "altName": "vocabulary",
     "options": [
       "CIEL",
       "Currency",
@@ -529,6 +533,7 @@
   },
   {
     "name": "Validity",
+    "altName": "invalidReason",
     "options": ["Valid", "Invalid"]
   }
 ]

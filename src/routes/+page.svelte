@@ -7,7 +7,11 @@
   import type ICategories from '$lib/interfaces/ICategories'
   import DataTableRendererCSR from '../../libs/RADar-DataTable/src/lib/components/DataTable/DataTableRendererCSR.svelte'
   import DataTableRendererJS from '../../libs/RADar-DataTable/src/lib/components/DataTable/DataTableRendererJS.svelte'
+  import DataTableRendererAthena from '../../libs/RADar-DataTable/src/lib/components/DataTable/DataTableRendererAthena.svelte'
   import DragAndDrop from '../../libs/RADar-DataTable/src/lib/components/Extra/DragAndDrop.svelte'
+  import type IFilter from '../../libs/RADar-DataTable/src/lib/interfaces/IFilter'
+  import type IPaginated from '../../libs/RADar-DataTable/src/lib/interfaces/IPaginated'
+  import type ISort from '../../libs/RADar-DataTable/src/lib/interfaces/ISort'
   import '$lib/styles/table.scss'
   import Equivalence from '$lib/components/Mapping/Equivalence.svelte'
   import type IMapping from '$lib/interfaces/IMapping'
@@ -20,15 +24,30 @@
   const categoriesFilter = writable<ICategories[]>([])
   const categoriesInput = writable<any>({})
   const originalFilterStore = writable<ICategories[]>(filtersJSON)
-  const athenaData = writable<any>()
+  let athenaData = writable<any>()
   const athenaColumns = writable<any>()
   const chosenRowMapping = writable<number>()
   const map = writable<boolean>()
+  let athenaPagination = writable<IPaginated>({
+    currentPage: 1,
+    rowsPerPage: 10,
+    totalRows: 10,
+    totalPages: 1000000,
+  })
+  let athenaFilter = writable<string>()
+  let athenaSorting = writable<ISort>()
 
-  let update = 0
+  let previousPagination: IPaginated
 
-  const updateTable = async () => {
-    update = update + 1
+  const athenaNames: any = {
+    id: "concept_id",
+    name: "concept_name",
+    code: "concept_code",
+    className: "concept_class",
+    concept: "standard_concept",
+    invalidReason: "invalid_reason",
+    domain: "domain_id",
+    vocabulary: "vocabulary_id",
   }
 
   const modalAuthor = async (value: boolean) => {
@@ -56,6 +75,7 @@
       $chosenRowMapping = Number(indexes[0])
     }
     $showPopup = value
+    // TODO: implement sort & filter for Athena --> with API call
     fetchAPI()
   }
 
@@ -152,34 +172,58 @@
   }
 
   const fetchAPI = async () => {
-    let URL = `https://athena.ohdsi.org/api/v1/concepts?pageSize=15`
+    let URL = `https://athena.ohdsi.org/api/v1/concepts?pageSize=${$athenaPagination.rowsPerPage}`
     for (let filter of $activatedFilters) {
       let substring: string = ''
       for (let option of filter.values) {
-        substring += `&${filter.name.toLowerCase()}=${option}`
+        substring += `&${filter.name}=${option}`
       }
       URL += substring
     }
-    URL += '&page=1&query='
+    URL += `&page=${$athenaPagination.currentPage}`
+    if($athenaFilter) {
+      URL += `&query=${$athenaFilter}`
+    } else {
+      URL += `&query=`
+    }
+    // TODO: set altName for sorting columns
+    if($athenaSorting) {
+      console.log("IN fetch ", $athenaSorting)
+      if(athenaNames[$athenaSorting.column]) {
+        URL += `&sort=${athenaNames[$athenaSorting.column]}&order=${$athenaSorting.direction == 2 ? 'desc' : 'asc'}`
+      }
+    }
+    console.log(encodeURI(URL))
     let res = await fetch(encodeURI(URL))
     let data = await res.json()
+    console.log(data)
+    $athenaPagination = {
+      currentPage: data.pageable.pageNumber,
+      totalPages: data.totalPages,
+      rowsPerPage: data.pageable.pageSize,
+      totalRows: data.totalElements,
+    }
+    previousPagination = $athenaPagination
+    console.log(data.content)
     transpileDataAPI(data.content)
   }
 
   const transpileDataAPI = async (data: any) => {
     let columns = []
     let filteredData = []
-    for (let item of Object.keys(data[0])) {
-      if (item == 'id') {
-        columns.push({
-          column: item,
-          type: 1,
-        })
-      } else {
-        columns.push({
-          column: item,
-          type: 0,
-        })
+    if(data.length > 0){
+      for (let item of Object.keys(data[0])) {
+        if (item == 'id') {
+          columns.push({
+            column: item,
+            type: 1,
+          })
+        } else {
+          columns.push({
+            column: item,
+            type: 0,
+          })
+        }
       }
     }
     for (let item of data) {
@@ -191,7 +235,7 @@
     }
     $athenaData = filteredData
     $athenaColumns = columns
-    updateTable()
+    console.log('UPDATED DATA ', $athenaData)
   }
 
   const fetchOptionsCSV = {
@@ -256,6 +300,23 @@
   onMount(() => {
     localStorage.getItem('author') == null ? showAuthor.set(true) : ($author = String(localStorage.getItem('author')))
   })
+
+  $: {
+    $athenaPagination
+    if (previousPagination != undefined) {
+      if (
+        $athenaPagination.currentPage != previousPagination.currentPage ||
+        $athenaPagination.rowsPerPage != previousPagination.rowsPerPage
+      ) {
+        fetchAPI()
+      }
+    }
+  }
+
+  $: {
+    $athenaFilter, $athenaSorting
+    fetchAPI()
+  }
 </script>
 
 <SmallModal bind:show={$showAuthor} saveFunction={modalAuthor}>
@@ -276,7 +337,6 @@
   dataType="CSV"
   {delimiter}
   rowEvent={updatePopup}
-  editable={true}
   {mapping}
   bind:map={$map}
 />
@@ -341,7 +401,10 @@
                             .values.includes(option)
                         ? true
                         : false}
-                      on:change={() => (event != undefined ? updateAPIFilters(event, filter.name, option) : null)}
+                      on:change={() =>
+                        event != undefined
+                          ? updateAPIFilters(event, filter.altName != undefined ? filter.altName : filter.name, option)
+                          : null}
                     />
                     <p>{option}</p>
                   </div>
@@ -362,7 +425,10 @@
                             .values.includes(option)
                         ? true
                         : false}
-                      on:change={() => (event != undefined ? updateAPIFilters(event, filter.name, option) : null)}
+                      on:change={() =>
+                        event != undefined
+                          ? updateAPIFilters(event, filter.altName != undefined ? filter.altName : filter.name, option)
+                          : null}
                     />
                     <p>{option}</p>
                   </div>
@@ -382,9 +448,14 @@
       </div>
       <div data-component="table">
         {#if $athenaData != null && $athenaColumns != null}
-          {#key update}
-            <DataTableRendererJS data={$athenaData} columns={$athenaColumns} rowEvent={mapped} />
-          {/key}
+          <DataTableRendererAthena
+            bind:data={athenaData}
+            bind:filter={athenaFilter}
+            columns={$athenaColumns}
+            rowEvent={mapped}
+            bind:pagination={athenaPagination}
+            bind:sorting={athenaSorting}
+          />
         {/if}
       </div>
     </section>
