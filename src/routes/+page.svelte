@@ -36,18 +36,19 @@
   })
   let athenaFilter = writable<string>()
   let athenaSorting = writable<ISort>()
+  let selectedRow = writable<string>()
 
   let previousPagination: IPaginated
 
   const athenaNames: any = {
-    id: "concept_id",
-    name: "concept_name",
-    code: "concept_code",
-    className: "concept_class",
-    concept: "standard_concept",
-    invalidReason: "invalid_reason",
-    domain: "domain_id",
-    vocabulary: "vocabulary_id",
+    id: 'concept_id',
+    name: 'concept_name',
+    code: 'concept_code',
+    className: 'concept_class',
+    concept: 'standard_concept',
+    invalidReason: 'invalid_reason',
+    domain: 'domain_id',
+    vocabulary: 'vocabulary_id',
   }
 
   const modalAuthor = async (value: boolean) => {
@@ -181,22 +182,19 @@
       URL += substring
     }
     URL += `&page=${$athenaPagination.currentPage}`
-    if($athenaFilter) {
+    if ($athenaFilter) {
       URL += `&query=${$athenaFilter}`
     } else {
       URL += `&query=`
     }
     // TODO: set altName for sorting columns
-    if($athenaSorting) {
-      console.log("IN fetch ", $athenaSorting)
-      if(athenaNames[$athenaSorting.column]) {
+    if ($athenaSorting) {
+      if (athenaNames[$athenaSorting.column]) {
         URL += `&sort=${athenaNames[$athenaSorting.column]}&order=${$athenaSorting.direction == 2 ? 'desc' : 'asc'}`
       }
     }
-    console.log(encodeURI(URL))
     let res = await fetch(encodeURI(URL))
     let data = await res.json()
-    console.log(data)
     $athenaPagination = {
       currentPage: data.pageable.pageNumber,
       totalPages: data.totalPages,
@@ -204,14 +202,13 @@
       totalRows: data.totalElements,
     }
     previousPagination = $athenaPagination
-    console.log(data.content)
     transpileDataAPI(data.content)
   }
 
   const transpileDataAPI = async (data: any) => {
     let columns = []
     let filteredData = []
-    if(data.length > 0){
+    if (data.length > 0) {
       for (let item of Object.keys(data[0])) {
         if (item == 'id') {
           columns.push({
@@ -235,7 +232,6 @@
     }
     $athenaData = filteredData
     $athenaColumns = columns
-    console.log('UPDATED DATA ', $athenaData)
   }
 
   const fetchOptionsCSV = {
@@ -317,6 +313,10 @@
     $athenaFilter, $athenaSorting
     fetchAPI()
   }
+
+  $: {
+    console.log('CHANGE ', $selectedRow)
+  }
 </script>
 
 <SmallModal bind:show={$showAuthor} saveFunction={modalAuthor}>
@@ -339,6 +339,7 @@
   rowEvent={updatePopup}
   {mapping}
   bind:map={$map}
+  bind:selectedRow
 />
 
 <Modal {updatePopup} show={$showPopup}>
