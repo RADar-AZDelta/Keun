@@ -255,6 +255,11 @@ div[data-component='modal-content'] {
       padding-bottom: 2rem;
     }
 
+    div[data-component='filters-buttons'] {
+      height: 70%;
+      width: 100%;
+    }
+
     div[data-component='filters'] {
       position: relative;
       height: 70%;
@@ -290,14 +295,47 @@ div[data-component='modal-content'] {
         overflow-y: scroll;
       }
 
+      div[data-component='activated'] {
+        padding: 2rem;
+      }
+
       div[data-component='filter-item'] {
         padding: 0 1rem;
         display: block;
         min-height: 10rem;
+        max-height: 20vh;
         border: 1px solid #999999;
         margin-bottom: 2rem;
         border-radius: 0 0 5px 5px;
         overflow-x: hidden;
+
+        div[data-component='activated-filter'] {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          background-color: #e3e3e3;
+          border-radius: 5px;
+          padding: 4px 8px;
+          margin: 0.5rem 0;
+
+          p {
+            font-weight: 400;
+            font-size: 10px;
+          }
+
+          button {
+            border: none;
+            background-color: inherit;
+            cursor: pointer;
+            margin-bottom: 0;
+            width: min-content;
+
+            img {
+              height: 20px;
+              width: 20px;
+            }
+          }
+        }
 
         div[data-component='filter-input'] {
           display: flex;

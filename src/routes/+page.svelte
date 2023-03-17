@@ -24,9 +24,9 @@
   const map = writable<boolean>()
   let athenaPagination = writable<IPaginated>({
     currentPage: 1,
-    rowsPerPage: 4,
-    totalRows: 3,
-    totalPages: 4,
+    rowsPerPage: 10,
+    totalRows: 10,
+    totalPages: 1,
   })
   let athenaFilter = writable<string>()
   let athenaSorting = writable<ISort>()
@@ -231,6 +231,7 @@
   {mapping}
   bind:map={$map}
   bind:selectedRow
+  downloadable={true}
 />
 
 <Modal {updatePopup} show={$showPopup}>
