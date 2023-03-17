@@ -7,7 +7,7 @@
   import Modal from '$lib/components/Extra/Modal.svelte'
   import type IQueryFilter from '$lib/interfaces/IQueryFilter'
   import DataTableRendererCSR from '../../libs/RADar-DataTable/src/lib/components/DataTable/DataTableRendererCSR.svelte'
-  import DataTableRendererAthena from '../../libs/RADar-DataTable/src/lib/components/DataTable/DataTableRendererAthena.svelte'
+  import DataTableRendererSSR from '../../libs/RADar-DataTable/src/lib/components/DataTable/DataTableRendererSSR.svelte'
   import DragAndDrop from '../../libs/RADar-DataTable/src/lib/components/Extra/DragAndDrop.svelte'
   import type IPaginated from '../../libs/RADar-DataTable/src/lib/interfaces/IPaginated'
   import type ISort from '../../libs/RADar-DataTable/src/lib/interfaces/ISort'
@@ -15,24 +15,27 @@
   import type IMapping from '$lib/interfaces/IMapping'
   import SmallModal from '$lib/components/Extra/SmallModal.svelte'
   import AthenaLayout from '$lib/components/Extra/AthenaLayout.svelte'
+    import { onMount } from 'svelte'
 
   const author = writable<string>()
   let activatedFilters = writable<IQueryFilter[]>([])
   let athenaData = writable<[string, any][][]>()
-  const athenaColumns = writable<IScheme[]>()
+  let athenaColumns = writable<IScheme[]>()
   const chosenRowMapping = writable<number>()
   const map = writable<boolean>()
   let athenaPagination = writable<IPaginated>({
-    currentPage: 1,
+    currentPage: 0,
     rowsPerPage: 10,
-    totalRows: 10,
-    totalPages: 1,
+    totalRows: 20,
+    totalPages: 2,
   })
   let athenaFilter = writable<string>()
   let athenaSorting = writable<ISort>()
   let selectedRow = writable<string>()
   let equivalenceMapping = writable<string>()
   const athenaNames = writable<Object>(athenaNamesJSON)
+  let APICall = writable<string>()
+  let APIFilters = writable<string[]>()
 
   let previousPagination: IPaginated
   let mapping: IMapping
@@ -62,29 +65,34 @@
       $chosenRowMapping = Number(indexes[0])
     }
     $showPopup = value
-    fetchAPI()
+    fetchAPI($APICall, $APIFilters)
   }
 
-  const fetchAPI = async (): Promise<void> => {
-    let URL = `https://athena.ohdsi.org/api/v1/concepts?pageSize=${$athenaPagination.rowsPerPage}`
+  const fetchAPI = async (URL: string, filters: string[]): Promise<void> => {
+    URL = 'https://athena.ohdsi.org/api/v1/concepts'
 
-    // Add all filters of categories to URL
-    for (let filter of $activatedFilters) {
-      let substring: string = ''
-      for (let option of filter.values) {
-        substring += `&${filter.name}=${option}`
+    URL += `?pageSize=${$athenaPagination.rowsPerPage}`
+    if ($athenaPagination.currentPage != undefined) {
+      if ($athenaPagination.currentPage == 0){
+        URL += `&page=1`
       }
-      URL += substring
-    }
-
-    // Add pagination to URL
-    URL += `&page=${$athenaPagination.currentPage}`
+      else {
+        URL += `&page=${$athenaPagination.currentPage}`
+      }
+    } else URL += `$page=1`
 
     // Add filter to URL if it exists
-    if ($athenaFilter) {
+    if ($athenaFilter != 'undefined' && $athenaFilter != undefined	&& !$athenaFilter.includes('undefined')) {
       URL += `&query=${$athenaFilter}`
     } else {
       URL += `&query=`
+    }
+
+    filters = Array.from(new Set(filters))
+    if (filters != undefined) {
+      for (let filter of filters) {
+        URL += filter
+      }
     }
 
     // Add sorting to URL if there is sorting
@@ -96,19 +104,10 @@
       }
     }
 
-    let res = await fetch(encodeURI(URL))
-    let data = await res.json()
-    $athenaPagination = {
-      currentPage: data.pageable.pageNumber,
-      totalPages: data.totalPages,
-      rowsPerPage: data.pageable.pageSize,
-      totalRows: data.totalElements,
-    }
-    previousPagination = $athenaPagination
-    transpileDataAPI(data.content)
+    APICall.set(encodeURI(URL))
   }
 
-  const transpileDataAPI = async (data: Array<Object>): Promise<void> => {
+  const transpileDataAPI = async (data: Array<Object>): Promise<object> => {
     let columns: IScheme[] = []
     let filteredData: [string, any][][] = []
     if (data.length > 0) {
@@ -131,12 +130,17 @@
     for (let item of data) {
       let row: [string, any][] = []
       for (let col of Object.keys(item)) {
-        row.push([col, item[col as keyof Object]])
+        row.push(item[col as keyof object])
       }
       filteredData.push(row)
     }
     $athenaData = filteredData
     $athenaColumns = columns
+    const dataObj = {
+      data: filteredData,
+      scheme: columns,
+    }
+    return dataObj
   }
 
   const mapped = async (event: Event): Promise<void> => {
@@ -173,7 +177,7 @@
 
   $: {
     $athenaFilter, $athenaSorting
-    fetchAPI()
+    fetchAPI($APICall, $APIFilters)
   }
 
   $: {
@@ -183,7 +187,7 @@
         $athenaPagination.currentPage != previousPagination.currentPage ||
         $athenaPagination.rowsPerPage != previousPagination.rowsPerPage
       ) {
-        fetchAPI()
+        fetchAPI($APICall, $APIFilters)
       }
     }
   }
@@ -200,6 +204,10 @@
 
   const file = writable<File | null>(null)
   const delimiter: string = ','
+
+  onMount(() => {
+    if($showAuthor == false && localStorage.getItem('author') == null) showAuthor.set(true)
+  })
 </script>
 
 <SmallModal bind:show={$showAuthor} saveFunction={modalAuthor}>
@@ -235,15 +243,23 @@
 />
 
 <Modal {updatePopup} show={$showPopup}>
-  <AthenaLayout filters={filtersJSON} {fetchAPI} bind:equivalenceMapping bind:activatedFilters>
-    {#if $athenaData != undefined && $athenaColumns != undefined}
-      <DataTableRendererAthena
-        bind:data={athenaData}
-        bind:filter={athenaFilter}
-        columns={$athenaColumns}
-        rowEvent={mapped}
+  <AthenaLayout filters={filtersJSON} bind:urlFilters={APIFilters} bind:equivalenceMapping bind:activatedFilters>
+    {#if $APICall != ''}
+      <DataTableRendererSSR
+        bind:url={APICall}
+        fetchOptions={{}}
+        dataPath={['content']}
+        currentPagePath={['pageable', 'pageNumber']}
+        totalPagesPath={['totalPages']}
+        rowsPerPagePath={['pageable', 'pageSize']}
+        totalRowsPath={['totalElements']}
+        bind:singleFilter={athenaFilter}
+        bind:singleSorting={athenaSorting}
         bind:pagination={athenaPagination}
-        bind:sorting={athenaSorting}
+        bind:columns={athenaColumns}
+        transpileData={transpileDataAPI}
+        special={true}
+        rowEvent={mapped}
       />
     {/if}
   </AthenaLayout>

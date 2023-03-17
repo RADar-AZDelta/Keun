@@ -6,7 +6,7 @@
   import { onMount } from 'svelte'
 
   export let filters: Array<ICategories>,
-    fetchAPI: Function,
+    urlFilters: Writable<string[]>,
     equivalenceMapping: Writable<string>,
     activatedFilters: Writable<IQueryFilter[]>
 
@@ -128,7 +128,18 @@
       }
     }
 
-    fetchAPI()
+    let URLFilters: string[] = []
+
+    // Add all filters of categories to URL
+    for (let filter of $activatedFilters) {
+      let substring: string = ''
+      for (let option of filter.values) {
+        substring += `&${filter.name}=${option}`
+      }
+      URLFilters.push(encodeURI(substring))
+    }
+
+    urlFilters.set(URLFilters)
   }
 
   const checkIfFilterExists = (filter: string, option: string): boolean => {
@@ -162,19 +173,14 @@
         if (filter.values.length == 1) {
           $activatedFilters[desiredFilterIndex].values = []
         } else {
-          console.log($activatedFilters[desiredFilterIndex].values)
-          const valueIndex = filter.values.indexOf(removingFilter)
           updatedFilter = []
           for (let value of filter.values) {
             if (value != removingFilter) updatedFilter.push(value)
           }
-          // Remove element from array with index
           $activatedFilters[desiredFilterIndex].values = updatedFilter
-          console.log(updatedFilter)
         }
       }
     }
-    console.log($activatedFilters)
     activatedFilters.update(() => $activatedFilters)
     localStorage.setItem('AthenaFilters', JSON.stringify($activatedFilters))
   }
