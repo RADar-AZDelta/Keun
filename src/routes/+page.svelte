@@ -15,7 +15,7 @@
   import type IMapping from '$lib/interfaces/IMapping'
   import SmallModal from '$lib/components/Extra/SmallModal.svelte'
   import AthenaLayout from '$lib/components/Extra/AthenaLayout.svelte'
-    import { onMount } from 'svelte'
+  import { onMount } from 'svelte'
 
   const author = writable<string>()
   let activatedFilters = writable<IQueryFilter[]>([])
@@ -39,6 +39,9 @@
 
   let previousPagination: IPaginated
   let mapping: IMapping
+
+  let columns = writable<Array<IScheme>>([])
+  let data = writable<any>()
 
   const modalAuthor = async (value: boolean): Promise<void> => {
     $showAuthor = value
@@ -73,17 +76,26 @@
 
     URL += `?pageSize=${$athenaPagination.rowsPerPage}`
     if ($athenaPagination.currentPage != undefined) {
-      if ($athenaPagination.currentPage == 0){
+      if ($athenaPagination.currentPage == 0) {
         URL += `&page=1`
-      }
-      else {
+      } else {
         URL += `&page=${$athenaPagination.currentPage}`
       }
     } else URL += `$page=1`
 
     // Add filter to URL if it exists
-    if ($athenaFilter != 'undefined' && $athenaFilter != undefined	&& !$athenaFilter.includes('undefined')) {
+    if ($athenaFilter != 'undefined' && $athenaFilter != undefined && !$athenaFilter.includes('undefined')) {
       URL += `&query=${$athenaFilter}`
+    } else if ($selectedRow != undefined) {
+      let columnIndex = 0
+      for (let col of $columns) {
+        if (col.column == 'sourceName') {
+          const sourceCol = col
+          columnIndex = $columns.indexOf(sourceCol)
+        }
+      }
+      const sourceName = $data[$selectedRow][columnIndex]
+      URL += `&query=${sourceName}`
     } else {
       URL += `&query=`
     }
@@ -206,7 +218,7 @@
   const delimiter: string = ','
 
   onMount(() => {
-    if($showAuthor == false && localStorage.getItem('author') == null) showAuthor.set(true)
+    if ($showAuthor == false && localStorage.getItem('author') == null) showAuthor.set(true)
   })
 </script>
 
@@ -240,6 +252,8 @@
   bind:map={$map}
   bind:selectedRow
   downloadable={true}
+  bind:columns
+  bind:data
 />
 
 <Modal {updatePopup} show={$showPopup}>
@@ -260,6 +274,7 @@
         transpileData={transpileDataAPI}
         special={true}
         rowEvent={mapped}
+        downloadable={false}
       />
     {/if}
   </AthenaLayout>
