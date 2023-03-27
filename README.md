@@ -4,8 +4,13 @@
 git clone git@github.com:RADar-AZDelta/POC-Keun.git
 cd .\POC-Keun\
 git submodule update --init --recursive
-cd .\lib\RADar-DataTable\ && pnpm build && cd ../..
 pnpm install
+cd .\lib\RADar-DataTable\ && pnpm build && cd ../..
+```
+
+#### Pull latest commit of submodule
+```bash
+git submodule update --remote --merge
 ```
 
 #### Running dev server

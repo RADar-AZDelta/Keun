@@ -23,7 +23,9 @@
   //Change so it can be unchecked
   $: {
     for (let column of $columns) {
-      hiddenColumns.includes(column.column) && column.forceVisibility != true ? column.visible = false : column.visible = true
+      hiddenColumns.includes(column.column) && column.forceVisibility != true
+        ? (column.visible = false)
+        : (column.visible = true)
     }
   }
 </script>
