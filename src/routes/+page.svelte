@@ -21,12 +21,12 @@
   import Sorting from '../../libs/RADar-DataTable/src/lib/components/DataTableBasics/Sorting.svelte'
   import Filtering from '../../libs/RADar-DataTable/src/lib/components/DataTableBasics/Filtering.svelte'
   import type IFilter from '../../libs/RADar-DataTable/src/lib/interfaces/IFilter'
-  import Editor from '../../libs/RADar-DataTable/src/lib/components/Extra/Editor.svelte'
+  import Editor from '$lib/components/Extra/Editor.svelte'
   import type IMapper from '../../libs/RADar-DataTable/src/lib/interfaces/IMapper'
   import { browser } from '$app/environment'
-  import ActionPage from '../../libs/RADar-DataTable/src/lib/components/Extra/ActionPage.svelte'
-  import Action from '../../libs/RADar-DataTable/src/lib/components/Extra/Action.svelte'
-  import ShowColumns from '../../libs/RADar-DataTable/src/lib/components/Extra/ShowColumns.svelte'
+  import ActionPage from '$lib/components/Extra/ActionPage.svelte'
+  import Action from '$lib/components/Extra/Action.svelte'
+  import ShowColumns from '$lib/components/Extra/ShowColumns.svelte'
 
   const author = writable<string>()
   let activatedFilters = writable<IQueryFilter[]>([])

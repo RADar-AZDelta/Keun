@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Editor from '../../../../libs/RADar-DataTable/src/lib/components/Extra/Editor.svelte'
+  import Editor from '$lib/components/Extra/Editor.svelte'
   import type IScheme from '../../../../libs/RADar-DataTable/src/lib/interfaces/IScheme'
   import type IStatus from '../../../../libs/RADar-DataTable/src/lib/interfaces/IStatus'
 
