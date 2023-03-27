@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Writable } from 'svelte/store'
-  import type IColumnName from '../../../../libs/RADar-DataTable/src/lib/interfaces/IColumnName'
+  import type IColumnName from '../../../../lib/RADar-DataTable/src/lib/interfaces/IColumnName'
 
   export let name: string,
     updateColumns: Array<IColumnName>,

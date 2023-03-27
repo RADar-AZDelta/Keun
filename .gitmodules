@@ -1,4 +1,3 @@
-[submodule "RADar-DataTable"]
-	path = libs/RADar-DataTable
-	url = ssh://git@github.com:RADar-AZDelta/RADar-DataTable.git
-	branch = master
+[submodule "lib/RADar-DataTable"]
+	path = lib/RADar-DataTable
+	url = git@github.com:RADar-AZDelta/RADar-DataTable.git
