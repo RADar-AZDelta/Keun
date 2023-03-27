@@ -295,10 +295,11 @@
   <section data-component="table-pop-up">
     <div data-component="table-head">
       <h2>Athena data</h2>
+      <slot name="currentRow" />
       <Equivalence bind:Eq={$equivalenceMapping} />
     </div>
     <div data-component="table">
-      <slot />
+      <slot name="table" />
     </div>
   </section>
 </div>
