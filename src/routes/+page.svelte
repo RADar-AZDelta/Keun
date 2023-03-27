@@ -70,6 +70,12 @@
     },
     {
       column: 'mappingStatus',
+      status: 'UNAPPROVED',
+      color: 'hsl(0, 100%, 77%)',
+      priority: 1,
+    },
+    {
+      column: 'mappingStatus',
       status: '',
       color: 'hsl(0, 0, 0)',
       priority: 1,
@@ -182,8 +188,18 @@
       name: 'domain',
       altName: 'domainId',
     },
+    {
+      name: 'ADD_INFO:author1',
+      altName: 'ADD_INFO:author1',
+    },
+    {
+      name: 'ADD_INFO:author2',
+      altName: 'ADD_INFO:author2',
+    },
   ]
   let additionalFields: object = {
+    'ADD_INFO:author1': '',
+    'ADD_INFO:author2': '',
     sourceAutoAssignedConceptIds: '',
     'ADD_INFO:additionalInfo': '',
     'ADD_INFO:prescriptionID': '',
@@ -191,7 +207,7 @@
     matchScore: 1,
     mappingStatus: '',
     equivalence: 'EQUAL',
-    statusSetBy: 'USER',
+    statusSetBy: '',
     statusSetOn: new Date().getTime(),
     mappingType: 'MAPS_TO',
     comment: 'AUTO MAPPED',
@@ -210,8 +226,6 @@
     additionalFields: additionalFields,
   })
 
-  const nextRow = async () => {}
-
   const updateData = async (worker: Worker, index: string, value: string): Promise<void> => {
     worker?.postMessage({
       editData: {
@@ -223,6 +237,12 @@
       pagination: $pagination,
       columns: $columns,
       mapper: $mapper,
+      extraChanges: [
+        {
+          column: 'createdBy',
+          value: getAuthor(),
+        },
+      ],
     })
   }
 
@@ -340,6 +360,30 @@
     return dataObj
   }
 
+  const checkForAuthor = (newData: any, oldData: any, oldColumns: IScheme[], row: any) => {
+    // Fill in old data to find authors
+    const author1Index = oldColumns.findIndex(col => col.column == 'ADD_INFO:author1')
+    const author2Index = oldColumns.findIndex(col => col.column == 'ADD_INFO:author2')
+    if (oldData[author1Index] != '' && oldData[author1Index] != undefined) {
+      newData['ADD_INFO:author1'] = getAuthor()
+      newData['ADD_INFO:author2'] = oldData[author1Index]
+    } else if (
+      oldData[author1Index] != '' &&
+      oldData[author1Index] != undefined &&
+      oldData[author2Index] != '' &&
+      oldData[author2Index] != undefined
+    ) {
+      const previousAuthor = oldData[author1Index]
+      newData['ADD_INFO:author1'] = getAuthor()
+      newData['ADD_INFO:author2'] = previousAuthor
+    } else {
+      newData['ADD_INFO:author1'] = getAuthor()
+      oldData[author1Index] = getAuthor()
+      newData['ADD_INFO:author2'] = ''
+    }
+    return newData
+  }
+
   const mapped = async (event: Event): Promise<void> => {
     let id: string
     const element = event.srcElement as HTMLElement
@@ -361,9 +405,10 @@
     }
     const indexes = id.split('-')
     const row = Number(indexes[0]) - $athenaPagination.rowsPerPage * ($athenaPagination.currentPage - 1)
-    const rowValues = $athenaData[row]
+    let rowValues = $athenaData[row]
     rowValues.equivalence = $equivalenceMapping
     rowValues.author = $author
+    rowValues = await checkForAuthor(rowValues, $data[Number($selectedRow)], $columns, Number($selectedRow))
     mapping = {
       row: Number($selectedRow),
       columns: $athenaColumns,
@@ -524,8 +569,8 @@
               data: 'APPROVED',
             },
             {
-              name: 'assignedReviewer',
-              altName: 'assignedReviewer',
+              name: 'statusSetBy',
+              altName: 'statusSetBy',
               data: getAuthor(),
             },
           ]}
@@ -543,8 +588,27 @@
               data: 'FLAGGED',
             },
             {
-              name: 'assignedReviewer',
-              altName: 'assignedReviewer',
+              name: 'statusSetBy',
+              altName: 'statusSetBy',
+              data: getAuthor(),
+            },
+          ]}
+        />
+        <Action
+          name="X"
+          bind:selectedRow
+          {worker}
+          bind:parentChange
+          row={number + $pagination.rowsPerPage * ($pagination.currentPage - 1)}
+          updateColumns={[
+            {
+              name: 'mappingStatus',
+              altName: 'mappingStatus',
+              data: 'UNAPPROVED',
+            },
+            {
+              name: 'statusSetBy',
+              altName: 'statusSetBy',
               data: getAuthor(),
             },
           ]}
@@ -590,8 +654,8 @@
           data: 'APPROVED',
         },
         {
-          name: 'assignedReviewer',
-          altName: 'assignedReviewer',
+          name: 'statusSetBy',
+          altName: 'statusSetBy',
           data: getAuthor(),
         },
       ]}
@@ -609,8 +673,8 @@
           data: 'FLAGGED',
         },
         {
-          name: 'assignedReviewer',
-          altName: 'assignedReviewer',
+          name: 'statusSetBy',
+          altName: 'statusSetBy',
           data: getAuthor(),
         },
       ]}
