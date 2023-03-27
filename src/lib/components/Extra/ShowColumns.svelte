@@ -1,6 +1,6 @@
 <script lang="ts">
   import { writable, type Writable } from 'svelte/store'
-  import type IScheme from '../../../../libs/RADar-DataTable/src/lib/interfaces/IScheme'
+  import type IScheme from '../../../../lib/RADar-DataTable/src/lib/interfaces/IScheme'
   export let columns: Writable<Array<IScheme>> = writable<Array<IScheme>>([]),
     parentChange: Writable<boolean>
 
@@ -21,15 +21,10 @@
     'domainId',
   ]
   //Change so it can be unchecked
-  const checkColumns = (cols: IScheme[]) => {
-    for (let column of cols) {
-      column.visible = !hiddenColumns.includes(column.column)
-    }
-    $columns = cols
-  }
-
   $: {
-    checkColumns($columns)
+    for (let column of $columns) {
+      hiddenColumns.includes(column.column) && column.forceVisibility != true ? column.visible = false : column.visible = true
+    }
   }
 </script>
 

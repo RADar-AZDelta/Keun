@@ -18,7 +18,7 @@ importers:
       eslint-plugin-svelte3: ^4.0.0
       prettier: ^2.8.0
       prettier-plugin-svelte: ^2.8.1
-      radar-datatable: file:libs\RADar-DataTable
+      radar-datatable: file:lib\RADar-DataTable
       sass: ^1.53.0
       sirv: ^2.0.2
       svelte: ^3.54.0
@@ -30,7 +30,7 @@ importers:
       vitest: ^0.29.2
     dependencies:
       arquero: 5.1.0
-      radar-datatable: file:libs/RADar-DataTable
+      radar-datatable: file:lib/RADar-DataTable
     devDependencies:
       '@playwright/test': 1.31.1
       '@sveltejs/adapter-auto': 2.0.0_@sveltejs+kit@1.9.2
@@ -55,7 +55,7 @@ importers:
       vite: 4.1.4_sass@1.58.3
       vitest: 0.29.2_sass@1.58.3
 
-  libs/RADar-DataTable:
+  lib/RADar-DataTable:
     specifiers:
       '@playwright/test': ^1.28.1
       '@sveltejs/adapter-auto': ^2.0.0
@@ -2781,8 +2781,8 @@ packages:
     engines: {node: '>=12.20'}
     dev: true
 
-  file:libs/RADar-DataTable:
-    resolution: {directory: libs/RADar-DataTable, type: directory}
+  file:lib/RADar-DataTable:
+    resolution: {directory: lib/RADar-DataTable, type: directory}
     name: radar-datatable
     version: 0.0.1
     dependencies:

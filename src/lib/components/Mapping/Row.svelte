@@ -1,7 +1,7 @@
 <script lang="ts">
   import Editor from '$lib/components/Extra/Editor.svelte'
-  import type IScheme from '../../../../libs/RADar-DataTable/src/lib/interfaces/IScheme'
-  import type IStatus from '../../../../libs/RADar-DataTable/src/lib/interfaces/IStatus'
+  import type IScheme from '../../../../lib/RADar-DataTable/src/lib/interfaces/IScheme'
+  import type IStatus from '../../../../lib/RADar-DataTable/src/lib/interfaces/IStatus'
 
   export let row: number,
     id: number,
