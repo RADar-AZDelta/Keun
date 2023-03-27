@@ -409,11 +409,6 @@
     if ($showAuthor == false && localStorage.getItem('author') == null) showAuthor.set(true)
     else if (localStorage.getItem('author') != null) $author = localStorage.getItem('author')!
   })
-
-  $: {
-    $APICall
-    console.log('CHANGE OF ROW ', $APICall)
-  }
 </script>
 
 <SmallModal bind:show={$showAuthor} saveFunction={modalAuthor}>

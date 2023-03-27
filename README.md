@@ -3,6 +3,8 @@
 ```bash
 git clone git@github.com:RADar-AZDelta/POC-Keun.git
 cd .\POC-Keun\
+git submodule update --init --recursive
+cd .\lib\RADar-DataTable\ && pnpm build && cd ../..
 pnpm install
 ```
 
