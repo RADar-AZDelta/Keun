@@ -397,7 +397,8 @@ section[data-component='table-pop-up'] {
   }
 
   div[data-component='table'] {
-    overflow: scroll;
+    // overflow: scroll;
+    overflow-y: scroll;
     height: 80%;
 
     div[data-component='tablerenderer'] {
