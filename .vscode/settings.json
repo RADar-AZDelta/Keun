@@ -1,4 +1,6 @@
 {
-    "awooga.originalColorCustomizations": {},
-    "workbench.colorCustomizations": {}
+	"awooga.originalColorCustomizations": {},
+	"workbench.colorCustomizations": {},
+	"editor.formatOnSave": true,
+	"[svelte]": { "editor.defaultFormatter": "svelte.svelte-vscode" }
 }

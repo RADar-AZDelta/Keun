@@ -1,3 +1,3 @@
-[submodule "powertable"]
-	path = powertable
-	url = git@github.com:RADar-AZDelta/powertable.git
+[submodule "lib/RADar-DataTable"]
+	path = lib/RADar-DataTable
+	url = git@github.com:RADar-AZDelta/RADar-DataTable.git
