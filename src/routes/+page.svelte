@@ -15,7 +15,6 @@
   import type IMapping from '$lib/interfaces/IMapping'
   import type IColumnName from '../../lib/RADar-DataTable/src/lib/interfaces/IColumnName'
 
-  import SmallModal from '$lib/components/Extra/SmallModal.svelte'
   import AthenaLayout from '$lib/components/Extra/AthenaLayout.svelte'
   import { onMount } from 'svelte'
   import Sorting from '../../lib/RADar-DataTable/src/lib/components/DataTableBasics/Sorting.svelte'
@@ -27,6 +26,7 @@
   import ActionPage from '$lib/components/Extra/ActionPage.svelte'
   import Action from '$lib/components/Extra/Action.svelte'
   import ShowColumns from '$lib/components/Extra/ShowColumns.svelte'
+  import type ISettings from '$lib/interfaces/ISettings'
 
   const author = writable<string>()
   let activatedFilters = writable<IQueryFilter[]>([])
@@ -48,6 +48,15 @@
   const athenaNames = writable<Object>(athenaNamesJSON)
   let APICall = writable<string>()
   let APIFilters = writable<string[]>()
+  let settings = writable<ISettings>({
+    visible: false,
+    options: [
+      {
+        name: 'Map to multiple concepts',
+        value: false,
+      },
+    ],
+  })
 
   let previousPagination: IPaginated
   let mapping: IMapping | Array<IMapping>
@@ -250,32 +259,18 @@
     })
   }
 
-  const modalAuthor = async (value: boolean): Promise<void> => {
+  const updatePopupAuthor = async (value: boolean): Promise<void> => {
     $showAuthor = value
     localStorage.setItem('author', $author)
   }
 
-  const updatePopup = async (event: any, value: boolean = false): Promise<void> => {
-    if (event != null) {
-      let id: string
-      if (event.srcElement.id == '') {
-        if (event.srcElement.firstChild.id == '') {
-          if (event.srcElement.firstChild.firstChild.id == '') {
-            id = event.srcElement.firstChild.firstChild.firstChild.id
-          } else {
-            id = event.srcElement.firstChild.firstChild.id
-          }
-        } else {
-          id = event.srcElement.firstChild.id
-        }
-      } else {
-        id = event.srcElement.id
-      }
-      const indexes = id.split('-')
-      $chosenRowMapping = Number(indexes[1])
-    }
+  const updatePopup = async (value: boolean = false): Promise<void> => {
     $showPopup = value
     fetchAPI($APICall, $APIFilters)
+  }
+
+  const updatePopupSettings = async (value: boolean) => {
+    $settings.visible = value
   }
 
   const fetchAPI = (URL: string, filters: string[], columnChange: boolean = false) => {
@@ -470,12 +465,26 @@
     if ($showAuthor == false && localStorage.getItem('author') == null) showAuthor.set(true)
     else if (localStorage.getItem('author') != null) $author = localStorage.getItem('author')!
   })
+
+  $: {
+    console.log($settings)
+  }
 </script>
 
-<SmallModal bind:show={$showAuthor} saveFunction={modalAuthor}>
+<Modal updatePopup={updatePopupAuthor} bind:show={$showAuthor} size="small">
   <label for="author">Who is the author?</label>
   <input id="author" type="text" placeholder="John Wick" bind:value={$author} />
-</SmallModal>
+  <div data-component="button-container">
+    <button data-component="button-cancel" on:click={() => ($showAuthor = false)}>Cancel</button>
+    <button
+      data-component="button-save"
+      on:click={() => {
+        updatePopupAuthor(false)
+        $showAuthor = false
+      }}>Save</button
+    >
+  </div>
+</Modal>
 
 <img src="/Keun.png" alt="The logo of POC-Keun" height="113" width="332" data-component="title-image" />
 
@@ -498,7 +507,31 @@
   />
 {/if} -->
 
-<ShowColumns {columns} bind:parentChange />
+<div class="options">
+  <ShowColumns {columns} bind:parentChange />
+  <button
+    on:click={() => {
+      $settings.visible = true
+    }}
+  >
+    <img src="/settings.svg" alt="Settings" />
+  </button>
+</div>
+
+<Modal updatePopup={updatePopupSettings} show={$settings.visible} size="medium">
+  <h2 class="pop-up-title">Settings</h2>
+  <div class="pop-up-container">
+    {#each $settings.options as option}
+      <div class="option">
+        <p>{option.name}</p>
+        <label class="switch">
+          <input type="checkbox" bind:checked={option.value} />
+          <span class="slider round" />
+        </label>
+      </div>
+    {/each}
+  </div>
+</Modal>
 
 <DataTableRendererCSR
   url={urlCSV}
@@ -561,7 +594,7 @@
       if ($selectedRow != String(number + $pagination.rowsPerPage * ($pagination.currentPage - 1))) {
         $selectedRow = String(number + $pagination.rowsPerPage * ($pagination.currentPage - 1))
       } else {
-        if (updatePopup != undefined && $editorUpdating == false && $editClick == false) updatePopup(event, true)
+        if (updatePopup != undefined && $editorUpdating == false && $editClick == false) updatePopup(true)
         editClick.set(false)
       }
     }}
@@ -700,7 +733,7 @@
   </div>
 </DataTableRendererCSR>
 
-<Modal {updatePopup} show={$showPopup}>
+<Modal {updatePopup} show={$showPopup} size="large">
   <h1>{$athenaFilter}</h1>
   <AthenaLayout
     filters={filtersJSON}
@@ -794,18 +827,22 @@
           </tr>
           <tr slot="row" let:row let:scheme let:id let:number {id}>
             <td class="actions">
-              <input
-                type="checkbox"
-                class="custom-checkbox"
-                on:change={e => {
-                  // @ts-ignore
-                  if (e.target.checked == true) {
-                    athenaRows.update(values => (values = [...values, Number(id)]))
-                  } else {
-                    $athenaRows = $athenaRows.filter(row => row != Number(id))
-                  }
-                }}
-              />
+              {#if $settings.options.find(option => option.name == 'Map to multiple concepts') != undefined}
+                {#if $settings.options.filter(option => option.name == 'Map to multiple concepts')[0].value == true}
+                  <input
+                    type="checkbox"
+                    class="custom-checkbox"
+                    on:change={e => {
+                      // @ts-ignore
+                      if (e.target.checked == true) {
+                        athenaRows.update(values => (values = [...values, Number(id)]))
+                      } else {
+                        $athenaRows = $athenaRows.filter(row => row != Number(id))
+                      }
+                    }}
+                  />
+                {/if}
+              {/if}
               <button {id} on:click={mapped} class="check-button"><img src="/check.svg" alt="check icon" /></button>
             </td>
             {#each row as cell, j}
@@ -826,7 +863,9 @@
       {/if}
     </div>
     <div slot="extra">
-      <button on:click={mappingMultiple}>Map multiple</button>
+      {#if $settings.options.filter(option => option.name == 'Map to multiple concepts')[0].value == true}
+        <button on:click={mappingMultiple}>Map multiple</button>
+      {/if}
     </div>
   </AthenaLayout>
 </Modal>
@@ -850,7 +889,6 @@
     appearance: none;
     width: 1.5rem;
     height: 1.5rem;
-    /* background-color: lightgray; */
     padding: 0;
     margin: 0;
     border-radius: 5px;
@@ -879,5 +917,87 @@
   .check-button:hover,
   .custom-checkbox:active {
     filter: invert(12%) sepia(87%) saturate(4289%) hue-rotate(238deg) brightness(67%) contrast(126%);
+  }
+
+  .options {
+    display: flex;
+    align-items: center;
+    gap: 5rem;
+  }
+
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+  }
+
+  .switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    -webkit-transition: 0.4s;
+    transition: 0.4s;
+  }
+
+  .slider:before {
+    position: absolute;
+    content: '';
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    -webkit-transition: 0.4s;
+    transition: 0.4s;
+  }
+
+  input:checked + .slider {
+    background-color: #2196f3;
+  }
+
+  input:focus + .slider {
+    box-shadow: 0 0 1px #2196f3;
+  }
+
+  input:checked + .slider:before {
+    -webkit-transform: translateX(26px);
+    -ms-transform: translateX(26px);
+    transform: translateX(26px);
+  }
+
+  /* Rounded sliders */
+  .slider.round {
+    border-radius: 34px;
+  }
+
+  .slider.round:before {
+    border-radius: 50%;
+  }
+
+  .option {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .pop-up-title {
+    font-size: 2rem;
+    font-weight: 700;
+    padding: 1rem 0 0 2rem;
+  }
+
+  .pop-up-container {
+    padding: 0 1rem;
   }
 </style>
