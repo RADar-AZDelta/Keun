@@ -33,7 +33,7 @@
   let athenaData = writable<any>()
   let athenaColumns = writable<IScheme[]>()
   const chosenRowMapping = writable<number>()
-  const map = writable<boolean>()
+  let map = writable<boolean>()
   let athenaPagination = writable<IPaginated>({
     currentPage: 0,
     rowsPerPage: 10,
@@ -50,7 +50,8 @@
   let APIFilters = writable<string[]>()
 
   let previousPagination: IPaginated
-  let mapping: IMapping
+  let mapping: IMapping | Array<IMapping>
+  let multipleMapping: Array<IMapping> = []
 
   let columns = writable<Array<IScheme>>([])
   let data = writable<any>()
@@ -93,6 +94,9 @@
       priority: 0,
     },
   ]
+
+  let athenaColumn = writable<string>('sourceName')
+  let athenaRows = writable<Array<number>>([])
 
   /*
     Slot stuff
@@ -274,7 +278,7 @@
     fetchAPI($APICall, $APIFilters)
   }
 
-  const fetchAPI = (URL: string, filters: string[]) => {
+  const fetchAPI = (URL: string, filters: string[], columnChange: boolean = false) => {
     URL = 'https://athena.ohdsi.org/api/v1/concepts'
 
     URL += `?pageSize=${$athenaPagination.rowsPerPage}`
@@ -287,20 +291,26 @@
     } else URL += `$page=1`
 
     // Add filter to URL if it exists
-    if ($athenaFilter != 'undefined' && $athenaFilter != undefined && !$athenaFilter.includes('undefined')) {
-      URL += `&query=${$athenaFilter}`
-    } else if ($selectedRow != undefined) {
-      let columnIndex = 0
-      for (let col of $columns) {
-        if (col.column == 'sourceName') {
-          const sourceCol = col
-          columnIndex = $columns.indexOf(sourceCol)
-        }
+    if (columnChange == false) {
+      if ($athenaFilter != 'undefined' && $athenaFilter != undefined && !$athenaFilter.includes('undefined')) {
+        URL += `&query=${$athenaFilter}`
+      } else if ($selectedRow != undefined) {
+        const index = $columns.indexOf($columns.filter(col => col.column == $athenaColumn)[0])
+        const sourceName = $data[$selectedRowPage][index]
+        $athenaFilter = sourceName
+        URL += `&query=${sourceName}`
+      } else {
+        URL += `&query=`
       }
-      const sourceName = $data[$selectedRowPage][columnIndex]
-      URL += `&query=${sourceName}`
     } else {
-      URL += `&query=`
+      if ($columns.length > 0) {
+        const index = $columns.indexOf(
+          $columns.filter(col => col.column.toLowerCase() == $athenaColumn.toLowerCase())[0]
+        )
+        const sourceName = $data[$selectedRowPage][index]
+        $athenaFilter = sourceName
+        URL += `&query=${sourceName}`
+      }
     }
 
     filters = Array.from(new Set(filters))
@@ -318,7 +328,6 @@
         }`
       }
     }
-
     $APICall = encodeURI(URL)
   }
 
@@ -364,7 +373,7 @@
     // Fill in old data to find authors
     const author1Index = oldColumns.findIndex(col => col.column == 'ADD_INFO:author1')
     const author2Index = oldColumns.findIndex(col => col.column == 'ADD_INFO:author2')
-    if (oldData[author1Index] != '' && oldData[author1Index] != undefined) {
+    if (oldData[author1Index] != '' && oldData[author1Index] != undefined && oldData[author1Index] != getAuthor()) {
       newData['ADD_INFO:author1'] = getAuthor()
       newData['ADD_INFO:author2'] = oldData[author1Index]
     } else if (
@@ -385,26 +394,9 @@
   }
 
   const mapped = async (event: Event): Promise<void> => {
-    let id: string
-    const element = event.srcElement as HTMLElement
-    const firstChild = element.firstChild as HTMLElement
-    const secondChild = firstChild.firstChild as HTMLElement
-    const thirdChild = secondChild.firstChild as HTMLElement
-    if (element.id == '') {
-      if (firstChild.id == '') {
-        if (secondChild.id == '') {
-          id = thirdChild.id
-        } else {
-          id = secondChild.id
-        }
-      } else {
-        id = firstChild.id
-      }
-    } else {
-      id = element.id
-    }
-    const indexes = id.split('-')
-    const row = Number(indexes[0]) - $athenaPagination.rowsPerPage * ($athenaPagination.currentPage - 1)
+    // @ts-ignore
+    let id: string = event.target.id
+    const row = Number(id) - $athenaPagination.rowsPerPage * ($athenaPagination.currentPage - 1)
     let rowValues = $athenaData[row]
     rowValues.equivalence = $equivalenceMapping
     rowValues.author = $author
@@ -417,9 +409,33 @@
     $map = true
   }
 
+  const mappingMultiple = async () => {
+    let count = 0
+    for (let athenaRow of $athenaRows) {
+      const row = Number(athenaRow) - $athenaPagination.rowsPerPage * ($athenaPagination.currentPage - 1)
+      let rowValues = $athenaData[row]
+      rowValues.equivalence = $equivalenceMapping
+      rowValues.author = $author
+      rowValues = await checkForAuthor(rowValues, $data[Number($selectedRow)], $columns, Number($selectedRow))
+      multipleMapping.push({
+        row: Number($selectedRow) + count,
+        columns: $athenaColumns,
+        data: $athenaData[row],
+      })
+      count += 1
+    }
+    mapping = multipleMapping
+    $map = true
+  }
+
   $: {
     $athenaFilter, $athenaSorting
     fetchAPI($APICall, $APIFilters)
+  }
+
+  $: {
+    $athenaColumn
+    fetchAPI($APICall, $APIFilters, true)
   }
 
   $: {
@@ -489,8 +505,8 @@
   fetchOptions={fetchOptionsCSV}
   dataType="CSV"
   {delimiter}
-  {mapping}
-  bind:map={$map}
+  bind:mapping
+  bind:map
   bind:selectedRow
   bind:selectedRowPage
   downloadable={true}
@@ -685,7 +701,15 @@
 </DataTableRendererCSR>
 
 <Modal {updatePopup} show={$showPopup}>
-  <AthenaLayout filters={filtersJSON} bind:urlFilters={APIFilters} bind:equivalenceMapping bind:activatedFilters>
+  <h1>{$athenaFilter}</h1>
+  <AthenaLayout
+    filters={filtersJSON}
+    bind:urlFilters={APIFilters}
+    bind:equivalenceMapping
+    bind:activatedFilters
+    bind:athenaColumn
+    filterColumns={['sourceName', 'sourceCode']}
+  >
     <div slot="currentRow" class="currentRow">
       <button
         on:click={() => {
@@ -705,9 +729,11 @@
           <th>sourceFrequency</th>
         </tr>
         <tr>
-          <td>{$data[$selectedRow][0]}</td>
-          <td>{$data[$selectedRow][1]}</td>
-          <td>{$data[$selectedRow][2]}</td>
+          {#if $data[$selectedRow] != undefined}
+            <td>{$data[$selectedRow][0]}</td>
+            <td>{$data[$selectedRow][1]}</td>
+            <td>{$data[$selectedRow][2]}</td>
+          {/if}
         </tr>
       </table>
       <button
@@ -741,6 +767,13 @@
           downloadable={false}
         >
           <tr slot="columns" let:columns let:updateSorting>
+            <th>
+              <div>
+                <div class="control">
+                  <p data-component="column-name">Actions</p>
+                </div>
+              </div>
+            </th>
             {#each columns as column}
               {#if column.visible == true}
                 <th>
@@ -759,8 +792,22 @@
               {/if}
             {/each}
           </tr>
-          <!-- updatePopup -->
-          <tr slot="row" let:row let:scheme let:id let:number {id} on:click={mapped}>
+          <tr slot="row" let:row let:scheme let:id let:number {id}>
+            <td class="actions">
+              <input
+                type="checkbox"
+                class="custom-checkbox"
+                on:change={e => {
+                  // @ts-ignore
+                  if (e.target.checked == true) {
+                    athenaRows.update(values => (values = [...values, Number(id)]))
+                  } else {
+                    $athenaRows = $athenaRows.filter(row => row != Number(id))
+                  }
+                }}
+              />
+              <button {id} on:click={mapped} class="check-button"><img src="/check.svg" alt="check icon" /></button>
+            </td>
             {#each row as cell, j}
               {#if scheme[j] != undefined}
                 {#if scheme[j].visible == true}
@@ -778,6 +825,9 @@
         </DataTableRendererSSR>
       {/if}
     </div>
+    <div slot="extra">
+      <button on:click={mappingMultiple}>Map multiple</button>
+    </div>
   </AthenaLayout>
 </Modal>
 
@@ -786,5 +836,48 @@
     display: flex;
     align-items: center;
     gap: 1rem;
+  }
+
+  .actions {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    border: none;
+  }
+
+  .custom-checkbox {
+    appearance: none;
+    width: 1.5rem;
+    height: 1.5rem;
+    /* background-color: lightgray; */
+    padding: 0;
+    margin: 0;
+    border-radius: 5px;
+    background-image: url('/plus.svg');
+    filter: invert(54%) sepia(3%) saturate(8%) hue-rotate(336deg) brightness(93%) contrast(86%);
+  }
+
+  .custom-checkbox:checked,
+  .custom-checkbox:hover,
+  .custom-checkbox:active {
+    background-image: url('/plus.svg');
+    filter: invert(12%) sepia(87%) saturate(4289%) hue-rotate(238deg) brightness(67%) contrast(126%);
+  }
+
+  .check-button {
+    border: none;
+    height: 1.5rem;
+    width: 1.5rem;
+    margin: 0;
+    padding: 0;
+    border-radius: 5px;
+    background-color: inherit;
+    filter: invert(54%) sepia(3%) saturate(8%) hue-rotate(336deg) brightness(93%) contrast(86%);
+  }
+
+  .check-button:hover,
+  .custom-checkbox:active {
+    filter: invert(12%) sepia(87%) saturate(4289%) hue-rotate(238deg) brightness(67%) contrast(126%);
   }
 </style>

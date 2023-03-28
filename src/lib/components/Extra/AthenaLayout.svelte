@@ -8,7 +8,9 @@
   export let filters: Array<ICategories>,
     urlFilters: Writable<string[]>,
     equivalenceMapping: Writable<string>,
-    activatedFilters: Writable<IQueryFilter[]>
+    activatedFilters: Writable<IQueryFilter[]>,
+    athenaColumn: Writable<string>,
+    filterColumns: Array<string>
 
   const JSONFilters = writable<ICategories[]>(filters)
   const filterOpen = writable<string>()
@@ -296,10 +298,49 @@
     <div data-component="table-head">
       <h2>Athena data</h2>
       <slot name="currentRow" />
-      <Equivalence bind:Eq={$equivalenceMapping} />
+      <div class="options">
+        <Equivalence bind:Eq={$equivalenceMapping} />
+        <div class="columnFilter">
+          <p>Filter on column:</p>
+          <select
+            class="columnSelect"
+            name="columns"
+            id="columns"
+            on:change={e => {
+              // @ts-ignore
+              athenaColumn.set(e.target.value)
+            }}
+          >
+            {#each filterColumns as column}
+              <option value={column}>{column}</option>
+            {/each}
+          </select>
+        </div>
+      </div>
     </div>
     <div data-component="table">
       <slot name="table" />
     </div>
+    <slot name="extra"/>
   </section>
 </div>
+
+<style>
+  .options {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .columnFilter {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .columnSelect {
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+  }
+</style>
