@@ -20,12 +20,13 @@
     'createdOn',
     'domainId',
   ]
-  //Change so it can be unchecked
+
   $: {
     for (let column of $columns) {
-      hiddenColumns.includes(column.column) && column.forceVisibility != true
-        ? (column.visible = false)
-        : (column.visible = true)
+      if(hiddenColumns.includes(column.column)){
+        if(column.forceVisibility == true) column.visible = true
+        else column.visible = false
+      }
     }
   }
 </script>
