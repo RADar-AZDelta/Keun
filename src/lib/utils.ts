@@ -234,7 +234,6 @@ export const createMapping = async (
 }
 
 export const createMappingMultiple = async (
-  athenaPagination: IPaginated,
   athenaColumns: IScheme[],
   athenaData: any,
   athenaRows: number[],
@@ -246,13 +245,13 @@ export const createMappingMultiple = async (
   let count = 0
   const multipleMapping: IMapping[] = []
   for (let athenaRow of athenaRows) {
-    const row = athenaRow - athenaPagination.rowsPerPage * (athenaPagination.currentPage - 1)
-    let rowValues = athenaData[row]
+    const rowIndex = athenaData.findIndex((obj: any) => obj.id == athenaRow)
+    let rowValues = athenaData[rowIndex]
     rowValues.equivalence = equivalenceMapping
     rowValues.author = getAuthor()
     rowValues = await checkForAuthor(rowValues, data[selectedRow], columns, selectedRow)
     multipleMapping.push({
-      row: selectedRow + count,
+      row: selectedRow,
       columns: athenaColumns,
       data: rowValues,
     })

@@ -63,7 +63,7 @@
   let athenaFilter = writable<string>()
   let athenaSorting = writable<ISort>()
   let athenaPreviousFilteredColumn: string = 'sourceName'
-  let athenaRows = writable<Array<number>>([])
+  let athenaRows = writable<any[]>([])
   // URI for the API call
   let APICall = writable<string>()
   // Filters set in the athena layout
@@ -797,12 +797,23 @@
                   <input
                     type="checkbox"
                     class="custom-checkbox"
+                    checked={$data.filter(r => {
+                      const index = $columns.indexOf($columns.filter(c => c.column == 'conceptId')[0])
+                      const indexAthena = scheme.indexOf(scheme.filter(obj => obj.column == 'id')[0])
+                      if(r[index] == row[indexAthena]){
+                        athenaRows.update(values => (values = Array.from(new Set([...values, row[indexAthena]]))))
+                        return true
+                      }
+                      else return false
+                    }).length > 0? true : false}
                     on:change={e => {
+                      const indexAthena = scheme.indexOf(scheme.filter(obj => obj.column == 'id')[0])
                       // @ts-ignore
                       if (e.target.checked == true) {
-                        athenaRows.update(values => (values = [...values, Number(id)]))
+                        athenaRows.update(values => (values = Array.from(new Set([...values, row[indexAthena]]))))
                       } else {
-                        $athenaRows = $athenaRows.filter(row => row != Number(id))
+                        const index = $athenaRows.indexOf(row[indexAthena])
+                        $athenaRows.splice(index, 1)
                       }
                     }}
                   />
@@ -850,7 +861,6 @@
         <button
           on:click={async () => {
             mapping = await createMappingMultiple(
-              $athenaPagination,
               $athenaColumns,
               $athenaData,
               $athenaRows,
