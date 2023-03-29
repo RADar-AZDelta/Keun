@@ -8,15 +8,15 @@
   export let filters: Array<ICategories>,
     urlFilters: Writable<string[]>,
     equivalenceMapping: Writable<string>,
-    activatedFilters: Writable<IQueryFilter[]>,
-    athenaColumn: Writable<string>,
+    activatedAthenaFilters: Writable<IQueryFilter[]>,
+    athenaFilteredColumn: Writable<string>,
     filterColumns: Array<string>
 
   const JSONFilters = writable<ICategories[]>(filters)
   const filterOpen = writable<string>()
   const optionsPerFilter = writable<ICategories[]>([])
   const filterInputField = writable<any>({})
-  const activatedFiltersValues = writable<string[]>([])
+  const activatedAthenaFiltersValues = writable<string[]>([])
 
   const showCategories = async (name: string): Promise<void> => {
     $filterOpen == name ? ($filterOpen = '') : ($filterOpen = name)
@@ -72,7 +72,7 @@
   }
 
   const updateAPIFilters = async (event: Event, filter: string, option: string): Promise<void> => {
-    let chosenFilter = $activatedFilters.filter(f => f.name.toLowerCase() == filter.toLowerCase())[0]
+    let chosenFilter = $activatedAthenaFilters.filter(f => f.name.toLowerCase() == filter.toLowerCase())[0]
     const inputElement = event.target as HTMLInputElement
     const inputValue = inputElement.checked
     if (chosenFilter != undefined) {
@@ -81,14 +81,15 @@
       // If the filter was deactivated remove it from the options
       if (inputValue == true) chosenFilter.values.push(option)
       else {
-        if (chosenFilter.values.length == 1) $activatedFilters.splice($activatedFilters.indexOf(chosenFilter), 1)
+        if (chosenFilter.values.length == 1)
+          $activatedAthenaFilters.splice($activatedAthenaFilters.indexOf(chosenFilter), 1)
         else chosenFilter.values.splice(chosenFilter.values.indexOf(option), 1)
       }
 
-      $activatedFilters.filter(f => f.name == option)[0] = chosenFilter
+      $activatedAthenaFilters.filter(f => f.name == option)[0] = chosenFilter
     } else {
       // If there is no filter in that categorie
-      $activatedFilters.push({
+      $activatedAthenaFilters.push({
         name: filter,
         values: [option],
       })
@@ -124,16 +125,16 @@
       localStorage.setItem('AthenaFilters', JSON.stringify(filters))
     }
 
-    for (let filter of $activatedFilters.map(obj => obj.values)) {
+    for (let filter of $activatedAthenaFilters.map(obj => obj.values)) {
       for (let option of filter) {
-        if (!$activatedFiltersValues.includes(option)) $activatedFiltersValues.push(option)
+        if (!$activatedAthenaFiltersValues.includes(option)) $activatedAthenaFiltersValues.push(option)
       }
     }
 
     let URLFilters: string[] = []
 
     // Add all filters of categories to URL
-    for (let filter of $activatedFilters) {
+    for (let filter of $activatedAthenaFilters) {
       let substring: string = ''
       for (let option of filter.values) {
         substring += `&${filter.name}=${option}`
@@ -164,27 +165,27 @@
   }
 
   const removeFilter = (removingFilter: string) => {
-    $activatedFiltersValues.splice($activatedFiltersValues.indexOf(removingFilter), 1)
-    activatedFiltersValues.update(() => $activatedFiltersValues)
-    for (let filter of $activatedFilters) {
+    $activatedAthenaFiltersValues.splice($activatedAthenaFiltersValues.indexOf(removingFilter), 1)
+    activatedAthenaFiltersValues.update(() => $activatedAthenaFiltersValues)
+    for (let filter of $activatedAthenaFilters) {
       if (filter.values.includes(removingFilter)) {
         let updatedFilter = []
-        const desiredFilterIndex = $activatedFilters.indexOf(
-          $activatedFilters.filter((obj: IQueryFilter) => obj.name == filter.name)[0]
+        const desiredFilterIndex = $activatedAthenaFilters.indexOf(
+          $activatedAthenaFilters.filter((obj: IQueryFilter) => obj.name == filter.name)[0]
         )
         if (filter.values.length == 1) {
-          $activatedFilters[desiredFilterIndex].values = []
+          $activatedAthenaFilters[desiredFilterIndex].values = []
         } else {
           updatedFilter = []
           for (let value of filter.values) {
             if (value != removingFilter) updatedFilter.push(value)
           }
-          $activatedFilters[desiredFilterIndex].values = updatedFilter
+          $activatedAthenaFilters[desiredFilterIndex].values = updatedFilter
         }
       }
     }
-    activatedFilters.update(() => $activatedFilters)
-    localStorage.setItem('AthenaFilters', JSON.stringify($activatedFilters))
+    activatedAthenaFilters.update(() => $activatedAthenaFilters)
+    localStorage.setItem('AthenaFilters', JSON.stringify($activatedAthenaFilters))
   }
 
   const checkForScroll = (filter: string): 'scroll' | null | undefined => {
@@ -203,7 +204,7 @@
   }
 
   const checkForScrollActivated = (): 'scroll' | null | undefined => {
-    if ($activatedFiltersValues.length > 3) {
+    if ($activatedAthenaFiltersValues.length > 3) {
       return 'scroll'
     } else {
       return null
@@ -214,11 +215,11 @@
     const filters =
       localStorage.getItem('AthenaFilters') == null ? '' : JSON.parse(localStorage.getItem('AthenaFilters')!)
     for (let filter of filters) {
-      $activatedFilters.push({
+      $activatedAthenaFilters.push({
         name: filter.name,
         values: filter.values,
       })
-      $activatedFiltersValues.push(...filter.values)
+      $activatedAthenaFiltersValues.push(...filter.values)
     }
   })
 </script>
@@ -281,7 +282,7 @@
         </button>
         {#if $filterOpen == 'filtersActivated'}
           <div data-component="filter-item" class={checkForScrollActivated()}>
-            {#each $activatedFiltersValues as filter}
+            {#each $activatedAthenaFiltersValues as filter}
               <div data-component="activated-filter">
                 <p>{filter}</p>
                 <button on:click={() => removeFilter(filter)}>
@@ -308,7 +309,7 @@
             id="columns"
             on:change={e => {
               // @ts-ignore
-              athenaColumn.set(e.target.value)
+              athenaFilteredColumn.set(e.target.value)
             }}
           >
             {#each filterColumns as column}
@@ -321,7 +322,7 @@
     <div data-component="table">
       <slot name="table" />
     </div>
-    <slot name="extra"/>
+    <slot name="extra" />
   </section>
 </div>
 

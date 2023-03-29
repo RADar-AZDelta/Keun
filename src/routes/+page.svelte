@@ -22,49 +22,117 @@
   import type IFilter from '../../lib/RADar-DataTable/src/lib/interfaces/IFilter'
   import Editor from '$lib/components/Extra/Editor.svelte'
   import type IMapper from '../../lib/RADar-DataTable/src/lib/interfaces/IMapper'
-  import { browser } from '$app/environment'
   import ActionPage from '$lib/components/Extra/ActionPage.svelte'
   import Action from '$lib/components/Extra/Action.svelte'
   import ShowColumns from '$lib/components/Extra/ShowColumns.svelte'
   import type ISettings from '$lib/interfaces/ISettings'
+  import {
+    getAuthor,
+    getColorFromStatus,
+    checkStatuses,
+    assembleURL,
+    createMapping,
+    createMappingMultiple,
+    updateSettings,
+  } from '$lib/utils'
 
   const author = writable<string>()
-  let activatedFilters = writable<IQueryFilter[]>([])
+  let settings = writable<ISettings>({
+    visible: false,
+    options: [
+      {
+        name: 'Map to multiple concepts',
+      },
+    ],
+  })
+
+  /*
+    Data Athena related
+  */
+  const athenaNames = writable<Object>(athenaNamesJSON)
+  let activatedAthenaFilters = writable<IQueryFilter[]>([])
   let athenaData = writable<any>()
   let athenaColumns = writable<IScheme[]>()
-  const chosenRowMapping = writable<number>()
-  let map = writable<boolean>()
   let athenaPagination = writable<IPaginated>({
     currentPage: 0,
     rowsPerPage: 10,
     totalRows: 20,
     totalPages: 2,
   })
+  let athenaFilteredColumn = writable<string>('sourceName')
   let athenaFilter = writable<string>()
   let athenaSorting = writable<ISort>()
-  let selectedRow = writable<string>()
-  let selectedRowPage = writable<number>()
-  let equivalenceMapping = writable<string>()
-  const athenaNames = writable<Object>(athenaNamesJSON)
+  let athenaPreviousFilteredColumn: string = 'sourceName'
+  let athenaRows = writable<Array<number>>([])
+  // URI for the API call
   let APICall = writable<string>()
+  // Filters set in the athena layout
   let APIFilters = writable<string[]>()
-  let settings = writable<ISettings>({
-    visible: false,
-    options: [
-      {
-        name: 'Map to multiple concepts',
-        value: false,
-      },
-    ],
-  })
 
-  let previousPagination: IPaginated
+  /*
+    Data mapping related
+  */
+  let map = writable<boolean>()
+  let selectedRow = writable<number>()
+  let selectedRowPage = writable<number>(0)
+  let equivalenceMapping = writable<string>()
   let mapping: IMapping | Array<IMapping>
-  let multipleMapping: Array<IMapping> = []
-
-  let columns = writable<Array<IScheme>>([])
-  let data = writable<any>()
-
+  let mappingURL: string = 'https://athena.ohdsi.org/api/v1/concepts?'
+  let mappingFetchOptions: object = {}
+  let mappingFileType: string = 'json'
+  let mappingDelimiter: string = ','
+  // Expected columns returned from the mapping table
+  let expectedColumns: Array<IColumnName> = [
+    {
+      name: 'id',
+      altName: 'conceptId',
+    },
+    {
+      name: 'name',
+      altName: 'conceptName',
+    },
+    {
+      name: 'domain',
+      altName: 'domainId',
+    },
+    {
+      name: 'ADD_INFO:author1',
+      altName: 'ADD_INFO:author1',
+    },
+    {
+      name: 'ADD_INFO:author2',
+      altName: 'ADD_INFO:author2',
+    },
+  ]
+  // Additional fields that need to be added when mapped
+  let additionalFields: object = {
+    'ADD_INFO:author1': '',
+    'ADD_INFO:author2': '',
+    sourceAutoAssignedConceptIds: '',
+    'ADD_INFO:additionalInfo': '',
+    'ADD_INFO:prescriptionID': '',
+    'ADD_INFO:ATC': '',
+    matchScore: 1,
+    mappingStatus: '',
+    equivalence: 'EQUAL',
+    statusSetBy: '',
+    statusSetOn: new Date().getTime(),
+    mappingType: 'MAPS_TO',
+    comment: 'AUTO MAPPED',
+    createdBy: 'ctl',
+    createdOn: new Date().getTime(),
+    assignedReviewer: '',
+  }
+  // Mapping information for the worker
+  let mapper = writable<IMapper>({
+    mappingURL: mappingURL,
+    mappingFetchOptions: mappingFetchOptions,
+    mappingFileType: mappingFileType,
+    mappingDelimiter: mappingDelimiter,
+    contentPath: ['content'],
+    expectedColumns: expectedColumns,
+    additionalFields: additionalFields,
+  })
   let statuses: IStatus[] = [
     {
       column: 'mappingStatus',
@@ -104,13 +172,11 @@
     },
   ]
 
-  let athenaColumn = writable<string>('sourceName')
-  let athenaRows = writable<Array<number>>([])
-
   /*
-    Slot stuff
+    General data
   */
-
+  let columns = writable<Array<IScheme>>([])
+  let data = writable<any>()
   let filters: Writable<Array<IFilter>> = writable([])
   let sorting: Writable<Array<ISort>> = writable([])
   let pagination: Writable<IPaginated> = writable({
@@ -119,212 +185,53 @@
     totalRows: 20,
     totalPages: 2,
   })
+  let previousPagination: IPaginated
 
-  // let worker: Worker | undefined
-
+  /*
+    Editor related
+  */
   let editClick = writable<boolean>(false)
   let editorUpdating = writable<boolean>(false)
   let updated = writable<boolean>(false)
   let parentChange = writable<boolean>(false)
-
   const ownEditorMethods = undefined
   const ownEditorVisuals = undefined
 
-  const getAuthorEvent = async () => {
-    // TODO: place pop-up for author
-  }
-
-  const getAuthor = () => {
-    let auth
-    if (browser == true) {
-      if (localStorage.getItem('author') !== null) {
-        auth = localStorage.getItem('author')
-      } else {
-        if (getAuthorEvent != null) getAuthorEvent()
-        else console.warn('No author found')
-      }
-    } else auth = 'SSR author'
-
-    return auth
-  }
-
-  function checkStatuses(scheme: IScheme[], row: number) {
-    const allStatuses = statuses.filter(obj => {
-      if (scheme.indexOf(scheme.filter(col => col.column.toLowerCase() == obj.column.toLowerCase())[0]) != -1) {
-        if (
-          obj.status.toLowerCase() ==
-          $data[row][
-            scheme.indexOf(scheme.filter(col => col.column.toLowerCase() == obj.column.toLowerCase())[0])
-          ].toLowerCase()
-        ) {
-          return obj
-        }
-      }
-    })
-    if (allStatuses.length > 0) {
-      return true
-    } else {
-      return false
-    }
-  }
-
-  function getColorFromStatus(scheme: IScheme[], row: number) {
-    const allStatuses = statuses.filter(obj => {
-      if (
-        obj.status.toLowerCase() ==
-        $data[row][
-          scheme.indexOf(scheme.filter(col => col.column.toLowerCase() == obj.column.toLowerCase())[0])
-        ].toLowerCase()
-      ) {
-        return obj
-      }
-    })
-    const priority = Math.max(...allStatuses.map(status => status.priority))
-    const status = allStatuses.filter(status => status.priority == priority)[0]
-    return status.color
-  }
-
-  let mappingURL: string = 'https://athena.ohdsi.org/api/v1/concepts?'
-  let mappingFetchOptions: object = {}
-  let mappingFileType: string = 'json'
-  let mappingDelimiter: string = ','
-  let expectedColumns: Array<IColumnName> = [
-    {
-      name: 'id',
-      altName: 'conceptId',
-    },
-    {
-      name: 'name',
-      altName: 'conceptName',
-    },
-    {
-      name: 'domain',
-      altName: 'domainId',
-    },
-    {
-      name: 'ADD_INFO:author1',
-      altName: 'ADD_INFO:author1',
-    },
-    {
-      name: 'ADD_INFO:author2',
-      altName: 'ADD_INFO:author2',
-    },
-  ]
-  let additionalFields: object = {
-    'ADD_INFO:author1': '',
-    'ADD_INFO:author2': '',
-    sourceAutoAssignedConceptIds: '',
-    'ADD_INFO:additionalInfo': '',
-    'ADD_INFO:prescriptionID': '',
-    'ADD_INFO:ATC': '',
-    matchScore: 1,
-    mappingStatus: '',
-    equivalence: 'EQUAL',
-    statusSetBy: '',
-    statusSetOn: new Date().getTime(),
-    mappingType: 'MAPS_TO',
-    comment: 'AUTO MAPPED',
-    createdBy: 'ctl',
-    createdOn: new Date().getTime(),
-    assignedReviewer: '',
-  }
-
-  let mapper = writable<IMapper>({
-    mappingURL: mappingURL,
-    mappingFetchOptions: mappingFetchOptions,
-    mappingFileType: mappingFileType,
-    mappingDelimiter: mappingDelimiter,
-    contentPath: ['content'],
-    expectedColumns: expectedColumns,
-    additionalFields: additionalFields,
-  })
-
-  const updateData = async (worker: Worker, index: string, value: string): Promise<void> => {
-    worker?.postMessage({
-      editData: {
-        index: index,
-        value: value,
-      },
-      filter: $filters,
-      order: $sorting,
-      pagination: $pagination,
-      columns: $columns,
-      mapper: $mapper,
-      extraChanges: [
-        {
-          column: 'createdBy',
-          value: getAuthor(),
-        },
-      ],
-    })
-  }
+  /*
+    Methods for pop-ups
+  */
 
   const updatePopupAuthor = async (value: boolean): Promise<void> => {
     $showAuthor = value
     localStorage.setItem('author', $author)
   }
 
-  const updatePopup = async (value: boolean = false): Promise<void> => {
+  const updatePopupMapping = async (value: boolean = false): Promise<void> => {
     $showPopup = value
-    fetchAPI($APICall, $APIFilters)
+    const { URL, filter } = assembleURL(
+      mappingURL,
+      $APIFilters,
+      $athenaPagination,
+      $athenaFilter,
+      $athenaSorting,
+      $athenaFilteredColumn,
+      $athenaNames,
+      $selectedRow,
+      $selectedRowPage,
+      $columns,
+      $data
+    )
+    APICall.set(URL)
+    filter != undefined ? athenaFilter.set(filter) : null
   }
 
   const updatePopupSettings = async (value: boolean) => {
     $settings.visible = value
   }
 
-  const fetchAPI = (URL: string, filters: string[], columnChange: boolean = false) => {
-    URL = 'https://athena.ohdsi.org/api/v1/concepts'
-
-    URL += `?pageSize=${$athenaPagination.rowsPerPage}`
-    if ($athenaPagination.currentPage != undefined) {
-      if ($athenaPagination.currentPage == 0) {
-        URL += `&page=1`
-      } else {
-        URL += `&page=${$athenaPagination.currentPage}`
-      }
-    } else URL += `$page=1`
-
-    // Add filter to URL if it exists
-    if (columnChange == false) {
-      if ($athenaFilter != 'undefined' && $athenaFilter != undefined && !$athenaFilter.includes('undefined')) {
-        URL += `&query=${$athenaFilter}`
-      } else if ($selectedRow != undefined) {
-        const index = $columns.indexOf($columns.filter(col => col.column == $athenaColumn)[0])
-        const sourceName = $data[$selectedRowPage][index]
-        $athenaFilter = sourceName
-        URL += `&query=${sourceName}`
-      } else {
-        URL += `&query=`
-      }
-    } else {
-      if ($columns.length > 0) {
-        const index = $columns.indexOf(
-          $columns.filter(col => col.column.toLowerCase() == $athenaColumn.toLowerCase())[0]
-        )
-        const sourceName = $data[$selectedRowPage][index]
-        $athenaFilter = sourceName
-        URL += `&query=${sourceName}`
-      }
-    }
-
-    filters = Array.from(new Set(filters))
-    if (filters != undefined) {
-      for (let filter of filters) {
-        URL += filter
-      }
-    }
-
-    // Add sorting to URL if there is sorting
-    if ($athenaSorting) {
-      if ($athenaNames[$athenaSorting.column as keyof Object]) {
-        URL += `&sort=${$athenaNames[$athenaSorting.column as keyof Object]}&order=${
-          $athenaSorting.direction == 2 ? 'desc' : 'asc'
-        }`
-      }
-    }
-    $APICall = encodeURI(URL)
-  }
+  /*
+    Data transpiler
+  */
 
   const transpileDataAPI = async (data: Array<Object>): Promise<object> => {
     let columns: IScheme[] = []
@@ -364,73 +271,31 @@
     return dataObj
   }
 
-  const checkForAuthor = (newData: any, oldData: any, oldColumns: IScheme[], row: any) => {
-    // Fill in old data to find authors
-    const author1Index = oldColumns.findIndex(col => col.column == 'ADD_INFO:author1')
-    const author2Index = oldColumns.findIndex(col => col.column == 'ADD_INFO:author2')
-    if (oldData[author1Index] != '' && oldData[author1Index] != undefined && oldData[author1Index] != getAuthor()) {
-      newData['ADD_INFO:author1'] = getAuthor()
-      newData['ADD_INFO:author2'] = oldData[author1Index]
-    } else if (
-      oldData[author1Index] != '' &&
-      oldData[author1Index] != undefined &&
-      oldData[author2Index] != '' &&
-      oldData[author2Index] != undefined
-    ) {
-      const previousAuthor = oldData[author1Index]
-      newData['ADD_INFO:author1'] = getAuthor()
-      newData['ADD_INFO:author2'] = previousAuthor
-    } else {
-      newData['ADD_INFO:author1'] = getAuthor()
-      oldData[author1Index] = getAuthor()
-      newData['ADD_INFO:author2'] = ''
-    }
-    return newData
-  }
-
-  const mapped = async (event: Event): Promise<void> => {
-    // @ts-ignore
-    let id: string = event.target.id
-    const row = Number(id) - $athenaPagination.rowsPerPage * ($athenaPagination.currentPage - 1)
-    let rowValues = $athenaData[row]
-    rowValues.equivalence = $equivalenceMapping
-    rowValues.author = $author
-    rowValues = await checkForAuthor(rowValues, $data[Number($selectedRow)], $columns, Number($selectedRow))
-    mapping = {
-      row: Number($selectedRow),
-      columns: $athenaColumns,
-      data: rowValues,
-    }
-    $map = true
-  }
-
-  const mappingMultiple = async () => {
-    let count = 0
-    for (let athenaRow of $athenaRows) {
-      const row = Number(athenaRow) - $athenaPagination.rowsPerPage * ($athenaPagination.currentPage - 1)
-      let rowValues = $athenaData[row]
-      rowValues.equivalence = $equivalenceMapping
-      rowValues.author = $author
-      rowValues = await checkForAuthor(rowValues, $data[Number($selectedRow)], $columns, Number($selectedRow))
-      multipleMapping.push({
-        row: Number($selectedRow) + count,
-        columns: $athenaColumns,
-        data: $athenaData[row],
-      })
-      count += 1
-    }
-    mapping = multipleMapping
-    $map = true
-  }
+  /*
+    Reactivity
+  */
 
   $: {
-    $athenaFilter, $athenaSorting
-    fetchAPI($APICall, $APIFilters)
-  }
-
-  $: {
-    $athenaColumn
-    fetchAPI($APICall, $APIFilters, true)
+    $athenaFilteredColumn
+    if ($athenaFilteredColumn.trim().toLowerCase() != athenaPreviousFilteredColumn.trim().toLowerCase()) {
+      athenaPreviousFilteredColumn = $athenaFilteredColumn
+      const { URL, filter } = assembleURL(
+        mappingURL,
+        $APIFilters,
+        $athenaPagination,
+        $athenaFilter,
+        $athenaSorting,
+        $athenaFilteredColumn,
+        $athenaNames,
+        $selectedRow,
+        $selectedRowPage,
+        $columns,
+        $data,
+        true
+      )
+      APICall.set(URL)
+      filter != undefined ? athenaFilter.set(filter) : null
+    }
   }
 
   $: {
@@ -440,13 +305,64 @@
         $athenaPagination.currentPage != previousPagination.currentPage ||
         $athenaPagination.rowsPerPage != previousPagination.rowsPerPage
       ) {
-        fetchAPI($APICall, $APIFilters)
+        const { URL, filter } = assembleURL(
+          mappingURL,
+          $APIFilters,
+          $athenaPagination,
+          $athenaFilter,
+          $athenaSorting,
+          $athenaFilteredColumn,
+          $athenaNames,
+          $selectedRow,
+          $selectedRowPage,
+          $columns,
+          $data
+        )
+        APICall.set(URL)
+        filter != undefined ? athenaFilter.set(filter) : null
       }
     } else {
       previousPagination = $athenaPagination
-      fetchAPI($APICall, $APIFilters)
+      const { URL, filter } = assembleURL(
+        mappingURL,
+        $APIFilters,
+        $athenaPagination,
+        $athenaFilter,
+        $athenaSorting,
+        $athenaFilteredColumn,
+        $athenaNames,
+        $selectedRow,
+        $selectedRowPage,
+        $columns,
+        $data
+      )
+      APICall.set(URL)
+      filter != undefined ? athenaFilter.set(filter) : null
     }
   }
+
+  $: {
+    $athenaFilter, $athenaSorting
+    const { URL, filter } = assembleURL(
+      mappingURL,
+      $APIFilters,
+      $athenaPagination,
+      $athenaFilter,
+      $athenaSorting,
+      $athenaFilteredColumn,
+      $athenaNames,
+      $selectedRow,
+      $selectedRowPage,
+      $columns,
+      $data
+    )
+    APICall.set(URL)
+    filter != undefined ? athenaFilter.set(filter) : null
+  }
+
+  /*
+    Configuration for initial table
+  */
 
   const fetchOptionsCSV = {
     method: 'GET',
@@ -461,51 +377,23 @@
   const file = writable<File | null>(null)
   const delimiter: string = ','
 
+  /*
+    Get information out of localStorage when the component has been mounted to the DOM
+  */
+
   onMount(() => {
     if ($showAuthor == false && localStorage.getItem('author') == null) showAuthor.set(true)
     else if (localStorage.getItem('author') != null) $author = localStorage.getItem('author')!
+
+    if (localStorage.getItem('options') != null) {
+      $settings.options = JSON.parse(localStorage.getItem('options')!)
+    }
   })
-
-  $: {
-    console.log($settings)
-  }
 </script>
-
-<Modal updatePopup={updatePopupAuthor} bind:show={$showAuthor} size="small">
-  <label for="author">Who is the author?</label>
-  <input id="author" type="text" placeholder="John Wick" bind:value={$author} />
-  <div data-component="button-container">
-    <button data-component="button-cancel" on:click={() => ($showAuthor = false)}>Cancel</button>
-    <button
-      data-component="button-save"
-      on:click={() => {
-        updatePopupAuthor(false)
-        $showAuthor = false
-      }}>Save</button
-    >
-  </div>
-</Modal>
 
 <img src="/Keun.png" alt="The logo of POC-Keun" height="113" width="332" data-component="title-image" />
 
-<!-- <DragAndDrop {file} fileExtension="csv" text={`DROP YOUR CSV FILE HERE`} />
-{#if $file != null}
-  <DataTableRendererCSR
-    statusScheme={statuses}
-    file={$file}
-    dataType="csv"
-    {delimiter}
-    rowEvent={updatePopup}
-    {mapping}
-    bind:map={$map}
-    bind:selectedRow
-    bind:selectedRowPage
-    downloadable={true}
-    bind:columns
-    bind:data
-    autoMapping={false}
-  />
-{/if} -->
+<!-- Extra's -->
 
 <div class="options">
   <ShowColumns {columns} bind:parentChange />
@@ -518,20 +406,7 @@
   </button>
 </div>
 
-<Modal updatePopup={updatePopupSettings} show={$settings.visible} size="medium">
-  <h2 class="pop-up-title">Settings</h2>
-  <div class="pop-up-container">
-    {#each $settings.options as option}
-      <div class="option">
-        <p>{option.name}</p>
-        <label class="switch">
-          <input type="checkbox" bind:checked={option.value} />
-          <span class="slider round" />
-        </label>
-      </div>
-    {/each}
-  </div>
-</Modal>
+<!-- Table -->
 
 <DataTableRendererCSR
   url={urlCSV}
@@ -591,17 +466,23 @@
     let:worker
     {id}
     on:click={function () {
-      if ($selectedRow != String(number + $pagination.rowsPerPage * ($pagination.currentPage - 1))) {
-        $selectedRow = String(number + $pagination.rowsPerPage * ($pagination.currentPage - 1))
+      if ($selectedRow != number + $pagination.rowsPerPage * ($pagination.currentPage - 1)) {
+        $selectedRow = number + $pagination.rowsPerPage * ($pagination.currentPage - 1)
+        const index = $columns.indexOf(
+          $columns.filter(col => col.column.toLowerCase().trim() == $athenaFilteredColumn.toLowerCase().trim())[0]
+        )
+        $athenaFilter = $data[$selectedRow][index]
       } else {
-        if (updatePopup != undefined && $editorUpdating == false && $editClick == false) updatePopup(true)
+        if (updatePopupMapping != undefined && $editorUpdating == false && $editClick == false) updatePopupMapping(true)
         editClick.set(false)
       }
     }}
-    style={`${checkStatuses(scheme, number) ? `background-color: ${getColorFromStatus(scheme, number)};` : ''}`}
-    class={`${
-      $selectedRow == String(number + $pagination.rowsPerPage * ($pagination.currentPage - 1)) ? 'selected-row' : ''
+    style={`${
+      checkStatuses(scheme, number, statuses, $data)
+        ? `background-color: ${getColorFromStatus(scheme, number, statuses, $data)};`
+        : ''
     }`}
+    class={`${$selectedRow == number + $pagination.rowsPerPage * ($pagination.currentPage - 1) ? 'selected-row' : ''}`}
   >
     <td class="cell">
       <div class="field has-addons" style="height: 20px;">
@@ -676,13 +557,17 @@
                 <Editor
                   col={number}
                   row={i}
-                  {updateData}
                   bind:updated
                   bind:editClick
                   bind:editorUpdating
                   {ownEditorMethods}
                   {ownEditorVisuals}
                   {worker}
+                  filters={$filters}
+                  sorting={$sorting}
+                  pagination={$pagination}
+                  columns={$columns}
+                  mapper={$mapper}
                 />
               {/if}
             </div>
@@ -733,23 +618,89 @@
   </div>
 </DataTableRendererCSR>
 
-<Modal {updatePopup} show={$showPopup} size="large">
-  <h1>{$athenaFilter}</h1>
+<!-- <DragAndDrop {file} fileExtension="csv" text={`DROP YOUR CSV FILE HERE`} />
+{#if $file != null}
+  <DataTableRendererCSR
+    statusScheme={statuses}
+    file={$file}
+    dataType="csv"
+    {delimiter}
+    rowEvent={updatePopup}
+    {mapping}
+    bind:map={$map}
+    bind:selectedRow
+    bind:selectedRowPage
+    downloadable={true}
+    bind:columns
+    bind:data
+    autoMapping={false}
+  />
+{/if} -->
+
+<!-- Modals -->
+
+<Modal updatePopup={updatePopupAuthor} bind:show={$showAuthor} size="small">
+  <div class="pop-up-container-center">
+    <h2 class="title-md">Who is the author?</h2>
+    <input id="author" type="text" placeholder="John Wick" class="author-input" bind:value={$author} />
+    <div class="buttons-container">
+      <button class="button-cancel" on:click={() => ($showAuthor = false)}>Cancel</button>
+      <button
+        class="button-save"
+        on:click={() => {
+          updatePopupAuthor(false)
+          $showAuthor = false
+        }}>Save</button
+      >
+    </div>
+  </div>
+</Modal>
+
+<Modal updatePopup={updatePopupSettings} show={$settings.visible} size="medium">
+  <h2 class="pop-up-title">Settings</h2>
+  <div class="pop-up-container">
+    {#each $settings.options as option}
+      <div class="option">
+        <p>{option.name}</p>
+        <label class="switch">
+          <input type="checkbox" bind:checked={option.value} on:change={() => updateSettings(option)} />
+          <span class="slider round" />
+        </label>
+      </div>
+    {/each}
+  </div>
+</Modal>
+
+<Modal updatePopup={updatePopupMapping} show={$showPopup} size="large">
   <AthenaLayout
     filters={filtersJSON}
     bind:urlFilters={APIFilters}
     bind:equivalenceMapping
-    bind:activatedFilters
-    bind:athenaColumn
+    bind:activatedAthenaFilters
+    bind:athenaFilteredColumn
     filterColumns={['sourceName', 'sourceCode']}
   >
     <div slot="currentRow" class="currentRow">
       <button
         on:click={() => {
-          if ($selectedRow != '0') {
-            $selectedRow = String(Number($selectedRow) - 1)
+          if ($selectedRow != 0) {
+            $selectedRow -= 1
             $athenaFilter = $data[$selectedRow][1]
-            fetchAPI($APICall, $APIFilters)
+            const { URL, filter } = assembleURL(
+              mappingURL,
+              $APIFilters,
+              $athenaPagination,
+              $athenaFilter,
+              $athenaSorting,
+              $athenaFilteredColumn,
+              $athenaNames,
+              $selectedRow,
+              $selectedRowPage,
+              $columns,
+              $data
+            )
+            APICall.set(URL)
+            filter != undefined ? athenaFilter.set(filter) : null
           }
         }}
       >
@@ -771,10 +722,24 @@
       </table>
       <button
         on:click={() => {
-          if ($selectedRow != String($pagination.totalRows)) {
-            $selectedRow = String(Number($selectedRow) + 1)
+          if ($selectedRow != $pagination.totalRows) {
+            $selectedRow += 1
             $athenaFilter = $data[$selectedRow][1]
-            fetchAPI($APICall, $APIFilters)
+            const { URL, filter } = assembleURL(
+              mappingURL,
+              $APIFilters,
+              $athenaPagination,
+              $athenaFilter,
+              $athenaSorting,
+              $athenaFilteredColumn,
+              $athenaNames,
+              $selectedRow,
+              $selectedRowPage,
+              $columns,
+              $data
+            )
+            APICall.set(URL)
+            filter != undefined ? athenaFilter.set(filter) : null
           }
         }}
       >
@@ -843,7 +808,25 @@
                   />
                 {/if}
               {/if}
-              <button {id} on:click={mapped} class="check-button"><img src="/check.svg" alt="check icon" /></button>
+              <button
+                {id}
+                on:click={async () => {
+                  // @ts-ignore
+                  const id = event?.target?.id
+                  mapping = await createMapping(
+                    id,
+                    $athenaPagination,
+                    $athenaColumns,
+                    $athenaData,
+                    $equivalenceMapping,
+                    $selectedRow,
+                    $columns,
+                    $data
+                  )
+                  $map = true
+                }}
+                class="check-button"><img src="/check.svg" alt="check icon" {id} /></button
+              >
             </td>
             {#each row as cell, j}
               {#if scheme[j] != undefined}
@@ -864,7 +847,21 @@
     </div>
     <div slot="extra">
       {#if $settings.options.filter(option => option.name == 'Map to multiple concepts')[0].value == true}
-        <button on:click={mappingMultiple}>Map multiple</button>
+        <button
+          on:click={async () => {
+            mapping = await createMappingMultiple(
+              $athenaPagination,
+              $athenaColumns,
+              $athenaData,
+              $athenaRows,
+              $equivalenceMapping,
+              $selectedRow,
+              $columns,
+              $data
+            )
+            $map = true
+          }}>Map multiple</button
+        >
       {/if}
     </div>
   </AthenaLayout>
@@ -999,5 +996,52 @@
 
   .pop-up-container {
     padding: 0 1rem;
+  }
+
+  .pop-up-container-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    gap: 1rem;
+    height: 100%;
+  }
+
+  .title-md {
+    font-size: 1.5rem;
+    text-align: center;
+  }
+
+  .author-input {
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+  }
+
+  .author-input:focus {
+    outline: none;
+    border: 1px solid #2196f3;
+  }
+
+  .buttons-container {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  .button-save {
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    background-color: lightgreen;
+    border: 1px solid green;
+    cursor: pointer;
+  }
+
+  .button-cancel {
+    padding: 0.5rem 1rem;
+    border-radius: 5px;
+    background-color: lightcoral;
+    border: 1px solid red;
+    cursor: pointer;
   }
 </style>
