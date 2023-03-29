@@ -1,12 +1,22 @@
 <script lang="ts">
   import type { Writable } from 'svelte/store'
+  import { updateData } from '$lib/utils'
+    import type IPaginated from '../../../../lib/RADar-DataTable/src/lib/interfaces/IPaginated'
+    import type IScheme from '../../../../lib/RADar-DataTable/src/lib/interfaces/IScheme'
+    import type IMapper from '../../../../lib/RADar-DataTable/src/lib/interfaces/IMapper'
+    import type ISort from '../../../../lib/RADar-DataTable/src/lib/interfaces/ISort'
+    import type IFilter from '../../../../lib/RADar-DataTable/src/lib/interfaces/IFilter'
 
   export let col: number,
     row: number,
-    updateData: Function | undefined = undefined,
     updated: Writable<boolean>,
     editClick: Writable<boolean>,
     editorUpdating: Writable<boolean>,
+    filters: IFilter[],
+    sorting: ISort[],
+    pagination: IPaginated,
+    columns: IScheme[],
+    mapper: IMapper,
     ownEditorVisuals: any | undefined = undefined,
     ownEditorMethods: Function | undefined = undefined,
     worker: Worker | undefined = undefined
@@ -47,7 +57,7 @@
       parent?.appendChild(tag)
       if (updateData != undefined) {
         updated.set(true)
-        updateData(worker, id, value)
+        updateData(worker, id, value, filters, sorting, pagination, columns, mapper)
       }
 
       editorUpdating.set(false)

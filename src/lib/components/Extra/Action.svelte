@@ -5,13 +5,13 @@
   export let name: string,
     updateColumns: Array<IColumnName>,
     worker: Worker | undefined,
-    selectedRow: Writable<string>,
+    selectedRow: Writable<number>,
     parentChange: Writable<boolean>,
-    row: string | undefined = undefined
+    row: number | undefined = undefined
 
   const loadWorker = async () => {
     if (worker != undefined) {
-      let currentRow = '0'
+      let currentRow = 0
       if (row != undefined) currentRow = row
       else currentRow = $selectedRow
       const action = {
@@ -21,7 +21,7 @@
       worker.postMessage({
         action: action,
       })
-      selectedRow.set('55')
+      selectedRow.set(55)
       parentChange.set(true)
     } else {
       console.warn('Provide a worker to use actions')
