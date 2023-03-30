@@ -6,7 +6,6 @@
     updateColumns: Array<IColumnName>,
     worker: Worker | undefined,
     selectedRow: Writable<number>,
-    parentChange: Writable<boolean>,
     row: number | undefined = undefined
 
   const loadWorker = async () => {
@@ -22,7 +21,6 @@
         action: action,
       })
       selectedRow.set(55)
-      parentChange.set(true)
     } else {
       console.warn('Provide a worker to use actions')
     }

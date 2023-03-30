@@ -66,8 +66,10 @@ export function checkStatuses(scheme: IScheme[], row: number, statuses: IStatus[
   const allStatuses = statuses.filter(obj => {
     const index = scheme.indexOf(scheme.filter(col => col.column.toLowerCase() == obj.column.toLowerCase())[0])
     if (index != -1 && data.length > 0) {
-      if (obj.status.toLowerCase() == data[row][index].toLowerCase()) {
-        return obj
+      if (data[row] != undefined) {
+        if (obj.status.toLowerCase() == data[row][index].toLowerCase()) {
+          return obj
+        }
       }
     } else {
       return false

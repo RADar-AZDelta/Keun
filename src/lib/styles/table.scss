@@ -2,6 +2,10 @@ body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+.selected-row {
+  background-color: #b2b2b2 !important;
+}
+
 div[data-component='tablerenderer'] {
   margin: 1rem;
 
@@ -29,10 +33,6 @@ div[data-component='tablerenderer'] {
 
   tr:nth-child(2n + 1) {
     background-color: inherit;
-  }
-
-  .selected-row {
-    background-color: #b2b2b2 !important;
   }
 
   td:hover {
