@@ -9,7 +9,6 @@
 
   export let col: number,
     row: number,
-    updated: Writable<boolean>,
     editClick: Writable<boolean>,
     editorUpdating: Writable<boolean>,
     filters: IFilter[],
@@ -56,7 +55,7 @@
       tag.appendChild(document.createTextNode(value))
       parent?.appendChild(tag)
       if (updateData != undefined) {
-        updated.set(true)
+        // updated.set(true)
         updateData(worker, id, value, filters, sorting, pagination, columns, mapper)
       }
 

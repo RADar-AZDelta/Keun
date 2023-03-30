@@ -1,8 +1,7 @@
 <script lang="ts">
   import { writable, type Writable } from 'svelte/store'
   import type IScheme from '../../../../lib/RADar-DataTable/src/lib/interfaces/IScheme'
-  export let columns: Writable<Array<IScheme>> = writable<Array<IScheme>>([]),
-    parentChange: Writable<boolean>
+  export let columns: Writable<Array<IScheme>> = writable<Array<IScheme>>([])
 
   const hiddenColumns = [
     'sourceAutoAssignedConceptIds',
@@ -10,9 +9,7 @@
     'ADD_INFO:prescriptionID',
     'ADD_INFO:ATC',
     'matchScore',
-    'mappingStatus',
     'matchScore',
-    'mappingStatus',
     'statusSetBy',
     'statusSetOn',
     'comment',
@@ -45,7 +42,6 @@
               // @ts-ignore
               if (event.target.checked == false) column.forceVisibility = true
               else column.forceVisibility = false
-              parentChange.set(true)
             }}
           /></label
         >

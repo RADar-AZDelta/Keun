@@ -35,6 +35,8 @@
     createMappingMultiple,
     updateSettings,
   } from '$lib/utils'
+  import Row from '$lib/components/Mapping/Row.svelte'
+  import Column from '$lib/components/Mapping/Column.svelte'
 
   const author = writable<string>()
   let settings = writable<ISettings>({
@@ -176,8 +178,8 @@
     General data
   */
   let columns = writable<Array<IScheme>>([])
-  let data = writable<any>()
-  let filters: Writable<Array<IFilter>> = writable([])
+  let data = writable<Array<Array<any>>>()
+  let filters: Writable<Array<IFilter>> = writable<IFilter[]>([])
   let sorting: Writable<Array<ISort>> = writable([])
   let pagination: Writable<IPaginated> = writable({
     currentPage: 1,
@@ -192,8 +194,6 @@
   */
   let editClick = writable<boolean>(false)
   let editorUpdating = writable<boolean>(false)
-  let updated = writable<boolean>(false)
-  let parentChange = writable<boolean>(false)
   const ownEditorMethods = undefined
   const ownEditorVisuals = undefined
 
@@ -389,6 +389,43 @@
       $settings.options = JSON.parse(localStorage.getItem('options')!)
     }
   })
+
+  const checkIfChecked = (data: Array<Array<any>>, columns: IScheme[], scheme: IScheme[], row: Array<any>): boolean => {
+    const dataIndex = $columns.indexOf($columns.filter(col => col.column == 'conceptId')[0])
+    const athenaIndex = scheme.indexOf(scheme.filter(col => col.column == 'id')[0])
+    const filteredData = data.filter(dataRow => dataRow[dataIndex] == row[athenaIndex])
+    if (filteredData.length > 0) return true
+    else return false
+  }
+
+  const updateSelected = (e: Event, scheme: IScheme[], row: Array<any>) => {
+    const element = e.target as HTMLInputElement
+    const checked = element.checked
+    const indexAthena = scheme.indexOf(scheme.filter(obj => obj.column == 'id')[0])
+    if (checked == true) {
+      athenaRows.update(values => (values = Array.from(new Set([...values, row[indexAthena]]))))
+    } else {
+      const index = $athenaRows.indexOf(row[indexAthena])
+      $athenaRows.splice(index, 1)
+    }
+    return null
+  }
+
+  const rowSelection = (row: number) => {
+    if ($selectedRow == undefined || $selectedRow != row + $pagination.rowsPerPage * ($pagination.currentPage - 1)) {
+      $selectedRow = row + $pagination.rowsPerPage * ($pagination.currentPage - 1)
+      const index = $columns.indexOf(
+        $columns.filter(col => col.column.toLowerCase().trim() == $athenaFilteredColumn.toLowerCase().trim())[0]
+      )
+      $data[$selectedRow][index] != undefined
+        ? ($athenaFilter = String($data[$selectedRow][index]))
+        : ($athenaFilter = '')
+    } else {
+      if (updatePopupMapping != undefined && $editorUpdating == false && $editClick == false) updatePopupMapping(true)
+      editClick.set(false)
+    }
+    return null
+  }
 </script>
 
 <img src="/Keun.png" alt="The logo of POC-Keun" height="113" width="332" data-component="title-image" />
@@ -396,7 +433,7 @@
 <!-- Extra's -->
 
 <div class="options">
-  <ShowColumns {columns} bind:parentChange />
+  <ShowColumns {columns} />
   <button
     on:click={() => {
       $settings.visible = true
@@ -425,8 +462,6 @@
   bind:sorting
   bind:pagination
   bind:mapper
-  bind:updated
-  bind:parentChange
 >
   <tr slot="columns" let:columns let:worker let:updateSorting let:deleteFilter let:updateFiltering>
     <th>
@@ -438,59 +473,35 @@
     </th>
     {#each columns as column}
       {#if column.visible == true}
-        <th>
-          <div>
-            <div class="control">
-              <Sorting
-                col={column.column}
-                direction={$sorting.filter(obj => obj.column == column.column)[0] != undefined
-                  ? $sorting.filter(obj => obj.column == column.column)[0].direction
-                  : 0}
-                {updateSorting}
-              />
-            </div>
-            <div class="control">
-              <Filtering col={column.column} type={column.type} {deleteFilter} {updateFiltering} bind:filters />
-            </div>
-          </div>
-        </th>
+        <Column {column} {sorting} {updateSorting} {deleteFilter} {updateFiltering} {filters} />
       {/if}
     {/each}
   </tr>
-  <tr
+  <Row
     slot="row"
     let:row
     let:scheme
     let:id
     let:number
     let:worker
+    {row}
+    {scheme}
     {id}
-    on:click={function () {
-      if ($selectedRow != number + $pagination.rowsPerPage * ($pagination.currentPage - 1)) {
-        $selectedRow = number + $pagination.rowsPerPage * ($pagination.currentPage - 1)
-        const index = $columns.indexOf(
-          $columns.filter(col => col.column.toLowerCase().trim() == $athenaFilteredColumn.toLowerCase().trim())[0]
-        )
-        $athenaFilter = $data[$selectedRow][index]
-      } else {
-        if (updatePopupMapping != undefined && $editorUpdating == false && $editClick == false) updatePopupMapping(true)
-        editClick.set(false)
-      }
-    }}
-    style={`${
-      checkStatuses(scheme, number, statuses, $data)
-        ? `background-color: ${getColorFromStatus(scheme, number, statuses, $data)};`
-        : ''
-    }`}
-    class={`${$selectedRow == number + $pagination.rowsPerPage * ($pagination.currentPage - 1) ? 'selected-row' : ''}`}
+    {number}
+    {pagination}
+    rowClickMethod={rowSelection}
+    checkStatusRow={checkStatuses}
+    {getColorFromStatus}
+    {statuses}
+    {data}
+    bind:selectedRow
   >
-    <td class="cell">
+    <td slot="actions" class="cell">
       <div class="field has-addons" style="height: 20px;">
         <Action
           name="&#10003"
           bind:selectedRow
           {worker}
-          bind:parentChange
           row={number + $pagination.rowsPerPage * ($pagination.currentPage - 1)}
           updateColumns={[
             {
@@ -509,7 +520,6 @@
           name="&#127988"
           bind:selectedRow
           {worker}
-          bind:parentChange
           row={number + $pagination.rowsPerPage * ($pagination.currentPage - 1)}
           updateColumns={[
             {
@@ -528,7 +538,6 @@
           name="X"
           bind:selectedRow
           {worker}
-          bind:parentChange
           row={number + $pagination.rowsPerPage * ($pagination.currentPage - 1)}
           updateColumns={[
             {
@@ -545,37 +554,23 @@
         />
       </div>
     </td>
-    {#each row as cell, i}
-      {#if scheme[i] != undefined}
-        {#if scheme[i].visible == true}
-          <td class="cell">
-            <div class="field has-addons" data-component="cell-container">
-              <p id={`${i}-${number + $pagination.rowsPerPage * ($pagination.currentPage - 1)}`}>
-                {cell}
-              </p>
-              {#if scheme[i].editable == true}
-                <Editor
-                  col={number}
-                  row={i}
-                  bind:updated
-                  bind:editClick
-                  bind:editorUpdating
-                  {ownEditorMethods}
-                  {ownEditorVisuals}
-                  {worker}
-                  filters={$filters}
-                  sorting={$sorting}
-                  pagination={$pagination}
-                  columns={$columns}
-                  mapper={$mapper}
-                />
-              {/if}
-            </div>
-          </td>
-        {/if}
-      {/if}
-    {/each}
-  </tr>
+    <Editor
+      let:cellNumber
+      slot="editor"
+      col={number}
+      row={cellNumber}
+      bind:editClick
+      bind:editorUpdating
+      {ownEditorMethods}
+      {ownEditorVisuals}
+      {worker}
+      filters={$filters}
+      sorting={$sorting}
+      pagination={$pagination}
+      columns={$columns}
+      mapper={$mapper}
+    />
+  </Row>
   <div slot="extra" let:worker>
     <ActionPage
       name="Approve page"
@@ -594,7 +589,6 @@
         },
       ]}
       {worker}
-      bind:parentChange
     />
     <ActionPage
       name="Flag page"
@@ -613,29 +607,9 @@
         },
       ]}
       {worker}
-      bind:parentChange
     />
   </div>
 </DataTableRendererCSR>
-
-<!-- <DragAndDrop {file} fileExtension="csv" text={`DROP YOUR CSV FILE HERE`} />
-{#if $file != null}
-  <DataTableRendererCSR
-    statusScheme={statuses}
-    file={$file}
-    dataType="csv"
-    {delimiter}
-    rowEvent={updatePopup}
-    {mapping}
-    bind:map={$map}
-    bind:selectedRow
-    bind:selectedRowPage
-    downloadable={true}
-    bind:columns
-    bind:data
-    autoMapping={false}
-  />
-{/if} -->
 
 <!-- Modals -->
 
@@ -685,7 +659,7 @@
         on:click={() => {
           if ($selectedRow != 0) {
             $selectedRow -= 1
-            $athenaFilter = $data[$selectedRow][1]
+            $data[$selectedRow] != undefined ? ($athenaFilter = String($data[$selectedRow][1])) : ($athenaFilter = '')
             const { URL, filter } = assembleURL(
               mappingURL,
               $APIFilters,
@@ -724,7 +698,7 @@
         on:click={() => {
           if ($selectedRow != $pagination.totalRows) {
             $selectedRow += 1
-            $athenaFilter = $data[$selectedRow][1]
+            $data[$selectedRow] != undefined ? ($athenaFilter = String($data[$selectedRow][1])) : ($athenaFilter = '')
             const { URL, filter } = assembleURL(
               mappingURL,
               $APIFilters,
@@ -797,25 +771,8 @@
                   <input
                     type="checkbox"
                     class="custom-checkbox"
-                    checked={$data.filter(r => {
-                      const index = $columns.indexOf($columns.filter(c => c.column == 'conceptId')[0])
-                      const indexAthena = scheme.indexOf(scheme.filter(obj => obj.column == 'id')[0])
-                      if(r[index] == row[indexAthena]){
-                        athenaRows.update(values => (values = Array.from(new Set([...values, row[indexAthena]]))))
-                        return true
-                      }
-                      else return false
-                    }).length > 0? true : false}
-                    on:change={e => {
-                      const indexAthena = scheme.indexOf(scheme.filter(obj => obj.column == 'id')[0])
-                      // @ts-ignore
-                      if (e.target.checked == true) {
-                        athenaRows.update(values => (values = Array.from(new Set([...values, row[indexAthena]]))))
-                      } else {
-                        const index = $athenaRows.indexOf(row[indexAthena])
-                        $athenaRows.splice(index, 1)
-                      }
-                    }}
+                    checked={checkIfChecked($data, $columns, scheme, row)}
+                    on:change={e => updateSelected(e, scheme, row)}
                   />
                 {/if}
               {/if}

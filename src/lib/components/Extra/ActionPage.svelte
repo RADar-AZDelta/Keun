@@ -6,8 +6,7 @@
     firstRow: number,
     lastRow: number,
     updateColumns: Array<IColumnName>,
-    worker: Worker | undefined,
-    parentChange: Writable<boolean>
+    worker: Worker | undefined
 
   const loadWorker = async () => {
     if (worker != undefined) {
@@ -19,7 +18,6 @@
       worker.postMessage({
         actionPage: action,
       })
-      parentChange.set(true)
     } else {
       console.warn('Provide a worker to use actions')
     }

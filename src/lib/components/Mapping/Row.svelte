@@ -1,87 +1,46 @@
 <script lang="ts">
-  import Editor from '$lib/components/Extra/Editor.svelte'
+  import type { Writable } from 'svelte/store'
+  import type IPaginated from '../../../../lib/RADar-DataTable/src/lib/interfaces/IPaginated'
   import type IScheme from '../../../../lib/RADar-DataTable/src/lib/interfaces/IScheme'
-  import type IStatus from '../../../../lib/RADar-DataTable/src/lib/interfaces/IStatus'
 
-  export let row: number,
-    id: number,
-    data: any,
+  export let row: any[],
     scheme: IScheme[],
-    statusScheme: IStatus[],
-    ownEditorVisuals: any,
-    ownEditorMethods: any,
-    updateData: any,
-    updated: any,
-    editClick: any,
-    editorUpdating: any
-
-  function checkStatuses(row: number) {
-    const allStatuses = statusScheme.filter(obj => {
-      if (
-        $data?.scheme.indexOf(
-          $data.scheme.filter((col: IScheme) => col.column.toLowerCase() == obj.column.toLowerCase())[0]
-        ) != -1
-      ) {
-        if (
-          obj.status.toLowerCase() ==
-          $data?.data[row][
-            $data?.scheme.indexOf(
-              $data.scheme.filter((col: IScheme) => col.column.toLowerCase() == obj.column.toLowerCase())[0]
-            )
-          ].toLowerCase()
-        ) {
-          return obj
-        }
-      }
-    })
-    if (allStatuses.length > 0) {
-      return true
-    } else {
-      return false
-    }
-  }
-
-  function getColorFromStatus(row: number) {
-    const allStatuses = statusScheme.filter(obj => {
-      if (
-        obj.status.toLowerCase() ==
-        $data?.data[row][
-          $data?.scheme.indexOf(
-            $data.scheme.filter((col: IScheme) => col.column.toLowerCase() == obj.column.toLowerCase())[0]
-          )
-        ].toLowerCase()
-      ) {
-        return obj
-      }
-    })
-    const priority = Math.max(...allStatuses.map(status => status.priority))
-    const status = allStatuses.filter(status => status.priority == priority)[0]
-    return status.color
-  }
+    id: string,
+    number: number,
+    pagination: Writable<IPaginated>,
+    rowClickMethod: any,
+    checkStatusRow: any,
+    getColorFromStatus: any,
+    statuses: any,
+    data: any,
+    selectedRow: Writable<number>
 </script>
 
-<tr style={`${checkStatuses(id) ? `background-color: ${getColorFromStatus(id)};` : ''}`}>
-  {#each data as cell, i}
-    {#if scheme[i].visible == true}
-      <td class="cell">
-        <div class="field has-addons" data-component="cell-container">
-          <p class="content" id="{id} - {i}">
-            {cell}
-          </p>
-          {#if $data.scheme[i].editable == true}
-            <Editor
-              col={i}
-              {row}
-              bind:updateData
-              bind:updated
-              bind:editClick
-              bind:editorUpdating
-              {ownEditorMethods}
-              {ownEditorVisuals}
-            />
-          {/if}
-        </div>
-      </td>
+<tr
+  {id}
+  on:click={rowClickMethod(number)}
+  style={`${
+    checkStatusRow(scheme, number, statuses, $data)
+      ? `background-color: ${getColorFromStatus(scheme, number, statuses, $data)};`
+      : ''
+  }`}
+  class={`${$selectedRow == number + $pagination.rowsPerPage * ($pagination.currentPage - 1) ? 'selected-row' : ''}`}
+>
+  <slot name="actions" />
+  {#each row as cell, i}
+    {#if scheme[i] != undefined}
+      {#if scheme[i].visible == true}
+        <td class="cell">
+          <div class="field has-addons" data-component="cell-container">
+            <p id={`${i}-${number + $pagination.rowsPerPage * ($pagination.currentPage - 1)}`}>
+              {cell}
+            </p>
+            {#if scheme[i].editable == true}
+              <slot name="editor" cellNumber={i}/>
+            {/if}
+          </div>
+        </td>
+      {/if}
     {/if}
   {/each}
 </tr>
