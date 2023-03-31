@@ -223,6 +223,7 @@
   }
 
   const updatePopupMapping = async (value: boolean = false): Promise<void> => {
+    console.log("HERE ", $selectedRowPage)
     $showMappingPopUp = value
     const { URL, filter } = assembleURL(
       mappingURL,
@@ -420,7 +421,10 @@
     const dataIndex = $columns.indexOf($columns.filter(col => col.column == 'conceptId')[0])
     const athenaIndex = scheme.indexOf(scheme.filter(col => col.column == 'id')[0])
     const filteredData = data.filter(dataRow => dataRow[dataIndex] == row[athenaIndex])
-    if (filteredData.length > 0) return true
+    if (filteredData.length > 0){
+      $athenaRows.push(row[athenaIndex])
+      return true
+    }
     else return false
   }
 
@@ -434,17 +438,19 @@
       const index = $athenaRows.indexOf(row[indexAthena])
       $athenaRows.splice(index, 1)
     }
+    console.log("ROWS ", $athenaRows)
     return null
   }
 
   const rowSelection = (row: number) => {
+    console.log("row chosen ", row)
     if ($selectedRow == undefined || $selectedRow != row + $pagination.rowsPerPage * ($pagination.currentPage - 1)) {
       $selectedRow = row + $pagination.rowsPerPage * ($pagination.currentPage - 1)
       const index = $columns.indexOf(
         $columns.filter(col => col.column.toLowerCase().trim() == $athenaFilteredColumn.toLowerCase().trim())[0]
       )
-      $data[$selectedRow][index] != undefined
-        ? ($athenaFilter = String($data[$selectedRow][index]))
+      $data[row][index] != undefined
+        ? ($athenaFilter = String($data[row][index]))
         : ($athenaFilter = '')
     } else {
       if (updatePopupMapping != undefined && $editorUpdating == false && $editClick == false) updatePopupMapping(true)
@@ -459,6 +465,11 @@
 
   $: {
     if(initialLoading == true) columnsVisibilityCheck(hiddenColumns)
+  }
+
+  $: {
+    console.log("UPDATE OF SELECTED ROW PAGE ", $selectedRow)
+    $selectedRowPage = $selectedRow - ($pagination.rowsPerPage * ($pagination.currentPage - 1))
   }
 </script>
 
@@ -526,7 +537,7 @@
     checkStatusRow={checkStatuses}
     {getColorFromStatus}
     {statuses}
-    {data}
+    bind:data
     bind:selectedRow
   >
     <td slot="actions" class="cell">
