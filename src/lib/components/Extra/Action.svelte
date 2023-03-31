@@ -20,7 +20,6 @@
       worker.postMessage({
         action: action,
       })
-      selectedRow.set(55)
     } else {
       console.warn('Provide a worker to use actions')
     }

@@ -145,7 +145,6 @@ export const assembleURL = (
   data: any,
   columnChange: boolean = false
 ) => {
-  // console.log("HERE ", filters)
   let filterUpdate: boolean = false
   URL += `?pageSize=${athenaPagination.rowsPerPage}`
   if (athenaPagination.currentPage != undefined) {
@@ -196,7 +195,6 @@ export const assembleURL = (
       }`
     }
   }
-  console.log(encodeURI(URL))
   if (filterUpdate == true) {
     return {
       URL: encodeURI(URL),
