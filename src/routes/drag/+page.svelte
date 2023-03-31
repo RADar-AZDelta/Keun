@@ -91,7 +91,6 @@
   */
   let map = writable<boolean>()
   let selectedRow = writable<number>()
-  let selectedRowPage = writable<number>(0)
   let equivalenceMapping = writable<string>()
   let mapping: IMapping | Array<IMapping>
   let mappingURL: string = 'https://athena.ohdsi.org/api/v1/concepts?'
@@ -235,7 +234,7 @@
       $athenaFilteredColumn,
       $athenaNames,
       $selectedRow,
-      $selectedRowPage,
+      $selectedRow - ($pagination.currentPage * ($pagination.rowsPerPage - 1)),
       $columns,
       $data
     )
@@ -316,7 +315,7 @@
         $athenaFilteredColumn,
         $athenaNames,
         $selectedRow,
-        $selectedRowPage,
+        $selectedRow - ($pagination.currentPage * ($pagination.rowsPerPage - 1)),
         $columns,
         $data,
         true
@@ -342,7 +341,7 @@
           $athenaFilteredColumn,
           $athenaNames,
           $selectedRow,
-          $selectedRowPage,
+          $selectedRow - ($pagination.currentPage * ($pagination.rowsPerPage - 1)),
           $columns,
           $data
         )
@@ -360,7 +359,7 @@
         $athenaFilteredColumn,
         $athenaNames,
         $selectedRow,
-        $selectedRowPage,
+        $selectedRow - ($pagination.currentPage * ($pagination.rowsPerPage - 1)),
         $columns,
         $data
       )
@@ -380,7 +379,7 @@
       $athenaFilteredColumn,
       $athenaNames,
       $selectedRow,
-      $selectedRowPage,
+      $selectedRow - ($pagination.currentPage * ($pagination.rowsPerPage - 1)),
       $columns,
       $data
     )
@@ -493,8 +492,6 @@
     {delimiter}
     bind:mapping
     bind:map
-    bind:selectedRow
-    bind:selectedRowPage
     downloadable={true}
     bind:columns
     bind:data
@@ -717,7 +714,7 @@
               $athenaFilteredColumn,
               $athenaNames,
               $selectedRow,
-              $selectedRowPage,
+              $selectedRow - ($pagination.currentPage * ($pagination.rowsPerPage - 1)),
               $columns,
               $data
             )
@@ -756,7 +753,7 @@
               $athenaFilteredColumn,
               $athenaNames,
               $selectedRow,
-              $selectedRowPage,
+              $selectedRow - ($pagination.currentPage * ($pagination.rowsPerPage - 1)),
               $columns,
               $data
             )

@@ -91,7 +91,6 @@
   */
   let map = writable<boolean>()
   let selectedRow = writable<number>()
-  let selectedRowPage = writable<number>(0)
   let equivalenceMapping = writable<string>()
   let mapping: IMapping | Array<IMapping>
   let mappingURL: string = 'https://athena.ohdsi.org/api/v1/concepts?'
@@ -154,19 +153,19 @@
     {
       column: 'mappingStatus',
       status: 'APPROVED',
-      color: 'hsl(120, 100%, 75%)',
+      color: 'hsl(141, 31%, 76%)',
       priority: 1,
     },
     {
       column: 'mappingStatus',
       status: 'FLAGGED',
-      color: 'hsl(38, 94%, 66%)',
+      color: 'hsl(48, 75%, 76%)',
       priority: 1,
     },
     {
       column: 'mappingStatus',
       status: 'UNAPPROVED',
-      color: 'hsl(0, 100%, 77%)',
+      color: 'hsl(7, 50%, 63%)',
       priority: 1,
     },
     {
@@ -240,7 +239,7 @@
       $athenaFilteredColumn,
       $athenaNames,
       $selectedRow,
-      $selectedRowPage,
+      $selectedRow - $pagination.currentPage * ($pagination.rowsPerPage - 1),
       $columns,
       $data
     )
@@ -307,10 +306,6 @@
   /*
     Reactivity
   */
-  $: {
-    $APIFilters
-    console.log("APIFILTERS ", $APIFilters)
-  }
 
   $: {
     $athenaFilteredColumn
@@ -325,7 +320,7 @@
         $athenaFilteredColumn,
         $athenaNames,
         $selectedRow,
-        $selectedRowPage,
+        $selectedRow - $pagination.currentPage * ($pagination.rowsPerPage - 1),
         $columns,
         $data,
         true
@@ -351,7 +346,7 @@
           $athenaFilteredColumn,
           $athenaNames,
           $selectedRow,
-          $selectedRowPage,
+          $selectedRow - $pagination.currentPage * ($pagination.rowsPerPage - 1),
           $columns,
           $data
         )
@@ -369,7 +364,7 @@
         $athenaFilteredColumn,
         $athenaNames,
         $selectedRow,
-        $selectedRowPage,
+        $selectedRow - $pagination.currentPage * ($pagination.rowsPerPage - 1),
         $columns,
         $data
       )
@@ -389,7 +384,7 @@
       $athenaFilteredColumn,
       $athenaNames,
       $selectedRow,
-      $selectedRowPage,
+      $selectedRow - $pagination.currentPage * ($pagination.rowsPerPage - 1),
       $columns,
       $data
     )
@@ -473,11 +468,6 @@
   $: {
     if (initialLoading == true) columnsVisibilityCheck(hiddenColumns)
   }
-
-  $: {
-    $selectedRow
-    $selectedRowPage = $selectedRow - $pagination.rowsPerPage * ($pagination.currentPage - 1)
-  }
 </script>
 
 <img src="/Keun.png" alt="The logo of POC-Keun" height="113" width="332" data-component="title-image" />
@@ -506,8 +496,6 @@
   {delimiter}
   bind:mapping
   bind:map
-  bind:selectedRow
-  bind:selectedRowPage
   downloadable={true}
   bind:columns
   bind:data
@@ -755,7 +743,7 @@
               $athenaFilteredColumn,
               $athenaNames,
               $selectedRow,
-              $selectedRowPage,
+              $selectedRow - $pagination.rowsPerPage * ($pagination.currentPage - 1),
               $columns,
               $data
             )
@@ -794,7 +782,7 @@
               $athenaFilteredColumn,
               $athenaNames,
               $selectedRow,
-              $selectedRowPage,
+              $selectedRow - $pagination.currentPage * ($pagination.rowsPerPage - 1),
               $columns,
               $data
             )
