@@ -21,10 +21,10 @@
   {id}
   on:click={rowClickMethod(number)}
   style={`${
-    checkStatusRow(scheme, number, statuses, $data)
+    checkStatusRow(scheme, statuses, row)
       ? `background-color: ${getColorFromStatus(scheme, number, statuses, $data)};`
       : ''
-  } ${$loading == true ? 'background-color: lightgray' : null}`}
+  } ${$loading == true ? 'background-color: gray' : null}`}
   class={`${$selectedRow == number + $pagination.rowsPerPage * ($pagination.currentPage - 1) ? 'selected-row' : ''}`}
 >
   <slot name="actions" />
@@ -33,11 +33,11 @@
       {#if scheme[i].visible == true}
         <td class="cell">
           <div class="field has-addons" data-component="cell-container">
-            <p id={`${i}-${number + $pagination.rowsPerPage * ($pagination.currentPage - 1)}`}>
-              {cell}
-            </p>
+            <div id={`${i}-${number + $pagination.rowsPerPage * ($pagination.currentPage - 1)}`}>
+              <p>{cell}</p>
+            </div>
             {#if scheme[i].editable == true}
-              <slot name="editor" cellNumber={i}/>
+              <slot name="editor" cellNumber={i} />
             {/if}
           </div>
         </td>

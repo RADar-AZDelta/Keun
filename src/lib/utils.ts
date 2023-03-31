@@ -62,12 +62,12 @@ export const updateSettings = async (option: IOption) => {
 /*
     Methods for the color of a row
 */
-export function checkStatuses(scheme: IScheme[], row: number, statuses: IStatus[], data: any) {
+export function checkStatuses(scheme: IScheme[], statuses: IStatus[], data: any) {
   const allStatuses = statuses.filter(obj => {
     const index = scheme.indexOf(scheme.filter(col => col.column.toLowerCase() == obj.column.toLowerCase())[0])
     if (index != -1 && data.length > 0) {
-      if (data[row] != undefined) {
-        if (obj.status.toLowerCase() == data[row][index].toLowerCase()) {
+      if (data[index] != undefined && data[index] != '') {
+        if (obj.status.toLowerCase() == data[index].toLowerCase()) {
           return obj
         }
       }
