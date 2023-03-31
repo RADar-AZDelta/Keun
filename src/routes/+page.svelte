@@ -475,7 +475,6 @@
 </script>
 
 <img src="/Keun.png" alt="The logo of POC-Keun" height="113" width="332" data-component="title-image" />
-<!-- User -->
 
 <!-- Extra's -->
 
@@ -488,6 +487,7 @@
   >
     <img src="/settings.svg" alt="Settings" />
   </button>
+  <!-- User -->
   <User bind:author={$author} bind:showPopupU={$showAuthorPopUp} />
 </div>
 
