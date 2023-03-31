@@ -36,6 +36,7 @@
   } from '$lib/utils'
   import Row from '$lib/components/Mapping/Row.svelte'
   import Column from '$lib/components/Mapping/Column.svelte'
+  import User from '$lib/components/Extra/User.svelte'
 
   const author = writable<string>()
   let settings = writable<ISettings>({
@@ -467,14 +468,19 @@
 
 <!-- Extra's -->
 
-<div class="options">
+<!-- Extra's -->
+
+<div class="buttons is-right" id="settings">
   <button
+    class="button"
     on:click={() => {
       $settings.visible = true
     }}
   >
     <img src="/settings.svg" alt="Settings" />
   </button>
+  <!-- User -->
+  <User bind:author={$author} bind:showPopupU={$showAuthorPopUp} />
 </div>
 
 <!-- Table -->
@@ -611,7 +617,7 @@
         mapper={$mapper}
       />
     </Row>
-    <div slot="extra" let:worker>
+    <div class="buttons is-right" slot="extra" let:worker>
       <ActionPage
         name="Approve page"
         firstRow={($pagination.currentPage - 1) * $pagination.rowsPerPage}

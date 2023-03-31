@@ -433,11 +433,10 @@
     const dataIndex = $columns.indexOf($columns.filter(col => col.column == 'conceptId')[0])
     const athenaIndex = scheme.indexOf(scheme.filter(col => col.column == 'id')[0])
     const filteredData = data.filter(dataRow => dataRow[dataIndex] == row[athenaIndex])
-    if (filteredData.length > 0){
+    if (filteredData.length > 0) {
       $athenaRows.push(row[athenaIndex])
       return true
-    }
-    else return false
+    } else return false
   }
 
   const updateSelected = (e: Event, scheme: IScheme[], row: Array<any>) => {
@@ -459,9 +458,7 @@
       const index = $columns.indexOf(
         $columns.filter(col => col.column.toLowerCase().trim() == $athenaFilteredColumn.toLowerCase().trim())[0]
       )
-      $data[row][index] != undefined
-        ? ($athenaFilter = String($data[row][index]))
-        : ($athenaFilter = '')
+      $data[row][index] != undefined ? ($athenaFilter = String($data[row][index])) : ($athenaFilter = '')
     } else {
       if (updatePopupMapping != undefined && $editorUpdating == false && $editClick == false) updatePopupMapping(true)
       editClick.set(false)
@@ -479,12 +476,11 @@
 
   $: {
     $selectedRow
-    $selectedRowPage = $selectedRow - ($pagination.rowsPerPage * ($pagination.currentPage - 1))
+    $selectedRowPage = $selectedRow - $pagination.rowsPerPage * ($pagination.currentPage - 1)
   }
 </script>
 
 <img src="/Keun.png" alt="The logo of POC-Keun" height="113" width="332" data-component="title-image" />
-<!-- User -->
 
 <!-- Extra's -->
 
@@ -497,6 +493,7 @@
   >
     <img src="/settings.svg" alt="Settings" />
   </button>
+  <!-- User -->
   <User bind:author={$author} bind:showPopupU={$showAuthorPopUp} />
 </div>
 
@@ -524,7 +521,7 @@
     <th>
       <div>
         <div class="control">
-          <p data-component="column-name">Actions</p>
+          <p>Actions</p>
         </div>
       </div>
     </th>
@@ -697,18 +694,18 @@
 
 <Modal updatePopup={updatePopupAuthor} bind:show={$showAuthorPopUp} size="small">
   <div class="pop-up-container-center">
-    <h2 class="title-md">Who is the author?</h2>
+    <h2 class="title is-5">Who is the author?</h2>
     <input id="author" type="text" placeholder="John Wick" class="author-input" bind:value={authorInput} />
     <div class="buttons-container">
       <button
-        class="button-cancel"
+        class="button is-danger"
         on:click={() => {
           cancelAuthor(false)
           $showAuthorPopUp = false
         }}>Cancel</button
       >
       <button
-        class="button-save"
+        class="button is-success"
         on:click={() => {
           updatePopupAuthor(false)
           $showAuthorPopUp = false
@@ -831,7 +828,7 @@
             <th>
               <div>
                 <div class="control">
-                  <p data-component="column-name">Actions</p>
+                  <p>Actions</p>
                 </div>
               </div>
             </th>
@@ -974,13 +971,6 @@
   .custom-checkbox:active {
     filter: invert(12%) sepia(87%) saturate(4289%) hue-rotate(238deg) brightness(67%) contrast(126%);
   }
-
-  .options {
-    display: flex;
-    align-items: center;
-    gap: 5rem;
-  }
-
   .switch {
     position: relative;
     display: inline-block;
@@ -1065,12 +1055,6 @@
     gap: 1rem;
     height: 100%;
   }
-
-  .title-md {
-    font-size: 1.5rem;
-    text-align: center;
-  }
-
   .author-input {
     padding: 0.5rem 1rem;
     border-radius: 5px;
@@ -1086,21 +1070,5 @@
     display: flex;
     align-items: center;
     gap: 2rem;
-  }
-
-  .button-save {
-    padding: 0.5rem 1rem;
-    border-radius: 5px;
-    background-color: lightgreen;
-    border: 1px solid green;
-    cursor: pointer;
-  }
-
-  .button-cancel {
-    padding: 0.5rem 1rem;
-    border-radius: 5px;
-    background-color: lightcoral;
-    border: 1px solid red;
-    cursor: pointer;
   }
 </style>
