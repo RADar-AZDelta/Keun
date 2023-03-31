@@ -4,6 +4,7 @@
   import { writable, type Writable } from 'svelte/store'
   import Equivalence from '../Mapping/Equivalence.svelte'
   import { onMount } from 'svelte'
+  import AthenaFilter from './AthenaFilter.svelte'
 
   export let filters: Array<ICategories>,
     urlFilters: Writable<string[]>,
@@ -13,10 +14,10 @@
     filterColumns: Array<string>
 
   const JSONFilters = writable<ICategories[]>(filters)
-  const filterOpen = writable<string>()
+  let filterOpen = writable<string>()
   const optionsPerFilter = writable<ICategories[]>([])
-  const filterInputField = writable<any>({})
-  const activatedAthenaFiltersValues = writable<string[]>([])
+  let filterInputField = writable<any>({})
+  let activatedAthenaFiltersValues = writable<string[]>([])
 
   const showCategories = async (name: string): Promise<void> => {
     $filterOpen == name ? ($filterOpen = '') : ($filterOpen = name)
@@ -139,7 +140,7 @@
       for (let option of filter.values) {
         substring += `&${filter.name}=${option}`
       }
-      URLFilters.push(encodeURI(substring))
+      URLFilters.push(substring)
     }
 
     urlFilters.set(URLFilters)
@@ -186,6 +187,16 @@
     }
     activatedAthenaFilters.update(() => $activatedAthenaFilters)
     localStorage.setItem('AthenaFilters', JSON.stringify($activatedAthenaFilters))
+    let URLFilters: string[] = []
+    for (let filter of $activatedAthenaFilters) {
+      let substring: string = ''
+      for (let option of filter.values) {
+        substring += `&${filter.name}=${option}`
+      }
+      URLFilters.push(substring)
+    }
+
+    urlFilters.set(URLFilters)
   }
 
   const checkForScroll = (filter: string): 'scroll' | null | undefined => {
@@ -230,68 +241,44 @@
     <div class="filters-buttons">
       <div data-component="filters">
         {#each $JSONFilters as filter}
-          <button
-            on:click={() => showCategories(filter.name)}
-            class={`${$filterOpen == filter.name ? 'border-radius-top' : null}`}
+          <AthenaFilter
+            {filter}
+            bind:filterOpen
+            bind:filterInputField
+            {showCategories}
+            {checkForScroll}
+            {filterCategories}
+            {removeFilterCategorie}
           >
-            <p>{filter.name}</p>
-            <img src="/chevron-down.svg" alt="Arrow down icon" />
-          </button>
-          {#if $filterOpen == filter.name}
-            <div data-component="filter-item" class={checkForScroll(filter.name)}>
-              <div data-component="filter-input">
-                <input
-                  type="text"
-                  placeholder="filter"
-                  data-component={filter.name}
-                  bind:value={$filterInputField[filter.name]}
-                  on:change={event => {
-                    filterCategories(event, filter.name)
-                  }}
-                />
-                <button on:click={() => removeFilterCategorie(filter.name)}>
-                  <img src="/x.svg" alt="Remove filter button" />
-                </button>
-              </div>
-              {#each filter.options as option}
-                <div data-component="filter-option">
-                  <input
-                    type="checkbox"
-                    checked={checkIfFilterExists(filter.name, option)}
-                    on:change={() =>
-                      event != undefined
-                        ? updateAPIFilters(event, filter.altName != undefined ? filter.altName : filter.name, option)
-                        : null}
-                  />
-                  <p>{option}</p>
-                </div>
-              {/each}
+            <div slot="option" data-component="filter-option" let:option>
+              <input
+                type="checkbox"
+                checked={checkIfFilterExists(filter.name, option)}
+                on:change={() =>
+                  event != undefined
+                    ? updateAPIFilters(event, filter.altName != undefined ? filter.altName : filter.name, option)
+                    : null}
+              />
+              <p>{option}</p>
             </div>
-          {:else}
-            <div />
-          {/if}
+          </AthenaFilter>
         {/each}
-      </div>
-      <div data-component="filters">
-        <button
-          on:click={() => showCategories('filtersActivated')}
-          class={`${$filterOpen == 'filtersActivated' ? 'border-radius-top' : null}`}
+        <AthenaFilter
+          bind:filterOpen
+          bind:filterInputField
+          {showCategories}
+          checkForScroll={checkForScrollActivated}
+          bind:explicitOptions={activatedAthenaFiltersValues}
+          explicitName="filtersActivated"
+          filterInput={false}
         >
-          <p>Activated filters</p>
-          <img src="/chevron-down.svg" alt="Arrow down icon" />
-        </button>
-        {#if $filterOpen == 'filtersActivated'}
-          <div data-component="filter-item" class={checkForScrollActivated()}>
-            {#each $activatedAthenaFiltersValues as filter}
-              <div data-component="activated-filter">
-                <p>{filter}</p>
-                <button on:click={() => removeFilter(filter)}>
-                  <img src="/x.svg" alt="Remove filter button" />
-                </button>
-              </div>
-            {/each}
+          <div slot="option" data-component="activated-filter" let:option>
+            <p>{option}</p>
+            <button on:click={() => removeFilter(option)}>
+              <img src="/x.svg" alt="Remove filter button" />
+            </button>
           </div>
-        {/if}
+        </AthenaFilter>
       </div>
     </div>
   </section>
