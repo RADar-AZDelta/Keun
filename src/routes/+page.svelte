@@ -686,7 +686,13 @@
     <h2 class="title-md">Who is the author?</h2>
     <input id="author" type="text" placeholder="John Wick" class="author-input" bind:value={authorInput} />
     <div class="buttons-container">
-      <button class="button-cancel" on:click={() => cancelAuthor}>Cancel</button>
+      <button
+        class="button-cancel"
+        on:click={() => {
+          cancelAuthor(false)
+          $showAuthorPopUp = false
+        }}>Cancel</button
+      >
       <button
         class="button-save"
         on:click={() => {

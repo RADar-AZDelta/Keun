@@ -16,11 +16,6 @@
   }
 </script>
 
-Skip to content Search or jump to… Pull requests Issues Codespaces Marketplace Explore @Louis-Herreman RADar-AZDelta /
-POC-Keun Private Cannot fork because forking is disabled. Code Issues Pull requests Actions Projects Security Insights
-Settings POC-Keun/src/lib/components/Extra/User.svelte @Louis-Herreman Louis-Herreman update User component Latest
-commit cebec4e 4 days ago History 1 contributor 38 lines (35 sloc) 834 Bytes
-
 <div id="content">
   <div class="buttons is-right">
     <button class="button" on:click={PopUp}>
