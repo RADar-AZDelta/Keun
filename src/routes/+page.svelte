@@ -1,6 +1,5 @@
 <script lang="ts">
   import { writable, type Writable } from 'svelte/store'
-  import { showPopup, showAuthor } from '$lib/store'
   import filtersJSON from '$lib/filters.json'
   import type IScheme from '../../lib/RADar-DataTable/src/lib/interfaces/IScheme'
   import type IStatus from '../../lib/RADar-DataTable/src/lib/interfaces/IStatus'
@@ -9,7 +8,6 @@
   import type IQueryFilter from '$lib/interfaces/IQueryFilter'
   import DataTableRendererCSR from '../../lib/RADar-DataTable/src/lib/components/DataTable/DataTableRendererCSR.svelte'
   import DataTableRendererSSR from '../../lib/RADar-DataTable/src/lib/components/DataTable/DataTableRendererSSR.svelte'
-  import DragAndDrop from '../../lib/RADar-DataTable/src/lib/components/Extra/DragAndDrop.svelte'
   import type IPaginated from '../../lib/RADar-DataTable/src/lib/interfaces/IPaginated'
   import type ISort from '../../lib/RADar-DataTable/src/lib/interfaces/ISort'
   import type IMapping from '$lib/interfaces/IMapping'
@@ -198,16 +196,19 @@
   const ownEditorVisuals = undefined
 
   /*
-    Methods for pop-ups
+    Pop-ups related
   */
 
+  let showMappingPopUp = writable<boolean>(false)
+  let showAuthorPopUp = writable<boolean>(false)
+
   const updatePopupAuthor = async (value: boolean): Promise<void> => {
-    $showAuthor = value
+    $showAuthorPopUp = value
     localStorage.setItem('author', $author)
   }
 
   const updatePopupMapping = async (value: boolean = false): Promise<void> => {
-    $showPopup = value
+    $showMappingPopUp = value
     const { URL, filter } = assembleURL(
       mappingURL,
       $APIFilters,
@@ -382,7 +383,7 @@
   */
 
   onMount(() => {
-    if ($showAuthor == false && localStorage.getItem('author') == null) showAuthor.set(true)
+    if ($showAuthorPopUp == false && localStorage.getItem('author') == null) showAuthorPopUp.set(true)
     else if (localStorage.getItem('author') != null) $author = localStorage.getItem('author')!
 
     if (localStorage.getItem('options') != null) {
@@ -433,7 +434,6 @@
 <!-- Extra's -->
 
 <div class="options">
-  <ShowColumns {columns} />
   <button
     on:click={() => {
       $settings.visible = true
@@ -613,17 +613,17 @@
 
 <!-- Modals -->
 
-<Modal updatePopup={updatePopupAuthor} bind:show={$showAuthor} size="small">
+<Modal updatePopup={updatePopupAuthor} bind:show={$showAuthorPopUp} size="small">
   <div class="pop-up-container-center">
     <h2 class="title-md">Who is the author?</h2>
     <input id="author" type="text" placeholder="John Wick" class="author-input" bind:value={$author} />
     <div class="buttons-container">
-      <button class="button-cancel" on:click={() => ($showAuthor = false)}>Cancel</button>
+      <button class="button-cancel" on:click={() => ($showAuthorPopUp = false)}>Cancel</button>
       <button
         class="button-save"
         on:click={() => {
           updatePopupAuthor(false)
-          $showAuthor = false
+          $showAuthorPopUp = false
         }}>Save</button
       >
     </div>
@@ -643,9 +643,10 @@
       </div>
     {/each}
   </div>
+  <ShowColumns {columns} />
 </Modal>
 
-<Modal updatePopup={updatePopupMapping} show={$showPopup} size="large">
+<Modal updatePopup={updatePopupMapping} show={$showMappingPopUp} size="large">
   <AthenaLayout
     filters={filtersJSON}
     bind:urlFilters={APIFilters}
