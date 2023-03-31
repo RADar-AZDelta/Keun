@@ -37,6 +37,7 @@
   import Row from '$lib/components/Mapping/Row.svelte'
   import Column from '$lib/components/Mapping/Column.svelte'
   import User from '$lib/components/Extra/User.svelte'
+  import Header from '$lib/components/Extra/Header.svelte'
 
   const author = writable<string>()
   let settings = writable<ISettings>({
@@ -234,7 +235,7 @@
       $athenaFilteredColumn,
       $athenaNames,
       $selectedRow,
-      $selectedRow - ($pagination.currentPage * ($pagination.rowsPerPage - 1)),
+      $selectedRow - $pagination.currentPage * ($pagination.rowsPerPage - 1),
       $columns,
       $data
     )
@@ -315,7 +316,7 @@
         $athenaFilteredColumn,
         $athenaNames,
         $selectedRow,
-        $selectedRow - ($pagination.currentPage * ($pagination.rowsPerPage - 1)),
+        $selectedRow - $pagination.currentPage * ($pagination.rowsPerPage - 1),
         $columns,
         $data,
         true
@@ -341,7 +342,7 @@
           $athenaFilteredColumn,
           $athenaNames,
           $selectedRow,
-          $selectedRow - ($pagination.currentPage * ($pagination.rowsPerPage - 1)),
+          $selectedRow - $pagination.currentPage * ($pagination.rowsPerPage - 1),
           $columns,
           $data
         )
@@ -359,7 +360,7 @@
         $athenaFilteredColumn,
         $athenaNames,
         $selectedRow,
-        $selectedRow - ($pagination.currentPage * ($pagination.rowsPerPage - 1)),
+        $selectedRow - $pagination.currentPage * ($pagination.rowsPerPage - 1),
         $columns,
         $data
       )
@@ -379,7 +380,7 @@
       $athenaFilteredColumn,
       $athenaNames,
       $selectedRow,
-      $selectedRow - ($pagination.currentPage * ($pagination.rowsPerPage - 1)),
+      $selectedRow - $pagination.currentPage * ($pagination.rowsPerPage - 1),
       $columns,
       $data
     )
@@ -463,7 +464,7 @@
   }
 </script>
 
-<img src="/Keun.png" alt="The logo of POC-Keun" height="113" width="332" data-component="title-image" />
+<Header />
 
 <!-- Extra's -->
 
@@ -714,7 +715,7 @@
               $athenaFilteredColumn,
               $athenaNames,
               $selectedRow,
-              $selectedRow - ($pagination.currentPage * ($pagination.rowsPerPage - 1)),
+              $selectedRow - $pagination.currentPage * ($pagination.rowsPerPage - 1),
               $columns,
               $data
             )
@@ -753,7 +754,7 @@
               $athenaFilteredColumn,
               $athenaNames,
               $selectedRow,
-              $selectedRow - ($pagination.currentPage * ($pagination.rowsPerPage - 1)),
+              $selectedRow - $pagination.currentPage * ($pagination.rowsPerPage - 1),
               $columns,
               $data
             )

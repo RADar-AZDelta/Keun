@@ -37,6 +37,7 @@
   } from '$lib/utils'
   import Row from '$lib/components/Mapping/Row.svelte'
   import Column from '$lib/components/Mapping/Column.svelte'
+  import Header from '$lib/components/Extra/Header.svelte'
 
   const author = writable<string>()
   let settings = writable<ISettings>({
@@ -470,7 +471,7 @@
   }
 </script>
 
-<img src="/Keun.png" alt="The logo of POC-Keun" height="113" width="332" data-component="title-image" />
+<Header />
 
 <!-- Extra's -->
 
