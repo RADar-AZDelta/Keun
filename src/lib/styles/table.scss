@@ -19,7 +19,7 @@ div[data-component='tablerenderer'] {
   }
 
   td {
-    padding: 4px 1px 5px 4px
+    padding: 4px 1px 4px 1px
   }
 
   th {
@@ -140,7 +140,7 @@ div[data-component='tablerenderer'] {
 
     p[data-component='column-name'] {
       font-weight: 800;
-      font-size: 1rem;
+      font-size: 12px;
     }
   }
 }
