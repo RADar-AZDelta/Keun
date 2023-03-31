@@ -2,29 +2,12 @@
   import { writable, type Writable } from 'svelte/store'
   import type IScheme from '../../../../lib/RADar-DataTable/src/lib/interfaces/IScheme'
   export let columns: Writable<Array<IScheme>> = writable<Array<IScheme>>([])
-
-  const hiddenColumns = [
-    'sourceAutoAssignedConceptIds',
-    'ADD_INFO:additionalInfo',
-    'ADD_INFO:prescriptionID',
-    'ADD_INFO:ATC',
-    'matchScore',
-    'matchScore',
-    'statusSetBy',
-    'statusSetOn',
-    'comment',
-    'createdBy',
-    'createdOn',
-    'domainId',
-  ]
+  export let visibilityCheck: any
+  export let hiddenColumns: string[]
 
   $: {
-    for (let column of $columns) {
-      if (hiddenColumns.includes(column.column)) {
-        if (column.forceVisibility == true) column.visible = true
-        else column.visible = false
-      }
-    }
+    $columns
+    visibilityCheck(hiddenColumns)
   }
 </script>
 
