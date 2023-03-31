@@ -420,7 +420,7 @@
     if (localStorage.getItem('options') != null) {
       $settings.options = JSON.parse(localStorage.getItem('options')!)
     } else {
-      localStorage.setItem('options', JSON.stringify([]))
+      localStorage.setItem('options', JSON.stringify($settings))
     }
   })
 
