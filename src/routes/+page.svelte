@@ -433,7 +433,7 @@
 
 <!-- Extra's -->
 
-<div class="options">
+<div class="buttons is-right">
   <button
     on:click={() => {
       $settings.visible = true
@@ -571,7 +571,7 @@
       mapper={$mapper}
     />
   </Row>
-  <div slot="extra" let:worker>
+  <div class="buttons is-right" slot="extra" let:worker>
     <ActionPage
       name="Approve page"
       firstRow={($pagination.currentPage - 1) * $pagination.rowsPerPage}
@@ -836,6 +836,9 @@
 </Modal>
 
 <style>
+  .buttons {
+    margin-right: 5px;
+  }
   .currentRow {
     display: flex;
     align-items: center;
