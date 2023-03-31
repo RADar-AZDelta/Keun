@@ -12,8 +12,8 @@
 </script>
 
 <section>
-  <h3 class="title is-5">Columns shown:</h3>
-  <div>
+  <div class="container is-fluid">
+    <h3 class="title is-5">Columns shown:</h3>
     {#each $columns as column}
       <span class="check"
         ><input
@@ -37,5 +37,8 @@
   .check:nth-child(5n):after {
     content: ' ';
     display: block;
+  }
+  .container {
+    padding-top: 10px;
   }
 </style>

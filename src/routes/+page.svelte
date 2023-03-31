@@ -24,6 +24,8 @@
   import Action from '$lib/components/Extra/Action.svelte'
   import ShowColumns from '$lib/components/Extra/ShowColumns.svelte'
   import type ISettings from '$lib/interfaces/ISettings'
+  import User from '$lib/components/Extra/User.svelte'
+
   import {
     getAuthor,
     getColorFromStatus,
@@ -216,10 +218,15 @@
 
   let showMappingPopUp = writable<boolean>(false)
   let showAuthorPopUp = writable<boolean>(false)
+  let authorInput: string
 
   const updatePopupAuthor = async (value: boolean): Promise<void> => {
+    $author = authorInput
     $showAuthorPopUp = value
     localStorage.setItem('author', $author)
+  }
+  const cancelAuthor = async (value: boolean): Promise<void> => {
+    authorInput = $author
   }
 
   const updatePopupMapping = async (value: boolean = false): Promise<void> => {
@@ -454,20 +461,23 @@
   }
 
   $: {
-    if($columns != undefined && $data != undefined && initialLoading == false) initialLoading = true
+    if ($columns != undefined && $data != undefined && initialLoading == false) initialLoading = true
   }
 
   $: {
-    if(initialLoading == true) columnsVisibilityCheck(hiddenColumns)
+    if (initialLoading == true) columnsVisibilityCheck(hiddenColumns)
   }
 </script>
 
 <img src="/Keun.png" alt="The logo of POC-Keun" height="113" width="332" data-component="title-image" />
+<!-- User -->
+<User bind:author={$author} bind:showPopupU={$showAuthorPopUp} />
 
 <!-- Extra's -->
 
-<div class="buttons is-right">
+<div id="settings" class="buttons is-right">
   <button
+    class="button is-small"
     on:click={() => {
       $settings.visible = true
     }}
@@ -674,9 +684,9 @@
 <Modal updatePopup={updatePopupAuthor} bind:show={$showAuthorPopUp} size="small">
   <div class="pop-up-container-center">
     <h2 class="title-md">Who is the author?</h2>
-    <input id="author" type="text" placeholder="John Wick" class="author-input" bind:value={$author} />
+    <input id="author" type="text" placeholder="John Wick" class="author-input" bind:value={authorInput} />
     <div class="buttons-container">
-      <button class="button-cancel" on:click={() => ($showAuthorPopUp = false)}>Cancel</button>
+      <button class="button-cancel" on:click={() => cancelAuthor}>Cancel</button>
       <button
         class="button-save"
         on:click={() => {
@@ -701,7 +711,7 @@
       </div>
     {/each}
   </div>
-  <ShowColumns bind:columns visibilityCheck={columnsVisibilityCheck} {hiddenColumns}/>
+  <ShowColumns bind:columns visibilityCheck={columnsVisibilityCheck} {hiddenColumns} />
 </Modal>
 
 <Modal updatePopup={updatePopupMapping} show={$showMappingPopUp} size="large">
