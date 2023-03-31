@@ -29,15 +29,15 @@
     let row = Number(idParts[1])
     row = row + pagination.rowsPerPage * (pagination.currentPage - 1)
     id = `${idParts[0]}-${row}`
-    parent = document.getElementById(id)
+    document.getElementById(id) != null ? (parent = document.getElementById(id)!) : null
     if (eventListener != id && $editorUpdating == false) {
       // First press on edit button
       eventListener = id
       let value: string
-      if (parent.firstChild.data == undefined) value = parent.firstChild.innerText
+      if (parent.firstChild?.data == undefined) value = parent.firstChild.innerText
       else value = parent.firstChild.data
       // Remove <p> tag and replace with <input> tag with the previous value of the <p> tag in it
-      parent?.firstChild.remove()
+      parent.firstChild.classList.add('is-hidden')
       const input = document.createElement('input')
       input.value = value
       parent?.appendChild(input)
@@ -53,13 +53,10 @@
     } else if (eventListener == id && $editorUpdating == true) {
       // When in editing state and "Enter" key is pressed or the edit button is pressed
       // @ts-ignore
-      const value = document.getElementById(id)?.firstChild?.value
-      parent?.firstChild.remove()
-      const tag = document.createElement('p')
-      tag.appendChild(document.createTextNode(value))
-      parent?.appendChild(tag)
+      const value = document.getElementById(id)?.childNodes[1].value
+      parent.childNodes[1].remove()
+      parent.firstChild.classList.remove('is-hidden')
       if (updateData != undefined) {
-        // updated.set(true)
         updateData(worker, id, value, filters, sorting, pagination, columns, mapper)
       }
 
