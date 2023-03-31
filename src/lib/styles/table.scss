@@ -7,7 +7,7 @@ body {
 }
 
 div[data-component='tablerenderer'] {
-  margin: 1rem;
+  margin: 0.25rem;
 
   h2 {
     font-size: 2rem;
@@ -19,12 +19,15 @@ div[data-component='tablerenderer'] {
   }
 
   td {
-    padding: 0.5rem 1rem;
+    padding: 4px 1px 5px 4px
   }
 
   th {
     width: max-content;
-    padding-right: 40px;
+    padding: 0.2em 0.1em;
+  }
+  tr{
+    line-height: 11px;
   }
 
   tr:nth-child(2n) {
