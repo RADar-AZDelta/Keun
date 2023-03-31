@@ -45,6 +45,21 @@
       },
     ],
   })
+  const hiddenColumns = [
+    'sourceAutoAssignedConceptIds',
+    'ADD_INFO:additionalInfo',
+    'ADD_INFO:prescriptionID',
+    'ADD_INFO:ATC',
+    'matchScore',
+    'matchScore',
+    'statusSetBy',
+    'statusSetOn',
+    'comment',
+    'createdBy',
+    'createdOn',
+    'domainId',
+  ]
+  let initialLoading: boolean = false
 
   /*
     Data Athena related
@@ -272,6 +287,16 @@
     return dataObj
   }
 
+  const columnsVisibilityCheck = async (hiddenColumns: string[]) => {
+    for (let column of $columns) {
+      if (hiddenColumns.includes(column.column)) {
+        if (column.forceVisibility == true) column.visible = true
+        else column.visible = false
+      }
+    }
+    columns.update(() => $columns)
+  }
+
   /*
     Reactivity
   */
@@ -427,6 +452,14 @@
     }
     return null
   }
+
+  $: {
+    if($columns != undefined && $data != undefined && initialLoading == false) initialLoading = true
+  }
+
+  $: {
+    if(initialLoading == true) columnsVisibilityCheck(hiddenColumns)
+  }
 </script>
 
 <img src="/Keun.png" alt="The logo of POC-Keun" height="113" width="332" data-component="title-image" />
@@ -514,6 +547,11 @@
               altName: 'statusSetBy',
               data: getAuthor(),
             },
+            {
+              name: 'ADD_INFO:author1',
+              altName: 'ADD_INFO:author1',
+              data: getAuthor(),
+            },
           ]}
         />
         <Action
@@ -532,6 +570,11 @@
               altName: 'statusSetBy',
               data: getAuthor(),
             },
+            {
+              name: 'ADD_INFO:author1',
+              altName: 'ADD_INFO:author1',
+              data: getAuthor(),
+            },
           ]}
         />
         <Action
@@ -548,6 +591,11 @@
             {
               name: 'statusSetBy',
               altName: 'statusSetBy',
+              data: getAuthor(),
+            },
+            {
+              name: 'ADD_INFO:author1',
+              altName: 'ADD_INFO:author1',
               data: getAuthor(),
             },
           ]}
@@ -587,6 +635,11 @@
           altName: 'statusSetBy',
           data: getAuthor(),
         },
+        {
+          name: 'ADD_INFO:author1',
+          altName: 'ADD_INFO:author1',
+          data: getAuthor(),
+        },
       ]}
       {worker}
     />
@@ -603,6 +656,11 @@
         {
           name: 'statusSetBy',
           altName: 'statusSetBy',
+          data: getAuthor(),
+        },
+        {
+          name: 'ADD_INFO:author1',
+          altName: 'ADD_INFO:author1',
           data: getAuthor(),
         },
       ]}
@@ -643,7 +701,7 @@
       </div>
     {/each}
   </div>
-  <ShowColumns {columns} />
+  <ShowColumns bind:columns visibilityCheck={columnsVisibilityCheck} {hiddenColumns}/>
 </Modal>
 
 <Modal updatePopup={updatePopupMapping} show={$showMappingPopUp} size="large">
