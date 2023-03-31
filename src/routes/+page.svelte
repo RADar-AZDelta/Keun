@@ -471,19 +471,19 @@
 
 <img src="/Keun.png" alt="The logo of POC-Keun" height="113" width="332" data-component="title-image" />
 <!-- User -->
-<User bind:author={$author} bind:showPopupU={$showAuthorPopUp} />
 
 <!-- Extra's -->
 
-<div id="settings" class="buttons is-right">
+<div class="buttons is-right" id="settings">
   <button
-    class="button is-small"
+    class="button"
     on:click={() => {
       $settings.visible = true
     }}
   >
     <img src="/settings.svg" alt="Settings" />
   </button>
+  <User bind:author={$author} bind:showPopupU={$showAuthorPopUp} />
 </div>
 
 <!-- Table -->

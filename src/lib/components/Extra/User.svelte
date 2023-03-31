@@ -20,8 +20,8 @@
   <div class="buttons is-right">
     <button class="button" on:click={PopUp}>
       <div class="buttons is-right">
+        <p id="name">{author}</p>
         <span><img class="img is-48x48" src="/user-solid.svg" alt="user icon" width="15px" height="15px" /></span>
-        <p>{author}</p>
       </div>
     </button>
   </div>
@@ -34,5 +34,8 @@
   }
   #content {
     margin-right: 35px;
+  }
+  #name {
+    padding-right: 5px;
   }
 </style>
