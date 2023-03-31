@@ -223,7 +223,6 @@
   }
 
   const updatePopupMapping = async (value: boolean = false): Promise<void> => {
-    console.log("HERE ", $selectedRowPage)
     $showMappingPopUp = value
     const { URL, filter } = assembleURL(
       mappingURL,
@@ -438,12 +437,10 @@
       const index = $athenaRows.indexOf(row[indexAthena])
       $athenaRows.splice(index, 1)
     }
-    console.log("ROWS ", $athenaRows)
     return null
   }
 
   const rowSelection = (row: number) => {
-    console.log("row chosen ", row)
     if ($selectedRow == undefined || $selectedRow != row + $pagination.rowsPerPage * ($pagination.currentPage - 1)) {
       $selectedRow = row + $pagination.rowsPerPage * ($pagination.currentPage - 1)
       const index = $columns.indexOf(
@@ -468,7 +465,7 @@
   }
 
   $: {
-    console.log("UPDATE OF SELECTED ROW PAGE ", $selectedRow)
+    $selectedRow
     $selectedRowPage = $selectedRow - ($pagination.rowsPerPage * ($pagination.currentPage - 1))
   }
 </script>

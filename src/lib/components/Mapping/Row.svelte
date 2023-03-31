@@ -19,10 +19,7 @@
 
 <tr
   {id}
-  on:click={() => {
-    console.log('CURRENT DATA ', row)
-    rowClickMethod(number)
-  }}
+  on:click={rowClickMethod(number)}
   style={`${
     checkStatusRow(scheme, statuses, row)
       ? `background-color: ${getColorFromStatus(scheme, number, statuses, $data)};`
@@ -36,9 +33,9 @@
       {#if scheme[i].visible == true}
         <td class="cell">
           <div class="field has-addons" data-component="cell-container">
-            <p id={`${i}-${number + $pagination.rowsPerPage * ($pagination.currentPage - 1)}`}>
-              {cell}
-            </p>
+            <div id={`${i}-${number + $pagination.rowsPerPage * ($pagination.currentPage - 1)}`}>
+              <p>{cell}</p>
+            </div>
             {#if scheme[i].editable == true}
               <slot name="editor" cellNumber={i} />
             {/if}
