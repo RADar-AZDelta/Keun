@@ -19,12 +19,15 @@
 
 <tr
   {id}
-  on:click={rowClickMethod(number)}
+  on:click={() => {
+    console.log('CURRENT DATA ', row)
+    rowClickMethod(number)
+  }}
   style={`${
-    checkStatusRow(scheme, number, statuses, $data)
+    checkStatusRow(scheme, statuses, row)
       ? `background-color: ${getColorFromStatus(scheme, number, statuses, $data)};`
       : ''
-  } ${$loading == true ? 'background-color: lightgray' : null}`}
+  } ${$loading == true ? 'background-color: gray' : null}`}
   class={`${$selectedRow == number + $pagination.rowsPerPage * ($pagination.currentPage - 1) ? 'selected-row' : ''}`}
 >
   <slot name="actions" />
@@ -37,7 +40,7 @@
               {cell}
             </p>
             {#if scheme[i].editable == true}
-              <slot name="editor" cellNumber={i}/>
+              <slot name="editor" cellNumber={i} />
             {/if}
           </div>
         </td>

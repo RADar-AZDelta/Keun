@@ -1,11 +1,11 @@
 <script lang="ts">
   import type { Writable } from 'svelte/store'
   import { updateData } from '$lib/utils'
-    import type IPaginated from '../../../../lib/RADar-DataTable/src/lib/interfaces/IPaginated'
-    import type IScheme from '../../../../lib/RADar-DataTable/src/lib/interfaces/IScheme'
-    import type IMapper from '../../../../lib/RADar-DataTable/src/lib/interfaces/IMapper'
-    import type ISort from '../../../../lib/RADar-DataTable/src/lib/interfaces/ISort'
-    import type IFilter from '../../../../lib/RADar-DataTable/src/lib/interfaces/IFilter'
+  import type IPaginated from '../../../../lib/RADar-DataTable/src/lib/interfaces/IPaginated'
+  import type IScheme from '../../../../lib/RADar-DataTable/src/lib/interfaces/IScheme'
+  import type IMapper from '../../../../lib/RADar-DataTable/src/lib/interfaces/IMapper'
+  import type ISort from '../../../../lib/RADar-DataTable/src/lib/interfaces/ISort'
+  import type IFilter from '../../../../lib/RADar-DataTable/src/lib/interfaces/IFilter'
 
   export let col: number,
     row: number,
@@ -25,6 +25,10 @@
   let parent: any
 
   const editor = async (id: string) => {
+    const idParts = id.split('-')
+    let row = Number(idParts[1])
+    row = row + pagination.rowsPerPage * (pagination.currentPage - 1)
+    id = `${idParts[0]}-${row}`
     parent = document.getElementById(id)
     if (eventListener != id && $editorUpdating == false) {
       // First press on edit button
@@ -76,7 +80,8 @@
         editor(`${row}-${col}`)
       }
     }}
-    class="button is-small"><img class="image is-16x16" src="/edit.svg" alt="Edit the cell" /></button>
+    class="button is-small"><img class="image is-16x16" src="/edit.svg" alt="Edit the cell" /></button
+  >
 {/if}
 
 <style>
