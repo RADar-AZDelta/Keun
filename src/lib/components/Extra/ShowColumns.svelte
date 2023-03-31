@@ -20,8 +20,8 @@
 
   $: {
     for (let column of $columns) {
-      if(hiddenColumns.includes(column.column)){
-        if(column.forceVisibility == true) column.visible = true
+      if (hiddenColumns.includes(column.column)) {
+        if (column.forceVisibility == true) column.visible = true
         else column.visible = false
       }
     }
@@ -32,19 +32,18 @@
   <h3 class="title is-5">Columns shown:</h3>
   <div>
     {#each $columns as column}
-      <span class="check">
-        <label class="checkbox"
-          ><input
-            type="checkbox"
-            id={column.column}
-            bind:checked={column.visible}
-            on:change={event => {
-              // @ts-ignore
-              if (event.target.checked == false) column.forceVisibility = true
-              else column.forceVisibility = false
-            }}
-          /></label
-        >
+      <span class="check"
+        ><input
+          type="checkbox"
+          id={column.column}
+          name={column.column}
+          bind:checked={column.visible}
+          on:change={event => {
+            // @ts-ignore
+            if (event.target.checked == false) column.forceVisibility = true
+            else column.forceVisibility = false
+          }}
+        />
         <label for={column.column}>{column.column}</label>
       </span>
     {/each}

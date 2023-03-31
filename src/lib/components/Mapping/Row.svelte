@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { Writable } from 'svelte/store'
+  import { loading } from '../../../../lib/RADar-DataTable/src/lib/store'
   import type IPaginated from '../../../../lib/RADar-DataTable/src/lib/interfaces/IPaginated'
   import type IScheme from '../../../../lib/RADar-DataTable/src/lib/interfaces/IScheme'
 
@@ -23,7 +24,7 @@
     checkStatusRow(scheme, number, statuses, $data)
       ? `background-color: ${getColorFromStatus(scheme, number, statuses, $data)};`
       : ''
-  }`}
+  } ${$loading == true ? 'background-color: lightgray' : null}`}
   class={`${$selectedRow == number + $pagination.rowsPerPage * ($pagination.currentPage - 1) ? 'selected-row' : ''}`}
 >
   <slot name="actions" />
