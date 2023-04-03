@@ -39,6 +39,8 @@
   import Column from '$lib/components/Mapping/Column.svelte'
   import Header from '$lib/components/Extra/Header.svelte'
 
+  let worker: Worker | undefined = undefined
+
   const author = writable<string>()
   let settings = writable<ISettings>({
     visible: false,
@@ -419,7 +421,7 @@
     else if (localStorage.getItem('author') != null) $author = localStorage.getItem('author')!
 
     if (localStorage.getItem('options') != null) {
-      $settings.options = JSON.parse(localStorage.getItem('options')!)
+      $settings = JSON.parse(localStorage.getItem('options')!)
     } else {
       localStorage.setItem('options', JSON.stringify($settings))
     }
@@ -469,6 +471,24 @@
   $: {
     if (initialLoading == true) columnsVisibilityCheck(hiddenColumns)
   }
+
+  $: {
+    // When mapping of a row has been done
+    if (mapping != undefined && $map == true) {
+      worker?.postMessage({
+        mapping: mapping,
+        expectedColumns: $mapper.expectedColumns,
+        columns: $columns,
+        pagination: $pagination
+      })
+      $map = false
+    }
+  }
+
+  const extraMessage: object = {
+    autoMapping: true,
+    mapper: $mapper,
+  }
 </script>
 
 <Header />
@@ -495,16 +515,15 @@
   fetchOptions={fetchOptionsCSV}
   dataType="CSV"
   {delimiter}
-  bind:mapping
-  bind:map
   downloadable={true}
   bind:columns
   bind:data
-  autoMapping={true}
+  {extraMessage}
   bind:filters
   bind:sorting
   bind:pagination
-  bind:mapper
+  bind:worker
+  workerPath={'../../../../../../src/lib/workers/keun.worker.ts?worker'}
 >
   <tr slot="columns" let:columns let:worker let:updateSorting let:deleteFilter let:updateFiltering>
     <th>
