@@ -1,24 +1,16 @@
 <script lang="ts">
-  import { browser } from '$app/environment'
-  export let showPopupU: Boolean
+    import type { Writable } from "svelte/store"
+
+
+  export let showAuthorPopUp: Writable<boolean>
   export let author: string
-  const getAuthor = () => {
-    let auth
-    if (browser == true) {
-      if (localStorage.getItem('author') !== null) {
-        auth = localStorage.getItem('author')
-      }
-    } else auth = 'no author'
-    return auth
-  }
-  const PopUp = () => {
-    showPopupU = true
-  }
 </script>
 
 <div id="content">
   <div class="buttons is-right">
-    <button class="button" on:click={PopUp}>
+    <button class="button" on:click={() => {
+      showAuthorPopUp.update((value) => !value)
+    }}>
       <div class="buttons is-right">
         <p id="name">{author}</p>
         <span><img class="img is-48x48" src="/user-solid.svg" alt="user icon" width="15px" height="15px" /></span>

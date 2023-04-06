@@ -25,7 +25,6 @@
       ? `background-color: ${getColorFromStatus(scheme, number, statuses, $data)};`
       : ''
   } ${$loading == true ? 'background-color: gray' : null}`}
-  class={`${$selectedRow == number + $pagination.rowsPerPage * ($pagination.currentPage - 1) ? 'selected-row' : ''}`}
 >
   <slot name="actions" />
   {#each row as cell, i}
