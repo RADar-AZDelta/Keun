@@ -75,6 +75,8 @@
       editClick.set(true)
       if (ownEditorMethods == undefined) {
         editor(`${row}-${col}`)
+      } else {
+        ownEditorMethods(row, col)
       }
     }}
     class="button is-small"><img class="image is-16x16" src="/edit.svg" alt="Edit the cell" /></button

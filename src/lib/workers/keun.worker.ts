@@ -194,7 +194,7 @@ const manipulateDataPage = async (action: any, columns: IScheme[]): Promise<Colu
   })
 }
 
-const updateTableData = async (index: string, value: string, extraChanges: Array<any>): Promise<void> => {
+const updateTableData = async (index: string, value: string, extraChanges: any): Promise<void> => {
   const indexes = index.split('-')
   const row = Number(indexes[1])
   const col = Number(indexes[0])
@@ -495,7 +495,7 @@ onmessage = async ({
     } else {
       filteredData = await filterData(table, filters, cols)
     }
-    data = filteredData
+    data = await getDataNeeded(filteredData, pagination)
     await postMessage({
       data: data,
       columns: cols,
@@ -509,7 +509,7 @@ onmessage = async ({
     } else {
       filteredData = await filteredData(table, filters, cols)
     }
-    data = filteredData
+    data = await getDataNeeded(filteredData, pagination)
     await postMessage({
       data: data,
       columns: cols,
@@ -524,7 +524,6 @@ onmessage = async ({
       update: true,
     })
   } else if (mapping != undefined || mapping != null) {
-    console.log('MAPPING IN WORKER')
     // When a row has been mapped
     table = await manipulateData(mappedData, mapping, columns, expectedColumns)
     orderedData = await orderData(table, sorts)
@@ -547,7 +546,6 @@ onmessage = async ({
     })
   } else {
     // When manipulation (filtering, sorting and pagination) has been done
-    console.log('MANIPULATION IN WORKER')
     cols = columns
     orderedData = await orderData(originalData, order)
     filteredData = await filterData(orderedData, filters, cols)

@@ -34,6 +34,7 @@
     createMapping,
     createMappingMultiple,
     updateSettings,
+    checkValuesOfAuthor,
   } from '$lib/utils'
   import Row from '$lib/components/Mapping/Row.svelte'
   import Column from '$lib/components/Mapping/Column.svelte'
@@ -122,11 +123,16 @@
       name: 'ADD_INFO:author2',
       altName: 'ADD_INFO:author2',
     },
+    {
+      name: 'ADD_INFO:lastEditor',
+      altName: 'ADD_INFO:lastEditor',
+    },
   ]
   // Additional fields that need to be added when mapped
   let additionalFields: object = {
     'ADD_INFO:author1': '',
     'ADD_INFO:author2': '',
+    'ADD_INFO:lastEditor': '',
     sourceAutoAssignedConceptIds: '',
     'ADD_INFO:additionalInfo': '',
     'ADD_INFO:prescriptionID': '',
@@ -154,39 +160,144 @@
   })
   let statuses: IStatus[] = [
     {
-      column: 'mappingStatus',
-      status: 'APPROVED',
+      // Both reviewers have approved but the last reviewer has edited the row
+      dependencies: [
+        {
+          column: 'mappingStatus',
+          status: 'APPROVED',
+          equality: 'equal',
+        },
+        {
+          column: 'ADD_INFO:author1',
+          status: '',
+          equality: 'not equal',
+        },
+        {
+          column: 'ADD_INFO:author2',
+          status: '',
+          equality: 'not equal',
+        },
+        {
+          column: 'ADD_INFO:lastEditor',
+          status: 'author',
+          equality: 'equal',
+        },
+      ],
       color: 'hsl(141, 31%, 76%)',
       priority: 1,
     },
     {
-      column: 'mappingStatus',
-      status: 'FLAGGED',
+      // Both reviewers have approved the row & the last reviewer didn't edit the row
+      dependencies: [
+        {
+          column: 'mappingStatus',
+          status: 'APPROVED',
+          equality: 'equal',
+        },
+        {
+          column: 'ADD_INFO:author1',
+          status: '',
+          equality: 'not equal',
+        },
+        {
+          column: 'ADD_INFO:author2',
+          status: '',
+          equality: 'not equal',
+        },
+        {
+          column: 'ADD_INFO:lastEditor',
+          status: 'author',
+          equality: 'not equal',
+        },
+      ],
+      color: 'hsl(145, 63%, 49%)',
+      priority: 1,
+    },
+    {
+      // Only one reviewer has approved the row and he didn't edit the row
+      dependencies: [
+        {
+          column: 'mappingStatus',
+          status: 'APPROVED',
+          equality: 'equal',
+        },
+        {
+          column: 'ADD_INFO:author1',
+          status: 'author',
+          equality: 'equal',
+        },
+        {
+          column: 'ADD_INFO:author2',
+          status: '',
+          equality: 'equal',
+        },
+        {
+          column: 'ADD_INFO:lastEditor',
+          status: 'author',
+          equality: 'not equal',
+        },
+      ],
+      color: 'hsl(150, 50%, 60%)',
+      priority: 1,
+    },
+    {
+      // Only one reviewer has approved the row and he edited the row
+      dependencies: [
+        {
+          column: 'mappingStatus',
+          status: 'APPROVED',
+          equality: 'equal',
+        },
+        {
+          column: 'ADD_INFO:author1',
+          status: 'author',
+          equality: 'equal',
+        },
+        {
+          column: 'ADD_INFO:author2',
+          status: '',
+          equality: 'equal',
+        },
+        {
+          column: 'ADD_INFO:lastEditor',
+          status: 'author',
+          equality: 'equal',
+        },
+      ],
+      color: 'hsl(150, 50%, 60%)',
+      priority: 1,
+    },
+    {
+      dependencies: [
+        {
+          column: 'mappingStatus',
+          status: 'FLAGGED',
+          equality: 'equal',
+        },
+      ],
       color: 'hsl(48, 75%, 76%)',
       priority: 1,
     },
     {
-      column: 'mappingStatus',
-      status: 'UNAPPROVED',
+      dependencies: [
+        {
+          column: 'mappingStatus',
+          status: 'UNAPPROVED',
+          equality: 'equal',
+        },
+      ],
       color: 'hsl(7, 50%, 63%)',
       priority: 1,
     },
     {
-      column: 'mappingStatus',
-      status: '',
+      dependencies: [
+        {
+          column: 'mappingStatus',
+          status: '',
+          equality: 'equal',
+        },
+      ],
       color: 'hsl(0, 0, 0)',
-      priority: 1,
-    },
-    {
-      column: 'statusSetBy',
-      status: 'Dupulthys Stijn',
-      color: 'hsl(16, 100%, 75%)',
-      priority: 0,
-    },
-    {
-      column: 'statusSetBy',
-      status: 'Kim Denturck',
-      color: 'hsl(240, 100%, 75%)',
       priority: 0,
     },
   ]
@@ -220,15 +331,15 @@
 
   let showMappingPopUp = writable<boolean>(false)
   let showAuthorPopUp = writable<boolean>(false)
-  let authorInput: string
+  let authorInput = writable<string>($author)
 
   const updatePopupAuthor = async (value: boolean): Promise<void> => {
-    $author = authorInput
+    $author = $authorInput
     $showAuthorPopUp = value
     localStorage.setItem('author', $author)
   }
   const cancelAuthor = async (value: boolean): Promise<void> => {
-    authorInput = $author
+    $authorInput = $author
   }
 
   const updatePopupMapping = async (value: boolean = false): Promise<void> => {
@@ -418,7 +529,7 @@
 
   onMount(() => {
     if ($showAuthorPopUp == false && localStorage.getItem('author') == null) showAuthorPopUp.set(true)
-    else if (localStorage.getItem('author') != null) $author = localStorage.getItem('author')!
+    else if (localStorage.getItem('author') != null) $author = getAuthor()!
 
     if (localStorage.getItem('options') != null) {
       $settings = JSON.parse(localStorage.getItem('options')!)
@@ -451,16 +562,13 @@
   }
 
   const rowSelection = (row: number) => {
-    if ($selectedRow == undefined || $selectedRow != row + $pagination.rowsPerPage * ($pagination.currentPage - 1)) {
-      $selectedRow = row + $pagination.rowsPerPage * ($pagination.currentPage - 1)
-      const index = $columns.indexOf(
-        $columns.filter(col => col.column.toLowerCase().trim() == $athenaFilteredColumn.toLowerCase().trim())[0]
-      )
-      $data[row][index] != undefined ? ($athenaFilter = String($data[row][index])) : ($athenaFilter = '')
-    } else {
-      if (updatePopupMapping != undefined && $editorUpdating == false && $editClick == false) updatePopupMapping(true)
-      editClick.set(false)
-    }
+    const index = $columns.indexOf(
+      $columns.filter(col => col.column.toLowerCase().trim() == $athenaFilteredColumn.toLowerCase().trim())[0]
+    )
+    $data[row][index] != undefined ? ($athenaFilter = String($data[row][index])) : ($athenaFilter = '')
+    if (updatePopupMapping != undefined && $editorUpdating == false && $editClick == false) updatePopupMapping(true)
+    editClick.set(false)
+
     return null
   }
 
@@ -469,7 +577,9 @@
   }
 
   $: {
-    if (initialLoading == true) columnsVisibilityCheck(hiddenColumns)
+    if (initialLoading == true) {
+      columnsVisibilityCheck(hiddenColumns)
+    }
   }
 
   $: {
@@ -479,10 +589,15 @@
         mapping: mapping,
         expectedColumns: $mapper.expectedColumns,
         columns: $columns,
-        pagination: $pagination
+        pagination: $pagination,
       })
       $map = false
     }
+  }
+
+  $: {
+    $data
+    columnsVisibilityCheck(hiddenColumns)
   }
 
   const extraMessage: object = {
@@ -505,7 +620,7 @@
     <img src="/settings.svg" alt="Settings" />
   </button>
   <!-- User -->
-  <User bind:author={$author} bind:showPopupU={$showAuthorPopUp} />
+  <User bind:author={$author} bind:showAuthorPopUp />
 </div>
 
 <!-- Table -->
@@ -564,6 +679,7 @@
           name="&#10003"
           bind:selectedRow
           {worker}
+          pagination={$pagination}
           row={number + $pagination.rowsPerPage * ($pagination.currentPage - 1)}
           updateColumns={[
             {
@@ -574,12 +690,12 @@
             {
               name: 'statusSetBy',
               altName: 'statusSetBy',
-              data: getAuthor(),
+              data: $author,
             },
             {
-              name: 'ADD_INFO:author1',
-              altName: 'ADD_INFO:author1',
-              data: getAuthor(),
+              name: checkValuesOfAuthor($data[number + $pagination.rowsPerPage * ($pagination.currentPage - 1)], scheme),
+              altName: checkValuesOfAuthor($data[number + $pagination.rowsPerPage * ($pagination.currentPage - 1)], scheme),
+              data: $author,
             },
           ]}
         />
@@ -587,6 +703,7 @@
           name="&#127988"
           bind:selectedRow
           {worker}
+          pagination={$pagination}
           row={number + $pagination.rowsPerPage * ($pagination.currentPage - 1)}
           updateColumns={[
             {
@@ -597,12 +714,12 @@
             {
               name: 'statusSetBy',
               altName: 'statusSetBy',
-              data: getAuthor(),
+              data: $author,
             },
             {
-              name: 'ADD_INFO:author1',
-              altName: 'ADD_INFO:author1',
-              data: getAuthor(),
+              name: checkValuesOfAuthor($data[number + $pagination.rowsPerPage * ($pagination.currentPage - 1)], scheme),
+              altName: checkValuesOfAuthor($data[number + $pagination.rowsPerPage * ($pagination.currentPage - 1)], scheme),
+              data: $author,
             },
           ]}
         />
@@ -610,6 +727,7 @@
           name="X"
           bind:selectedRow
           {worker}
+          pagination={$pagination}
           row={number + $pagination.rowsPerPage * ($pagination.currentPage - 1)}
           updateColumns={[
             {
@@ -620,12 +738,12 @@
             {
               name: 'statusSetBy',
               altName: 'statusSetBy',
-              data: getAuthor(),
+              data: $author,
             },
             {
-              name: 'ADD_INFO:author1',
-              altName: 'ADD_INFO:author1',
-              data: getAuthor(),
+              name: checkValuesOfAuthor($data[number + $pagination.rowsPerPage * ($pagination.currentPage - 1)], scheme),
+              altName: checkValuesOfAuthor($data[number + $pagination.rowsPerPage * ($pagination.currentPage - 1)], scheme),
+              data: $author,
             },
           ]}
         />
@@ -651,6 +769,7 @@
   <div class="buttons is-right" slot="extra" let:worker>
     <ActionPage
       name="Approve page"
+      pagination={$pagination}
       firstRow={($pagination.currentPage - 1) * $pagination.rowsPerPage}
       lastRow={$pagination.currentPage * $pagination.rowsPerPage - 1}
       updateColumns={[
@@ -662,18 +781,19 @@
         {
           name: 'statusSetBy',
           altName: 'statusSetBy',
-          data: getAuthor(),
+          data: $author,
         },
         {
           name: 'ADD_INFO:author1',
           altName: 'ADD_INFO:author1',
-          data: getAuthor(),
+          data: $author,
         },
       ]}
       {worker}
     />
     <ActionPage
       name="Flag page"
+      pagination={$pagination}
       firstRow={($pagination.currentPage - 1) * $pagination.rowsPerPage}
       lastRow={$pagination.currentPage * $pagination.rowsPerPage - 1}
       updateColumns={[
@@ -685,12 +805,12 @@
         {
           name: 'statusSetBy',
           altName: 'statusSetBy',
-          data: getAuthor(),
+          data: $author,
         },
         {
           name: 'ADD_INFO:author1',
           altName: 'ADD_INFO:author1',
-          data: getAuthor(),
+          data: $author,
         },
       ]}
       {worker}
@@ -703,7 +823,7 @@
 <Modal updatePopup={updatePopupAuthor} bind:show={$showAuthorPopUp} size="small">
   <div class="pop-up-container-center">
     <h2 class="title is-5">Who is the author?</h2>
-    <input id="author" type="text" placeholder="John Wick" class="author-input" bind:value={authorInput} />
+    <input id="author" type="text" placeholder="John Wick" class="author-input" bind:value={$authorInput} />
     <div class="buttons-container">
       <button
         class="button is-danger"
