@@ -1,16 +1,30 @@
 import { browser } from '$app/environment'
-import type IFilter from '../../lib/RADar-DataTable/src/lib/interfaces/IFilter'
-import type IMapper from '../../lib/RADar-DataTable/src/lib/interfaces/IMapper'
-import type IPaginated from '../../lib/RADar-DataTable/src/lib/interfaces/IPaginated'
-import type IScheme from '../../lib/RADar-DataTable/src/lib/interfaces/IScheme'
-import type ISort from '../../lib/RADar-DataTable/src/lib/interfaces/ISort'
-import type IStatus from '../../lib/RADar-DataTable/src/lib/interfaces/IStatus'
-import type IMapping from './interfaces/IMapping'
-import type IOption from './interfaces/IOption'
+import type { IColumnMetaData, IPagination } from '../../lib/RADar-DataTable/src/lib/components/DataTable'
+import type { SingleSorting, IStatus } from './components/Types'
 
 /*
     Basic helper methods
 */
+
+export function mapReviver(key: string, value: any) {
+  if (typeof value === 'object' && value !== null) {
+    if (value.dataType === 'Map') {
+      return new Map(value.value)
+    }
+  }
+  return value
+}
+
+export function jsonMapReplacer(key: string, value: any) {
+  if (value instanceof Map) {
+    return {
+      dataType: 'Map',
+      value: Array.from(value.entries()),
+    }
+  } else {
+    return value
+  }
+}
 
 export const getAuthor = (getAuthorEvent?: Function) => {
   let auth
@@ -28,38 +42,38 @@ export const getAuthor = (getAuthorEvent?: Function) => {
   return auth
 }
 
-export const checkForAuthor = (newData: any, oldData: any, oldColumns: IScheme[], row: any) => {
+export const checkForAuthor = (data: any, columns: IColumnMetaData[], author: string) => {
   // Fill in old data to find authors
-  const author1Index = oldColumns.findIndex(col => col.column == 'ADD_INFO:author1')
-  const author2Index = oldColumns.findIndex(col => col.column == 'ADD_INFO:author2')
-  if (oldData[author1Index] != '' && oldData[author1Index] != undefined && oldData[author1Index] != getAuthor()) {
-    console.log('SCENARIO 1')
-    newData['ADD_INFO:author1'] = getAuthor()
-    newData['ADD_INFO:author2'] = oldData[author1Index]
+  const author1Index = columns.findIndex(col => col.id == 'ADD_INFO:author1')
+  const author2Index = columns.findIndex(col => col.id == 'ADD_INFO:author2')
+  if (data[author1Index] != '' && data[author1Index] != undefined && data[author1Index] != author) {
+    return {
+      first: author,
+      second: data[author1Index],
+    }
   } else if (
-    oldData[author1Index] != '' &&
-    oldData[author1Index] != undefined &&
-    oldData[author2Index] != '' &&
-    oldData[author2Index] != undefined
+    data[author1Index] != '' &&
+    data[author1Index] != undefined &&
+    data[author2Index] != '' &&
+    data[author2Index] != undefined
   ) {
-    console.log('SCENARIO 2')
-    const previousAuthor = oldData[author1Index]
-    newData['ADD_INFO:author1'] = getAuthor()
-    newData['ADD_INFO:author2'] = previousAuthor
+    return {
+      first: author,
+      second: data[author1Index],
+    }
   } else {
-    console.log('SCENARIO 3')
-    newData['ADD_INFO:author1'] = getAuthor()
-    oldData[author1Index] = getAuthor()
-    newData['ADD_INFO:author2'] = ''
+    return {
+      first: author,
+      second: '',
+    }
   }
-  return newData
 }
 
-export const checkValuesOfAuthor = (data: any, columns: IScheme[]) => {
-  const author1Index = columns.findIndex(col => col.column == 'ADD_INFO:author1')
-  const author2Index = columns.findIndex(col => col.column == 'ADD_INFO:author2')
-  const mappingStatusIndex = columns.findIndex(col => col.column == 'mappingStatus')
-  const lastEditorIndex = columns.findIndex(col => col.column == 'ADD_INFO:lastEditor')
+export const checkValuesOfAuthor = (data: any, columns: IColumnMetaData[]) => {
+  const author1Index = columns.findIndex(col => col.id == 'ADD_INFO:author1')
+  const author2Index = columns.findIndex(col => col.id == 'ADD_INFO:author2')
+  const mappingStatusIndex = columns.findIndex(col => col.id == 'mappingStatus')
+  const lastEditorIndex = columns.findIndex(col => col.id == 'ADD_INFO:lastEditor')
   const author = getAuthor()
   let value = ''
   if (author1Index != -1 && author2Index != -1 && mappingStatusIndex != -1 && lastEditorIndex != -1) {
@@ -92,60 +106,17 @@ export const checkValuesOfAuthor = (data: any, columns: IScheme[]) => {
   return ''
 }
 
-export const checkAllValuesOfAuthor = (data: any, columns: IScheme[]) => {
-  let authorCols = []
-  for (let row of data) {
-    // TODO: return columns for rows when action on full page
-    const author1Index = columns.findIndex(col => col.column == 'ADD_INFO:author1')
-    const author2Index = columns.findIndex(col => col.column == 'ADD_INFO:author2')
-    const mappingStatusIndex = columns.findIndex(col => col.column == 'mappingStatus')
-    const lastEditorIndex = columns.findIndex(col => col.column == 'ADD_INFO:lastEditor')
-    const author = getAuthor()
-    let value = ''
-    if (author1Index != -1 && author2Index != -1 && mappingStatusIndex != -1 && lastEditorIndex != -1) {
-      const author1 = row[author1Index]
-      const author2 = row[author2Index]
-      const mappingStatus = row[mappingStatusIndex]
-      const lastEditor = row[lastEditorIndex]
-      if (author1 != undefined && author2 != undefined) {
-        if (author1 == '') {
-          if (author2 == '' && mappingStatus == '' && lastEditor == '') {
-            value = 'ADD_INFO:author1'
-          } else
-            console.warn(
-              'Author 1 is empty and somehow there is a second author or a mapping status or a last editor filled in'
-            )
-        } else if (author1 != '') {
-          if (mappingStatus != 'APPROVED') {
-            return 'ADD_INFO:author1'
-          } else if (mappingStatus == 'APPROVED') {
-            if (lastEditor == author) {
-              return 'ADD_INFO:author1'
-            } else {
-              return 'ADD_INFO:author2'
-            }
-          }
-        }
-        authorCols.push(value)
-      }
-    }
-  }
-  return authorCols
-}
-
-export const updateSettings = async (option: IOption) => {
-  const oldOptions = JSON.parse(localStorage.getItem('options')!)
-  let updateOption = oldOptions.find((opt: IOption) => opt.name == option.name)
-  oldOptions.splice(oldOptions.indexOf(updateOption), 1)
-  updateOption.value = option.value
-  oldOptions.push(updateOption)
-  localStorage.setItem('options', JSON.stringify(oldOptions))
+export const updateSettings = async (settings: Map<string, boolean>, name: string, value: boolean) => {
+  settings.set(name, !value)
+  console.log('HEY THERE ', settings)
+  localStorage.setItem('options', JSON.stringify(settings, jsonMapReplacer))
+  return settings
 }
 
 /*
     Methods for the color of a row
 */
-export function checkStatuses(scheme: IScheme[], statuses: IStatus[], data: any) {
+export function checkStatuses(scheme: IColumnMetaData[], statuses: IStatus[], data: any) {
   const allStatuses = []
   for (let status of statuses) {
     allStatuses.push(status)
@@ -153,18 +124,14 @@ export function checkStatuses(scheme: IScheme[], statuses: IStatus[], data: any)
       if (dep.equality == 'equal') {
         if (
           dep.status.toLowerCase() !=
-          data[
-            scheme.indexOf(scheme.filter(col => col.column.toLowerCase() == dep.column.toLowerCase())[0])
-          ].toLowerCase()
+          data[scheme.indexOf(scheme.filter(col => col.id.toLowerCase() == dep.column.toLowerCase())[0])].toLowerCase()
         ) {
           allStatuses.splice(allStatuses.indexOf(status), 1)
         }
       } else if (dep.equality == 'not equal') {
         if (
           dep.status.toLowerCase() ==
-          data[
-            scheme.indexOf(scheme.filter(col => col.column.toLowerCase() == dep.column.toLowerCase())[0])
-          ].toLowerCase()
+          data[scheme.indexOf(scheme.filter(col => col.id.toLowerCase() == dep.column.toLowerCase())[0])].toLowerCase()
         ) {
           allStatuses.splice(allStatuses.indexOf(status), 1)
         }
@@ -178,7 +145,7 @@ export function checkStatuses(scheme: IScheme[], statuses: IStatus[], data: any)
   }
 }
 
-export function getColorFromStatus(scheme: IScheme[], row: number, statuses: IStatus[], data: any) {
+export function getColorFromStatus(scheme: IColumnMetaData[], row: number, statuses: IStatus[], data: any) {
   const allStatuses = []
   // TODO: fix issue with author --> when author is changed it doesnt change in statuses
   for (let status of statuses) {
@@ -189,7 +156,7 @@ export function getColorFromStatus(scheme: IScheme[], row: number, statuses: ISt
         if (
           dep.status.toLowerCase() !=
           data[row][
-            scheme.indexOf(scheme.filter(col => col.column.toLowerCase() == dep.column.toLowerCase())[0])
+            scheme.indexOf(scheme.filter(col => col.id.toLowerCase() == dep.column.toLowerCase())[0])
           ].toLowerCase()
         ) {
           allStatuses.splice(allStatuses.indexOf(status), 1)
@@ -198,7 +165,7 @@ export function getColorFromStatus(scheme: IScheme[], row: number, statuses: ISt
         if (
           dep.status.toLowerCase() ==
           data[row][
-            scheme.indexOf(scheme.filter(col => col.column.toLowerCase() == dep.column.toLowerCase())[0])
+            scheme.indexOf(scheme.filter(col => col.id.toLowerCase() == dep.column.toLowerCase())[0])
           ].toLowerCase()
         ) {
           allStatuses.splice(allStatuses.indexOf(status), 1)
@@ -219,58 +186,14 @@ export function getColorFromStatus(scheme: IScheme[], row: number, statuses: ISt
   Methods for updating data, URL, ... everything data related
 */
 
-export const updateData = async (
-  worker: Worker | undefined,
-  index: string,
-  value: string,
-  filters: IFilter[],
-  sorting: ISort[],
-  pagination: IPaginated,
-  columns: IScheme[],
-  mapper: IMapper
-): Promise<void> => {
-  worker?.postMessage({
-    editData: {
-      index: index,
-      value: value,
-    },
-    filter: filters,
-    order: sorting,
-    pagination: pagination,
-    columns: columns,
-    mapper: mapper,
-    extraChanges: [
-      {
-        column: 'createdBy',
-        value: getAuthor(),
-      },
-      {
-        column: 'ADD_INFO:lastEditor',
-        value: getAuthor(),
-      },
-      {
-        column: 'ADD_INFO:author1',
-        value: getAuthor(),
-      },
-    ],
-  })
-}
-
 export const assembleURL = (
   URL: string,
   filters: string[],
-  athenaPagination: IPaginated,
+  athenaPagination: IPagination,
   athenaFilter: string,
-  athenaSorting: ISort,
-  athenaColumn: string,
-  athenaNames: Object,
-  selectedRow: number,
-  selectedRowPage: number,
-  columns: IScheme[],
-  data: any,
-  columnChange: boolean = false
+  athenaSorting: SingleSorting,
+  athenaNames: Object
 ) => {
-  let filterUpdate: boolean = false
   URL += `?pageSize=${athenaPagination.rowsPerPage}`
   if (athenaPagination.currentPage != undefined) {
     if (athenaPagination.currentPage == 0) {
@@ -281,28 +204,11 @@ export const assembleURL = (
   } else URL += `$page=1`
 
   // Add filter to URL if it exists
-  if (columnChange == false) {
-    if (athenaFilter != 'undefined' && athenaFilter != undefined && !athenaFilter.includes('undefined')) {
-      URL += `&query=${athenaFilter}`
-      filterUpdate = true
-    } else if (selectedRow != undefined && selectedRowPage != undefined) {
-      const index = columns.indexOf(columns.filter(col => col.column == athenaColumn)[0])
-      const sourceName = data[selectedRowPage][index]
-      athenaFilter = sourceName
-      filterUpdate = true
-      URL += `&query=${sourceName}`
-    } else {
-      URL += `&query=`
-    }
+  console.log('FILTER ', athenaFilter)
+  if (athenaFilter != undefined) {
+    URL += `&query=${athenaFilter}`
   } else {
-    if (columns.length > 0) {
-      const index = columns.indexOf(columns.filter(col => col.column.toLowerCase() == athenaColumn.toLowerCase())[0])
-      if (isNaN(selectedRowPage)) selectedRowPage = 0
-      const sourceName = data[selectedRowPage][index]
-      athenaFilter = sourceName
-      filterUpdate = true
-      URL += `&query=${sourceName}`
-    }
+    URL += `&query=`
   }
 
   filters = Array.from(new Set(filters))
@@ -316,76 +222,9 @@ export const assembleURL = (
   if (athenaSorting) {
     if (athenaNames[athenaSorting.column as keyof Object]) {
       URL += `&sort=${athenaNames[athenaSorting.column as keyof Object]}&order=${
-        athenaSorting.direction == 2 ? 'desc' : 'asc'
+        athenaSorting.sortDirection == 'asc' || athenaSorting.sortDirection == 'desc' ? athenaSorting.sortDirection : ''
       }`
     }
   }
-  if (filterUpdate == true) {
-    return {
-      URL: encodeURI(URL),
-      filter: athenaFilter,
-    }
-  } else {
-    return {
-      URL: encodeURI(URL),
-    }
-  }
-}
-
-/*
-  Methods for mapping
-*/
-
-export const createMapping = async (
-  id: string,
-  athenaPagination: IPaginated,
-  athenaColumns: IScheme[],
-  athenaData: any,
-  equivalenceMapping: string,
-  selectedRow: number,
-  columns: IScheme[],
-  data: any
-): Promise<IMapping> => {
-  const row = Number(id) - athenaPagination.rowsPerPage * (athenaPagination.currentPage - 1)
-  let rowValues = athenaData[row]
-  rowValues.equivalence = equivalenceMapping
-  rowValues.author = getAuthor()
-  rowValues['ADD_INFO:lastEditor'] = getAuthor()
-  console.log('PRE')
-  rowValues = await checkForAuthor(rowValues, data[selectedRow], columns, selectedRow)
-  console.log('AFTER')
-  const mapping: IMapping = {
-    row: selectedRow,
-    columns: athenaColumns,
-    data: rowValues,
-  }
-
-  return mapping
-}
-
-export const createMappingMultiple = async (
-  athenaColumns: IScheme[],
-  athenaData: any,
-  athenaRows: number[],
-  equivalenceMapping: string,
-  selectedRow: number,
-  columns: IScheme[],
-  data: any
-) => {
-  let count = 0
-  const multipleMapping: IMapping[] = []
-  for (let athenaRow of athenaRows) {
-    const rowIndex = athenaData.findIndex((obj: any) => obj.id == athenaRow)
-    let rowValues = athenaData[rowIndex]
-    rowValues.equivalence = equivalenceMapping
-    rowValues.author = getAuthor()
-    rowValues = await checkForAuthor(rowValues, data[selectedRow], columns, selectedRow)
-    multipleMapping.push({
-      row: selectedRow,
-      columns: athenaColumns,
-      data: rowValues,
-    })
-    count += 1
-  }
-  return multipleMapping
+  return encodeURI(URL)
 }

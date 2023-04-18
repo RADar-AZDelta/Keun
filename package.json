@@ -40,6 +40,7 @@
   "type": "module",
   "dependencies": {
     "arquero": "^5.1.0",
+    "lodash.debounce": "^4.0.8",
     "radar-datatable": "file:lib\\RADar-DataTable"
   },
   "files": [

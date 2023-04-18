@@ -1,33 +1,50 @@
 <script lang="ts">
-  import { writable, type Writable } from 'svelte/store'
-  import type IScheme from '../../../../lib/RADar-DataTable/src/lib/interfaces/IScheme'
-  export let columns: Writable<Array<IScheme>> = writable<Array<IScheme>>([])
-  export let visibilityCheck: any
-  export let hiddenColumns: string[]
+  import type { IColumnMetaData } from '../../../../lib/RADar-DataTable/src/lib/components/DataTable'
+  export let columns: IColumnMetaData[]
 
-  $: {
-    $columns
-    visibilityCheck(hiddenColumns)
+  let hiddenColumns = [
+    'sourceAutoAssignedConceptIds',
+    'ADD_INFO:additionalInfo',
+    'ADD_INFO:prescriptionID',
+    'ADD_INFO:ATC',
+    'matchScore',
+    'matchScore',
+    'statusSetBy',
+    'statusSetOn',
+    'comment',
+    'createdBy',
+    'createdOn',
+    'domainId',
+  ]
+
+  for (let col of hiddenColumns) {
+    // TODO: check if columns are already added to the Table
+    const column = columns.find(column => column.id == col)
+    column!.visible = false
+  }
+
+  function updateVisibilityColumn(e: Event, column: IColumnMetaData) {
+    const element = e.target as HTMLInputElement
+    column.visible = element.checked
+    column = column
   }
 </script>
 
 <section>
   <div class="container is-fluid">
     <h3 class="title is-5">Columns shown:</h3>
-    {#each $columns as column}
+    {#each columns as column}
       <span class="check"
         ><input
           type="checkbox"
-          id={column.column}
-          name={column.column}
+          id={column.id}
+          name={column.id}
           bind:checked={column.visible}
           on:change={event => {
-            // @ts-ignore
-            if (event.target.checked == false) column.forceVisibility = true
-            else column.forceVisibility = false
+            updateVisibilityColumn(event, column)
           }}
         />
-        <label for={column.column}>{column.column}</label>
+        <label for={column.id}>{column.id}</label>
       </span>
     {/each}
   </div>

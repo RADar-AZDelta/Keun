@@ -1,15 +1,15 @@
+<!-- <SvgIcon href="icons.svg" id="settings" width="16px" height="16px"/> -->
 <script lang="ts">
-  import type { CustomOptionsEvents } from '../Types'
-  import SvgIcon from './SvgIcon.svelte'
   import { createEventDispatcher } from 'svelte'
+  import SvgIcon from './SvgIcon.svelte'
+  import type { CustomOptionsEvents } from '../Types'
 
-  export let showAuthorPopUp: boolean
-  export let author: string
+  export let showSettingsPopUp: boolean
 
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
   function onClick() {
-    dispatch('generalVisibilityChanged', { visibility: !showAuthorPopUp })
+    dispatch('generalVisibilityChanged', { visibility: !showSettingsPopUp })
   }
 </script>
 
@@ -17,8 +17,7 @@
   <div class="buttons is-right">
     <button class="button" on:click={onClick}>
       <div class="buttons is-right">
-        <p id="name">{author}</p>
-        <SvgIcon href="icons.svg" id="user" width="16px" height="16px" />
+        <SvgIcon href="icons.svg" id="settings" width="16px" height="16px" />
       </div>
     </button>
   </div>
@@ -31,8 +30,5 @@
   }
   #content {
     margin-right: 35px;
-  }
-  #name {
-    padding-right: 5px;
   }
 </style>
