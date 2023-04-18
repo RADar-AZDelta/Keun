@@ -307,7 +307,7 @@ div[data-component='modal-content'] {
         border: 1px solid #999999;
         margin-bottom: 2rem;
         border-radius: 0 0 5px 5px;
-        overflow-x: hidden;
+        overflow-x: scroll;
 
         div[data-component='activated-filter'] {
           display: flex;
