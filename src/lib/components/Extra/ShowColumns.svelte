@@ -1,33 +1,17 @@
 <script lang="ts">
+  import { createEventDispatcher } from 'svelte'
   import type { IColumnMetaData } from '../../../../lib/RADar-DataTable/src/lib/components/DataTable'
+  import type { CustomOptionsEvents } from '../Types'
   export let columns: IColumnMetaData[]
 
-  let hiddenColumns = [
-    'sourceAutoAssignedConceptIds',
-    'ADD_INFO:additionalInfo',
-    'ADD_INFO:prescriptionID',
-    'ADD_INFO:ATC',
-    'matchScore',
-    'matchScore',
-    'statusSetBy',
-    'statusSetOn',
-    'comment',
-    'createdBy',
-    'createdOn',
-    'domainId',
-  ]
-
-  for (let col of hiddenColumns) {
-    // TODO: check if columns are already added to the Table
-    const column = columns.find(column => column.id == col)
-    column!.visible = false
-  }
+  const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
   function updateVisibilityColumn(e: Event, column: IColumnMetaData) {
     const element = e.target as HTMLInputElement
-    column.visible = element.checked
-    column = column
+    dispatch('columnVisibilityChanged', { column: column, visible: element.checked})
   }
+
+  $: console.log('COLUMNS IN SHOWCOLUMNS ', columns)
 </script>
 
 <section>
