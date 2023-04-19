@@ -1,5 +1,8 @@
 <script lang="ts">
   import DataTable from '../../lib/RADar-DataTable/src/lib/components/DataTable.svelte'
+  import '$lib/styles/table.scss'
+  import dummyData from '$lib/data/dummyData.json'
+  import rowStatuses from '$lib/data/statuses.json'
   import athenaNamesJSON from '$lib/columnsAthena.json'
   import Header from '$lib/components/Extra/Header.svelte'
   import User from '$lib/components/Extra/User.svelte'
@@ -8,6 +11,7 @@
     AutoMappingEventDetail,
     ColumnVisibilityChangedEventDetail,
     FilterOptionsChangedEventDetail,
+    IStatus,
     SingleMappingEventDetail,
     SingleSorting,
     VisibilityChangedEventDetail,
@@ -37,7 +41,7 @@
 
   let APIFilters: string[]
   let APICall: string
-  let equivalenceMapping: string
+  let equivalenceMapping: string = 'EQUAL'
   let athenaFilteredColumn: string = 'name'
   let athenaFilter: string
   let selectedRow: any[]
@@ -51,142 +55,12 @@
   let athenaSorting: SingleSorting
   let athenaFiltering: string
   let athenaNames: Object = athenaNamesJSON
-  let importantAthenaColumns = new Map<string, string>([
-    ['id', 'conceptId'],
-    ['name', 'conceptName'],
-    ['domain', 'domainId'],
-  ])
-  let additionalFields: object = {
-    'ADD_INFO:author1': '',
-    'ADD_INFO:author2': '',
-    'ADD_INFO:lastEditor': '',
-    sourceAutoAssignedConceptIds: '',
-    'ADD_INFO:additionalInfo': '',
-    'ADD_INFO:prescriptionID': '',
-    'ADD_INFO:ATC': '',
-    matchScore: 1,
-    mappingStatus: '',
-    equivalence: 'EQUAL',
-    statusSetBy: '',
-    statusSetOn: new Date().getTime(),
-    mappingType: 'MAPS_TO',
-    comment: 'AUTO MAPPED',
-    createdBy: 'ctl',
-    createdOn: new Date().getTime(),
-    assignedReviewer: '',
-  }
-  let hiddenColumns = [
-    'sourceAutoAssignedConceptIds',
-    'ADD_INFO:additionalInfo',
-    'ADD_INFO:prescriptionID',
-    'ADD_INFO:ATC',
-    'matchScore',
-    'matchScore',
-    'statusSetBy',
-    'statusSetOn',
-    'comment',
-    'createdBy',
-    'createdOn',
-    'domainId',
-  ]
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // DATA
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
-  let data = [
-    {
-      name: 'Rory',
-      age: 35,
-      country: 'Belgium',
-      telephone: '0800-123-524-634',
-      address: 'Rue des Taillis 221,Gijzelbrechtegem,West Flanders,8570,',
-    },
-    {
-      name: 'Amethyst',
-      age: 35,
-      country: 'Belgium',
-      telephone: '0800-123-524-634',
-      address: 'Eikstraat 450,Belgrade,Namur,5001,',
-    },
-    {
-      name: 'Bob',
-      age: 35,
-      country: 'Belgium',
-      telephone: '0800-123-524-634',
-      address: 'Rue du Château 143,Lochristi,East Flanders,9080,',
-    },
-    {
-      name: 'Cindy',
-      age: 35,
-      country: 'Belgium',
-      telephone: '0800-123-524-634',
-      address: 'Rue Libert 93,Warsage,Liège,4608,',
-    },
-    {
-      name: 'Derek',
-      age: 35,
-      country: 'USA',
-      telephone: '0800-123-524-634',
-      address: '123 Main Street, New York, NY 10001',
-    },
-    {
-      name: 'Eve',
-      age: 35,
-      country: 'Belgium',
-      telephone: '0800-123-524-634',
-      address: 'Rue du Pont Simon 204,Antwerpen,Antwerp,2040,',
-    },
-    {
-      name: 'Frank',
-      age: 35,
-      country: 'Belgium',
-      telephone: '0800-123-524-634',
-      address: 'Rue du Vert Galant 190,Poulseur,Liège,4171,',
-    },
-    {
-      name: 'Gina',
-      age: 35,
-      country: 'Belgium',
-      telephone: '0800-123-524-634',
-      address: 'Poolse Winglaan 288,Sint-Kwintens-Lennik,Flemish Brabant,1750,',
-    },
-    {
-      name: 'Hannah',
-      age: 35,
-      country: 'Belgium',
-      telephone: '0800-123-524-634',
-      address: 'Rue de la Poste 335,Ramsdonk,Flemish Brabant,1880,',
-    },
-    {
-      name: 'Ivan',
-      age: 35,
-      country: 'Belgium',
-      telephone: '0800-123-524-634',
-      address: 'Rue du Centre 259,Marquain,Hainaut,7522,',
-    },
-    {
-      name: 'Jenny',
-      age: 35,
-      country: 'Belgium',
-      telephone: '0800-123-524-634',
-      address: 'Rue des Campanules 311,Strombeek-Bever,Flemish Brabant,1853,',
-    },
-    {
-      name: 'Karl',
-      age: 35,
-      country: 'Belgium',
-      telephone: '0800-123-524-634',
-      address: 'Rue Engeland 373,Neerrepen,Limburg,3700,',
-    },
-    {
-      name: 'Rory2',
-      age: 45,
-      country: 'Belgium',
-      telephone: '0800-123-524-634',
-      address: 'Machelsesteenweg 343,Montroeul-sur-Haine,Hainaut,7350,',
-    },
-  ]
+  let data = dummyData
 
   let matrix = data.map(obj => Object.values(obj))
 
@@ -242,6 +116,47 @@
     },
   ]
 
+  let importantAthenaColumns = new Map<string, string>([
+    ['id', 'conceptId'],
+    ['name', 'conceptName'],
+    ['domain', 'domainId'],
+  ])
+  let additionalFields: object = {
+    'ADD_INFO:author1': '',
+    'ADD_INFO:author2': '',
+    'ADD_INFO:lastEditor': '',
+    sourceAutoAssignedConceptIds: '',
+    'ADD_INFO:additionalInfo': '',
+    'ADD_INFO:prescriptionID': '',
+    'ADD_INFO:ATC': '',
+    matchScore: 1,
+    mappingStatus: '',
+    equivalence: 'EQUAL',
+    statusSetBy: '',
+    statusSetOn: new Date().getTime(),
+    mappingType: 'MAPS_TO',
+    comment: 'AUTO MAPPED',
+    createdBy: 'ctl',
+    createdOn: new Date().getTime(),
+    assignedReviewer: '',
+  }
+  let hiddenColumns = [
+    'sourceAutoAssignedConceptIds',
+    'ADD_INFO:additionalInfo',
+    'ADD_INFO:prescriptionID',
+    'ADD_INFO:ATC',
+    'matchScore',
+    'matchScore',
+    'statusSetBy',
+    'statusSetOn',
+    'comment',
+    'createdBy',
+    'createdOn',
+    'domainId',
+  ]
+
+  let statuses: IStatus[] = rowStatuses
+
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // EVENTS
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -265,16 +180,6 @@
     event.detail.data != undefined
       ? ((selectedRow = event.detail.data.row), (selectedRowIndex = event.detail.data.index))
       : null
-  }
-
-  function cancelAuthorUpdate() {
-    authorVisibility = false
-  }
-
-  function saveAuthorUpdate() {
-    authorVisibility = false
-    author = authorInput
-    localStorage.setItem('author', author)
   }
 
   function filterOptionsChanged(event: CustomEvent<FilterOptionsChangedEventDetail>) {
@@ -382,13 +287,22 @@
     }
   }
 
+  const cancelAuthorUpdate = async () => {
+    authorVisibility = false
+  }
+
+  const saveAuthorUpdate = async () => {
+    authorVisibility = false
+    author = authorInput
+    localStorage.setItem('author', author)
+  }
+
   const hideCertainColumns = async () => {
     for (let col of columns) {
       if (hiddenColumns.includes(col.id)) col.visible = false
       else col.visible = true
     }
     columns = columns
-    console.log('COLUMNS IN PAGE ', columns)
   }
 
   let fetchDataURL = fetchData
@@ -497,6 +411,7 @@
             editable={false}
             actions={true}
             {settings}
+            {author}
             table="Athena"
             showMappingPopUp={mappingVisibility}
             bind:dataTable={dataTableAthena}
@@ -528,68 +443,8 @@
     actions={true}
     {settings}
     showMappingPopUp={mappingVisibility}
+    {statuses}
+    {author}
     bind:dataTable={dataTableMatrix}
   />
 </DataTable>
-
-<style>
-  .switch {
-    position: relative;
-    display: inline-block;
-    width: 60px;
-    height: 34px;
-  }
-
-  .switch input {
-    opacity: 0;
-    width: 0;
-    height: 0;
-  }
-
-  .slider {
-    position: absolute;
-    cursor: pointer;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-color: #ccc;
-    -webkit-transition: 0.4s;
-    transition: 0.4s;
-  }
-
-  .slider:before {
-    position: absolute;
-    content: '';
-    height: 26px;
-    width: 26px;
-    left: 4px;
-    bottom: 4px;
-    background-color: white;
-    -webkit-transition: 0.4s;
-    transition: 0.4s;
-  }
-
-  input:checked + .slider {
-    background-color: #2196f3;
-  }
-
-  input:focus + .slider {
-    box-shadow: 0 0 1px #2196f3;
-  }
-
-  input:checked + .slider:before {
-    -webkit-transform: translateX(26px);
-    -ms-transform: translateX(26px);
-    transform: translateX(26px);
-  }
-
-  /* Rounded sliders */
-  .slider.round {
-    border-radius: 34px;
-  }
-
-  .slider.round:before {
-    border-radius: 50%;
-  }
-</style>

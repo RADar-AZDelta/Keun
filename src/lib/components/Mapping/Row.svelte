@@ -1,10 +1,11 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte'
-  import type { CustomOptionsEvents } from '../Types'
+  import type { CustomOptionsEvents, IStatus } from '../Types'
   import type { IColumnMetaData } from '../../../../lib/RADar-DataTable/src/lib/components/DataTable.d'
   import SvgIcon from '../Extra/SvgIcon.svelte'
   import EditableCell from '../../../../lib/RADar-DataTable/src/lib/components/EditableCell.svelte'
   import type DataTable from '../../../../lib/RADar-DataTable/src/lib/components/DataTable.svelte'
+  import { getColorFromStatus } from '$lib/utils'
 
   export let showMappingPopUp: boolean = false
   export let renderedRow: any[],
@@ -14,7 +15,9 @@
     settings: Map<string, boolean>,
     editable: boolean = false,
     actions: boolean = false,
-    table: string = 'Main'
+    table: string = 'Main',
+    statuses: IStatus[] = [],
+    author: string
 
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
@@ -53,14 +56,27 @@
     await dataTable.updateRows(new Map([[index, Object.fromEntries([[columns[i].id, e.detail]])]]))
   }
 
+  const getFullRow = async () => {
+    if (dataTable) {
+      const row = await dataTable.getFullRow(index)
+      return row
+    }
+    return renderedRow
+  }
+
+  let fullRow: any
+
+  $: dataTable != undefined ? dataTable.getFullRow(index).then((row) => fullRow = row) : fullRow = renderedRow
+
   onMount(() => {
-    if(table == "Main") dispatch('autoMapping', { row: renderedRow, index: index })
+    if (table == 'Main') dispatch('autoMapping', { row: renderedRow, index: index })
   })
 </script>
 
-<tr>
+<tr style={`background-color: ${getColorFromStatus(columns, fullRow, statuses, author)}`}>
   {#if actions == true && table == 'Main'}
     <td class="actions">
+      <button on:click={getFullRow}><SvgIcon href="icons.svg" id="arrow-left" width="16px" height="16px" /></button>
       <button on:click={onClickMapping}><SvgIcon href="icons.svg" id="map" width="16px" height="16px" /></button>
       <button on:click={onClickApproving}><SvgIcon href="icons.svg" id="check" width="16px" height="16px" /></button>
       <button on:click={onClickFlagging}><SvgIcon href="icons.svg" id="flag" width="16px" height="16px" /></button>

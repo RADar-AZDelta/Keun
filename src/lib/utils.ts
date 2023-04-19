@@ -121,14 +121,14 @@ export function checkStatuses(scheme: IColumnMetaData[], statuses: IStatus[], da
   for (let status of statuses) {
     allStatuses.push(status)
     for (let dep of status.dependencies) {
-      if (dep.equality == 'equal') {
+      if (dep.equal == true) {
         if (
           dep.status.toLowerCase() !=
           data[scheme.indexOf(scheme.filter(col => col.id.toLowerCase() == dep.column.toLowerCase())[0])].toLowerCase()
         ) {
           allStatuses.splice(allStatuses.indexOf(status), 1)
         }
-      } else if (dep.equality == 'not equal') {
+      } else if (dep.equal == false) {
         if (
           dep.status.toLowerCase() ==
           data[scheme.indexOf(scheme.filter(col => col.id.toLowerCase() == dep.column.toLowerCase())[0])].toLowerCase()
@@ -145,40 +145,35 @@ export function checkStatuses(scheme: IColumnMetaData[], statuses: IStatus[], da
   }
 }
 
-export function getColorFromStatus(scheme: IColumnMetaData[], row: number, statuses: IStatus[], data: any) {
+export function getColorFromStatus(columns: IColumnMetaData[], row: any, statuses: IStatus[], author: string) {
   const allStatuses = []
-  // TODO: fix issue with author --> when author is changed it doesnt change in statuses
   for (let status of statuses) {
-    allStatuses.push(status)
+    let error = false
     for (let dep of status.dependencies) {
-      if (dep.equality == 'equal') {
-        if (dep.status.toLowerCase() == 'author') dep.status = getAuthor()!
-        if (
-          dep.status.toLowerCase() !=
-          data[row][
-            scheme.indexOf(scheme.filter(col => col.id.toLowerCase() == dep.column.toLowerCase())[0])
-          ].toLowerCase()
-        ) {
-          allStatuses.splice(allStatuses.indexOf(status), 1)
-        }
-      } else if (dep.equality == 'not equal') {
-        if (
-          dep.status.toLowerCase() ==
-          data[row][
-            scheme.indexOf(scheme.filter(col => col.id.toLowerCase() == dep.column.toLowerCase())[0])
-          ].toLowerCase()
-        ) {
-          allStatuses.splice(allStatuses.indexOf(status), 1)
-        }
-      }
+      const column = columns.find(col => col.id.toLowerCase() == dep.column.toLowerCase())
+      if (column != undefined) {
+        const rowValue = row[column.id]
+        if (rowValue != undefined) {
+          if (dep.status.toLowerCase() == 'author') dep.status = author
+          if (dep.equal == true) {
+            if (dep.status.toLowerCase() !== rowValue.toLowerCase()) {
+              error = true
+            }
+          } else if (dep.equal == false) {
+            if (dep.status.toLowerCase() == rowValue.toLowerCase()) {
+              error = true
+            }
+          }
+        } else error = true
+      } else error = true
     }
+    error == false ? allStatuses.push(status) : null
   }
   const priority = Math.max(...allStatuses.map(status => status.priority))
   if (allStatuses.length > 0) {
-    const status = allStatuses.filter(status => status.priority == priority)[0]
-    return status.color
+    return allStatuses.find(status => status.priority == priority)!.color
   } else {
-    return '#000000'
+    return '#FFFFFF'
   }
 }
 
