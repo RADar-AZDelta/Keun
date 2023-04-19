@@ -1,8 +1,9 @@
-import type { SortDirection } from '../../../lib/RADar-DataTable/src/lib/components/DataTable'
+import type { IColumnMetaData, SortDirection } from '../../../lib/RADar-DataTable/src/lib/components/DataTable'
 
 export interface CustomOptionsEvents {
   generalVisibilityChanged: VisibilityChangedEventDetail
   filterOptionsChanged: FilterOptionsChangedEventDetail
+  columnVisibilityChanged: ColumnVisibilityChangedEventDetail
   singleMapping: SingleMappingEventDetail
   actionPerformed: ActionPerformedEventDetail
   autoMapping: AutoMappingEventDetail
@@ -16,6 +17,11 @@ export interface VisibilityChangedEventDetail {
 export interface FilterOptionsChangedEventDetail {
   filter: string
   option: string
+}
+
+export interface ColumnVisibilityChangedEventDetail {
+  column: IColumnMetaData
+  visible: boolean
 }
 
 export interface SingleMappingEventDetail {

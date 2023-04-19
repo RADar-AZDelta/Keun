@@ -6,6 +6,7 @@
   import type {
     ActionPerformedEventDetail,
     AutoMappingEventDetail,
+    ColumnVisibilityChangedEventDetail,
     FilterOptionsChangedEventDetail,
     SingleMappingEventDetail,
     SingleSorting,
@@ -24,7 +25,9 @@
   import AthenaLayout from '$lib/components/Extra/AthenaLayout.svelte'
   import Row from '$lib/components/Mapping/Row.svelte'
   import { onMount } from 'svelte/internal'
+  import ShowColumns from '$lib/components/Extra/ShowColumns.svelte'
 
+  let mounted: boolean = false
   let settingsVisibility: boolean = false
   let settings = new Map<string, boolean>([['Map to multiple concepts', false]])
   let authorVisibility: boolean = false
@@ -72,6 +75,20 @@
     createdOn: new Date().getTime(),
     assignedReviewer: '',
   }
+  let hiddenColumns = [
+    'sourceAutoAssignedConceptIds',
+    'ADD_INFO:additionalInfo',
+    'ADD_INFO:prescriptionID',
+    'ADD_INFO:ATC',
+    'matchScore',
+    'matchScore',
+    'statusSetBy',
+    'statusSetOn',
+    'comment',
+    'createdBy',
+    'createdOn',
+    'domainId',
+  ]
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // DATA
@@ -237,6 +254,12 @@
     settingsVisibility = event.detail.visibility
   }
 
+  function columnVisibilityChanged(event: CustomEvent<ColumnVisibilityChangedEventDetail>) {
+    const columnIndex = columns.indexOf(event.detail.column)
+    columns[columnIndex].visible = event.detail.visible
+    columns = columns
+  }
+
   function mappingVisibilityChanged(event: CustomEvent<VisibilityChangedEventDetail>) {
     mappingVisibility = event.detail.visibility
     event.detail.data != undefined
@@ -273,6 +296,7 @@
     matrix = data.map(obj => Object.values(obj))
     matrix = matrix
     athenaFiltering = ''
+    hideCertainColumns()
   }
 
   async function singleRowMapping(event: CustomEvent<SingleMappingEventDetail>) {
@@ -358,10 +382,19 @@
     }
   }
 
+  const hideCertainColumns = async () => {
+    for (let col of columns) {
+      if (hiddenColumns.includes(col.id)) col.visible = false
+      else col.visible = true
+    }
+    columns = columns
+    console.log('COLUMNS IN PAGE ', columns)
+  }
+
   let fetchDataURL = fetchData
 
   $: {
-    if (author == '' || author == undefined || author == null) authorVisibility = true
+    if (mounted == true && (author == '' || author == undefined || author == null)) authorVisibility = true
   }
 
   onMount(() => {
@@ -372,6 +405,8 @@
     localStorage.getItem('options') != undefined
       ? (settings = JSON.parse(localStorage.getItem('options')!, mapReviver))
       : null
+
+    mounted = true
   })
 </script>
 
@@ -402,6 +437,7 @@
         >
       </div>
     {/each}
+    <ShowColumns on:columnVisibilityChanged={columnVisibilityChanged} {columns} />
   </div>
 </Modal>
 
