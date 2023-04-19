@@ -62,5 +62,5 @@ export interface IStatus {
 interface IDependency {
   column: string
   status: string
-  equality: 'equal' | 'not equal'
+  equal: boolean
 }
