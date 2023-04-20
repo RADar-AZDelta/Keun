@@ -3,14 +3,15 @@
   import Equivalence from '../Mapping/Equivalence.svelte'
   import AthenaFilter from './AthenaFilter.svelte'
   import filtersJSON from '$lib/filters.json'
-  import { jsonMapReplacer, mapReviver } from '$lib/utils'
+  import {localStorageGetter, localStorageSetter } from '$lib/utils'
   import type { CustomOptionsEvents, ICategories } from '../Types'
+  import SvgIcon from './SvgIcon.svelte'
+  import AthenaActivatedFilter from './AthenaActivatedFilter.svelte'
 
   export let urlFilters: string[], equivalenceMapping: string, athenaFilteredColumn: string, filterColumns: string[]
 
   let JSONFilters = new Map<string, ICategories>([])
   let activatedAthenaFilters = new Map<string, string[]>()
-
   let openedFilter: string
   let savedFilters: Map<string, string[]>
 
@@ -32,7 +33,7 @@
       activatedAthenaFilters.set(filter, [option])
     }
 
-    localStorage.setItem('AthenaFilters', JSON.stringify(activatedAthenaFilters, jsonMapReplacer))
+    localStorageSetter('AthenaFilters', activatedAthenaFilters, true)
 
     let URLFilters: string[] = []
 
@@ -45,23 +46,25 @@
     }
 
     urlFilters = URLFilters
-    dispatch('filterOptionsChanged', { filter: filter, option: option })
+    dispatch('filterOptionsChanged', { filters: activatedAthenaFilters })
   }
 
-  const checkIfFilterExists = (filter: string, option: string): boolean => {
-    if (localStorage.getItem('AthenaFilters') == null || localStorage.getItem('AthenaFilters') == 'undefined') {
+  const checkIfFilterExists = (filter: string, altName: string | undefined, option: string): boolean => {
+    let allFilters: Map<string, string[]> = activatedAthenaFilters
+    const chosenFilter =
+      allFilters.get(filter) == undefined
+        ? altName != undefined
+          ? allFilters.get(altName)
+          : undefined
+        : allFilters.get(filter)
+
+    if (chosenFilter == undefined || chosenFilter.length == 0) {
       return false
     } else {
-      let allFilters: Map<string, string[]> = JSON.parse(localStorage.getItem('AthenaFilters')!, mapReviver)
-      const chosenFilter = allFilters.get(filter.toLowerCase())
-      if (chosenFilter == undefined || chosenFilter.length == 0) {
-        return false
+      if (chosenFilter.includes(option)) {
+        return true
       } else {
-        if (chosenFilter.includes(option)) {
-          return true
-        } else {
-          return false
-        }
+        return false
       }
     }
   }
@@ -72,12 +75,19 @@
     athenaFilteredColumn = inputValue
   }
 
+  function removeFilter(filter: string, option: string) {
+    activatedAthenaFilters.get(filter)!.splice(activatedAthenaFilters.get(filter)!.indexOf(option), 1)
+    localStorageSetter('AthenaFilters', activatedAthenaFilters, true)
+    dispatch('filterOptionsChanged', { filters: activatedAthenaFilters })
+  }
+
   onMount(() => {
     savedFilters =
-      localStorage.getItem('AthenaFilters') == null || localStorage.getItem('AthenaFilters') == 'undefined'
+      localStorageGetter('AthenaFilters') !== null
         ? new Map<string, string[]>()
-        : JSON.parse(localStorage.getItem('AthenaFilters')!, mapReviver)
+        : localStorageGetter('AthenaFilters', true)
     activatedAthenaFilters = savedFilters
+    dispatch('filterOptionsChanged', { filters: activatedAthenaFilters })
   })
 </script>
 
@@ -87,11 +97,11 @@
     <div class="filters-buttons">
       <div data-component="filters">
         {#each [...JSONFilters] as [key, options]}
-          <AthenaFilter filterName={key} filterOptions={options} bind:openedFilter allowInput={true}>
+          <AthenaFilter filter={{ name: key, categories: options }} bind:openedFilter allowInput={true}>
             <div slot="option" data-component="filter-option" let:option>
               <input
                 type="checkbox"
-                checked={checkIfFilterExists(key, option)}
+                checked={checkIfFilterExists(key, options.altName, option)}
                 on:change={() =>
                   event != undefined
                     ? updateAPIFilters(event, options.altName != undefined ? options.altName : 'sourceName', option)
@@ -101,6 +111,14 @@
             </div>
           </AthenaFilter>
         {/each}
+        <AthenaActivatedFilter filters={activatedAthenaFilters} bind:openedFilter filterName="Activated filters">
+          <div slot="option" data-component="filter-option" let:filter let:option>
+            <p>{option}</p>
+            <button on:click={() => removeFilter(filter, option)}
+              ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
+            >
+          </div>
+        </AthenaActivatedFilter>
       </div>
     </div>
   </section>

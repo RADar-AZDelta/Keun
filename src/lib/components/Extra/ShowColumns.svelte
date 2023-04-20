@@ -10,8 +10,6 @@
     const element = e.target as HTMLInputElement
     dispatch('columnVisibilityChanged', { column: column, visible: element.checked})
   }
-
-  $: console.log('COLUMNS IN SHOWCOLUMNS ', columns)
 </script>
 
 <section>

@@ -24,7 +24,7 @@
     TFilter,
   } from '../../lib/RADar-DataTable/src/lib/components/DataTable'
   import Modal from '$lib/components/Extra/Modal.svelte'
-  import { assembleURL, checkForAuthor, mapReviver, updateSettings } from '$lib/utils'
+  import { assembleURL, checkForAuthor, localStorageGetter, localStorageSetter, updateSettings } from '$lib/utils'
   import SvgIcon from '$lib/components/Extra/SvgIcon.svelte'
   import AthenaLayout from '$lib/components/Extra/AthenaLayout.svelte'
   import Row from '$lib/components/Mapping/Row.svelte'
@@ -43,7 +43,7 @@
   let APICall: string
   let equivalenceMapping: string = 'EQUAL'
   let athenaFilteredColumn: string = 'name'
-  let athenaFilter: string
+  let athenaFilters = new Map<string, string[]>()
   let selectedRow: any[]
   let selectedRowIndex: number
 
@@ -183,7 +183,16 @@
   }
 
   function filterOptionsChanged(event: CustomEvent<FilterOptionsChangedEventDetail>) {
-    assembleAthenaURL()
+    athenaFilters = event.detail.filters
+    APIFilters = []
+    for (let [filter, options] of athenaFilters) {
+      let substring: string = ''
+      for (let option of options) {
+        substring += `&${filter}=${option}`
+      }
+      APIFilters.push(substring)
+    }
+    APIFilters = APIFilters
     fetchDataURL = fetchData
   }
 
@@ -238,6 +247,7 @@
     } else {
       athenaFiltering = filter
     }
+    // TODO: let the filters from previous sessions (localstorage) apply to the API call
     const URL = assembleURL(mappingURL, APIFilters, athenaPagination, athenaFiltering, athenaSorting, athenaNames)
     APICall = URL
     return URL
@@ -294,7 +304,7 @@
   const saveAuthorUpdate = async () => {
     authorVisibility = false
     author = authorInput
-    localStorage.setItem('author', author)
+    localStorageSetter('author', author)
   }
 
   const hideCertainColumns = async () => {
@@ -312,13 +322,11 @@
   }
 
   onMount(() => {
-    localStorage.getItem('author') != undefined ? (author = localStorage.getItem('author')!) : null
+    localStorageGetter('author') !== null ? (author = localStorageGetter('author')) : null
     if (author != '' || author != undefined || author != null) authorVisibility = false
     else authorVisibility = true
 
-    localStorage.getItem('options') != undefined
-      ? (settings = JSON.parse(localStorage.getItem('options')!, mapReviver))
-      : null
+    localStorageGetter('options') !== null ? (settings = localStorageGetter('options', true)) : null
 
     mounted = true
   })

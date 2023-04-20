@@ -266,7 +266,7 @@ div[data-component='modal-content'] {
       display: flex;
       flex-direction: column;
 
-      button {
+      button[data-component='filter-button'] {
         width: 100%;
         display: flex;
         align-items: center;
