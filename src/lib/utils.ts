@@ -32,10 +32,11 @@ export function localStorageSetter(key: string, value: any, mapReplacer: boolean
     : localStorage.setItem(key, JSON.stringify(value))
 }
 
-export function localStorageGetter(key: string, mapReviver: boolean = false) {
+export function localStorageGetter(key: string, mapReviver: boolean = false, json: boolean = true) {
   if (localStorage.getItem(key) != null) {
     if (mapReviver == true) return JSON.parse(localStorage.getItem(key)!, jsonMapReviver)
-    else return JSON.parse(localStorage.getItem(key)!, jsonMapReviver)
+    else if (mapReviver == false && json == true) return JSON.parse(localStorage.getItem(key)!)
+    else if (mapReviver == false && json == false) return localStorage.getItem(key)
   } else {
     return null
   }
@@ -99,27 +100,29 @@ export const updateSettings = async (settings: Map<string, boolean>, name: strin
 */
 export function getColorFromStatus(columns: IColumnMetaData[], row: any, statuses: IStatus[], author: string) {
   const allStatuses = []
-  for (let status of statuses) {
-    let error = false
-    for (let dep of status.dependencies) {
-      const column = columns.find(col => col.id.toLowerCase() == dep.column.toLowerCase())
-      if (column != undefined) {
-        const rowValue = String(row[column.id])
-        if (rowValue != undefined) {
-          if (dep.status.toLowerCase() == 'author') dep.status = author
-          if (dep.equal == true) {
-            if (dep.status.toLowerCase() !== rowValue.toLowerCase()) {
-              error = true
+  if (row != undefined) {
+    for (let status of statuses) {
+      let error = false
+      for (let dep of status.dependencies) {
+        const column = columns.find(col => col.id.toLowerCase() == dep.column.toLowerCase())
+        if (column != undefined) {
+          const rowValue = String(row[column.id])
+          if (rowValue != undefined) {
+            if (dep.status.toLowerCase() == 'author') dep.status = author
+            if (dep.equal == true) {
+              if (dep.status.toLowerCase() !== rowValue.toLowerCase()) {
+                error = true
+              }
+            } else if (dep.equal == false) {
+              if (dep.status.toLowerCase() == rowValue.toLowerCase()) {
+                error = true
+              }
             }
-          } else if (dep.equal == false) {
-            if (dep.status.toLowerCase() == rowValue.toLowerCase()) {
-              error = true
-            }
-          }
+          } else error = true
         } else error = true
-      } else error = true
+      }
+      error == false ? allStatuses.push(status) : null
     }
-    error == false ? allStatuses.push(status) : null
   }
   const priority = Math.max(...allStatuses.map(status => status.priority))
   if (allStatuses.length > 0) {
