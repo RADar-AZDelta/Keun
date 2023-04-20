@@ -247,7 +247,6 @@
     } else {
       athenaFiltering = filter
     }
-    // TODO: let the filters from previous sessions (localstorage) apply to the API call
     const URL = assembleURL(mappingURL, APIFilters, athenaPagination, athenaFiltering, athenaSorting, athenaNames)
     APICall = URL
     return URL
@@ -313,6 +312,24 @@
       else col.visible = true
     }
     columns = columns
+  }
+
+  const selectNextRow = async () => {
+    if (selectedRowIndex + 1 <= data.length) selectedRowIndex += 1
+    selectedRow = Object.values(data[selectedRowIndex])
+    athenaFiltering = String(
+      selectedRow[columns.indexOf(columns.find(column => column.id == athenaFilteredColumn)!) as keyof object]
+    )
+    fetchDataURL = fetchData
+  }
+
+  const selectPreviousRow = async () => {
+    if (selectedRowIndex - 1 >= 0) selectedRowIndex -= 1
+    selectedRow = Object.values(data[selectedRowIndex])
+    athenaFiltering = String(
+      selectedRow[columns.indexOf(columns.find(column => column.id == athenaFilteredColumn)!) as keyof object]
+    )
+    fetchDataURL = fetchData
   }
 
   let fetchDataURL = fetchData
@@ -383,7 +400,7 @@
     filterColumns={['sourceName', 'sourceCode']}
   >
     <div slot="currentRow" class="currentRow">
-      <button id="left" on:click={() => assembleAthenaURL}
+      <button id="left" on:click={selectPreviousRow} disabled={selectedRowIndex == 0 ? true : false}
         ><SvgIcon href="icons.svg" id="arrow-left" width="16px" height="16px" />
       </button>
       <table class="table">
@@ -393,14 +410,14 @@
           <th>sourceFrequency</th>
         </tr>
         <tr>
-          {#if data[0] != undefined}
-            <td>{data[0].name}</td>
-            <td>{data[0].address}</td>
-            <td>{data[0].country}</td>
+          {#if data[selectedRowIndex] != undefined}
+            <td>{data[selectedRowIndex].name}</td>
+            <td>{data[selectedRowIndex].address}</td>
+            <td>{data[selectedRowIndex].country}</td>
           {/if}
         </tr>
       </table>
-      <button id="right" on:click={() => assembleAthenaURL}>
+      <button id="right" on:click={selectNextRow} disabled={selectedRowIndex == data.length ? true : false}>
         <SvgIcon href="icons.svg" id="arrow-right" width="16px" height="16px" />
       </button>
     </div>
