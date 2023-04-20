@@ -5,6 +5,8 @@ export interface CustomOptionsEvents {
   filterOptionsChanged: FilterOptionsChangedEventDetail
   columnVisibilityChanged: ColumnVisibilityChangedEventDetail
   singleMapping: SingleMappingEventDetail
+  multipleMapping: MultipleMappingEventDetail
+  removeMapping: RemoveMappingEventDetail
   actionPerformed: ActionPerformedEventDetail
   autoMapping: AutoMappingEventDetail
 }
@@ -24,6 +26,16 @@ export interface ColumnVisibilityChangedEventDetail {
 }
 
 export interface SingleMappingEventDetail {
+  row: any[]
+}
+
+export interface MultipleMappingEventDetail {
+  row: any[]
+}
+
+export interface RemoveMappingEventDetail {
+  index: number
+  multiple: boolean
   row: any[]
 }
 

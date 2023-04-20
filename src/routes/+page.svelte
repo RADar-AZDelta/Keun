@@ -12,6 +12,7 @@
     ColumnVisibilityChangedEventDetail,
     FilterOptionsChangedEventDetail,
     IStatus,
+    MultipleMappingEventDetail,
     SingleMappingEventDetail,
     SingleSorting,
     VisibilityChangedEventDetail,
@@ -172,7 +173,6 @@
   function columnVisibilityChanged(event: CustomEvent<ColumnVisibilityChangedEventDetail>) {
     const columnIndex = columns.indexOf(event.detail.column)
     columns[columnIndex].visible = event.detail.visible
-    columns = columns
   }
 
   function mappingVisibilityChanged(event: CustomEvent<VisibilityChangedEventDetail>) {
@@ -199,34 +199,33 @@
   async function autoMapping(event: CustomEvent<AutoMappingEventDetail>) {
     const row = event.detail.row
     const index = columns.indexOf(columns.find(column => column.id == athenaFilteredColumn)! as keyof object)
-    await assembleAthenaURL(row[index])
-      .then(async (URL: string) => await fetch(URL))
-      .then(async (response: Response) => await response.json())
-      .then((res: any) => {
-        const firstRow = res.content[0]
-        mapRow(firstRow, event.detail.index)
-      })
-    columns = columns
-    matrix = data.map(obj => Object.values(obj))
-    matrix = matrix
+
+    const API = await assembleAthenaURL(row[index])
+    const res = await fetch(API)
+    const resData = await res.json()
+    const firstRow = resData.content[0]
+    if (data[event.detail.index] != undefined) {
+      const { mappedIndex, mappedRow } = await mapRow(firstRow, event.detail.index)
+      await dataTableMatrix.updateRows(new Map([[mappedIndex, mappedRow]]))
+      matrix = data.map(obj => Object.values(obj))
+    }
     athenaFiltering = ''
     hideCertainColumns()
   }
 
   async function singleRowMapping(event: CustomEvent<SingleMappingEventDetail>) {
-    await mapRow(event.detail.row)
-    columns = columns
-    matrix = data.map(obj => Object.values(obj))
-    matrix = matrix
+    const { mappedIndex, mappedRow } = await mapRow(event.detail.row)
+    await dataTableMatrix.updateRows(new Map([[mappedIndex, mappedRow]]))
+  }
+
+  async function multipleRowMapping(event: CustomEvent<MultipleMappingEventDetail>) {
+    const { mappedIndex, mappedRow } = await mapRow(event.detail.row)
+    await insertRows(dataTableMatrix, [mappedRow])
   }
 
   function actionPerformed(event: CustomEvent<ActionPerformedEventDetail>) {
     columns.find(column => column.id == 'mappingStatus') == undefined ? columns.push({ id: 'mappingStatus' }) : null
-    // @ts-ignore
-    data[event.detail.index]['mappingStatus'] = event.detail.action
-    columns = columns
-    matrix = data.map(obj => Object.values(obj))
-    matrix = matrix
+    dataTableMatrix.updateRows(new Map([[event.detail.index, { mappingStatus: event.detail.action }]]))
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -260,10 +259,10 @@
     athenaPagination = pagination
     await assembleAthenaURL()
     const response = await fetch(APICall)
-    const data = await response.json()
+    const APIData = await response.json()
     return {
-      data: data.content,
-      totalRows: data.totalElements,
+      data: APIData.content,
+      totalRows: APIData.totalElements,
     }
   }
 
@@ -272,27 +271,32 @@
     let rowIndex
     if (i == undefined) rowIndex = selectedRowIndex
     else rowIndex = i
+    let rowData = data[rowIndex]
 
     for (let [name, alt] of importantAthenaColumns) {
       columns.find(column => column.id == alt) == undefined ? columns.push({ id: alt }) : null
       const index = athenaColumns.indexOf(athenaColumns.find(column => column.id == name)!)
-      if (row instanceof Array == false) data[rowIndex][alt as keyof Object] = row[name as keyof object]
-      else data[rowIndex][alt as keyof Object] = row[index]
+      if (row instanceof Array == false) rowData[alt as keyof Object] = row[name as keyof object]
+      else rowData[alt as keyof Object] = row[index]
     }
     for (let col of Object.keys(additionalFields)) {
       columns.find(column => column.id == col) == undefined ? columns.push({ id: col }) : null
       // @ts-ignore
-      if (col == 'equivalence') data[rowIndex][col] = equivalenceMapping
+      if (col == 'equivalence') rowData[col] = equivalenceMapping
       else if ((col == 'ADD_INFO:author1' || col == 'ADD_INFO:author2') && authorFilled == false) {
         const { first, second } = await checkForAuthor(data, columns, author)
         // @ts-ignore
-        data[rowIndex]['ADD_INFO:author1'] = first
+        rowData['ADD_INFO:author1'] = first
         // @ts-ignore
-        data[rowIndex]['ADD_INFO:author2'] = second
+        rowData['ADD_INFO:author2'] = second
         authorFilled = true
       }
       // @ts-ignore
-      else data[rowIndex][col] = additionalFields[col]
+      else rowData[col] = additionalFields[col]
+    }
+    return {
+      mappedIndex: rowIndex,
+      mappedRow: rowData,
     }
   }
 
@@ -311,7 +315,6 @@
       if (hiddenColumns.includes(col.id)) col.visible = false
       else col.visible = true
     }
-    columns = columns
   }
 
   const selectNextRow = async () => {
@@ -332,18 +335,22 @@
     fetchDataURL = fetchData
   }
 
+  const insertRows = async (dataTable: DataTable, rows: any[]) => {
+    await dataTable.insertRows(rows)
+  }
+
   let fetchDataURL = fetchData
 
   $: {
     if (mounted == true && (author == '' || author == undefined || author == null)) authorVisibility = true
   }
 
-  onMount(() => {
-    localStorageGetter('author') !== null ? (author = localStorageGetter('author')) : null
+  onMount(async () => {
+    localStorageGetter('author', false, false) !== null ? (author = localStorageGetter('author', false, false)) : null
     if (author != '' || author != undefined || author != null) authorVisibility = false
     else authorVisibility = true
 
-    localStorageGetter('options') !== null ? (settings = localStorageGetter('options', true)) : null
+    localStorageGetter('options', true, true) !== null ? (settings = localStorageGetter('options', true, true)) : null
 
     mounted = true
   })
@@ -430,6 +437,7 @@
             let:index
             on:generalVisibilityChanged={mappingVisibilityChanged}
             on:singleMapping={singleRowMapping}
+            on:multipleMapping={multipleRowMapping}
             {renderedRow}
             columns={athenaColumns}
             {index}
@@ -439,6 +447,8 @@
             {author}
             table="Athena"
             showMappingPopUp={mappingVisibility}
+            concept={selectedRow}
+            conceptColumns={columns}
             bind:dataTable={dataTableAthena}
           />
         </DataTable>
