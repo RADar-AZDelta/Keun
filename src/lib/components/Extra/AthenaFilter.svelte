@@ -1,14 +1,17 @@
 <script lang="ts">
-    import type { ICategories } from '../Types'
+  import { checkForScroll } from '$lib/utils'
+  import type { ICategories } from '../Types'
   import SvgIcon from './SvgIcon.svelte'
 
-  export let filterName: string,
-    filterOptions: ICategories,
+  export let filter: {
+      name: string
+      categories: ICategories
+    },
     openedFilter: string,
     allowInput: boolean = true
 
   let filterInput: string
-  let filteredFilterOptions: ICategories = filterOptions
+  let filteredFilterOptions: ICategories = filter.categories
 
   function onChange(
     event: Event & {
@@ -20,38 +23,37 @@
     updateOptionsFromFilter(inputValue)
   }
 
-  const checkForScroll = (): 'scroll' | null | undefined => {
-    if (filterOptions.options.length > 3) return 'scroll'
-    else return null
-  }
-
   const showCategories = async (): Promise<void> => {
-    openedFilter == filterName ? (openedFilter = '') : (openedFilter = filterName)
+    openedFilter == filter.name ? (openedFilter = '') : (openedFilter = filter.name)
   }
 
   const removeInputFromFilter = async (): Promise<void> => {
     filterInput = ''
-    filteredFilterOptions = filterOptions
+    filteredFilterOptions = filter.categories
   }
 
   const updateOptionsFromFilter = async (input: string): Promise<void> => {
-    const options = filterOptions.options.filter(op => op.toLowerCase().includes(input.toLowerCase()))
+    const options = filter.categories.options.filter(op => op.toLowerCase().includes(input.toLowerCase()))
     filteredFilterOptions = { options: options }
   }
 </script>
 
-<button on:click={showCategories} class={`${openedFilter == filterName ? 'border-radius-top' : null}`}>
-  <p>{filterName}</p>
+<button
+  data-component="filter-button"
+  on:click={showCategories}
+  class={`${openedFilter == filter.name ? 'border-radius-top' : null}`}
+>
+  <p>{filter.name}</p>
   <SvgIcon href="icons.svg" id="updown" width="16px" height="16px" />
 </button>
-{#if openedFilter == filterName}
-  <div data-component="filter-item" class={checkForScroll()}>
+{#if openedFilter == filter.name}
+  <div data-component="filter-item" class={checkForScroll(filter.categories.options, 3)}>
     {#if allowInput == true}
       <div data-component="filter-input">
         <input
           type="text"
           placeholder="filter"
-          data-component={filterName}
+          data-component={filter.name}
           bind:value={filterInput}
           on:change={onChange}
         />

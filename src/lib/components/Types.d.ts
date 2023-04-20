@@ -15,8 +15,7 @@ export interface VisibilityChangedEventDetail {
 }
 
 export interface FilterOptionsChangedEventDetail {
-  filter: string
-  option: string
+  filters: Map<string, string[]>
 }
 
 export interface ColumnVisibilityChangedEventDetail {

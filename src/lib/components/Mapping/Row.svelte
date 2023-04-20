@@ -66,7 +66,7 @@
 
   let fullRow: any
 
-  $: dataTable != undefined ? dataTable.getFullRow(index).then((row) => fullRow = row) : fullRow = renderedRow
+  $: dataTable != undefined && table != "Athena" ? dataTable.getFullRow(index).then((row) => fullRow = row) : fullRow = renderedRow
 
   onMount(() => {
     if (table == 'Main') dispatch('autoMapping', { row: renderedRow, index: index })
