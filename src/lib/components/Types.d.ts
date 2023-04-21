@@ -34,8 +34,6 @@ export interface MultipleMappingEventDetail {
 }
 
 export interface RemoveMappingEventDetail {
-  index: number
-  multiple: boolean
   row: any[]
 }
 

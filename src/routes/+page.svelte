@@ -13,6 +13,7 @@
     FilterOptionsChangedEventDetail,
     IStatus,
     MultipleMappingEventDetail,
+    RemoveMappingEventDetail,
     SingleMappingEventDetail,
     SingleSorting,
     VisibilityChangedEventDetail,
@@ -31,6 +32,7 @@
   import Row from '$lib/components/Mapping/Row.svelte'
   import { onMount } from 'svelte/internal'
   import ShowColumns from '$lib/components/Extra/ShowColumns.svelte'
+  import AthenaRow from '$lib/components/Mapping/AthenaRow.svelte'
 
   let mounted: boolean = false
   let settingsVisibility: boolean = false
@@ -47,6 +49,7 @@
   let athenaFilters = new Map<string, string[]>()
   let selectedRow: any[]
   let selectedRowIndex: number
+  let selectedRowMap = new Map<number, string[]>()
 
   let mappingURL: string = 'https://athena.ohdsi.org/api/v1/concepts?'
   let athenaPagination: IPagination = {
@@ -66,6 +69,9 @@
   let matrix = data.map(obj => Object.values(obj))
 
   let columns: IColumnMetaData[] = [
+    {
+      id: 'id',
+    },
     {
       id: 'name',
     },
@@ -219,8 +225,13 @@
   }
 
   async function multipleRowMapping(event: CustomEvent<MultipleMappingEventDetail>) {
-    const { mappedIndex, mappedRow } = await mapRow(event.detail.row)
-    await insertRows(dataTableMatrix, [mappedRow])
+    const { mappedIndex, mappedRow } = await multipleMapRow(event.detail.row, selectedRowIndex)
+    await dataTableMatrix.updateRows(new Map([[mappedIndex, { ...mappedRow }]]))
+  }
+
+  async function removeMapping(event: CustomEvent<RemoveMappingEventDetail>) {
+    const { mappedIndex, mappedRow } = await multipleMapRow(event.detail.row, selectedRowIndex, true)
+    await dataTableMatrix.updateRows(new Map([[mappedIndex, { ...mappedRow }]]))
   }
 
   function actionPerformed(event: CustomEvent<ActionPerformedEventDetail>) {
@@ -294,6 +305,42 @@
       // @ts-ignore
       else rowData[col] = additionalFields[col]
     }
+    return {
+      mappedIndex: rowIndex,
+      mappedRow: rowData,
+    }
+  }
+
+  const multipleMapRow = async (row: any[], i?: number, deletion: boolean = false) => {
+    let rowIndex
+    if (i == undefined) rowIndex = selectedRowIndex
+    else rowIndex = i
+    let rowData = data[rowIndex]
+
+    for (let [name, alt] of importantAthenaColumns) {
+      columns.find(column => column.id == alt) == undefined ? columns.push({ id: alt }) : null
+      const index = athenaColumns.indexOf(athenaColumns.find(column => column.id == name)!)
+      if (row instanceof Array == false) {
+        if (deletion == false)
+          // @ts-ignore
+          rowData[alt as keyof Object] = `${rowData[alt as keyof Object]}
+        ${row[name as keyof object]}`
+        else {
+          // @ts-ignore
+          rowData[alt as keyof Object] = rowData[alt as keyof Object].replace(row[name as keyof object], '')
+        }
+      } else {
+        if (deletion == false) {
+          // @ts-ignore
+          rowData[alt as keyof Object] = `${rowData[alt as keyof Object]}
+      ${row[index]}`
+        } else {
+          // @ts-ignore
+          rowData[alt as keyof Object] = rowData[alt as keyof Object].replace(row[index], '')
+        }
+      }
+    }
+
     return {
       mappedIndex: rowIndex,
       mappedRow: rowData,
@@ -431,25 +478,20 @@
     <div slot="table">
       {#if APICall != ''}
         <DataTable data={fetchDataURL} columns={athenaColumns} bind:this={dataTableAthena}>
-          <Row
+          <AthenaRow
             slot="row"
             let:renderedRow
             let:index
-            on:generalVisibilityChanged={mappingVisibilityChanged}
             on:singleMapping={singleRowMapping}
             on:multipleMapping={multipleRowMapping}
+            on:removeMapping={removeMapping}
             {renderedRow}
             columns={athenaColumns}
-            {index}
-            editable={false}
-            actions={true}
             {settings}
-            {author}
-            table="Athena"
-            showMappingPopUp={mappingVisibility}
-            concept={selectedRow}
-            conceptColumns={columns}
-            bind:dataTable={dataTableAthena}
+            bind:selectedRow
+            selectedRowColumns={columns}
+            {selectedRowIndex}
+            bind:mappedConceptIds={selectedRowMap}
           />
         </DataTable>
       {/if}
@@ -475,8 +517,6 @@
     {columns}
     {index}
     editable={true}
-    actions={true}
-    {settings}
     showMappingPopUp={mappingVisibility}
     {statuses}
     {author}
