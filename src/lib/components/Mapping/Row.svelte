@@ -16,6 +16,8 @@
     statuses: IStatus[] = [],
     author: string
 
+  let fullRow: any
+  let state: string = ''
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
   function onClickMapping() {
@@ -29,34 +31,50 @@
     dispatch('generalVisibilityChanged', object)
   }
 
-  function onClickApproving() {
+  async function onClickApproving() {
+    await fetchRow()
+    state = 'APPROVED'
     dispatch('actionPerformed', { action: 'APPROVED', index: index })
   }
 
-  function onClickFlagging() {
+  async function onClickFlagging() {
+    await fetchRow()
+    state = 'FLAGGED'
     dispatch('actionPerformed', { action: 'FLAGGED', index: index })
   }
 
-  function onClickUnapproving() {
+  async function onClickUnapproving() {
+    await fetchRow()
+    state = 'UNAPPROVED'
     dispatch('actionPerformed', { action: 'UNAPPROVED', index: index })
+  }
+
+  function onClickDeletion() {
+    dispatch('deleteRow', { indexes: [index] })
+  }
+
+  async function fetchRow() {
+    const row = await dataTable.getFullRow(index)
+    fullRow = row.row
   }
 
   async function valueUpdate(e: CustomEvent<any>, i: number) {
     await dataTable.updateRows(new Map([[index, Object.fromEntries([[columns[i].id, e.detail]])]]))
   }
 
-  let fullRow: any
-
-  $: dataTable != undefined ? dataTable.getFullRow(index).then(row => (fullRow = row)) : (fullRow = renderedRow)
-
-  onMount(() => {
-    dispatch('autoMapping', { row: renderedRow, index: index })
+  onMount(async () => {
+    const conceptIdIndex = columns.findIndex(column => column.id === 'conceptId')
+    const conceptId = renderedRow[conceptIdIndex]
+    conceptId == undefined ? dispatch('autoMapping', { row: renderedRow, index: index }) : null
+    fullRow = await dataTable.getFullRow(index)
   })
 </script>
 
-<tr style={`background-color: ${getColorFromStatus(columns, fullRow, statuses, author)}`}>
+<tr style={`background-color: ${getColorFromStatus(fullRow, columns, state, statuses, author)}`}>
   <td class="actions">
     <button on:click={onClickMapping}><SvgIcon href="icons.svg" id="map" width="16px" height="16px" /></button>
+    <button on:click={onClickDeletion}><SvgIcon href="icons.svg" id="trash" width="16px" height="16px" /></button>
+    <div />
     <button on:click={onClickApproving}><SvgIcon href="icons.svg" id="check" width="16px" height="16px" /></button>
     <button on:click={onClickFlagging}><SvgIcon href="icons.svg" id="flag" width="16px" height="16px" /></button>
     <button on:click={onClickUnapproving}><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button>
@@ -82,7 +100,8 @@
 
 <style>
   .actions {
-    display: flex;
-    align-items: center;
+    display: grid;
+    grid-template-columns: repeat(3, min-content);
+    grid-template-rows: repeat(2, min-content);
   }
 </style>
