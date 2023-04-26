@@ -64,22 +64,20 @@ export const getAuthor = (getAuthorEvent?: Function) => {
 }
 
 export const checkForAuthor = (data: any, columns: IColumnMetaData[], author: string) => {
-  const author1Index = columns.findIndex(col => col.id == 'ADD_INFO:author1')
-  const author2Index = columns.findIndex(col => col.id == 'ADD_INFO:author2')
-  if (data[author1Index] != '' && data[author1Index] != undefined && data[author1Index] != author) {
+  if (data['ADD_INFO:author1'] != '' && data['ADD_INFO:author1'] != undefined && data['ADD_INFO:author1'] != author) {
     return {
       first: author,
-      second: data[author1Index],
+      second: data['ADD_INFO:author1'],
     }
   } else if (
-    data[author1Index] != '' &&
-    data[author1Index] != undefined &&
-    data[author2Index] != '' &&
-    data[author2Index] != undefined
+    data['ADD_INFO:author1'] != '' &&
+    data['ADD_INFO:author1'] != undefined &&
+    data['ADD_INFO:author2'] != '' &&
+    data['ADD_INFO:author2'] != undefined
   ) {
     return {
       first: author,
-      second: data[author1Index],
+      second: data['ADD_INFO:author1'],
     }
   } else {
     return {
@@ -98,15 +96,22 @@ export const updateSettings = async (settings: Map<string, boolean>, name: strin
 /*
     Methods for the color of a row
 */
-export function getColorFromStatus(columns: IColumnMetaData[], row: any, statuses: IStatus[], author: string) {
+export function getColorFromStatus(
+  row: any,
+  columns: IColumnMetaData[],
+  state: string,
+  statuses: IStatus[],
+  author: string
+) {
   const allStatuses = []
   if (row != undefined) {
     for (let status of statuses) {
       let error = false
       for (let dep of status.dependencies) {
-        const column = columns.find(col => col.id.toLowerCase() == dep.column.toLowerCase())
-        if (column != undefined) {
-          const rowValue = String(row[column.id])
+        const columnIndex = columns.findIndex(col => col.id.toLowerCase() == dep.column.toLowerCase())
+        if (columnIndex != undefined) {
+          let rowValue
+          dep.column.toLowerCase() == 'mappingstatus' ? (rowValue = state) : (rowValue = String(row[columnIndex]))
           if (rowValue != undefined) {
             if (dep.status.toLowerCase() == 'author') dep.status = author
             if (dep.equal == true) {

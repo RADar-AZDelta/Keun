@@ -2,7 +2,7 @@
   import { createEventDispatcher, onMount } from 'svelte'
   import Equivalence from '../Mapping/Equivalence.svelte'
   import AthenaFilter from './AthenaFilter.svelte'
-  import filtersJSON from '$lib/filters.json'
+  import filtersJSON from '$lib/data/filters.json'
   import {localStorageGetter, localStorageSetter } from '$lib/utils'
   import type { CustomOptionsEvents, ICategories } from '../Types'
   import SvgIcon from './SvgIcon.svelte'
