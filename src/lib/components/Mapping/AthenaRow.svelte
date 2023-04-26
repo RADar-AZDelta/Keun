@@ -1,35 +1,40 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount } from 'svelte'
+  import { createEventDispatcher } from 'svelte'
   import type { CustomOptionsEvents } from '../Types'
   import SvgIcon from '../Extra/SvgIcon.svelte'
   import type DataTable from '../../../../lib/RADar-DataTable/src/lib/components/DataTable.svelte'
-  import { query } from 'arquero'
 
   export let renderedRow: any[],
     settings: Map<string, boolean>,
     mainTable: DataTable,
-    selectedRowIndex: number
+    selectedRowIndex: number,
+    selectedRow: Record<string, any>,
+    mappedRows: Map<string, any[]>
 
   let alreadyMapped: boolean = false
+  let originalRow: Record<string, any>
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
   let multipleConcepts =
     settings.get('Map to multiple concepts') != undefined ? settings.get('Map to multiple concepts')! : false
 
   async function onClickMapping() {
-    const originalRow = await mainTable.getFullRow(selectedRowIndex)
+    originalRow = await mainTable.getFullRow(selectedRowIndex)
     if (multipleConcepts == true) dispatch('multipleMapping', { originalRow, row: renderedRow })
     else dispatch('singleMapping', { originalRow, row: renderedRow })
   }
 
-  onMount(async() => {
-    // @ts-ignore
-    const q = query().params({ value: renderedRow[0] }).filter((d: any, params: any) => d!.conceptId == params.value).toObject()
-    const res = await mainTable.executeQueryAndReturnResults(q)
-    if(res.queriedData.length > 0){
-      alreadyMapped = true
+  const checkRow = () => {
+    if (selectedRow) {
+      const res = mappedRows.get(String(selectedRow[0]))
+      res == undefined ? null : res.includes(renderedRow[0]) ? (alreadyMapped = true) : (alreadyMapped = false)
     }
-  })
+  }
+
+  $: {
+    renderedRow
+    checkRow()
+  }
 </script>
 
 <tr>

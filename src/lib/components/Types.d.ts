@@ -10,6 +10,7 @@ export interface CustomOptionsEvents {
   actionPerformed: ActionPerformedEventDetail
   autoMapping: AutoMappingEventDetail
   deleteRow: DeleteRowEventDetail
+  registerMapping: RegisterMappingEventDetail
 }
 
 export interface VisibilityChangedEventDetail {
@@ -52,6 +53,11 @@ export interface AutoMappingEventDetail {
 
 export interface DeleteRowEventDetail {
   indexes: number[]
+}
+
+export interface RegisterMappingEventDetail {
+  sourceCode: string | number
+  conceptId: string | number
 }
 
 export interface SingleSorting {

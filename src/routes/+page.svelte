@@ -14,6 +14,7 @@
     FilterOptionsChangedEventDetail,
     IStatus,
     MultipleMappingEventDetail,
+    RegisterMappingEventDetail,
     RemoveMappingEventDetail,
     SingleMappingEventDetail,
     SingleSorting,
@@ -43,13 +44,14 @@
   let authorInput: string = ''
   let author: string = ''
   let mappingVisibility: boolean = false
+  let registeredMapping = new Map<string, any[]>()
 
   let APIFilters: string[]
   let APICall: string
   let equivalenceMapping: string = 'EQUAL'
   let athenaFilteredColumn: string = 'sourceName'
   let athenaFilters = new Map<string, string[]>()
-  let selectedRow: any[]
+  let selectedRow: Record<string, any>
   let selectedRowIndex: number
   let lastRow: boolean = false
   let rowsMapping = new Map<number, Record<string, any>>()
@@ -156,9 +158,8 @@
     settingsVisibility = event.detail.visibility
   }
 
-  function columnVisibilityChanged(event: CustomEvent<ColumnVisibilityChangedEventDetail>) {
-    const columnIndex = columns.indexOf(event.detail.column)
-    columns[columnIndex].visible = event.detail.visible
+  async function columnVisibilityChanged(event: CustomEvent<ColumnVisibilityChangedEventDetail>) {
+    await dataTableFile.updateColumns([{ id: event.detail.column.id, visible: event.detail.visible }])
   }
 
   function mappingVisibilityChanged(event: CustomEvent<VisibilityChangedEventDetail>) {
@@ -166,6 +167,7 @@
     event.detail.data != undefined
       ? ((selectedRow = event.detail.data.row), (selectedRowIndex = event.detail.data.index))
       : null
+    athenaFiltering = ''
   }
 
   function filterOptionsChanged(event: CustomEvent<FilterOptionsChangedEventDetail>) {
@@ -220,6 +222,12 @@
 
   async function deleteRow(event: CustomEvent<DeleteRowEventDetail>) {
     await dataTableFile.deleteRows(event.detail.indexes)
+  }
+
+  async function registerMapping(event: CustomEvent<RegisterMappingEventDetail>) {
+    let mapped = registeredMapping.get(String(event.detail.sourceCode))
+    mapped == undefined ? mapped = [event.detail.conceptId] : mapped?.includes(event.detail.conceptId) ? null : mapped?.push(event.detail.conceptId)
+    registeredMapping.set(String(event.detail.sourceCode), mapped!)
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -366,7 +374,8 @@
 
   const selectNextRow = async () => {
     if ((await dataTableFile.getFullRow(selectedRowIndex + 1)) != undefined) selectedRowIndex += 1
-    const selectedRow = await dataTableFile.getFullRow(selectedRowIndex)
+    const selectedRowObj = await dataTableFile.getFullRow(selectedRowIndex)
+    selectedRow = selectedRowObj.row
     const selectedRowValues = Object.values(selectedRow)
     athenaFiltering = String(
       selectedRowValues[columns.indexOf(columns.find(column => column.id == athenaFilteredColumn)!) as keyof object]
@@ -402,7 +411,7 @@
     else authorVisibility = true
 
     localStorageGetter('options', true, true) !== null ? (settings = localStorageGetter('options', true, true)) : null
-    
+
     mounted = true
   })
 </script>
@@ -430,8 +439,8 @@
               settings = await updateSettings(settings, name, value)
             }}
           />
-          <span class="slider round" /></label
-        >
+          <span class="slider round" />
+        </label>
       </div>
     {/each}
     <ShowColumns on:columnVisibilityChanged={columnVisibilityChanged} {columns} />
@@ -462,18 +471,18 @@
         ><SvgIcon href="icons.svg" id="arrow-left" width="16px" height="16px" />
       </button>
       <table class="table">
-        <!-- <tr>
+        <tr>
           <th>sourceCode</th>
           <th>sourceName</th>
           <th>sourceFrequency</th>
         </tr>
         <tr>
-          {#if data[selectedRowIndex] != undefined}
-            <td>{data[selectedRowIndex].name}</td>
-            <td>{data[selectedRowIndex].address}</td>
-            <td>{data[selectedRowIndex].country}</td>
+          {#if selectedRow != undefined}
+            <td>{selectedRow[0]}</td>
+            <td>{selectedRow[1]}</td>
+            <td>{selectedRow[2]}</td>
           {/if}
-        </tr> -->
+        </tr>
       </table>
       <button id="right" on:click={selectNextRow} disabled={lastRow}>
         <SvgIcon href="icons.svg" id="arrow-right" width="16px" height="16px" />
@@ -498,6 +507,8 @@
             {settings}
             mainTable={dataTableFile}
             {selectedRowIndex}
+            {selectedRow}
+            bind:mappedRows={registeredMapping}
           />
         </DataTable>
       {/if}
@@ -521,6 +532,7 @@
     on:actionPerformed={actionPerformed}
     on:autoMapping={autoMapping}
     on:deleteRow={deleteRow}
+    on:registerMapping={registerMapping}
     {renderedRow}
     {columns}
     {index}
