@@ -3,17 +3,26 @@
   import Equivalence from '../Mapping/Equivalence.svelte'
   import AthenaFilter from './AthenaFilter.svelte'
   import filtersJSON from '$lib/data/filters.json'
-  import {localStorageGetter, localStorageSetter } from '$lib/utils'
+  import { localStorageGetter, localStorageSetter } from '$lib/utils'
   import type { CustomOptionsEvents, ICategories } from '../Types'
   import SvgIcon from './SvgIcon.svelte'
   import AthenaActivatedFilter from './AthenaActivatedFilter.svelte'
+  import type DataTable from '../../../../lib/RADar-DataTable/src/lib/components/DataTable.svelte'
+  import { query } from 'arquero'
 
-  export let urlFilters: string[], equivalenceMapping: string, athenaFilteredColumn: string, filterColumns: string[]
+  export let urlFilters: string[],
+    equivalenceMapping: string,
+    athenaFilteredColumn: string,
+    filterColumns: string[],
+    selectedRow: any,
+    mainTable: DataTable
 
   let JSONFilters = new Map<string, ICategories>([])
   let activatedAthenaFilters = new Map<string, string[]>()
   let openedFilter: string
   let savedFilters: Map<string, string[]>
+
+  let alreadyMapped: Record<string, any>[] = []
 
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
@@ -81,7 +90,15 @@
     dispatch('filterOptionsChanged', { filters: activatedAthenaFilters })
   }
 
-  onMount(() => {
+  onMount(async () => {
+    const q = query()
+      .params({ value: selectedRow[0] })
+      .filter((d: any, params: any) => d.sourceCode == params.value)
+      .toObject()
+    const res = await mainTable.executeQueryAndReturnResults(q)
+    for (let row of res.queriedData) {
+      alreadyMapped.push(row)
+    }
     savedFilters =
       localStorageGetter('AthenaFilters') !== null
         ? new Map<string, string[]>()
@@ -124,18 +141,31 @@
   </section>
   <section data-component="table-pop-up">
     <div data-component="table-head">
-      <h2>Athena data</h2>
-      <slot name="currentRow" />
-      <div class="options">
-        <Equivalence bind:Eq={equivalenceMapping} />
-        <div class="columnFilter">
-          <p>Filter on column:</p>
-          <select class="columnSelect" name="columns" id="columns" on:change={changeFilteredColumnAthena}>
-            {#each filterColumns as column}
-              <option value={column}>{column}</option>
-            {/each}
-          </select>
+      <div class="table-head-top-half">
+        <h2>Athena data</h2>
+        <slot name="currentRow" />
+        <div class="options">
+          <Equivalence bind:Eq={equivalenceMapping} />
+          <div class="columnFilter">
+            <p>Filter on column:</p>
+            <select class="columnSelect" name="columns" id="columns" on:change={changeFilteredColumnAthena}>
+              {#each filterColumns as column}
+                <option value={column}>{column}</option>
+              {/each}
+            </select>
+          </div>
         </div>
+      </div>
+      <div class="table-head-bottom-half">
+        <table>
+          <thead>
+            <tr>
+              <th>Id</th>
+              <th>Name</th>
+            </tr>
+          </thead>
+          <slot name="mappedRows" mapped={alreadyMapped} />
+        </table>
       </div>
     </div>
     <div data-component="table">
@@ -144,3 +174,16 @@
     <slot name="extra" />
   </section>
 </div>
+
+<style>
+  .table-head-top-half {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+  .table-head-bottom-half {
+    display: flex;
+    width: 100%;
+  }
+</style>
