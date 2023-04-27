@@ -1,0 +1,159 @@
+<svg xmlns="http://www.w3.org/2000/svg" xml:space="preserve" version="1.1">
+<defs>
+    <symbol
+      id="arrow-left"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+  <line x1="19" y1="12" x2="5" y2="12" />
+  <polyline points="12 19 5 12 12 5" />
+</symbol>
+    <symbol
+      id="arrow-right"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <line x1="5" y1="12" x2="19" y2="12" />
+      <polyline points="12 5 19 12 12 19" />
+    </symbol>
+        <symbol id="updown" viewbox="0 -10 100 110">
+      <g>
+        <path
+          style="fill-opacity: var(--up-opacity, 1); fill: var(--up-color, #888888);"
+          d="M1.5 6.5l6 -6 5.962 6c-0.984,0 -4.962,0 -11.962,0z"
+        />
+        <path
+          style="fill-opacity: var(--down-opacity, 1); fill: var(--down-color, #888888);"
+          d="M13.5 9.5l-6 6 -6 -6c0,0 12,0 12,0z"
+        />
+      </g>
+    </symbol>
+    <symbol
+      id="check"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+  <polyline points="20 6 9 17 4 12" />
+</symbol>
+<symbol
+      id="edit"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+  <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+</symbol>
+<symbol
+      id="plus"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+  <line x1="12" y1="5" x2="12" y2="19" />
+  <line x1="5" y1="12" x2="19" y2="12" />
+</symbol>
+<symbol
+      id="settings"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+  <path
+        d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
+      />
+  <circle cx="12" cy="12" r="3" />
+</symbol>
+          <symbol
+      id="x"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+    >
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </symbol>
+
+    <symbol id="user" viewBox="0 0 448 512">
+    <path
+        d="M224 256A128 128 0 1 0 224 0a128 128 0 1 0 0 256zm-45.7 48C79.8 304 0 383.8 0 482.3C0 498.7 13.3 512 29.7 512H418.3c16.4 0 29.7-13.3 29.7-29.7C448 383.8 368.2 304 269.7 304H178.3z"
+      />
+    </symbol>
+    <symbol
+      id="map"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class="lucide lucide-git-branch-plus"
+    ><path d="M6 3v12" /><path d="M18 9a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" /><path
+        d="M6 21a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"
+      /><path d="M15 6a9 9 0 0 0-9 9" /><path d="M18 15v6" /><path d="M21 18h-6" /></symbol>
+      <symbol
+      id="flag"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class="lucide lucide-flag"
+    ><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" /><line
+        x1="4"
+        x2="4"
+        y1="22"
+        y2="15"
+      /></symbol>
+      <symbol
+      id="unapprove"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class="lucide lucide-flag-off"
+    ><path d="M8 2c3 0 5 2 8 2s4-1 4-1v11" /><path d="M4 22V4" /><path d="M4 15s1-1 4-1 5 2 8 2" /><line
+        x1="2"
+        x2="22"
+        y1="2"
+        y2="22"
+      /></symbol>
+    <symbol
+      id="trash"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      class="lucide lucide-trash-2"
+    ><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path
+        d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"
+      /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></symbol>
+</defs>
+</svg>
