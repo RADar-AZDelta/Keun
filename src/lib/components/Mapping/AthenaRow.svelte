@@ -3,10 +3,13 @@
   import type { CustomOptionsEvents } from '../Types'
   import SvgIcon from '../Extra/SvgIcon.svelte'
   import type DataTable from '../../../../lib/RADar-DataTable/src/lib/components/DataTable.svelte'
+  import type { IColumnMetaData } from '../../../../lib/RADar-DataTable/src/lib/components/DataTable'
 
   export let renderedRow: any[],
+    columns: IColumnMetaData[],
     settings: Map<string, boolean>,
     mainTable: DataTable,
+    mainTableColumns: IColumnMetaData[],
     selectedRowIndex: number,
     selectedRow: Record<string, any>,
     mappedRows: Map<string, any[]>
@@ -20,8 +23,24 @@
 
   async function onClickMapping() {
     originalRow = await mainTable.getFullRow(selectedRowIndex)
-    if (multipleConcepts == true) dispatch('multipleMapping', { originalRow, row: renderedRow })
-    else dispatch('singleMapping', { originalRow, row: renderedRow })
+
+    let rowObj: Record<string, any> = {}
+    for (let i = 0; i < originalRow.row.length; i++) {
+      rowObj[mainTableColumns![i].id] = originalRow.row[i]
+    }
+    let renderedObj: Record<string, any> = {}
+    for (let i = 0; i < renderedRow.length; i++) {
+      renderedObj[columns[i].id] = renderedRow[i]
+    }
+    if (multipleConcepts == true) dispatch('multipleMapping', { originalRow: rowObj, row: renderedObj })
+    else {
+      dispatch('deleteRegisteredMapping', {
+        sourceCode: rowObj.sourceCode,
+        oldConceptId: rowObj.conceptId,
+        newConceptId: renderedObj.conceptId,
+      })
+      dispatch('singleMapping', { originalRow, row: renderedObj })
+    }
   }
 
   const checkRow = () => {
@@ -39,12 +58,8 @@
 
 <tr>
   <td class="actions">
-    {#if multipleConcepts}
-      {#if alreadyMapped == true}
-        <button class="apply"><SvgIcon href="icons.svg" id="check" width="16px" height="16px" /></button>
-      {:else}
-        <button on:click={onClickMapping}><SvgIcon href="icons.svg" id="map" width="16px" height="16px" /></button>
-      {/if}
+    {#if alreadyMapped == true}
+      <button class="apply"><SvgIcon href="icons.svg" id="check" width="16px" height="16px" /></button>
     {:else}
       <button on:click={onClickMapping}><SvgIcon href="icons.svg" id="map" width="16px" height="16px" /></button>
     {/if}
