@@ -476,6 +476,8 @@
     bind:equivalenceMapping
     bind:athenaFilteredColumn
     filterColumns={['sourceName', 'sourceCode']}
+    {selectedRow}
+    mainTable={dataTableFile}
   >
     <div slot="currentRow" class="currentRow">
       <button id="left" on:click={selectPreviousRow} disabled={selectedRowIndex == 0 ? true : false}
@@ -532,6 +534,16 @@
         <button> Map multiple </button>
       {/if}
     </div>
+    <div slot="mappedRows" let:mapped>
+      {#if mapped.length != 0}
+        {#each mapped as row}
+          <tr>
+            <td>{row.conceptId}</td>
+            <td>{row.conceptName}</td>
+          </tr>
+        {/each}
+      {/if}
+    </div>
   </AthenaLayout>
 </Modal>
 
@@ -557,3 +569,9 @@
     bind:dataTable={dataTableFile}
   />
 </DataTable>
+
+<style>
+  .currentRow {
+    display: flex;
+  }
+</style>
