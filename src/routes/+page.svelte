@@ -10,6 +10,7 @@
     ActionPerformedEventDetail,
     AutoMappingEventDetail,
     ColumnVisibilityChangedEventDetail,
+    DeleteRegisteredMappingEventDetail,
     DeleteRowEventDetail,
     FilterOptionsChangedEventDetail,
     IStatus,
@@ -221,12 +222,22 @@
   }
 
   async function deleteRow(event: CustomEvent<DeleteRowEventDetail>) {
+    const mapped = registeredMapping.get(String(event.detail.sourceCode))
+    mapped?.splice(mapped.indexOf(event.detail.conceptId), 1)
+    if((mapped!.length == 1 && mapped![0] == undefined) || (mapped!.length == 0)) registeredMapping.delete(String(event.detail.sourceCode))
+    else registeredMapping.set(String(event.detail.sourceCode), mapped!)
     await dataTableFile.deleteRows(event.detail.indexes)
   }
 
   async function registerMapping(event: CustomEvent<RegisterMappingEventDetail>) {
     let mapped = registeredMapping.get(String(event.detail.sourceCode))
     mapped == undefined ? mapped = [event.detail.conceptId] : mapped?.includes(event.detail.conceptId) ? null : mapped?.push(event.detail.conceptId)
+    registeredMapping.set(String(event.detail.sourceCode), mapped!)
+  }
+
+  async function deleteRegisteredMapping(event: CustomEvent<DeleteRegisteredMappingEventDetail>) {
+    let mapped = registeredMapping.get(String(event.detail.sourceCode))
+    mapped?.splice(mapped.indexOf(event.detail.oldConceptId), 1)
     registeredMapping.set(String(event.detail.sourceCode), mapped!)
   }
 
@@ -290,7 +301,7 @@
         }
         const index = athenaColumns.findIndex(column => column.id === name)
         if (row instanceof Array === false) rowObj[alt] = row[name as keyof object]
-        else rowObj[alt] = row[index]
+        else rowObj[columns.findIndex(col => col.id == alt)] = row[index]
       }
       for (let col of Object.keys(additionalFields)) {
         if (columns!.find(column => column.id == col) == undefined) {
@@ -503,9 +514,12 @@
             on:singleMapping={singleRowMapping}
             on:multipleMapping={multipleRowMapping}
             on:removeMapping={removeMapping}
+            on:deleteRegisteredMapping={deleteRegisteredMapping}
             {renderedRow}
+            columns={athenaColumns}
             {settings}
             mainTable={dataTableFile}
+            mainTableColumns={columns}
             {selectedRowIndex}
             {selectedRow}
             bind:mappedRows={registeredMapping}

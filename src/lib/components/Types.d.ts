@@ -11,6 +11,7 @@ export interface CustomOptionsEvents {
   autoMapping: AutoMappingEventDetail
   deleteRow: DeleteRowEventDetail
   registerMapping: RegisterMappingEventDetail
+  deleteRegisteredMapping: DeleteRegisteredMappingEventDetail
 }
 
 export interface VisibilityChangedEventDetail {
@@ -29,12 +30,12 @@ export interface ColumnVisibilityChangedEventDetail {
 
 export interface SingleMappingEventDetail {
   originalRow: Record<string, any>
-  row: any[]
+  row: Record<string, any>
 }
 
 export interface MultipleMappingEventDetail {
   originalRow: Record<string, any>
-  row: any[]
+  row: Record<string, any>
 }
 
 export interface RemoveMappingEventDetail {
@@ -53,11 +54,19 @@ export interface AutoMappingEventDetail {
 
 export interface DeleteRowEventDetail {
   indexes: number[]
+  sourceCode: string | number
+  conceptId: string | number
 }
 
 export interface RegisterMappingEventDetail {
   sourceCode: string | number
   conceptId: string | number
+}
+
+export interface DeleteRegisteredMappingEventDetail {
+  sourceCode: string | number
+  oldConceptId: string | number
+  newConceptId: string | number
 }
 
 export interface SingleSorting {

@@ -50,7 +50,11 @@
   }
 
   function onClickDeletion() {
-    dispatch('deleteRow', { indexes: [index] })
+    const conceptIdIndex = columns.findIndex(column => column.id === 'conceptId')
+    const conceptId = renderedRow[conceptIdIndex]
+    const sourceCodeIndex = columns.findIndex(column => column.id === 'sourceCode')
+    const sourceCode = renderedRow[sourceCodeIndex]
+    dispatch('deleteRow', { indexes: [index], sourceCode: sourceCode , conceptId: conceptId })
   }
 
   async function fetchRow() {
