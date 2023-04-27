@@ -16,6 +16,7 @@ importers:
       eslint: ^8.28.0
       eslint-config-prettier: ^8.5.0
       eslint-plugin-svelte3: ^4.0.0
+      lodash.debounce: ^4.0.8
       prettier: ^2.8.0
       prettier-plugin-svelte: ^2.8.1
       radar-datatable: file:lib\RADar-DataTable
@@ -30,6 +31,7 @@ importers:
       vitest: ^0.29.2
     dependencies:
       arquero: 5.1.0
+      lodash.debounce: 4.0.8
       radar-datatable: file:lib/RADar-DataTable
     devDependencies:
       '@playwright/test': 1.31.1
@@ -575,6 +577,10 @@ packages:
   /@types/json-schema/7.0.11:
     resolution: {integrity: sha512-wOuvG1SN4Us4rez+tylwwwCV1psiNVOkJeM3AUWUNWg/jDQY2+HE/444y5gc+jBmRqASOm2Oeh5c1axHobwRKQ==}
     dev: true
+
+  /@types/lodash/4.14.194:
+    resolution: {integrity: sha512-r22s9tAS7imvBt2lyHC9B8AGwWnXaYb1tY09oyLkXDs4vArpYJzw09nj8MLx5VfciBPGIb+ZwG0ssYnEPJxn/g==}
+    dev: false
 
   /@types/node/17.0.45:
     resolution: {integrity: sha512-w+tIMs3rq2afQdsPJlODhoUEKzFP1ayaoyl1CcnwtIlsVe7K7bA1NGm4s3PraqTLlXnbIN84zuBlxBWo1u9BLw==}
@@ -1668,6 +1674,10 @@ packages:
 
   /lodash.camelcase/4.3.0:
     resolution: {integrity: sha512-TwuEnCnxbc3rAvhf/LbG7tJUDzhqXyFnv3dtzLOPgCG/hODL7WFnsbwktkD7yUV0RrreP/l1PALq/YSg6VvjlA==}
+    dev: false
+
+  /lodash.debounce/4.0.8:
+    resolution: {integrity: sha512-FT1yDzDYEoYWhnSGnpE/4Kj1fLZkDFyqRb7fNt6FdYOSxlUWAtp42Eh6Wb0rGIv/m9Bgo7x4GhQbm5Ys4SG5ow==}
     dev: false
 
   /lodash.merge/4.6.2:
@@ -2786,7 +2796,9 @@ packages:
     name: radar-datatable
     version: 0.0.1
     dependencies:
+      '@types/lodash': 4.14.194
       arquero: 5.1.0
+      lodash.debounce: 4.0.8
     transitivePeerDependencies:
       - encoding
     dev: false

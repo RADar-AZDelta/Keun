@@ -1,87 +1,118 @@
 <script lang="ts">
-  import Editor from '$lib/components/Extra/Editor.svelte'
-  import type IScheme from '../../../../lib/RADar-DataTable/src/lib/interfaces/IScheme'
-  import type IStatus from '../../../../lib/RADar-DataTable/src/lib/interfaces/IStatus'
+  import { createEventDispatcher, onMount } from 'svelte'
+  import type { CustomOptionsEvents, IStatus } from '../Types'
+  import type { IColumnMetaData } from '../../../../lib/RADar-DataTable/src/lib/components/DataTable.d'
+  import SvgIcon from '../Extra/SvgIcon.svelte'
+  import EditableCell from '../../../../lib/RADar-DataTable/src/lib/components/EditableCell.svelte'
+  import type DataTable from '../../../../lib/RADar-DataTable/src/lib/components/DataTable.svelte'
+  import { getColorFromStatus } from '$lib/utils'
 
-  export let row: number,
-    id: number,
-    data: any,
-    scheme: IScheme[],
-    statusScheme: IStatus[],
-    ownEditorVisuals: any,
-    ownEditorMethods: any,
-    updateData: any,
-    updated: any,
-    editClick: any,
-    editorUpdating: any
+  export let showMappingPopUp: boolean = false
+  export let renderedRow: any[],
+    columns: IColumnMetaData[],
+    index: number,
+    dataTable: DataTable,
+    editable: boolean = false,
+    statuses: IStatus[] = [],
+    author: string
 
-  function checkStatuses(row: number) {
-    const allStatuses = statusScheme.filter(obj => {
-      if (
-        $data?.scheme.indexOf(
-          $data.scheme.filter((col: IScheme) => col.column.toLowerCase() == obj.column.toLowerCase())[0]
-        ) != -1
-      ) {
-        if (
-          obj.status.toLowerCase() ==
-          $data?.data[row][
-            $data?.scheme.indexOf(
-              $data.scheme.filter((col: IScheme) => col.column.toLowerCase() == obj.column.toLowerCase())[0]
-            )
-          ].toLowerCase()
-        ) {
-          return obj
-        }
-      }
-    })
-    if (allStatuses.length > 0) {
-      return true
-    } else {
-      return false
+  let fullRow: any
+  let state: string = ''
+  const dispatch = createEventDispatcher<CustomOptionsEvents>()
+
+  function onClickMapping() {
+    const object = {
+      visibility: !showMappingPopUp,
+      data: {
+        row: renderedRow,
+        index: index,
+      },
     }
+    dispatch('generalVisibilityChanged', object)
   }
 
-  function getColorFromStatus(row: number) {
-    const allStatuses = statusScheme.filter(obj => {
-      if (
-        obj.status.toLowerCase() ==
-        $data?.data[row][
-          $data?.scheme.indexOf(
-            $data.scheme.filter((col: IScheme) => col.column.toLowerCase() == obj.column.toLowerCase())[0]
-          )
-        ].toLowerCase()
-      ) {
-        return obj
-      }
-    })
-    const priority = Math.max(...allStatuses.map(status => status.priority))
-    const status = allStatuses.filter(status => status.priority == priority)[0]
-    return status.color
+  async function onClickApproving() {
+    await fetchRow()
+    state = 'APPROVED'
+    dispatch('actionPerformed', { action: 'APPROVED', index: index })
+  }
+
+  async function onClickFlagging() {
+    await fetchRow()
+    state = 'FLAGGED'
+    dispatch('actionPerformed', { action: 'FLAGGED', index: index })
+  }
+
+  async function onClickUnapproving() {
+    await fetchRow()
+    state = 'UNAPPROVED'
+    dispatch('actionPerformed', { action: 'UNAPPROVED', index: index })
+  }
+
+  function onClickDeletion() {
+    const conceptIdIndex = columns.findIndex(column => column.id === 'conceptId')
+    const conceptId = renderedRow[conceptIdIndex]
+    const sourceCodeIndex = columns.findIndex(column => column.id === 'sourceCode')
+    const sourceCode = renderedRow[sourceCodeIndex]
+    dispatch('deleteRow', { indexes: [index], sourceCode: sourceCode , conceptId: conceptId })
+  }
+
+  async function fetchRow() {
+    const row = await dataTable.getFullRow(index)
+    fullRow = row.row
+  }
+
+  async function valueUpdate(e: CustomEvent<any>, i: number) {
+    await dataTable.updateRows(new Map([[index, Object.fromEntries([[columns[i].id, e.detail]])]]))
+  }
+
+  onMount(async () => {
+    const conceptIdIndex = columns.findIndex(column => column.id === 'conceptId')
+    const conceptId = renderedRow[conceptIdIndex]
+    conceptId == undefined ? dispatch('autoMapping', { row: renderedRow, index: index }) : null
+    fullRow = await dataTable.getFullRow(index)
+  })
+
+  $: {
+    renderedRow
+    const conceptIdIndex = columns.findIndex(col => col.id == "conceptId")
+    const sourceCodeIndex = columns.findIndex(col => col.id == "sourceCode")
+    if(renderedRow[conceptIdIndex] != undefined) dispatch('registerMapping', { sourceCode: renderedRow[sourceCodeIndex], conceptId: renderedRow[conceptIdIndex]})
   }
 </script>
 
-<tr style={`${checkStatuses(id) ? `background-color: ${getColorFromStatus(id)};` : ''}`}>
-  {#each data as cell, i}
-    {#if scheme[i].visible == true}
-      <td class="cell">
+<tr style={`background-color: ${getColorFromStatus(fullRow, columns, state, statuses, author)}`}>
+  <td class="actions">
+    <button on:click={onClickMapping}><SvgIcon href="icons.svg" id="map" width="16px" height="16px" /></button>
+    <button on:click={onClickDeletion}><SvgIcon href="icons.svg" id="trash" width="16px" height="16px" /></button>
+    <div />
+    <button on:click={onClickApproving}><SvgIcon href="icons.svg" id="check" width="16px" height="16px" /></button>
+    <button on:click={onClickFlagging}><SvgIcon href="icons.svg" id="flag" width="16px" height="16px" /></button>
+    <button on:click={onClickUnapproving}><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button>
+  </td>
+  {#each renderedRow as cell, i}
+    <td>
+      {#if editable == true}
+        <EditableCell value={cell} on:valueChanged={event => valueUpdate(event, i)} />
+      {:else}
         <div class="field has-addons" data-component="cell-container">
-          <p class="content" id="{id} - {i}">
-            {cell}
-          </p>
-          {#if $data.scheme[i].editable == true}
-            <Editor
-              col={i}
-              {row}
-              bind:updateData
-              bind:updated
-              bind:editClick
-              bind:editorUpdating
-              {ownEditorMethods}
-              {ownEditorVisuals}
-            />
+          {#if columns != undefined && $$slots.editor}
+            <slot name="editor" />
+          {:else}
+            <div>
+              <pre>{cell}</pre>
+            </div>
           {/if}
         </div>
-      </td>
-    {/if}
+      {/if}
+    </td>
   {/each}
 </tr>
+
+<style>
+  .actions {
+    display: grid;
+    grid-template-columns: repeat(3, min-content);
+    grid-template-rows: repeat(2, min-content);
+  }
+</style>

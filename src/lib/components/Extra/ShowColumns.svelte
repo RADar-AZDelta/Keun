@@ -1,54 +1,32 @@
 <script lang="ts">
-  import { writable, type Writable } from 'svelte/store'
-  import type IScheme from '../../../../lib/RADar-DataTable/src/lib/interfaces/IScheme'
-  export let columns: Writable<Array<IScheme>> = writable<Array<IScheme>>([]),
-    parentChange: Writable<boolean>
+  import { createEventDispatcher } from 'svelte'
+  import type { IColumnMetaData } from '../../../../lib/RADar-DataTable/src/lib/components/DataTable'
+  import type { CustomOptionsEvents } from '../Types'
+  export let columns: IColumnMetaData[]
 
-  const hiddenColumns = [
-    'sourceAutoAssignedConceptIds',
-    'ADD_INFO:additionalInfo',
-    'ADD_INFO:prescriptionID',
-    'ADD_INFO:ATC',
-    'matchScore',
-    'mappingStatus',
-    'matchScore',
-    'mappingStatus',
-    'statusSetBy',
-    'statusSetOn',
-    'comment',
-    'createdBy',
-    'createdOn',
-    'domainId',
-  ]
-  //Change so it can be unchecked
-  $: {
-    for (let column of $columns) {
-      hiddenColumns.includes(column.column) && column.forceVisibility != true
-        ? (column.visible = false)
-        : (column.visible = true)
-    }
+  const dispatch = createEventDispatcher<CustomOptionsEvents>()
+
+  function updateVisibilityColumn(e: Event, column: IColumnMetaData) {
+    const element = e.target as HTMLInputElement
+    dispatch('columnVisibilityChanged', { column: column, visible: element.checked})
   }
 </script>
 
 <section>
-  <h3 class="title is-5">Columns shown:</h3>
-  <div>
-    {#each $columns as column}
-      <span class="check">
-        <label class="checkbox"
-          ><input
-            type="checkbox"
-            id={column.column}
-            bind:checked={column.visible}
-            on:change={event => {
-              // @ts-ignore
-              if (event.target.checked == false) column.forceVisibility = true
-              else column.forceVisibility = false
-              parentChange.set(true)
-            }}
-          /></label
-        >
-        <label for={column.column}>{column.column}</label>
+  <div class="container is-fluid">
+    <h3 class="title is-5">Columns shown:</h3>
+    {#each columns as column}
+      <span class="check"
+        ><input
+          type="checkbox"
+          id={column.id}
+          name={column.id}
+          bind:checked={column.visible}
+          on:change={event => {
+            updateVisibilityColumn(event, column)
+          }}
+        />
+        <label for={column.id}>{column.id}</label>
       </span>
     {/each}
   </div>
@@ -58,5 +36,8 @@
   .check:nth-child(5n):after {
     content: ' ';
     display: block;
+  }
+  .container {
+    padding-top: 10px;
   }
 </style>
