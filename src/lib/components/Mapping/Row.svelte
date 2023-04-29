@@ -1,10 +1,10 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte'
   import type { CustomOptionsEvents, IStatus } from '../Types'
-  import type { IColumnMetaData } from '../../../../lib/RADar-DataTable/src/lib/components/DataTable.d'
+  import type { IColumnMetaData } from 'svelte-radar-datatable'
   import SvgIcon from '../Extra/SvgIcon.svelte'
-  import EditableCell from '../../../../lib/RADar-DataTable/src/lib/components/EditableCell.svelte'
-  import type DataTable from '../../../../lib/RADar-DataTable/src/lib/components/DataTable.svelte'
+  import { EditableCell } from 'svelte-radar-datatable'
+  import type DataTable from 'svelte-radar-datatable'
   import { getColorFromStatus } from '$lib/utils'
 
   export let showMappingPopUp: boolean = false
@@ -54,7 +54,7 @@
     const conceptId = renderedRow[conceptIdIndex]
     const sourceCodeIndex = columns.findIndex(column => column.id === 'sourceCode')
     const sourceCode = renderedRow[sourceCodeIndex]
-    dispatch('deleteRow', { indexes: [index], sourceCode: sourceCode , conceptId: conceptId })
+    dispatch('deleteRow', { indexes: [index], sourceCode: sourceCode, conceptId: conceptId })
   }
 
   async function fetchRow() {
@@ -75,9 +75,10 @@
 
   $: {
     renderedRow
-    const conceptIdIndex = columns.findIndex(col => col.id == "conceptId")
-    const sourceCodeIndex = columns.findIndex(col => col.id == "sourceCode")
-    if(renderedRow[conceptIdIndex] != undefined) dispatch('registerMapping', { sourceCode: renderedRow[sourceCodeIndex], conceptId: renderedRow[conceptIdIndex]})
+    const conceptIdIndex = columns.findIndex(col => col.id == 'conceptId')
+    const sourceCodeIndex = columns.findIndex(col => col.id == 'sourceCode')
+    if (renderedRow[conceptIdIndex] != undefined)
+      dispatch('registerMapping', { sourceCode: renderedRow[sourceCodeIndex], conceptId: renderedRow[conceptIdIndex] })
   }
 </script>
 

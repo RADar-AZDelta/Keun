@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
-  import type { IColumnMetaData } from '../../../../lib/RADar-DataTable/src/lib/components/DataTable'
+  import type { IColumnMetaData } from 'svelte-radar-datatable'
   import type { CustomOptionsEvents } from '../Types'
   export let columns: IColumnMetaData[]
 
@@ -8,7 +8,7 @@
 
   function updateVisibilityColumn(e: Event, column: IColumnMetaData) {
     const element = e.target as HTMLInputElement
-    dispatch('columnVisibilityChanged', { column: column, visible: element.checked})
+    dispatch('columnVisibilityChanged', { column: column, visible: element.checked })
   }
 </script>
 

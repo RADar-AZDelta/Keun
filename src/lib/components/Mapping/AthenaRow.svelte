@@ -2,8 +2,8 @@
   import { createEventDispatcher } from 'svelte'
   import type { CustomOptionsEvents } from '../Types'
   import SvgIcon from '../Extra/SvgIcon.svelte'
-  import type DataTable from '../../../../lib/RADar-DataTable/src/lib/components/DataTable.svelte'
-  import type { IColumnMetaData } from '../../../../lib/RADar-DataTable/src/lib/components/DataTable'
+  import type DataTable from 'svelte-radar-datatable'
+  import type { IColumnMetaData } from 'svelte-radar-datatable'
 
   export let renderedRow: any[],
     columns: IColumnMetaData[],
