@@ -1,5 +1,5 @@
 import { browser } from '$app/environment'
-import type { IColumnMetaData, IPagination } from '../../lib/RADar-DataTable/src/lib/components/DataTable'
+import type { IColumnMetaData, IPagination } from 'svelte-radar-datatable'
 import type { SingleSorting, IStatus } from './components/Types'
 
 /*
@@ -175,9 +175,8 @@ export const assembleURL = (
   // Add sorting to URL if there is sorting
   if (athenaSorting) {
     if (athenaNames[athenaSorting.column as keyof Object]) {
-      URL += `&sort=${athenaNames[athenaSorting.column as keyof Object]}&order=${
-        athenaSorting.sortDirection == 'asc' || athenaSorting.sortDirection == 'desc' ? athenaSorting.sortDirection : ''
-      }`
+      URL += `&sort=${athenaNames[athenaSorting.column as keyof Object]}&order=${athenaSorting.sortDirection == 'asc' || athenaSorting.sortDirection == 'desc' ? athenaSorting.sortDirection : ''
+        }`
     }
   }
   return encodeURI(URL)

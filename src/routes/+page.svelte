@@ -1,6 +1,5 @@
 <script lang="ts">
-  import DataTable from '../../lib/RADar-DataTable/src/lib/components/DataTable.svelte'
-  import '$lib/styles/table.scss'
+  import DataTable from 'svelte-radar-datatable'
   import dataTableColumns from '$lib/data/columns.json'
   import rowStatuses from '$lib/data/statuses.json'
   import athenaNamesJSON from '$lib/data/columnsAthena.json'
@@ -22,12 +21,7 @@
     VisibilityChangedEventDetail,
   } from '$lib/components/Types'
   import Settings from '$lib/components/Extra/Settings.svelte'
-  import type {
-    IColumnMetaData,
-    IPagination,
-    SortDirection,
-    TFilter,
-  } from '../../lib/RADar-DataTable/src/lib/components/DataTable'
+  import type { IColumnMetaData, IPagination, SortDirection, TFilter } from 'svelte-radar-datatable'
   import Modal from '$lib/components/Extra/Modal.svelte'
   import { assembleURL, checkForAuthor, localStorageGetter, localStorageSetter, updateSettings } from '$lib/utils'
   import SvgIcon from '$lib/components/Extra/SvgIcon.svelte'
@@ -224,14 +218,19 @@
   async function deleteRow(event: CustomEvent<DeleteRowEventDetail>) {
     const mapped = registeredMapping.get(String(event.detail.sourceCode))
     mapped?.splice(mapped.indexOf(event.detail.conceptId), 1)
-    if((mapped!.length == 1 && mapped![0] == undefined) || (mapped!.length == 0)) registeredMapping.delete(String(event.detail.sourceCode))
+    if ((mapped!.length == 1 && mapped![0] == undefined) || mapped!.length == 0)
+      registeredMapping.delete(String(event.detail.sourceCode))
     else registeredMapping.set(String(event.detail.sourceCode), mapped!)
     await dataTableFile.deleteRows(event.detail.indexes)
   }
 
   async function registerMapping(event: CustomEvent<RegisterMappingEventDetail>) {
     let mapped = registeredMapping.get(String(event.detail.sourceCode))
-    mapped == undefined ? mapped = [event.detail.conceptId] : mapped?.includes(event.detail.conceptId) ? null : mapped?.push(event.detail.conceptId)
+    mapped == undefined
+      ? (mapped = [event.detail.conceptId])
+      : mapped?.includes(event.detail.conceptId)
+      ? null
+      : mapped?.push(event.detail.conceptId)
     registeredMapping.set(String(event.detail.sourceCode), mapped!)
   }
 

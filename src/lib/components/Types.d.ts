@@ -1,4 +1,4 @@
-import type { IColumnMetaData, SortDirection } from '../../../lib/RADar-DataTable/src/lib/components/DataTable'
+import type { IColumnMetaData, SortDirection } from 'svelte-radar-datatable'
 
 export interface CustomOptionsEvents {
   generalVisibilityChanged: VisibilityChangedEventDetail

@@ -7,7 +7,7 @@
   import type { CustomOptionsEvents, ICategories } from '../Types'
   import SvgIcon from './SvgIcon.svelte'
   import AthenaActivatedFilter from './AthenaActivatedFilter.svelte'
-  import type DataTable from '../../../../lib/RADar-DataTable/src/lib/components/DataTable.svelte'
+  import type DataTable from 'svelte-radar-datatable'
   import { query } from 'arquero'
 
   export let urlFilters: string[],
