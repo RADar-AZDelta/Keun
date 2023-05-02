@@ -141,7 +141,7 @@
   </section>
   <section data-component="table-pop-up">
     <div data-component="table-head">
-      <div class="table-head-top-half">
+      <div data-component="top">
         <h2>Athena data</h2>
         <slot name="currentRow" />
         <div class="options">
@@ -156,16 +156,8 @@
           </div>
         </div>
       </div>
-      <div class="table-head-bottom-half">
-        <table>
-          <thead>
-            <tr>
-              <th>Id</th>
-              <th>Name</th>
-            </tr>
-          </thead>
-          <slot name="mappedRows" mapped={alreadyMapped} />
-        </table>
+      <div data-component="bottom">
+        <slot name="mappedRows" mapped={alreadyMapped} />
       </div>
     </div>
     <div data-component="table">
@@ -174,16 +166,3 @@
     <slot name="extra" />
   </section>
 </div>
-
-<style>
-  .table-head-top-half {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-  }
-  .table-head-bottom-half {
-    display: flex;
-    width: 100%;
-  }
-</style>

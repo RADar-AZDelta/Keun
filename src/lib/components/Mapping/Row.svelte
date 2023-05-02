@@ -72,14 +72,6 @@
     conceptId == undefined ? dispatch('autoMapping', { row: renderedRow, index: index }) : null
     fullRow = await dataTable.getFullRow(index)
   })
-
-  $: {
-    renderedRow
-    const conceptIdIndex = columns.findIndex(col => col.id == 'conceptId')
-    const sourceCodeIndex = columns.findIndex(col => col.id == 'sourceCode')
-    if (renderedRow[conceptIdIndex] != undefined)
-      dispatch('registerMapping', { sourceCode: renderedRow[sourceCodeIndex], conceptId: renderedRow[conceptIdIndex] })
-  }
 </script>
 
 <tr style={`background-color: ${getColorFromStatus(fullRow, columns, state, statuses, author)}`}>

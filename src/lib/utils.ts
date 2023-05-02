@@ -87,8 +87,8 @@ export const checkForAuthor = (data: any, columns: IColumnMetaData[], author: st
   }
 }
 
-export const updateSettings = async (settings: Map<string, boolean>, name: string, value: boolean) => {
-  settings.set(name, !value)
+export const updateSettings = async (settings: Map<string, boolean | string | number>, name: string, value: boolean | string | number) => {
+  settings.set(name, value)
   localStorageSetter('options', settings, true)
   return settings
 }
@@ -149,7 +149,7 @@ export const assembleURL = (
   athenaSorting: SingleSorting,
   athenaNames: Object
 ) => {
-  URL += `?pageSize=${athenaPagination.rowsPerPage}`
+  URL += `pageSize=${athenaPagination.rowsPerPage}`
   if (athenaPagination.currentPage != undefined) {
     if (athenaPagination.currentPage == 0) {
       URL += `&page=1`

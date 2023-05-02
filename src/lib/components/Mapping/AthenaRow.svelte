@@ -7,12 +7,11 @@
 
   export let renderedRow: any[],
     columns: IColumnMetaData[],
-    settings: Map<string, boolean>,
+    settings: Map<string, boolean | string | number>,
     mainTable: DataTable,
     mainTableColumns: IColumnMetaData[],
     selectedRowIndex: number,
-    selectedRow: Record<string, any>,
-    mappedRows: Map<string, any[]>
+    uniqueConceptIds: string[]
 
   let alreadyMapped: boolean = false
   let originalRow: Record<string, any>
@@ -33,26 +32,11 @@
       renderedObj[columns[i].id] = renderedRow[i]
     }
     if (multipleConcepts == true) dispatch('multipleMapping', { originalRow: rowObj, row: renderedObj })
-    else {
-      dispatch('deleteRegisteredMapping', {
-        sourceCode: rowObj.sourceCode,
-        oldConceptId: rowObj.conceptId,
-        newConceptId: renderedObj.conceptId,
-      })
-      dispatch('singleMapping', { originalRow, row: renderedObj })
-    }
-  }
-
-  const checkRow = () => {
-    if (selectedRow) {
-      const res = mappedRows.get(String(selectedRow[0]))
-      res == undefined ? null : res.includes(renderedRow[0]) ? (alreadyMapped = true) : (alreadyMapped = false)
-    }
+    else dispatch('singleMapping', { originalRow, row: renderedObj })
   }
 
   $: {
-    renderedRow
-    checkRow()
+    uniqueConceptIds.includes(renderedRow[0]) ? (alreadyMapped = true) : (alreadyMapped = false)
   }
 </script>
 
