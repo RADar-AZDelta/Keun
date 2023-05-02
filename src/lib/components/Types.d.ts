@@ -3,15 +3,11 @@ import type { IColumnMetaData, SortDirection } from 'svelte-radar-datatable'
 export interface CustomOptionsEvents {
   generalVisibilityChanged: VisibilityChangedEventDetail
   filterOptionsChanged: FilterOptionsChangedEventDetail
-  columnVisibilityChanged: ColumnVisibilityChangedEventDetail
   singleMapping: SingleMappingEventDetail
   multipleMapping: MultipleMappingEventDetail
-  removeMapping: RemoveMappingEventDetail
   actionPerformed: ActionPerformedEventDetail
   autoMapping: AutoMappingEventDetail
   deleteRow: DeleteRowEventDetail
-  registerMapping: RegisterMappingEventDetail
-  deleteRegisteredMapping: DeleteRegisteredMappingEventDetail
 }
 
 export interface VisibilityChangedEventDetail {
@@ -23,11 +19,6 @@ export interface FilterOptionsChangedEventDetail {
   filters: Map<string, string[]>
 }
 
-export interface ColumnVisibilityChangedEventDetail {
-  column: IColumnMetaData
-  visible: boolean
-}
-
 export interface SingleMappingEventDetail {
   originalRow: Record<string, any>
   row: Record<string, any>
@@ -36,10 +27,6 @@ export interface SingleMappingEventDetail {
 export interface MultipleMappingEventDetail {
   originalRow: Record<string, any>
   row: Record<string, any>
-}
-
-export interface RemoveMappingEventDetail {
-  row: any[]
 }
 
 export interface ActionPerformedEventDetail {
@@ -56,17 +43,6 @@ export interface DeleteRowEventDetail {
   indexes: number[]
   sourceCode: string | number
   conceptId: string | number
-}
-
-export interface RegisterMappingEventDetail {
-  sourceCode: string | number
-  conceptId: string | number
-}
-
-export interface DeleteRegisteredMappingEventDetail {
-  sourceCode: string | number
-  oldConceptId: string | number
-  newConceptId: string | number
 }
 
 export interface SingleSorting {

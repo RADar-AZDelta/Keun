@@ -8,14 +8,10 @@
   import type {
     ActionPerformedEventDetail,
     AutoMappingEventDetail,
-    ColumnVisibilityChangedEventDetail,
-    DeleteRegisteredMappingEventDetail,
     DeleteRowEventDetail,
     FilterOptionsChangedEventDetail,
     IStatus,
     MultipleMappingEventDetail,
-    RegisterMappingEventDetail,
-    RemoveMappingEventDetail,
     SingleMappingEventDetail,
     SingleSorting,
     VisibilityChangedEventDetail,
@@ -28,18 +24,40 @@
   import AthenaLayout from '$lib/components/Extra/AthenaLayout.svelte'
   import Row from '$lib/components/Mapping/Row.svelte'
   import { onMount } from 'svelte/internal'
-  import ShowColumns from '$lib/components/Extra/ShowColumns.svelte'
   import AthenaRow from '$lib/components/Mapping/AthenaRow.svelte'
+  import { op, query } from 'arquero'
 
   let file: File
   let mounted: boolean = false
   let settingsVisibility: boolean = false
-  let settings = new Map<string, boolean>([['Map to multiple concepts', false]])
+  let settings = new Map<string, boolean | string | number>([
+    ['Map to multiple concepts', false],
+    ['Language of file', 'en'],
+  ])
+  let languages: Record<string, string> = {
+    bg: 'Bulgarian',
+    ca: 'Catalan',
+    cs: 'Czech',
+    nl: 'Dutch',
+    en: 'English',
+    et: 'Estonian',
+    de: 'German',
+    fr: 'French',
+    is: 'Icelandic',
+    it: 'Italian',
+    nb: 'Norwegian Bokmål',
+    nn: 'Norwegian Nynorsk',
+    fa: 'Persian',
+    pl: 'Polish',
+    pt: 'Portuguese',
+    ru: 'Russian',
+    es: 'Spanish',
+    uk: 'Ukrainian',
+  }
   let authorVisibility: boolean = false
   let authorInput: string = ''
   let author: string = ''
   let mappingVisibility: boolean = false
-  let registeredMapping = new Map<string, any[]>()
 
   let APIFilters: string[]
   let APICall: string
@@ -54,11 +72,13 @@
   let mappingURL: string = 'https://athena.ohdsi.org/api/v1/concepts?'
   let athenaPagination: IPagination = {
     currentPage: 0,
-    rowsPerPage: 10,
+    rowsPerPage: 1,
   }
   let athenaSorting: SingleSorting
   let athenaFiltering: string
   let athenaNames: Object = athenaNamesJSON
+
+  let uniqueConceptIds: string[]
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // DATA
@@ -153,10 +173,6 @@
     settingsVisibility = event.detail.visibility
   }
 
-  async function columnVisibilityChanged(event: CustomEvent<ColumnVisibilityChangedEventDetail>) {
-    await dataTableFile.updateColumns([{ id: event.detail.column.id, visible: event.detail.visible }])
-  }
-
   function mappingVisibilityChanged(event: CustomEvent<VisibilityChangedEventDetail>) {
     mappingVisibility = event.detail.visibility
     event.detail.data != undefined
@@ -205,39 +221,13 @@
     await insertRows(dataTableFile, [mappedRow])
   }
 
-  async function removeMapping(event: CustomEvent<RemoveMappingEventDetail>) {
-    const { mappedIndex, mappedRow } = await multipleMapRow(event.detail.row, selectedRowIndex, true)
-    await dataTableFile.updateRows(new Map([[mappedIndex, { ...mappedRow }]]))
-  }
-
   async function actionPerformed(event: CustomEvent<ActionPerformedEventDetail>) {
     columns.find(column => column.id == 'mappingStatus') == undefined ? columns.push({ id: 'mappingStatus' }) : null
     await dataTableFile.updateRows(new Map([[event.detail.index, { mappingStatus: event.detail.action }]]))
   }
 
   async function deleteRow(event: CustomEvent<DeleteRowEventDetail>) {
-    const mapped = registeredMapping.get(String(event.detail.sourceCode))
-    mapped?.splice(mapped.indexOf(event.detail.conceptId), 1)
-    if ((mapped!.length == 1 && mapped![0] == undefined) || mapped!.length == 0)
-      registeredMapping.delete(String(event.detail.sourceCode))
-    else registeredMapping.set(String(event.detail.sourceCode), mapped!)
     await dataTableFile.deleteRows(event.detail.indexes)
-  }
-
-  async function registerMapping(event: CustomEvent<RegisterMappingEventDetail>) {
-    let mapped = registeredMapping.get(String(event.detail.sourceCode))
-    mapped == undefined
-      ? (mapped = [event.detail.conceptId])
-      : mapped?.includes(event.detail.conceptId)
-      ? null
-      : mapped?.push(event.detail.conceptId)
-    registeredMapping.set(String(event.detail.sourceCode), mapped!)
-  }
-
-  async function deleteRegisteredMapping(event: CustomEvent<DeleteRegisteredMappingEventDetail>) {
-    let mapped = registeredMapping.get(String(event.detail.sourceCode))
-    mapped?.splice(mapped.indexOf(event.detail.oldConceptId), 1)
-    registeredMapping.set(String(event.detail.sourceCode), mapped!)
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -336,42 +326,6 @@
     }
   }
 
-  const multipleMapRow = async (row: any[], i?: number, deletion: boolean = false) => {
-    let rowIndex
-    if (i == undefined) rowIndex = selectedRowIndex
-    else rowIndex = i
-    let rowData = selectedRow
-
-    for (let [name, alt] of importantAthenaColumns) {
-      columns.find(column => column.id == alt) == undefined ? columns.push({ id: alt }) : null
-      const index = athenaColumns.indexOf(athenaColumns.find(column => column.id == name)!)
-      if (row instanceof Array == false) {
-        if (deletion == false)
-          // @ts-ignore
-          rowData[alt as keyof Object] = `${rowData[alt as keyof Object]}
-        ${row[name as keyof object]}`
-        else {
-          // @ts-ignore
-          rowData[alt as keyof Object] = rowData[alt as keyof Object].replace(row[name as keyof object], '')
-        }
-      } else {
-        if (deletion == false) {
-          // @ts-ignore
-          rowData[alt as keyof Object] = `${rowData[alt as keyof Object]}
-      ${row[index]}`
-        } else {
-          // @ts-ignore
-          rowData[alt as keyof Object] = rowData[alt as keyof Object].replace(row[index], '')
-        }
-      }
-    }
-
-    return {
-      mappedIndex: rowIndex,
-      mappedRow: rowData,
-    }
-  }
-
   const cancelAuthorUpdate = async () => {
     authorVisibility = false
   }
@@ -382,22 +336,23 @@
     localStorageSetter('author', author)
   }
 
-  const selectNextRow = async () => {
-    if ((await dataTableFile.getFullRow(selectedRowIndex + 1)) != undefined) selectedRowIndex += 1
+  const selectRow = async (positionUp: boolean) => {
+    const tablePagination = await dataTableFile.getTablePagination()
+    // TODO: needs to be tested --> NPM package was at this point not updated with pagination methods
+    positionUp == true &&
+    (tablePagination.rowsPerPage % selectedRowIndex || selectedRowIndex % tablePagination.rowsPerPage)
+      ? await dataTableFile.changePagination({ currentPage: tablePagination.currentPage + 1 })
+      : null
+    positionUp == false &&
+    (tablePagination.rowsPerPage % selectedRowIndex || selectedRowIndex % tablePagination.rowsPerPage)
+      ? await dataTableFile.changePagination({ currentPage: tablePagination.currentPage - 1 })
+      : null
+    positionUp == true && selectedRowIndex + 1 <= tablePagination.totalRows ? (selectedRowIndex += 1) : null
+    positionUp == false && selectedRowIndex - 1 >= 0 ? (selectedRowIndex -= 1) : null
+    positionUp == true && selectedRowIndex == tablePagination.totalRows ? (lastRow = true) : (lastRow = false)
+
     const selectedRowObj = await dataTableFile.getFullRow(selectedRowIndex)
     selectedRow = selectedRowObj.row
-    const selectedRowValues = Object.values(selectedRow)
-    athenaFiltering = String(
-      selectedRowValues[columns.indexOf(columns.find(column => column.id == athenaFilteredColumn)!) as keyof object]
-    )
-    fetchDataURL = fetchData
-    if ((await dataTableFile.getFullRow(selectedRowIndex + 1)) == undefined) lastRow = true
-    else lastRow = false
-  }
-
-  const selectPreviousRow = async () => {
-    if (selectedRowIndex - 1 >= 0) selectedRowIndex -= 1
-    const selectedRow = await dataTableFile.getFullRow(selectedRowIndex)
     const selectedRowValues = Object.values(selectedRow)
     athenaFiltering = String(
       selectedRowValues[columns.indexOf(columns.find(column => column.id == athenaFilteredColumn)!) as keyof object]
@@ -409,10 +364,28 @@
     await dataTable.insertRows(rows)
   }
 
+  const getAllUniqueConceptIds = async () => {
+    const q = query()
+      .select('conceptId')
+      .rollup({ conceptId: op.array_agg_distinct('conceptId') })
+      .toObject()
+    const res = await dataTableFile.executeQueryAndReturnResults(q)
+    uniqueConceptIds = res.queriedData[0].conceptId
+  }
+
   let fetchDataURL = fetchData
 
   $: {
     if (mounted == true && (author == '' || author == undefined || author == null)) authorVisibility = true
+  }
+
+  $: {
+    if (dataTableFile && file) {
+      // Wait for table to be rendered
+      setTimeout(() => {
+        getAllUniqueConceptIds()
+      }, 2000)
+    }
   }
 
   onMount(async () => {
@@ -441,19 +414,41 @@
     {#each [...settings] as [name, value]}
       <div class="option">
         <p>{name}</p>
-        <label class="switch">
+        {#if typeof value == 'boolean'}
+          <label class="switch">
+            <input
+              type="checkbox"
+              bind:checked={value}
+              on:change={async () => {
+                settings = await updateSettings(settings, name, value)
+              }}
+            />
+            <span class="slider round" />
+          </label>
+        {:else if typeof value == 'string'}
+          {#if name == 'Language of file'}
+            <select
+              bind:value
+              on:change={async () => {
+                settings = await updateSettings(settings, name, value)
+              }}
+            >
+              {#each Object.keys(languages) as lang}
+                <option value={languages[lang]}>{lang}</option>
+              {/each}
+            </select>
+          {/if}
+        {:else if typeof value == 'number'}
           <input
-            type="checkbox"
-            bind:checked={value}
+            type="number"
+            bind:value
             on:change={async () => {
               settings = await updateSettings(settings, name, value)
             }}
           />
-          <span class="slider round" />
-        </label>
+        {/if}
       </div>
     {/each}
-    <ShowColumns on:columnVisibilityChanged={columnVisibilityChanged} {columns} />
   </div>
 </Modal>
 
@@ -479,7 +474,7 @@
     mainTable={dataTableFile}
   >
     <div slot="currentRow" class="currentRow">
-      <button id="left" on:click={selectPreviousRow} disabled={selectedRowIndex == 0 ? true : false}
+      <button id="left" on:click={() => selectRow(false)} disabled={selectedRowIndex == 0 ? true : false}
         ><SvgIcon href="icons.svg" id="arrow-left" width="16px" height="16px" />
       </button>
       <table class="table">
@@ -496,7 +491,7 @@
           {/if}
         </tr>
       </table>
-      <button id="right" on:click={selectNextRow} disabled={lastRow}>
+      <button id="right" on:click={() => selectRow(true)} disabled={lastRow}>
         <SvgIcon href="icons.svg" id="arrow-right" width="16px" height="16px" />
       </button>
     </div>
@@ -514,35 +509,35 @@
             let:index
             on:singleMapping={singleRowMapping}
             on:multipleMapping={multipleRowMapping}
-            on:removeMapping={removeMapping}
-            on:deleteRegisteredMapping={deleteRegisteredMapping}
             {renderedRow}
             columns={athenaColumns}
             {settings}
             mainTable={dataTableFile}
             mainTableColumns={columns}
             {selectedRowIndex}
-            {selectedRow}
-            bind:mappedRows={registeredMapping}
+            {uniqueConceptIds}
           />
         </DataTable>
       {/if}
     </div>
-    <div slot="extra">
-      {#if settings.get('Map to multiple concepts') == true}
-        <button> Map multiple </button>
-      {/if}
-    </div>
-    <div slot="mappedRows" let:mapped>
+    <table slot="mappedRows" let:mapped>
       {#if mapped.length != 0}
-        {#each mapped as row}
+        {#if mapped.length == 1 && mapped[0].conceptId == undefined && mapped[0].conceptName == undefined}
+          <div />
+        {:else}
           <tr>
-            <td>{row.conceptId}</td>
-            <td>{row.conceptName}</td>
+            <th>conceptId</th>
+            <th>conceptName</th>
           </tr>
-        {/each}
+          <tr>
+            {#each mapped as row}
+              <td>{row.conceptId}</td>
+              <td>{row.conceptName}</td>
+            {/each}
+          </tr>
+        {/if}
       {/if}
-    </div>
+    </table>
   </AthenaLayout>
 </Modal>
 
@@ -557,7 +552,6 @@
     on:actionPerformed={actionPerformed}
     on:autoMapping={autoMapping}
     on:deleteRow={deleteRow}
-    on:registerMapping={registerMapping}
     {renderedRow}
     {columns}
     {index}
