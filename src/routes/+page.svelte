@@ -390,8 +390,7 @@
 
   onMount(async () => {
     localStorageGetter('author', false, false) !== null ? (author = localStorageGetter('author', false, false)) : null
-    if (author != '' || author != undefined || author != null) authorVisibility = false
-    else authorVisibility = true
+    if (author == '' || author == undefined || author == null) authorVisibility = true
 
     localStorageGetter('options', true, true) !== null ? (settings = localStorageGetter('options', true, true)) : null
 
@@ -409,58 +408,66 @@
 <!-- MODALS -->
 
 <Modal on:generalVisibilityChanged={settingsVisibilityChanged} show={settingsVisibility} size="medium">
-  <h2 class="pop-up-title">Settings</h2>
-  <div class="pop-up-container">
-    {#each [...settings] as [name, value]}
-      <div class="option">
-        <p>{name}</p>
-        {#if typeof value == 'boolean'}
-          <label class="switch">
+  <section data-name="settings">
+    <h2 class="pop-up-title">Settings</h2>
+    <div data-name="options">
+      {#each [...settings] as [name, value]}
+        <div data-name="option">
+          <p>{name}</p>
+          {#if typeof value == 'boolean'}
+            <div data-name="switch">
+              <input
+                id={name}
+                type="checkbox"
+                bind:checked={value}
+                on:change={async () => {
+                  settings = await updateSettings(settings, name, !value)
+                }}
+              />
+              <label for={name}>Test</label>
+            </div>
+          {:else if typeof value == 'string'}
+            {#if name == 'Language of file'}
+              <select
+                {value}
+                on:change={async e => {
+                  settings = await updateSettings(settings, name, e.target.value)
+                }}
+              >
+                {#each Object.keys(languages) as lang}
+                  <option
+                    value={languages[lang]}
+                    on:click={async () => {
+                      // settings = await updateSettings(settings, name, value)
+                    }}>{lang}</option
+                  >
+                {/each}
+              </select>
+            {/if}
+          {:else if typeof value == 'number'}
             <input
-              type="checkbox"
-              bind:checked={value}
-              on:change={async () => {
-                settings = await updateSettings(settings, name, value)
-              }}
-            />
-            <span class="slider round" />
-          </label>
-        {:else if typeof value == 'string'}
-          {#if name == 'Language of file'}
-            <select
+              type="number"
               bind:value
               on:change={async () => {
                 settings = await updateSettings(settings, name, value)
               }}
-            >
-              {#each Object.keys(languages) as lang}
-                <option value={languages[lang]}>{lang}</option>
-              {/each}
-            </select>
+            />
           {/if}
-        {:else if typeof value == 'number'}
-          <input
-            type="number"
-            bind:value
-            on:change={async () => {
-              settings = await updateSettings(settings, name, value)
-            }}
-          />
-        {/if}
-      </div>
-    {/each}
-  </div>
+        </div>
+      {/each}
+    </div>
+  </section>
 </Modal>
 
 <Modal on:generalVisibilityChanged={authorVisibilityChanged} show={authorVisibility} size="small">
-  <div class="pop-up-container-center">
+  <section data-name="author">
     <h2 class="title is-5">Who is the author?</h2>
     <input id="author" type="text" placeholder="John Wick" class="author-input" bind:value={authorInput} />
-    <div class="buttons-container">
-      <button class="button is-danger" on:click={cancelAuthorUpdate}>Cancel</button>
-      <button class="button is-success" on:click={saveAuthorUpdate}>Save</button>
+    <div data-name='buttons-container'>
+      <button data-name="cancel" on:click={cancelAuthorUpdate}>Cancel</button>
+      <button data-name="save" on:click={saveAuthorUpdate}>Save</button>
     </div>
-  </div>
+  </section>
 </Modal>
 
 <Modal on:generalVisibilityChanged={mappingVisibilityChanged} show={mappingVisibility} size="large">
@@ -473,7 +480,7 @@
     {selectedRow}
     mainTable={dataTableFile}
   >
-    <div slot="currentRow" class="currentRow">
+    <div slot="currentRow" data-name="currentRow">
       <button id="left" on:click={() => selectRow(false)} disabled={selectedRowIndex == 0 ? true : false}
         ><SvgIcon href="icons.svg" id="arrow-left" width="16px" height="16px" />
       </button>

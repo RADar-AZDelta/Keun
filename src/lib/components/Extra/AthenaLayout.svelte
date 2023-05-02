@@ -108,11 +108,11 @@
   })
 </script>
 
-<div data-component="pop-up-container">
-  <section data-component="filters-container">
+<div data-name="athena-layout">
+  <section data-name="filters-container">
     <h2>Filters</h2>
-    <div class="filters-buttons">
-      <div data-component="filters">
+    <div data-name="filters-buttons">
+      <div data-name="filters">
         {#each [...JSONFilters] as [key, options]}
           <AthenaFilter filter={{ name: key, categories: options }} bind:openedFilter allowInput={true}>
             <div slot="option" data-component="filter-option" let:option>
@@ -139,14 +139,14 @@
       </div>
     </div>
   </section>
-  <section data-component="table-pop-up">
-    <div data-component="table-head">
-      <div data-component="top">
+  <section data-name="table-pop-up">
+    <div data-name="table-head">
+      <div data-name="top">
         <h2>Athena data</h2>
         <slot name="currentRow" />
-        <div class="options">
+        <div data-name="options">
           <Equivalence bind:Eq={equivalenceMapping} />
-          <div class="columnFilter">
+          <div data-name="columnFilter">
             <p>Filter on column:</p>
             <select class="columnSelect" name="columns" id="columns" on:change={changeFilteredColumnAthena}>
               {#each filterColumns as column}
@@ -156,7 +156,7 @@
           </div>
         </div>
       </div>
-      <div data-component="bottom">
+      <div data-name="bottom">
         <slot name="mappedRows" mapped={alreadyMapped} />
       </div>
     </div>
