@@ -32,7 +32,9 @@
       renderedObj[columns[i].id] = renderedRow[i]
     }
     if (multipleConcepts == true) dispatch('multipleMapping', { originalRow: rowObj, row: renderedObj })
-    else dispatch('singleMapping', { originalRow, row: renderedObj })
+    else dispatch('singleMapping', { originalRow: originalRow.row, row: renderedObj })
+
+    multipleConcepts == true ? (alreadyMapped = true) : null
   }
 
   $: {
@@ -40,30 +42,17 @@
   }
 </script>
 
-<tr>
-  <td class="actions">
-    {#if alreadyMapped == true}
-      <button class="apply"><SvgIcon href="icons.svg" id="check" width="16px" height="16px" /></button>
-    {:else}
-      <button on:click={onClickMapping}><SvgIcon href="icons.svg" id="map" width="16px" height="16px" /></button>
-    {/if}
+<td class="actions">
+  {#if alreadyMapped == true}
+    <button class="apply"><SvgIcon href="icons.svg" id="check" width="16px" height="16px" /></button>
+  {:else}
+    <button on:click={onClickMapping}><SvgIcon href="icons.svg" id="map" width="16px" height="16px" /></button>
+  {/if}
+</td>
+{#each renderedRow as cell, i}
+  <td>
+    <div class="field has-addons" data-component="cell-container">
+      <p>{cell}</p>
+    </div>
   </td>
-  {#each renderedRow as cell, i}
-    <td>
-      <div class="field has-addons" data-component="cell-container">
-        <p>{cell}</p>
-      </div>
-    </td>
-  {/each}
-</tr>
-
-<style>
-  .actions {
-    display: flex;
-    align-items: center;
-  }
-
-  .apply {
-    background-color: greenyellow;
-  }
-</style>
+{/each}

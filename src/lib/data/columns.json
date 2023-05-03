@@ -30,21 +30,6 @@
     "visible": false
   },
   {
-    "id": "ADD_INFO:author1",
-    "position": 7,
-    "visible": true
-  },
-  {
-    "id": "ADD_INFO:author2",
-    "position": 8,
-    "visible": true
-  },
-  {
-    "id": "ADD_INFO:lastEditor",
-    "position": 9,
-    "visible": false
-  },
-  {
     "id": "ADD_INFO:additionalInfo",
     "visible": false
   },
@@ -57,6 +42,15 @@
     "visible": false
   },
   {
+    "id": "ADD_INFO:approvedBy",
+    "visible": true,
+    "position": 10
+  },
+  {
+    "id": "ADD_INFO:approvedOn",
+    "visible": false
+  },
+  {
     "id": "sourceAutoAssignedConceptIds",
     "visible": false
   },
@@ -66,7 +60,7 @@
   },
   {
     "id": "mappingStatus",
-    "position": 10,
+    "position": 7,
     "visible": true
   },
   {
@@ -76,7 +70,8 @@
   },
   {
     "id": "statusSetBy",
-    "visible": false
+    "visible": true,
+    "position": 9
   },
   {
     "id": "statusSetOn",
@@ -92,7 +87,8 @@
   },
   {
     "id": "createdBy",
-    "visible": false
+    "visible": true,
+    "position": 8
   },
   {
     "id": "createdOn",
@@ -100,6 +96,6 @@
   },
   {
     "id": "assignedReviewer",
-    "visible": false
+    "visible": true
   }
 ]

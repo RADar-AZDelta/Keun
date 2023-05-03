@@ -8,6 +8,7 @@ export interface CustomOptionsEvents {
   actionPerformed: ActionPerformedEventDetail
   autoMapping: AutoMappingEventDetail
   deleteRow: DeleteRowEventDetail
+  cellEdited: cellEditedEventDetail
 }
 
 export interface VisibilityChangedEventDetail {
@@ -32,11 +33,17 @@ export interface MultipleMappingEventDetail {
 export interface ActionPerformedEventDetail {
   action: string
   index: number
+  row: Record<string, any>
 }
 
 export interface AutoMappingEventDetail {
   row: any[]
   index: number
+}
+
+export interface cellEditedEventDetail {
+  index: number
+  update: Record<string, any>
 }
 
 export interface DeleteRowEventDetail {

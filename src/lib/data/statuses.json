@@ -2,127 +2,80 @@
   {
     "dependencies": [
       {
-        "column": "mappingstatus",
-        "status": "",
+        "column": "statusSetBy",
+        "status": null,
         "equal": true
       },
       {
-        "column": "ADD_INFO:author1",
-        "status": "",
-        "equal": true
-      },
-      {
-        "column": "ADD_INFO:author2",
-        "status": "",
-        "equal": true
-      },
-      {
-        "column": "ADD_INFO:lastEditor",
-        "status": "",
+        "column": "ADD_INFO:approvedBy",
+        "status": null,
         "equal": true
       }
     ],
-    "color": "hsl(0, 100%, 100%)",
+    "color": "inherit",
     "priority": 0
   },
   {
     "dependencies": [
       {
-        "column": "mappingstatus",
-        "status": "APPROVED",
-        "equal": true
-      },
-      {
-        "column": "ADD_INFO:author1",
-        "status": "author",
-        "equal": true
-      },
-      {
-        "column": "ADD_INFO:author2",
-        "status": "",
-        "equal": true
-      },
-      {
-        "column": "ADD_INFO:lastEditor",
-        "status": "",
-        "equal": true
-      }
-    ],
-    "color": "hsl(141, 31%, 76%)",
-    "priority": 0
-  },
-  {
-    "dependencies": [
-      {
-        "column": "mappingstatus",
-        "status": "APPROVED",
-        "equal": true
-      },
-      {
-        "column": "ADD_INFO:author1",
-        "status": "author",
-        "equal": true
-      },
-      {
-        "column": "ADD_INFO:author2",
-        "status": "",
-        "equal": true
-      },
-      {
-        "column": "ADD_INFO:lastEditor",
-        "status": "author",
-        "equal": true
-      }
-    ],
-    "color": "hsl(141, 31%, 76%)",
-    "priority": 0
-  },
-  {
-    "dependencies": [
-      {
-        "column": "mappingstatus",
-        "status": "APPROVED",
-        "equal": true
-      },
-      {
-        "column": "ADD_INFO:author1",
-        "status": "author",
+        "column": "statusSetBy",
+        "status": null,
         "equal": false
       },
       {
-        "column": "ADD_INFO:author2",
-        "status": "author",
+        "column": "ADD_INFO:approvedBy",
+        "status": null,
         "equal": true
       },
       {
-        "column": "ADD_INFO:lastEditor",
-        "status": "author",
-        "equal": false
-      }
-    ],
-    "color": "hsl(145, 63%, 49%)",
-    "priority": 0
-  },
-  {
-    "dependencies": [
-      {
-        "column": "mappingstatus",
-        "status": "FLAGGED",
-        "equal": true
-      }
-    ],
-    "color": "hsl(48, 75%, 76%)",
-    "priority": 1
-  },
-  {
-    "dependencies": [
-      {
-        "column": "mappingstatus",
+        "column": "mappingStatus",
         "status": "UNAPPROVED",
         "equal": true
       }
     ],
-    "color": "hsl(7, 50%, 63%)",
-    "priority": 1
+    "color": "hsl(84, 100%, 70%)",
+    "priority": 0
+  },
+  {
+    "dependencies": [
+      {
+        "column": "statusSetBy",
+        "status": null,
+        "equal": false
+      },
+      {
+        "column": "ADD_INFO:approvedBy",
+        "status": null,
+        "equal": true
+      },
+      {
+        "column": "mappingStatus",
+        "status": "FLAGGED",
+        "equal": true
+      }
+    ],
+    "color": "hsl(54, 89%, 64%);",
+    "priority": 0
+  },
+  {
+    "dependencies": [
+      {
+        "column": "statusSetBy",
+        "status": "author",
+        "equal": false
+      },
+      {
+        "column": "ADD_INFO:approvedBy",
+        "status": "author",
+        "equal": true
+      },
+      {
+        "column": "mappingStatus",
+        "status": "APPROVED",
+        "equal": true
+      }
+    ],
+    "color": "hsl(156, 100%, 35%);",
+    "priority": 0
   }
 ]

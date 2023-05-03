@@ -1,7 +1,7 @@
 div[data-component='RADar-DataTable'] {
   div[data-name='table-container'] {
     resize: vertical;
-    overflow-x: scroll;
+    overflow-x: auto;
     /*overflow: hidden;*/
 
     table {
@@ -599,4 +599,22 @@ div[data-name='athena-layout'] {
       }
     }
   }
+}
+
+button[data-name='header-button'] {
+  border: 1px solid lightgray;
+  border-radius: 5px;
+  padding: 1rem;
+  display: flex;
+  gap: 0.5rem;
+  margin-right: 1rem;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+}
+
+.apply {
+  background-color: greenyellow;
 }

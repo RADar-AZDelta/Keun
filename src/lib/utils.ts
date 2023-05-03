@@ -2,6 +2,8 @@ import { browser } from '$app/environment'
 import type { IColumnMetaData, IPagination } from 'svelte-radar-datatable'
 import type { SingleSorting, IStatus } from './components/Types'
 
+let allColumns: IColumnMetaData[]
+
 /*
     Basic helper methods
 */
@@ -87,7 +89,11 @@ export const checkForAuthor = (data: any, columns: IColumnMetaData[], author: st
   }
 }
 
-export const updateSettings = async (settings: Map<string, boolean | string | number>, name: string, value: boolean | string | number) => {
+export const updateSettings = async (
+  settings: Map<string, boolean | string | number>,
+  name: string,
+  value: boolean | string | number
+) => {
   settings.set(name, value)
   localStorageSetter('options', settings, true)
   return settings
@@ -98,42 +104,46 @@ export const updateSettings = async (settings: Map<string, boolean | string | nu
 */
 export function getColorFromStatus(
   row: any,
-  columns: IColumnMetaData[],
+  columns: IColumnMetaData[] | undefined,
   state: string,
   statuses: IStatus[],
   author: string
 ) {
+  console.log('ROW ', row)
+  console.log('COLUMNS ', columns)
+  columns != undefined ? (allColumns = columns) : null
   const allStatuses = []
-  if (row != undefined) {
+  if (row != undefined && allColumns != undefined) {
     for (let status of statuses) {
       let error = false
       for (let dep of status.dependencies) {
-        const columnIndex = columns.findIndex(col => col.id.toLowerCase() == dep.column.toLowerCase())
+        const columnIndex = allColumns!.findIndex(col => col.id.toLowerCase() == dep.column.toLowerCase())
         if (columnIndex != undefined) {
           let rowValue
-          dep.column.toLowerCase() == 'mappingstatus' ? (rowValue = state) : (rowValue = String(row[columnIndex]))
-          if (rowValue != undefined) {
-            if (dep.status.toLowerCase() == 'author') dep.status = author
+          dep.column.toLowerCase() == 'mappingstatus' ? (rowValue = state) : (rowValue = row[columnIndex])
+          console.log('ROWVALUE ', rowValue)
+          if (String(rowValue) != undefined) {
+            if (String(dep.status).toLowerCase() == 'author') dep.status = author
             if (dep.equal == true) {
-              if (dep.status.toLowerCase() !== rowValue.toLowerCase()) {
+              if (String(dep.status).toLowerCase() !== String(rowValue).toLowerCase()) {
                 error = true
               }
             } else if (dep.equal == false) {
-              if (dep.status.toLowerCase() == rowValue.toLowerCase()) {
+              if (String(dep.status).toLowerCase() == String(rowValue).toLowerCase()) {
                 error = true
               }
             }
           } else error = true
         } else error = true
       }
-      error == false ? allStatuses.push(status) : null
+      error == false ? allStatuses.push(status) : console.log('ERROR IN DEPENDENCIE ')
     }
   }
   const priority = Math.max(...allStatuses.map(status => status.priority))
   if (allStatuses.length > 0) {
     return allStatuses.find(status => status.priority == priority)!.color
   } else {
-    return '#FFFFFF'
+    return 'inherit'
   }
 }
 
@@ -175,8 +185,9 @@ export const assembleURL = (
   // Add sorting to URL if there is sorting
   if (athenaSorting) {
     if (athenaNames[athenaSorting.column as keyof Object]) {
-      URL += `&sort=${athenaNames[athenaSorting.column as keyof Object]}&order=${athenaSorting.sortDirection == 'asc' || athenaSorting.sortDirection == 'desc' ? athenaSorting.sortDirection : ''
-        }`
+      URL += `&sort=${athenaNames[athenaSorting.column as keyof Object]}&order=${
+        athenaSorting.sortDirection == 'asc' || athenaSorting.sortDirection == 'desc' ? athenaSorting.sortDirection : ''
+      }`
     }
   }
   return encodeURI(URL)
