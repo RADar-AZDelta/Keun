@@ -104,7 +104,8 @@
         ? new Map<string, string[]>()
         : localStorageGetter('AthenaFilters', true)
     activatedAthenaFilters = savedFilters
-    dispatch('filterOptionsChanged', { filters: activatedAthenaFilters })
+    savedFilters != null ? activatedAthenaFilters = savedFilters : activatedAthenaFilters = new Map<string, string[]>()
+    activatedAthenaFilters != null ? dispatch('filterOptionsChanged', { filters: activatedAthenaFilters }) : null
   })
 </script>
 
