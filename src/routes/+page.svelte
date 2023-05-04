@@ -148,6 +148,11 @@
 
   let statuses: IStatus[] = rowStatuses
 
+  let dataTableInit: boolean = false
+
+  const controller = new AbortController()
+  const signal = controller.signal
+
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // EVENTS
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -201,19 +206,30 @@
   }
 
   async function autoMapping(event: CustomEvent<AutoMappingEventDetail>) {
-    const rowObj: { [key: string]: any } = {}
-    for (let i = 0; i < event.detail.row.length; i++) {
-      rowObj[columns[i].id as keyof object] = event.detail.row[i]
-    }
-    const URL = await assembleAthenaURL(rowObj[athenaFilteredColumn])
-    const res = await fetch(URL)
-    const resData = await res.json()
-    if (resData.content[0]) {
-      const { mappedIndex, mappedRow } = await rowMapping(rowObj, resData.content[0], dataTableFile, event.detail.index)
-      rowsMapping.set(mappedIndex, mappedRow)
-      await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
-    }
-    athenaFiltering = ''
+    if (signal.aborted) return Promise.reject(new DOMException('Aborted', 'AbortError'))
+    return new Promise(async (resolve, reject) => {
+      signal.addEventListener('abort', () => {
+        reject(new DOMException('Aborted', 'AbortError'))
+      })
+      const rowObj: { [key: string]: any } = {}
+      for (let i = 0; i < event.detail.row.length; i++) {
+        rowObj[columns[i].id as keyof object] = event.detail.row[i]
+      }
+      const URL = await assembleAthenaURL(rowObj[athenaFilteredColumn])
+      const res = await fetch(URL)
+      const resData = await res.json()
+      if (resData.content[0]) {
+        const { mappedIndex, mappedRow } = await rowMapping(
+          rowObj,
+          resData.content[0],
+          dataTableFile,
+          event.detail.index
+        )
+        rowsMapping.set(mappedIndex, mappedRow)
+        await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
+      }
+      athenaFiltering = ''
+    })
   }
 
   async function singleRowMapping(event: CustomEvent<SingleMappingEventDetail>) {
@@ -223,7 +239,7 @@
 
   async function multipleRowMapping(event: CustomEvent<MultipleMappingEventDetail>) {
     const { mappedIndex, mappedRow } = await rowMapping(event.detail.originalRow, event.detail.row, dataTableFile)
-    console.log("MULTIPLE ", mappedRow)
+    console.log('MULTIPLE ', mappedRow)
     await insertRows(dataTableFile, [mappedRow])
   }
 
@@ -425,8 +441,16 @@
     const element = e.target as HTMLSelectElement | HTMLInputElement
     const value = element.checked != undefined ? !element.checked : element.value
     const name = element.id
-    console.log("UPDATE SETTINGS ", !value)
+    console.log('UPDATE SETTINGS ', !value)
     settings = await updateSettings(settings, name, value)
+  }
+
+  function dataTableInitialized() {
+    dataTableInit = true
+  }
+
+  function abortAllPromises() {
+    if (dataTableInit == true) controller.abort()
   }
 
   let fetchDataURL = fetchData
@@ -436,12 +460,7 @@
   }
 
   $: {
-    if (dataTableFile && file) {
-      // Wait for table to be rendered
-      setTimeout(() => {
-        getAllUniqueConceptIds()
-      }, 2000)
-    }
+    if (dataTableInit == true) getAllUniqueConceptIds()
   }
 
   onMount(async () => {
@@ -594,7 +613,14 @@
 
 <!-- DATATABLE -->
 <input type="file" accept=".csv, .json" on:change={onFileInputChange} />
-<DataTable data={file} {columns} bind:this={dataTableFile} options={{ actionColumn: true }}>
+<DataTable
+  data={file}
+  {columns}
+  bind:this={dataTableFile}
+  options={{ actionColumn: true }}
+  on:rendering={abortAllPromises}
+  on:initialized={dataTableInitialized}
+>
   <Row
     slot="default"
     let:renderedRow
