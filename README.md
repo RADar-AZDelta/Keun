@@ -1,8 +1,8 @@
 # Keun
 ####  Clone the repo
 ```bash
-git clone git@github.com:RADar-AZDelta/POC-Keun.git
-cd .\POC-Keun\
+git clone git@github.com:RADar-AZDelta/Keun.git
+cd .\Keun\
 pnpm install
 ```
 
