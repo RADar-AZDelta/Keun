@@ -611,7 +611,6 @@
     editable={true}
     showMappingPopUp={mappingVisibility}
     {statuses}
-    {author}
     bind:dataTable={dataTableFile}
   />
 </DataTable>

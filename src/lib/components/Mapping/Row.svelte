@@ -13,12 +13,12 @@
     index: number,
     dataTable: DataTable,
     editable: boolean = false,
-    statuses: IStatus[] = [],
-    author: string
+    statuses: IStatus[] = []
 
   let fullRow: any
   let fullColumns: IColumnMetaData[] | undefined
-  let state: string = ''
+  let state: string | undefined = undefined
+  let color: string = 'inherit'
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
   function onClickMapping() {
@@ -65,7 +65,12 @@
   }
 
   async function valueUpdate(e: CustomEvent<any>, i: number) {
-    dispatch('cellEdited', { index: index, update: Object.fromEntries([[columns![i].id, e.detail]])})
+    dispatch('cellEdited', { index: index, update: Object.fromEntries([[columns![i].id, e.detail]]) })
+  }
+
+  function getColors() {
+    // TODO: fix the issue that the color won't update if the checked columns are not visible --> when getting fullRow & all the columns --> only the last row will execute the method
+    color = getColorFromStatus(renderedRow, columns, state, statuses)
   }
 
   onMount(async () => {
@@ -76,9 +81,14 @@
     fullRow = fullR.row
     fullColumns = await dataTable.getColumns()
   })
+
+  $: {
+    renderedRow, dataTable, index
+    getColors()
+  }
 </script>
 
-<td class="actions" style={`background-color: ${getColorFromStatus(fullRow, fullColumns, state, statuses, author)}`}>
+<td class="actions" style={`background-color: ${color}`}>
   <button on:click={onClickMapping}><SvgIcon href="icons.svg" id="map" width="16px" height="16px" /></button>
   <button on:click={onClickDeletion}><SvgIcon href="icons.svg" id="trash" width="16px" height="16px" /></button>
   <div />
@@ -87,7 +97,7 @@
   <button on:click={onClickUnapproving}><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button>
 </td>
 {#each renderedRow as cell, i}
-  <td style={`background-color: ${getColorFromStatus(fullRow, fullColumns, state, statuses, author)}`}>
+  <td style={`background-color: ${color}`}>
     {#if editable == true}
       <EditableCell value={cell} on:valueChanged={event => valueUpdate(event, i)} />
     {:else}

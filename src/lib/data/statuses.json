@@ -61,13 +61,13 @@
     "dependencies": [
       {
         "column": "statusSetBy",
-        "status": "author",
+        "status": null,
         "equal": false
       },
       {
         "column": "ADD_INFO:approvedBy",
-        "status": "author",
-        "equal": true
+        "status": null,
+        "equal": false
       },
       {
         "column": "mappingStatus",

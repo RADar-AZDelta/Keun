@@ -1,6 +1,7 @@
 import { browser } from '$app/environment'
 import type { IColumnMetaData, IPagination } from 'svelte-radar-datatable'
 import type { SingleSorting, IStatus } from './components/Types'
+import type DataTable from 'svelte-radar-datatable/components/DataTable.svelte'
 
 let allColumns: IColumnMetaData[]
 
@@ -105,44 +106,47 @@ export const updateSettings = async (
 export function getColorFromStatus(
   row: any,
   columns: IColumnMetaData[] | undefined,
-  state: string,
-  statuses: IStatus[],
-  author: string
+  state: string | undefined,
+  statuses: IStatus[]
 ) {
-  console.log('ROW ', row)
-  console.log('COLUMNS ', columns)
-  columns != undefined ? (allColumns = columns) : null
   const allStatuses = []
-  if (row != undefined && allColumns != undefined) {
+  console.log("ROW ", row, " COLUMNS ", columns)
+  if (row != undefined && columns != undefined) {
     for (let status of statuses) {
       let error = false
       for (let dep of status.dependencies) {
-        const columnIndex = allColumns!.findIndex(col => col.id.toLowerCase() == dep.column.toLowerCase())
+        const columnIndex = columns!.findIndex(col => col.id.toLowerCase() == dep.column.toLowerCase())
         if (columnIndex != undefined) {
           let rowValue
-          dep.column.toLowerCase() == 'mappingstatus' ? (rowValue = state) : (rowValue = row[columnIndex])
-          console.log('ROWVALUE ', rowValue)
+          dep.column.toLowerCase() == 'mappingstatus'
+            ? state != undefined
+              ? (rowValue = state)
+              : (rowValue = row[columnIndex])
+            : (rowValue = row[columnIndex])
+            console.log("DEP ", dep.column.toLowerCase(), " AND ROWVALUE ", rowValue)
           if (String(rowValue) != undefined) {
-            if (String(dep.status).toLowerCase() == 'author') dep.status = author
             if (dep.equal == true) {
-              if (String(dep.status).toLowerCase() !== String(rowValue).toLowerCase()) {
+              if (String(dep.status).toLowerCase().replaceAll(' ','') !== String(rowValue).toLowerCase().replaceAll(' ','')) {
+                console.log('ERROR IN DEPENDENCIE ', String(dep.status).toLowerCase(), " IS NOT EQUAL TO ", String(rowValue).toLowerCase())
                 error = true
               }
             } else if (dep.equal == false) {
-              if (String(dep.status).toLowerCase() == String(rowValue).toLowerCase()) {
+              if (String(dep.status).toLowerCase().replaceAll(' ','') == String(rowValue).toLowerCase().replaceAll(' ','')) {
+                console.log('ERROR IN DEPENDENCIE ', String(dep.status).toLowerCase(), " IS EQUAL TO ", String(rowValue).toLowerCase(), " WITH INDEX ", columnIndex)
                 error = true
               }
             }
           } else error = true
         } else error = true
       }
-      error == false ? allStatuses.push(status) : console.log('ERROR IN DEPENDENCIE ')
+      error == false ? allStatuses.push(status) : console.log('ERROR IN DEPENDENCIE ', status)
     }
   }
   const priority = Math.max(...allStatuses.map(status => status.priority))
   if (allStatuses.length > 0) {
     return allStatuses.find(status => status.priority == priority)!.color
   } else {
+    // console.log("HERE ", row)
     return 'inherit'
   }
 }
