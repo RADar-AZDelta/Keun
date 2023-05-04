@@ -21,7 +21,7 @@
   }
 
   .logo:hover {
-    animation: spin 20s infinite linear;
+    animation: spin 2s infinite alternate-reverse;
   }
 
   @keyframes spin {
