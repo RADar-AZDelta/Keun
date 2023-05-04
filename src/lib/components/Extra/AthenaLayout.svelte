@@ -9,6 +9,7 @@
   import AthenaActivatedFilter from './AthenaActivatedFilter.svelte'
   import type DataTable from 'svelte-radar-datatable'
   import { query } from 'arquero'
+  import Modal from './Modal.svelte'
 
   export let urlFilters: string[],
     equivalenceMapping: string,
@@ -21,6 +22,7 @@
   let activatedAthenaFilters = new Map<string, string[]>()
   let openedFilter: string
   let savedFilters: Map<string, string[]>
+  let settingsVisibility: boolean = false
 
   let alreadyMapped: Record<string, any>[] = []
 
@@ -90,6 +92,10 @@
     dispatch('filterOptionsChanged', { filters: activatedAthenaFilters })
   }
 
+  function settingsVisibilityChanged() {
+    settingsVisibility = !settingsVisibility
+  }
+
   onMount(async () => {
     const q = query()
       .params({ value: selectedRow[0] })
@@ -104,14 +110,49 @@
         ? new Map<string, string[]>()
         : localStorageGetter('AthenaFilters', true)
     activatedAthenaFilters = savedFilters
-    savedFilters != null ? activatedAthenaFilters = savedFilters : activatedAthenaFilters = new Map<string, string[]>()
+    savedFilters != null
+      ? (activatedAthenaFilters = savedFilters)
+      : (activatedAthenaFilters = new Map<string, string[]>())
     activatedAthenaFilters != null ? dispatch('filterOptionsChanged', { filters: activatedAthenaFilters }) : null
   })
 </script>
 
+<Modal show={settingsVisibility} size="medium" on:generalVisibilityChanged={settingsVisibilityChanged}>
+  <h2>Filters</h2>
+  <div data-name="filters-buttons">
+    <div data-name="filters">
+      {#each [...JSONFilters] as [key, options]}
+        <AthenaFilter filter={{ name: key, categories: options }} bind:openedFilter allowInput={true}>
+          <div slot="option" data-component="filter-option" let:option>
+            <input
+              type="checkbox"
+              checked={checkIfFilterExists(key, options.altName, option)}
+              on:change={() =>
+                event != undefined
+                  ? updateAPIFilters(event, options.altName != undefined ? options.altName : 'sourceName', option)
+                  : null}
+            />
+            <p>{option}</p>
+          </div>
+        </AthenaFilter>
+      {/each}
+      <AthenaActivatedFilter filters={activatedAthenaFilters} bind:openedFilter filterName="Activated filters">
+        <div slot="option" data-component="filter-option" let:filter let:option>
+          <p>{option}</p>
+          <button on:click={() => removeFilter(filter, option)}
+            ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
+          >
+        </div>
+      </AthenaActivatedFilter>
+    </div>
+  </div>
+</Modal>
+
 <div data-name="athena-layout">
   <section data-name="filters-container-small">
-    <button><SvgIcon href="icons.svg" id="settings" width="10px" height="10px"/></button>
+    <button on:click={settingsVisibilityChanged}
+      ><SvgIcon href="icons.svg" id="settings" width="10px" height="10px" /></button
+    >
   </section>
   <section data-name="filters-container">
     <h2>Filters</h2>
@@ -145,7 +186,7 @@
   </section>
   <section data-name="table-pop-up">
     <div data-name="table-head">
-      <div data-name="top">
+      <div data-name="top-large">
         <h2>Athena data</h2>
         <slot name="currentRow" />
         <div data-name="options">
@@ -160,7 +201,20 @@
           </div>
         </div>
       </div>
-      <div data-name="bottom">
+      <div data-name="top-small">
+        <h2>Athena data</h2>
+        <Equivalence bind:Eq={equivalenceMapping} />
+        <select class="columnSelect" name="columns" id="columns" on:change={changeFilteredColumnAthena}>
+          {#each filterColumns as column}
+            <option value={column}>{column}</option>
+          {/each}
+        </select>
+      </div>
+      <div data-name="bottom-large">
+        <slot name="mappedRows" mapped={alreadyMapped} />
+      </div>
+      <div data-name="bottom-small">
+        <slot name="currentRow" />
         <slot name="mappedRows" mapped={alreadyMapped} />
       </div>
     </div>

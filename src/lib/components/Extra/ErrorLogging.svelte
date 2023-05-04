@@ -16,8 +16,8 @@
   <div
     data-name="logger"
     style={`background-color: ${
-      log.type == 'error' ? 'red' : log.type == 'warning' ? '#FFD580' : 'inherit'
-    }; border-color: ${log.type == 'error' ? 'red' : log.type == 'warning' ? '#FFCD67' : 'inherit'}`}
+      log.type == 'error' ? '#FFCCCB' : log.type == 'warning' ? '#FFD580' : 'inherit'
+    }; border-color: ${log.type == 'error' ? '#-FFCCCB' : log.type == 'warning' ? '#FFCD67' : 'inherit'}`}
   >
     <div data-name="logger-content">
       <h2>{log.title}</h2>

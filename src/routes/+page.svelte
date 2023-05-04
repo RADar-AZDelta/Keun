@@ -36,7 +36,7 @@
   let settingsVisibility: boolean = false
   let settings = new Map<string, boolean | string | number>([
     ['Map to multiple concepts', false],
-    ['Language of file', 'en'],
+    ['Language', 'en'],
   ])
   let languages: Record<string, string> = {
     bg: 'Bulgarian',
@@ -303,8 +303,8 @@
     updatingObj[Object.keys(event.detail.update)[0]] = Object.values(event.detail.update)[0]
     updatingObj.statusSetBy = author
     updatingObj.statusSetOn = Date.now()
-    updatingObj['ADD_INFO:approvedBy'] = ''
-    updatingObj['ADD_INFO:approvedOn'] = ''
+    updatingObj['ADD_INFO:approvedBy'] = null
+    updatingObj['ADD_INFO:approvedOn'] = null
     await dataTableFile.updateRows(new Map([[event.detail.index, updatingObj]]))
   }
 
@@ -505,6 +505,18 @@
   </div>
 </section>
 
+<section data-name="header-small">
+  <Header />
+  <div data-name="header-buttons-container" id="settings">
+    <Settings showSettingsPopUp={settingsVisibility} on:generalVisibilityChanged={settingsVisibilityChanged} />
+    <User showAuthorPopUp={authorVisibility} {author} on:generalVisibilityChanged={authorVisibilityChanged} />
+  </div>
+</section>
+
+<div data-name="logger-seperate">
+  <ErrorLogging visibility={errorVisibility} log={errorLog} />
+</div>
+
 <!-- MODALS -->
 
 <Modal on:generalVisibilityChanged={settingsVisibilityChanged} show={settingsVisibility} size="medium">
@@ -520,7 +532,7 @@
               <label for={name}>Test</label>
             </div>
           {:else if typeof value == 'string'}
-            {#if name == 'Language of file'}
+            {#if name == 'Language'}
               <select id={name} {value} on:change={saveSettings}>
                 {#each Object.keys(languages) as lang}
                   <option
@@ -549,7 +561,7 @@
 
 <Modal on:generalVisibilityChanged={authorVisibilityChanged} show={authorVisibility} size="small">
   <section data-name="author">
-    <h2 class="title is-5">Who is the author?</h2>
+    <h2>Who is the author?</h2>
     <input id="author" type="text" placeholder="John Wick" class="author-input" bind:value={authorInput} />
     <div data-name="buttons-container">
       <button data-name="cancel" on:click={cancelAuthorUpdate}>Cancel</button>
@@ -615,24 +627,26 @@
         </DataTable>
       {/if}
     </div>
-    <table slot="mappedRows" let:mapped>
-      {#if mapped.length != 0}
-        {#if mapped.length == 1 && mapped[0].conceptId == undefined && mapped[0].conceptName == undefined}
-          <div />
-        {:else}
-          <tr>
-            <th>conceptId</th>
-            <th>conceptName</th>
-          </tr>
-          <tr>
-            {#each mapped as row}
-              <td>{row.conceptId}</td>
-              <td>{row.conceptName}</td>
-            {/each}
-          </tr>
+    <div slot="mappedRows" data-name="mappedRows" let:mapped>
+      <table>
+        {#if mapped.length != 0}
+          {#if mapped.length == 1 && mapped[0].conceptId == undefined && mapped[0].conceptName == undefined}
+            <div />
+          {:else}
+            <tr>
+              <th>conceptId</th>
+              <th>conceptName</th>
+            </tr>
+            <tr>
+              {#each mapped as row}
+                <td>{row.conceptId}</td>
+                <td>{row.conceptName}</td>
+              {/each}
+            </tr>
+          {/if}
         {/if}
-      {/if}
-    </table>
+      </table>
+    </div>
   </AthenaLayout>
 </Modal>
 
