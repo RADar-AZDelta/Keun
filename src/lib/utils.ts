@@ -1,9 +1,5 @@
-import { browser } from '$app/environment'
 import type { IColumnMetaData, IPagination } from 'svelte-radar-datatable'
 import type { SingleSorting, IStatus } from './components/Types'
-import type DataTable from 'svelte-radar-datatable/components/DataTable.svelte'
-
-let allColumns: IColumnMetaData[]
 
 /*
     Basic helper methods
@@ -50,46 +46,6 @@ export const checkForScroll = (list: any[], limit: number): 'scroll' | null | un
   else return null
 }
 
-export const getAuthor = (getAuthorEvent?: Function) => {
-  let auth
-  if (browser == true) {
-    if (localStorageGetter('author') !== null) {
-      auth = localStorageGetter('author')
-    } else {
-      if (getAuthorEvent != undefined) getAuthorEvent()
-      else {
-        auth = 'Placeholder author'
-        console.warn('No author found')
-      }
-    }
-  } else auth = 'SSR author'
-  return auth
-}
-
-export const checkForAuthor = (data: any, columns: IColumnMetaData[], author: string) => {
-  if (data['ADD_INFO:author1'] != '' && data['ADD_INFO:author1'] != undefined && data['ADD_INFO:author1'] != author) {
-    return {
-      first: author,
-      second: data['ADD_INFO:author1'],
-    }
-  } else if (
-    data['ADD_INFO:author1'] != '' &&
-    data['ADD_INFO:author1'] != undefined &&
-    data['ADD_INFO:author2'] != '' &&
-    data['ADD_INFO:author2'] != undefined
-  ) {
-    return {
-      first: author,
-      second: data['ADD_INFO:author1'],
-    }
-  } else {
-    return {
-      first: author,
-      second: '',
-    }
-  }
-}
-
 export const updateSettings = async (
   settings: Map<string, boolean | string | number>,
   name: string,
@@ -101,8 +57,9 @@ export const updateSettings = async (
 }
 
 /*
-    Methods for the color of a row
+    Methods for the color of a cell / row
 */
+
 export function getColorFromStatus(
   row: any,
   columns: IColumnMetaData[] | undefined,
@@ -110,7 +67,6 @@ export function getColorFromStatus(
   statuses: IStatus[]
 ) {
   const allStatuses = []
-  console.log("ROW ", row, " COLUMNS ", columns)
   if (row != undefined && columns != undefined) {
     for (let status of statuses) {
       let error = false
@@ -123,32 +79,31 @@ export function getColorFromStatus(
               ? (rowValue = state)
               : (rowValue = row[columnIndex])
             : (rowValue = row[columnIndex])
-            console.log("DEP ", dep.column.toLowerCase(), " AND ROWVALUE ", rowValue)
           if (String(rowValue) != undefined) {
             if (dep.equal == true) {
-              if (String(dep.status).toLowerCase().replaceAll(' ','') !== String(rowValue).toLowerCase().replaceAll(' ','')) {
-                console.log('ERROR IN DEPENDENCIE ', String(dep.status).toLowerCase(), " IS NOT EQUAL TO ", String(rowValue).toLowerCase())
+              if (
+                String(dep.status).toLowerCase().replaceAll(' ', '') !==
+                String(rowValue).toLowerCase().replaceAll(' ', '')
+              ) {
                 error = true
               }
             } else if (dep.equal == false) {
-              if (String(dep.status).toLowerCase().replaceAll(' ','') == String(rowValue).toLowerCase().replaceAll(' ','')) {
-                console.log('ERROR IN DEPENDENCIE ', String(dep.status).toLowerCase(), " IS EQUAL TO ", String(rowValue).toLowerCase(), " WITH INDEX ", columnIndex)
+              if (
+                String(dep.status).toLowerCase().replaceAll(' ', '') ==
+                String(rowValue).toLowerCase().replaceAll(' ', '')
+              ) {
                 error = true
               }
             }
           } else error = true
         } else error = true
       }
-      error == false ? allStatuses.push(status) : console.log('ERROR IN DEPENDENCIE ', status)
+      error == false ? allStatuses.push(status) : null
     }
   }
   const priority = Math.max(...allStatuses.map(status => status.priority))
-  if (allStatuses.length > 0) {
-    return allStatuses.find(status => status.priority == priority)!.color
-  } else {
-    // console.log("HERE ", row)
-    return 'inherit'
-  }
+  if (allStatuses.length > 0) return allStatuses.find(status => status.priority == priority)!.color
+  else return 'inherit'
 }
 
 /*
