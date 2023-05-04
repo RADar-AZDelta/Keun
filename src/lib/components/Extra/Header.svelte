@@ -8,13 +8,12 @@
 
 <style>
   .logo-holder {
-    width: 400px;
-    height: 100px;
+    height: min-content;
   }
 
   .logo {
-    width: 100px;
-    height: 100px;
+    width: 50px;
+    height: 50px;
     display: inline-block;
     position: relative;
     background-image: url(keun.svg);
@@ -51,11 +50,11 @@
   .logo-text.text-bold {
     font-family: Calibri, Candara, Segoe, Segoe UI, Optima, Arial, sans-serif;
     font-weight: bold;
-    font-size: 100px;
+    font-size: 50px;
   }
 
   .logo-text.text-light {
     font-family: Calibri, Candara, Segoe, Segoe UI, Optima, Arial, sans-serif;
-    font-size: 75px;
+    font-size: 25px;
   }
 </style>

@@ -618,3 +618,40 @@ button[data-name='header-button'] {
 .apply {
   background-color: greenyellow;
 }
+
+section[data-name="header"] {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2rem 1rem;
+}
+
+div[data-name="logger"] {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 1rem;
+  border-width: 1px;
+  border-style: solid;
+  border-radius: 5px;
+  max-width: 40vw;
+  box-shadow: 5px 5px 5px 0px rgba(0, 0, 0, 0.1);
+
+  div[data-name="logger-content"] {
+    h2 {
+      font-weight: 700;
+      padding-bottom: 0.5rem;
+    }
+  }
+
+  button {
+    height: min-content;
+    width: min-content;
+    padding: 0.5rem;
+    background-color: inherit;
+    border: none;
+  }
+
+  button:hover {
+    color: red;
+  }
+}
