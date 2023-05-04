@@ -21,7 +21,7 @@
   import Settings from '$lib/components/Extra/Settings.svelte'
   import type { IColumnMetaData, IPagination, SortDirection, TFilter } from 'svelte-radar-datatable'
   import Modal from '$lib/components/Extra/Modal.svelte'
-  import { assembleURL, checkForAuthor, localStorageGetter, localStorageSetter, updateSettings } from '$lib/utils'
+  import { assembleURL, localStorageGetter, localStorageSetter, updateSettings } from '$lib/utils'
   import SvgIcon from '$lib/components/Extra/SvgIcon.svelte'
   import AthenaLayout from '$lib/components/Extra/AthenaLayout.svelte'
   import Row from '$lib/components/Mapping/Row.svelte'
@@ -249,7 +249,16 @@
 
   async function multipleRowMapping(event: CustomEvent<MultipleMappingEventDetail>) {
     const { mappedIndex, mappedRow } = await rowMapping(event.detail.originalRow, event.detail.row, dataTableFile)
-    console.log('MULTIPLE ', mappedRow)
+    const q = query()
+      .params({ value: mappedRow.sourceCode })
+      .filter((r: any, params: any) => r.sourceCode == params.value).toObject()
+    const res = await dataTableFile.executeQueryAndReturnResults(q)
+    mappedRow['ADD_INFO:numberOfConcepts'] = res.queriedData.length + 1
+    const rowsToUpdate = new Map()
+    for(let index of res.indices) {
+      rowsToUpdate.set(index, { 'ADD_INFO:numberOfConcepts': res.queriedData.length + 1 })
+    }
+    await dataTableFile.updateRows(rowsToUpdate)
     await insertRows(dataTableFile, [mappedRow])
   }
 
@@ -262,7 +271,8 @@
     if (event.detail.row[statusSetByIndex] == author && event.detail.action == 'APPROVED') {
       errorLog = {
         title: 'Invalid action',
-        message: "You cannot approve a row where you edited the row. Only a reviewer that hasn't edited the row can approve this row.",
+        message:
+          "You cannot approve a row where you edited the row. Only a reviewer that hasn't edited the row can approve this row.",
         type: 'warning',
       }
     } else {
@@ -489,8 +499,7 @@
 <section data-name="header">
   <Header />
   <ErrorLogging visibility={errorVisibility} log={errorLog} />
-  <div class="buttons is-right" id="settings">
-    <Download dataTable={dataTableFile} />
+  <div data-name="header-buttons-container" id="settings">
     <Settings showSettingsPopUp={settingsVisibility} on:generalVisibilityChanged={settingsVisibilityChanged} />
     <User showAuthorPopUp={authorVisibility} {author} on:generalVisibilityChanged={authorVisibilityChanged} />
   </div>
@@ -592,6 +601,7 @@
           <AthenaRow
             slot="default"
             let:renderedRow
+            let:index
             on:singleMapping={singleRowMapping}
             on:multipleMapping={multipleRowMapping}
             {renderedRow}
@@ -627,7 +637,10 @@
 </Modal>
 
 <!-- DATATABLE -->
-<input type="file" accept=".csv, .json" on:change={onFileInputChange} />
+<div data-name="table-options">
+  <input type="file" accept=".csv, .json" on:change={onFileInputChange} />
+  <Download dataTable={dataTableFile} />
+</div>
 <DataTable
   data={file}
   {columns}

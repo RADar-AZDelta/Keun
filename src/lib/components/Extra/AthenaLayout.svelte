@@ -110,6 +110,9 @@
 </script>
 
 <div data-name="athena-layout">
+  <section data-name="filters-container-small">
+    <button><SvgIcon href="icons.svg" id="settings" width="10px" height="10px"/></button>
+  </section>
   <section data-name="filters-container">
     <h2>Filters</h2>
     <div data-name="filters-buttons">
