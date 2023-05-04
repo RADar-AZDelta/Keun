@@ -10,6 +10,7 @@
     AutoMappingEventDetail,
     DeleteRowEventDetail,
     FilterOptionsChangedEventDetail,
+    ILogger,
     IStatus,
     MultipleMappingEventDetail,
     SingleMappingEventDetail,
@@ -28,6 +29,7 @@
   import AthenaRow from '$lib/components/Mapping/AthenaRow.svelte'
   import { op, query } from 'arquero'
   import Download from '$lib/components/Extra/Download.svelte'
+  import ErrorLogging from '$lib/components/Extra/ErrorLogging.svelte'
 
   let file: File
   let mounted: boolean = false
@@ -60,6 +62,8 @@
   let authorInput: string = ''
   let author: string = ''
   let mappingVisibility: boolean = false
+  let errorVisibility: boolean = false
+  let errorLog: ILogger = { message: undefined, title: undefined, type: undefined }
 
   let APIFilters: string[]
   let APICall: string
@@ -473,13 +477,15 @@
   })
 </script>
 
-<Header />
-
-<div class="buttons is-right" id="settings">
-  <Download dataTable={dataTableFile} />
-  <Settings showSettingsPopUp={settingsVisibility} on:generalVisibilityChanged={settingsVisibilityChanged} />
-  <User showAuthorPopUp={authorVisibility} {author} on:generalVisibilityChanged={authorVisibilityChanged} />
-</div>
+<section data-name="header">
+  <Header />
+  <ErrorLogging visibility={errorVisibility} log={errorLog} />
+  <div class="buttons is-right" id="settings">
+    <Download dataTable={dataTableFile} />
+    <Settings showSettingsPopUp={settingsVisibility} on:generalVisibilityChanged={settingsVisibilityChanged} />
+    <User showAuthorPopUp={authorVisibility} {author} on:generalVisibilityChanged={authorVisibilityChanged} />
+  </div>
+</section>
 
 <!-- MODALS -->
 

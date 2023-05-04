@@ -78,3 +78,9 @@ interface IDependency {
   status: string | null
   equal: boolean
 }
+
+export interface ILogger {
+  title: string | undefined
+  message: string | undefined
+  type: 'error' | 'warning' | undefined
+}
