@@ -171,6 +171,12 @@
       if (extension && allowedExtensions.includes(extension)) {
         file = f
         break
+      } else {
+        errorLog = {
+          title: 'File format',
+          message: "You inserted a file format that is not supported. The accepted format is '.csv'.",
+          type: 'error',
+        }
       }
     }
   }
@@ -254,7 +260,11 @@
     const updatingObj: { [key: string]: any } = {}
 
     if (event.detail.row[statusSetByIndex] == author && event.detail.action == 'APPROVED') {
-      // TODO: create error message
+      errorLog = {
+        title: 'Invalid action',
+        message: "You cannot approve a row where you edited the row. Only a reviewer that hasn't edited the row can approve this row.",
+        type: 'warning',
+      }
     } else {
       if (event.detail.row[statusSetByIndex] == author) {
         updatingObj.statusSetBy = author
@@ -445,7 +455,6 @@
     const element = e.target as HTMLSelectElement | HTMLInputElement
     const value = element.checked != undefined ? !element.checked : element.value
     const name = element.id
-    console.log('UPDATE SETTINGS ', !value)
     settings = await updateSettings(settings, name, value)
   }
 
