@@ -487,7 +487,7 @@
   }
 
   onMount(async () => {
-    localStorageGetter('author', false, false) !== null ? (author = localStorageGetter('author', false, false)) : null
+    localStorageGetter('author', false, false) !== null ? (author = localStorageGetter('author', false, false).replaceAll('"','')) : null
     if (author == '' || author == undefined || author == null) authorVisibility = true
 
     localStorageGetter('options', true, true) !== null ? (settings = localStorageGetter('options', true, true)) : null
