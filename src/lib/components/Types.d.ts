@@ -10,6 +10,7 @@ export interface CustomOptionsEvents {
   deleteRow: DeleteRowEventDetail
   cellEdited: CellEditedEventDetail
   columnFilterChanged: ColumnFilterChangedEventDetail
+  uniqueConceptIdsChanged: UniqueConceptIdsChangedEventDetail
 }
 
 export interface VisibilityChangedEventDetail {
@@ -55,6 +56,10 @@ export interface DeleteRowEventDetail {
 
 export interface ColumnFilterChangedEventDetail {
   filter: string
+}
+
+export interface UniqueConceptIdsChangedEventDetail {
+  uniqueConceptIds: string[]
 }
 
 export interface SingleSorting {
