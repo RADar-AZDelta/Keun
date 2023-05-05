@@ -8,7 +8,8 @@ export interface CustomOptionsEvents {
   actionPerformed: ActionPerformedEventDetail
   autoMapping: AutoMappingEventDetail
   deleteRow: DeleteRowEventDetail
-  cellEdited: cellEditedEventDetail
+  cellEdited: CellEditedEventDetail
+  columnFilterChanged: ColumnFilterChangedEventDetail
 }
 
 export interface VisibilityChangedEventDetail {
@@ -41,7 +42,7 @@ export interface AutoMappingEventDetail {
   index: number
 }
 
-export interface cellEditedEventDetail {
+export interface CellEditedEventDetail {
   index: number
   update: Record<string, any>
 }
@@ -50,6 +51,10 @@ export interface DeleteRowEventDetail {
   indexes: number[]
   sourceCode: string | number
   conceptId: string | number
+}
+
+export interface ColumnFilterChangedEventDetail {
+  filter: string
 }
 
 export interface SingleSorting {
