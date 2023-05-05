@@ -16,7 +16,8 @@
     SingleMappingEventDetail,
     SingleSorting,
     VisibilityChangedEventDetail,
-    cellEditedEventDetail,
+    CellEditedEventDetail,
+    ColumnFilterChangedEventDetail,
   } from '$lib/components/Types'
   import Settings from '$lib/components/Extra/Settings.svelte'
   import type { IColumnMetaData, IPagination, SortDirection, TFilter } from 'svelte-radar-datatable'
@@ -169,7 +170,7 @@
     for (const f of inputFiles) {
       const extension = f.name.split('.').pop()
       if (extension && allowedExtensions.includes(extension)) {
-        file = f
+          file = f
         break
       } else {
         errorLog = {
@@ -182,6 +183,7 @@
   }
 
   function authorVisibilityChanged(event: CustomEvent<VisibilityChangedEventDetail>) {
+    authorInput = author
     authorVisibility = event.detail.visibility
   }
 
@@ -236,6 +238,7 @@
           event.detail.index
         )
         rowsMapping.set(mappedIndex, mappedRow)
+        mappedRow['ADD_INFO:numberOfConcepts'] = 1
         await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
       }
       athenaFiltering = ''
@@ -251,11 +254,12 @@
     const { mappedIndex, mappedRow } = await rowMapping(event.detail.originalRow, event.detail.row, dataTableFile)
     const q = query()
       .params({ value: mappedRow.sourceCode })
-      .filter((r: any, params: any) => r.sourceCode == params.value).toObject()
+      .filter((r: any, params: any) => r.sourceCode == params.value)
+      .toObject()
     const res = await dataTableFile.executeQueryAndReturnResults(q)
     mappedRow['ADD_INFO:numberOfConcepts'] = res.queriedData.length + 1
     const rowsToUpdate = new Map()
-    for(let index of res.indices) {
+    for (let index of res.indices) {
       rowsToUpdate.set(index, { 'ADD_INFO:numberOfConcepts': res.queriedData.length + 1 })
     }
     await dataTableFile.updateRows(rowsToUpdate)
@@ -298,7 +302,7 @@
     await dataTableFile.updateRows(new Map([[event.detail.index, updatingObj]]))
   }
 
-  async function cellEdited(event: CustomEvent<cellEditedEventDetail>) {
+  async function cellEdited(event: CustomEvent<CellEditedEventDetail>) {
     const updatingObj: { [key: string]: any } = {}
     updatingObj[Object.keys(event.detail.update)[0]] = Object.values(event.detail.update)[0]
     updatingObj.statusSetBy = author
@@ -310,6 +314,11 @@
 
   async function deleteRow(event: CustomEvent<DeleteRowEventDetail>) {
     await dataTableFile.deleteRows(event.detail.indexes)
+  }
+
+  function columnFilterChanged(event: CustomEvent<ColumnFilterChangedEventDetail>) {
+    athenaFiltering = selectedRow[event.detail.filter]
+    fetchDataURL = fetchData
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -411,6 +420,7 @@
   }
 
   const cancelAuthorUpdate = async () => {
+    authorInput = author
     authorVisibility = false
   }
 
@@ -487,7 +497,9 @@
   }
 
   onMount(async () => {
-    localStorageGetter('author', false, false) !== null ? (author = localStorageGetter('author', false, false).replaceAll('"','')) : null
+    localStorageGetter('author', false, false) !== null
+      ? (author = localStorageGetter('author', false, false).replaceAll('"', ''), authorInput = author)
+      : null
     if (author == '' || author == undefined || author == null) authorVisibility = true
 
     localStorageGetter('options', true, true) !== null ? (settings = localStorageGetter('options', true, true)) : null
@@ -573,6 +585,7 @@
 <Modal on:generalVisibilityChanged={mappingVisibilityChanged} show={mappingVisibility} size="large">
   <AthenaLayout
     on:filterOptionsChanged={filterOptionsChanged}
+    on:columnFilterChanged={columnFilterChanged}
     bind:urlFilters={APIFilters}
     bind:equivalenceMapping
     bind:athenaFilteredColumn
@@ -613,7 +626,6 @@
           <AthenaRow
             slot="default"
             let:renderedRow
-            let:index
             on:singleMapping={singleRowMapping}
             on:multipleMapping={multipleRowMapping}
             {renderedRow}
@@ -637,12 +649,12 @@
               <th>conceptId</th>
               <th>conceptName</th>
             </tr>
-            <tr>
               {#each mapped as row}
+              <tr>
                 <td>{row.conceptId}</td>
                 <td>{row.conceptName}</td>
+              </tr>
               {/each}
-            </tr>
           {/if}
         {/if}
       </table>

@@ -84,6 +84,7 @@
     const inputElement = e.target as HTMLInputElement
     const inputValue = inputElement.value
     athenaFilteredColumn = inputValue
+    dispatch('columnFilterChanged', { filter: athenaFilteredColumn })
   }
 
   function removeFilter(filter: string, option: string) {
