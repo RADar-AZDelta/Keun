@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount } from 'svelte'
+  import { createEventDispatcher } from 'svelte'
   import type { CustomOptionsEvents, IStatus } from '../Types'
   import type { IColumnMetaData } from 'svelte-radar-datatable'
   import SvgIcon from '../Extra/SvgIcon.svelte'
@@ -8,7 +8,7 @@
   import { getColorFromStatus } from '$lib/utils'
 
   export let showMappingPopUp: boolean = false
-  export let renderedRow: any[],
+  export let renderedRow: Record<string, any>,
     columns: IColumnMetaData[] | undefined,
     index: number,
     dataTable: DataTable,
@@ -16,7 +16,6 @@
     statuses: IStatus[] = []
 
   let fullRow: any
-  let fullColumns: IColumnMetaData[] | undefined
   let state: string | undefined = undefined
   let color: string = 'inherit'
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
@@ -51,10 +50,8 @@
   }
 
   function onClickDeletion() {
-    const conceptIdIndex = columns!.findIndex(column => column.id === 'conceptId')
-    const conceptId = renderedRow[conceptIdIndex]
-    const sourceCodeIndex = columns!.findIndex(column => column.id === 'sourceCode')
-    const sourceCode = renderedRow[sourceCodeIndex]
+    const conceptId = renderedRow['conceptId']
+    const sourceCode = renderedRow['sourceCode']
     dispatch('deleteRow', { indexes: [index], sourceCode: sourceCode, conceptId: conceptId })
   }
 
@@ -73,15 +70,6 @@
     color = getColorFromStatus(renderedRow, columns, state, statuses)
   }
 
-  onMount(async () => {
-    const conceptIdIndex = columns!.findIndex(column => column.id === 'conceptId')
-    const conceptId = renderedRow[conceptIdIndex]
-    conceptId == undefined ? dispatch('autoMapping', { row: renderedRow, index: index }) : null
-    let fullR = await dataTable.getFullRow(index)
-    fullRow = fullR.row
-    fullColumns = await dataTable.getColumns()
-  })
-
   $: {
     renderedRow, dataTable, index
     getColors()
@@ -96,17 +84,17 @@
   <button on:click={onClickFlagging}><SvgIcon href="icons.svg" id="flag" width="16px" height="16px" /></button>
   <button on:click={onClickUnapproving}><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button>
 </td>
-{#each renderedRow as cell, i}
+{#each columns || [] as column, i (column.id)}
   <td style={`background-color: ${color}`}>
     {#if editable == true}
-      <EditableCell value={cell} on:valueChanged={event => valueUpdate(event, i)} />
+      <EditableCell value={renderedRow[column.id]} on:valueChanged={event => valueUpdate(event, i)} />
     {:else}
       <div class="field has-addons" data-component="cell-container">
         {#if columns != undefined && $$slots.editor}
           <slot name="editor" />
         {:else}
           <div>
-            <pre>{cell}</pre>
+            <pre>{renderedRow[column.id]}</pre>
           </div>
         {/if}
       </div>
