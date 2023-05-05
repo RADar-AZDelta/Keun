@@ -156,8 +156,8 @@
 
   let dataTableInit: boolean = false
 
-  const controller = new AbortController()
-  const signal = controller.signal
+  let autoMappingAbortController: AbortController
+  let autoMappingPromise: Promise<void>
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // EVENTS
@@ -218,51 +218,20 @@
     }
   }
 
-  async function autoMapping(event: CustomEvent<AutoMappingEventDetail>) {
-    if (signal.aborted) return Promise.reject(new DOMException('Aborted', 'AbortError'))
-    return new Promise(async (resolve, reject) => {
-      signal.addEventListener('abort', () => {
-        reject(new DOMException('Aborted', 'AbortError'))
-      })
-      const rowObj: { [key: string]: any } = {}
-      for (let i = 0; i < event.detail.row.length; i++) {
-        rowObj[columns[i].id as keyof object] = event.detail.row[i]
-      }
-      const URL = await assembleAthenaURL(rowObj[athenaFilteredColumn])
-      const res = await fetch(URL)
-      const resData = await res.json()
-      if (resData.content[0]) {
-        const { mappedIndex, mappedRow } = await rowMapping(
-          rowObj,
-          resData.content[0],
-          dataTableFile,
-          event.detail.index
-        )
-        rowsMapping.set(mappedIndex, mappedRow)
-        mappedRow['ADD_INFO:numberOfConcepts'] = 1
-        await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
-      }
-      athenaFiltering = ''
-    })
-  }
-
-  async function autoMapping2(row: Record<string, any>, index: number) {
-    if (signal.aborted) return Promise.reject(new DOMException('Aborted', 'AbortError'))
-    return new Promise(async (resolve, reject) => {
-      signal.addEventListener('abort', () => {
-        reject(new DOMException('Aborted', 'AbortError'))
-      })
-      const URL = await assembleAthenaURL(row[athenaFilteredColumn])
-      const res = await fetch(URL)
-      const resData = await res.json()
-      if (resData.content[0]) {
-        const { mappedIndex, mappedRow } = await rowMapping(row, resData.content[0], dataTableFile, index)
-        rowsMapping.set(mappedIndex, mappedRow)
-        mappedRow['ADD_INFO:numberOfConcepts'] = 1
-        await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
-      }
-      athenaFiltering = ''
-    })
+  async function autoMapRow(signal: AbortSignal, row: Record<string, any>, index: number) {
+    if (signal.aborted) return
+    const URL = await assembleAthenaURL(row[athenaFilteredColumn])
+    if (signal.aborted) return
+    const res = await fetch(URL)
+    const resData = await res.json()
+    if (resData.content[0]) {
+      const { mappedIndex, mappedRow } = await rowMapping(row, resData.content[0], dataTableFile, index)
+      rowsMapping.set(mappedIndex, mappedRow)
+      mappedRow['ADD_INFO:numberOfConcepts'] = 1
+      if (signal.aborted) return
+      await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
+    }
+    athenaFiltering = ''
   }
 
   async function singleRowMapping(event: CustomEvent<SingleMappingEventDetail>) {
@@ -497,34 +466,34 @@
     dataTableInit = true
   }
 
-  function abortAllPromises() {
+  function abortAutoMap() {
     // TODO: disable every input from table instead --> if bad feedback remove this
     console.log('HERE NOW FOR ABORT')
-    dataTableFile.setDisabled(true)
+    if (autoMappingPromise) autoMappingAbortController.abort()
+    //dataTableFile.setDisabled(true)
     // if (dataTableInit == true) controller.abort()
   }
 
-  async function checkForAutoMapping(index: number) {
-    if (signal.aborted) return Promise.reject(new DOMException('Aborted', 'AbortError'))
-    return new Promise(async (resolve, reject) => {
-      signal.addEventListener('abort', () => {
-        reject(new DOMException('Aborted', 'AbortError'))
-      })
-      console.log('HERE TEST ', index)
-      const row = await dataTableFile.getFullRow(index)
-      console.log('ROW ', row)
-      row.conceptId == undefined ? autoMapping2(row, index) : null
-    })
-  }
-
-  async function renderingCompleted() {
-    dataTableFile.setDisabled(true)
-    const pag = dataTableFile.getTablePagination()
-    for (let index of Array(pag.rowsPerPage!).keys()) {
-      console.log('HERE in FOR')
-      await checkForAutoMapping(index)
+  function autoMapPage() {
+    //dataTableFile.setDisabled(true)
+    if (autoMappingPromise) {
+      console.log('ABORTING')
+      autoMappingAbortController.abort()
     }
-    dataTableFile.setDisabled(false)
+
+    autoMappingAbortController = new AbortController()
+    const signal = autoMappingAbortController.signal
+
+    autoMappingPromise = new Promise(async (resolve, reject) => {
+      const pag = dataTableFile.getTablePagination()
+      for (let index of Array(pag.rowsPerPage!).keys()) {
+        if (signal.aborted) return Promise.resolve()
+        const row = await dataTableFile.getFullRow(index)
+        console.log(`ROW ${index}`, row)
+        if (row.conceptId == undefined) await autoMapRow(signal, row, index)
+      }
+      //dataTableFile.setDisabled(false)
+    })
   }
 
   let fetchDataURL = fetchData
@@ -710,8 +679,8 @@
   {columns}
   bind:this={dataTableFile}
   options={{ actionColumn: true }}
-  on:rendering={abortAllPromises}
-  on:renderingComplete={renderingCompleted}
+  on:rendering={abortAutoMap}
+  on:renderingComplete={autoMapPage}
   on:initialized={dataTableInitialized}
 >
   <Row
@@ -721,7 +690,6 @@
     let:index
     on:generalVisibilityChanged={mappingVisibilityChanged}
     on:actionPerformed={actionPerformed}
-    on:autoMapping={autoMapping}
     on:deleteRow={deleteRow}
     on:cellEdited={cellEdited}
     {renderedRow}
