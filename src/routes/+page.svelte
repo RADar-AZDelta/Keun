@@ -18,6 +18,7 @@
     VisibilityChangedEventDetail,
     CellEditedEventDetail,
     ColumnFilterChangedEventDetail,
+    UniqueConceptIdsChangedEventDetail,
   } from '$lib/components/Types'
   import Settings from '$lib/components/Extra/Settings.svelte'
   import type { IColumnMetaData, IPagination, SortDirection, TFilter } from 'svelte-radar-datatable'
@@ -170,7 +171,7 @@
     for (const f of inputFiles) {
       const extension = f.name.split('.').pop()
       if (extension && allowedExtensions.includes(extension)) {
-          file = f
+        file = f
         break
       } else {
         errorLog = {
@@ -321,6 +322,10 @@
     fetchDataURL = fetchData
   }
 
+  function uniqueConceptIdsChanged(event: CustomEvent<UniqueConceptIdsChangedEventDetail>) {
+    uniqueConceptIds = event.detail.uniqueConceptIds
+  }
+
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // METHODS
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -462,15 +467,6 @@
     await dataTableFile.changePagination(pag)
   }
 
-  const getAllUniqueConceptIds = async () => {
-    const q = query()
-      .select('conceptId')
-      .rollup({ conceptId: op.array_agg_distinct('conceptId') })
-      .toObject()
-    const res = await dataTableFile.executeQueryAndReturnResults(q)
-    uniqueConceptIds = res.queriedData[0].conceptId
-  }
-
   async function saveSettings(e: Event) {
     const element = e.target as HTMLSelectElement | HTMLInputElement
     const value = element.checked != undefined ? !element.checked : element.value
@@ -492,13 +488,9 @@
     if (mounted == true && (author == '' || author == undefined || author == null)) authorVisibility = true
   }
 
-  $: {
-    if (dataTableInit == true) getAllUniqueConceptIds()
-  }
-
   onMount(async () => {
     localStorageGetter('author', false, false) !== null
-      ? (author = localStorageGetter('author', false, false).replaceAll('"', ''), authorInput = author)
+      ? ((author = localStorageGetter('author', false, false).replaceAll('"', '')), (authorInput = author))
       : null
     if (author == '' || author == undefined || author == null) authorVisibility = true
 
@@ -586,6 +578,7 @@
   <AthenaLayout
     on:filterOptionsChanged={filterOptionsChanged}
     on:columnFilterChanged={columnFilterChanged}
+    on:uniqueConceptIdsChanged={uniqueConceptIdsChanged}
     bind:urlFilters={APIFilters}
     bind:equivalenceMapping
     bind:athenaFilteredColumn
@@ -649,12 +642,12 @@
               <th>conceptId</th>
               <th>conceptName</th>
             </tr>
-              {#each mapped as row}
+            {#each mapped as row}
               <tr>
                 <td>{row.conceptId}</td>
                 <td>{row.conceptName}</td>
               </tr>
-              {/each}
+            {/each}
           {/if}
         {/if}
       </table>

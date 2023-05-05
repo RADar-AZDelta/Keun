@@ -106,6 +106,7 @@
     for (let row of res.queriedData) {
       alreadyMapped.push(row)
     }
+    dispatch('uniqueConceptIdsChanged', { uniqueConceptIds: alreadyMapped.map((row) => row.conceptId)})
     savedFilters =
       localStorageGetter('AthenaFilters') !== null
         ? new Map<string, string[]>()

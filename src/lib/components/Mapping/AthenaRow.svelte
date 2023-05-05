@@ -11,7 +11,7 @@
     mainTable: DataTable,
     mainTableColumns: IColumnMetaData[],
     selectedRowIndex: number,
-    uniqueConceptIds: string[]
+    uniqueConceptIds: string[] = []
 
   let alreadyMapped: boolean = false
   let originalRow: Record<string, any>
