@@ -32,21 +32,18 @@
   }
 
   async function onClickApproving() {
-    const row = await fetchRow()
     state = 'APPROVED'
-    dispatch('actionPerformed', { action: 'APPROVED', index: index, row: fullRow })
+    dispatch('actionPerformed', { action: 'APPROVED', index: index, row: renderedRow })
   }
 
   async function onClickFlagging() {
-    const row = await fetchRow()
     state = 'FLAGGED'
-    dispatch('actionPerformed', { action: 'FLAGGED', index: index, row: fullRow })
+    dispatch('actionPerformed', { action: 'FLAGGED', index: index, row: renderedRow })
   }
 
   async function onClickUnapproving() {
-    const row = await fetchRow()
     state = 'UNAPPROVED'
-    dispatch('actionPerformed', { action: 'UNAPPROVED', index: index, row: fullRow })
+    dispatch('actionPerformed', { action: 'UNAPPROVED', index: index, row: renderedRow })
   }
 
   function onClickDeletion() {
@@ -55,19 +52,12 @@
     dispatch('deleteRow', { indexes: [index], sourceCode: sourceCode, conceptId: conceptId })
   }
 
-  async function fetchRow() {
-    const row = await dataTable.getFullRow(index)
-    fullRow = row.row
-    return fullRow
-  }
-
   async function valueUpdate(e: CustomEvent<any>, i: number) {
     dispatch('cellEdited', { index: index, update: Object.fromEntries([[columns![i].id, e.detail]]) })
   }
 
   function getColors() {
-    // TODO: fix the issue that the color won't update if the checked columns are not visible --> when getting fullRow & all the columns --> only the last row will execute the method
-    color = getColorFromStatus(renderedRow, columns, state, statuses)
+    color = getColorFromStatus(renderedRow, state, statuses)
   }
 
   $: {

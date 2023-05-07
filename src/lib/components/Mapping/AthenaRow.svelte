@@ -5,40 +5,29 @@
   import type DataTable from 'svelte-radar-datatable'
   import type { IColumnMetaData } from 'svelte-radar-datatable'
 
-  export let renderedRow: any[],
+  export let renderedRow: Record<string, any>,
     columns: IColumnMetaData[],
     settings: Map<string, boolean | string | number>,
     mainTable: DataTable,
-    mainTableColumns: IColumnMetaData[],
     selectedRowIndex: number,
     uniqueConceptIds: string[] = []
 
   let alreadyMapped: boolean = false
-  let originalRow: Record<string, any>
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
   let multipleConcepts =
     settings.get('Map to multiple concepts') != undefined ? settings.get('Map to multiple concepts')! : false
 
   async function onClickMapping() {
-    originalRow = await mainTable.getFullRow(selectedRowIndex)
-
-    let rowObj: Record<string, any> = {}
-    for (let i = 0; i < originalRow.row.length; i++) {
-      rowObj[mainTableColumns![i].id] = originalRow.row[i]
-    }
-    let renderedObj: Record<string, any> = {}
-    for (let i = 0; i < renderedRow.length; i++) {
-      renderedObj[columns[i].id] = renderedRow[i]
-    }
-    if (multipleConcepts == true) dispatch('multipleMapping', { originalRow: rowObj, row: renderedObj })
-    else dispatch('singleMapping', { originalRow: originalRow.row, row: renderedObj })
+    let originalRow = await mainTable.getFullRow(selectedRowIndex)
+    if (multipleConcepts == true) dispatch('multipleMapping', { originalRow, row: renderedRow })
+    else dispatch('singleMapping', { originalRow, row: renderedRow })
 
     multipleConcepts == true ? (alreadyMapped = true) : null
   }
 
   $: {
-    uniqueConceptIds.includes(renderedRow[0]) ? (alreadyMapped = true) : (alreadyMapped = false)
+    uniqueConceptIds.includes(renderedRow.id) ? (alreadyMapped = true) : (alreadyMapped = false)
   }
 </script>
 
@@ -49,10 +38,10 @@
     <button on:click={onClickMapping}><SvgIcon href="icons.svg" id="map" width="16px" height="16px" /></button>
   {/if}
 </td>
-{#each renderedRow as cell, i}
+{#each columns || [] as column (column.id)}
   <td>
     <div class="field has-addons" data-component="cell-container">
-      <p>{cell}</p>
+      <p>{renderedRow[column.id]}</p>
     </div>
   </td>
 {/each}
