@@ -60,42 +60,33 @@ export const updateSettings = async (
     Methods for the color of a cell / row
 */
 
-export function getColorFromStatus(
-  row: any,
-  columns: IColumnMetaData[] | undefined,
-  state: string | undefined,
-  statuses: IStatus[]
-) {
+export function getColorFromStatus(row: Record<string, any>, state: string | undefined, statuses: IStatus[]) {
   const allStatuses = []
-  if (row != undefined && columns != undefined) {
+  if (row != undefined) {
     for (let status of statuses) {
       let error = false
       for (let dep of status.dependencies) {
-        const columnIndex = columns!.findIndex(col => col.id.toLowerCase() == dep.column.toLowerCase())
-        if (columnIndex != undefined) {
-          let rowValue
-          dep.column.toLowerCase() == 'mappingstatus'
-            ? state != undefined
-              ? (rowValue = state)
-              : (rowValue = row[columnIndex])
-            : (rowValue = row[columnIndex])
-          if (String(rowValue) != undefined) {
-            if (dep.equal == true) {
-              if (
-                String(dep.status).toLowerCase().replaceAll(' ', '') !==
-                String(rowValue).toLowerCase().replaceAll(' ', '')
-              ) {
-                error = true
-              }
-            } else if (dep.equal == false) {
-              if (
-                String(dep.status).toLowerCase().replaceAll(' ', '') ==
-                String(rowValue).toLowerCase().replaceAll(' ', '')
-              ) {
-                error = true
-              }
+        let rowValue
+        dep.column.toLowerCase() == 'mappingstatus'
+          ? state != undefined
+            ? (rowValue = state)
+            : (rowValue = row[dep.column])
+          : (rowValue = row[dep.column])
+        if (String(rowValue) != undefined) {
+          if (dep.equal == true) {
+            if (
+              String(dep.status).toLowerCase().replaceAll(' ', '') !==
+              String(rowValue).toLowerCase().replaceAll(' ', '')
+            ) {
+              error = true
             }
-          } else error = true
+          } else if (dep.equal == false) {
+            if (
+              String(dep.status).toLowerCase().replaceAll(' ', '') == String(rowValue).toLowerCase().replaceAll(' ', '')
+            ) {
+              error = true
+            }
+          }
         } else error = true
       }
       error == false ? allStatuses.push(status) : null

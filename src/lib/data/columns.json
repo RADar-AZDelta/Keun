@@ -12,7 +12,7 @@
   {
     "id": "sourceFrequency",
     "position": 3,
-    "visible": true
+    "visible": false
   },
   {
     "id": "conceptId",
@@ -42,7 +42,7 @@
   },
   {
     "id": "ADD_INFO:approvedBy",
-    "visible": true,
+    "visible": false,
     "position": 10
   },
   {
@@ -65,11 +65,11 @@
   {
     "id": "equivalence",
     "position": 6,
-    "visible": true
+    "visible": false
   },
   {
     "id": "statusSetBy",
-    "visible": true,
+    "visible": false,
     "position": 9
   },
   {
@@ -86,7 +86,7 @@
   },
   {
     "id": "createdBy",
-    "visible": true,
+    "visible": false,
     "position": 8
   },
   {
@@ -95,10 +95,10 @@
   },
   {
     "id": "assignedReviewer",
-    "visible": true
+    "visible": false
   },
   {
     "id": "ADD_INFO:numberOfConcepts",
-    "visible": true
+    "visible": false
   }
 ]
