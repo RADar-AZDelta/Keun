@@ -69,7 +69,16 @@
 <td class="actions" style={`background-color: ${color}`}>
   <button on:click={onClickMapping}><SvgIcon href="icons.svg" id="map" width="16px" height="16px" /></button>
   <button on:click={onClickDeletion}><SvgIcon href="icons.svg" id="trash" width="16px" height="16px" /></button>
-  <div />
+  {#if renderedRow.equivalence == 'EQUAL'}
+    <div class="icon-container"><SvgIcon href="icons.svg" id="EQUAL" height="16px" width="16px" /></div>
+  {:else}
+    <div />
+  {/if}
+  {#if renderedRow["ADD_INFO:numberOfConcepts"]}
+    <div class="icon-container"><p>{renderedRow["ADD_INFO:numberOfConcepts"]}</p></div>
+  {:else}
+    <div />
+  {/if}
   <button on:click={onClickApproving}><SvgIcon href="icons.svg" id="check" width="16px" height="16px" /></button>
   <button on:click={onClickFlagging}><SvgIcon href="icons.svg" id="flag" width="16px" height="16px" /></button>
   <button on:click={onClickUnapproving}><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button>
@@ -95,7 +104,14 @@
 <style>
   .actions {
     display: grid;
-    grid-template-columns: repeat(3, min-content);
+    grid-template-columns: repeat(4, min-content);
     grid-template-rows: repeat(2, min-content);
+  }
+
+  .icon-container {
+    padding: 0 0.25rem;
+    background-color: aliceblue;
+    border: 1px solid gray;
+    border-radius: 5px;
   }
 </style>
