@@ -123,7 +123,6 @@
       selectedRowIndex = event.detail.data.index
     }
     athenaFiltering = ''
-    const tablePagination = dataTableFile.getTablePagination()
   }
 
   function filterOptionsChanged(event: CustomEvent<FilterOptionsChangedEventDetail>) {
@@ -252,14 +251,17 @@
     }
 
     // Add sorting to URL if there is sorting
-    if (sorting) url += `&sort=${sorting[0]}&order=${sorting[1]}`
+    if (sorting) {
+      const sortingName = columnsAthena[sorting[0] as keyof Object]
+      url += `&sort=${sortingName}&order=${sorting[1]}`
+    }
 
     // Add filter to URL if there is a filter
     if (athenaFiltering) url += `&query=${athenaFiltering}`
 
     // Add pagination to URL if there is pagination
     if (pagination) url += `&page=${pagination.currentPage}`
-    
+
     return encodeURI(url)
   }
 
@@ -268,7 +270,6 @@
     sortedColumns: Map<string, SortDirection>,
     pagination: IPagination
   ) {
-    console.log('SORTING ', sortedColumns)
     const url = await assembleAthenaURL(
       filteredColumns.entries().next().value,
       sortedColumns.entries().next().value,
@@ -316,7 +317,7 @@
 
           case 'createdBy':
           case 'createdOn':
-            if (!mappedUsagiRow.createdBy && mappedUsagiRow.createdBy != settings.author && !autoMap) {
+            if (!mappedUsagiRow.createdBy && mappedUsagiRow.createdBy != settings.author) {
               mappedUsagiRow.createdBy = settings.author
               mappedUsagiRow.createdOn = Date.now()
             }
