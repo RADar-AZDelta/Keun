@@ -15,7 +15,6 @@
   export let urlFilters: string[],
     equivalenceMapping: string,
     athenaFilteredColumn: string,
-    filterColumns: string[],
     selectedRow: Record<string, any>,
     selectedRowIndex: number,
     mainTable: DataTable,
@@ -32,36 +31,45 @@
   const athenaColumns: IColumnMetaData[] = [
     {
       id: 'id',
+      filterable: false
     },
     {
       id: 'code',
+      filterable: false
     },
     {
       id: 'name',
     },
     {
       id: 'className',
+      filterable: false
     },
     {
       id: 'standardConcept',
+      filterable: false
     },
     {
       id: 'invalidReason',
+      filterable: false
     },
     {
       id: 'domain',
+      filterable: false
     },
     {
       id: 'vocabulary',
+      filterable: false
     },
     {
       id: 'score',
+      filterable: false
     },
   ]
 
   let dataTableAthena: DataTable
 
-  let alreadyMapped: Record<string, any>[] = []
+  let alreadyMapped: any[] = []
+  let uniqueConceptIds: string[]
 
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
@@ -151,31 +159,9 @@
     dispatch('filterOptionsChanged', { filters: activatedAthenaFilters })
   }
 
-  function onRowChange(e: Event) {
-    const elem = e.target as HTMLButtonElement
-    if (elem.id == 'left') dispatch('rowChange', { up: false })
-    else dispatch('rowChange', { up: true })
+  function onRowChange(up: boolean) {
+    dispatch('rowChange', { up })
   }
-
-  // onMount(async () => {
-  //   const q = query()
-  //     .params({ value: selectedRow.sourceCode })
-  //     .filter((d: any, params: any) => d.sourceCode == params.value)
-  //     .toObject()
-  //   const res = await mainTable.executeQueryAndReturnResults(q)
-  //   for (let row of res.queriedData) {
-  //     alreadyMapped.push(row)
-  //   }
-  //   dispatch('uniqueConceptIdsChanged', { uniqueConceptIds: alreadyMapped.map(row => row.conceptId) })
-  //   savedFilters =
-  //     localStorageGetter('AthenaFilters') !== null ? new Map<string, string[]>() : localStorageGetter('AthenaFilters')
-  //   activatedAthenaFilters = savedFilters
-  //   savedFilters != null
-  //     ? (activatedAthenaFilters = savedFilters)
-  //     : (activatedAthenaFilters = new Map<string, string[]>())
-  //   //CAUSES INFINITE LOOP !!!!!!!!!!!!!!!!!!!!!!
-  //   //activatedAthenaFilters != null ? dispatch('filterOptionsChanged', { filters: activatedAthenaFilters }) : null
-  // })
 
   async function getUniqueConceptIds() {
     const q = query()
@@ -184,15 +170,16 @@
       .toObject()
     const res = await mainTable.executeQueryAndReturnResults(q)
     for (let row of res.queriedData) {
-      alreadyMapped.push(row)
+      if(row.conceptId) {
+        alreadyMapped.push(row)
+      }
     }
-    dispatch('uniqueConceptIdsChanged', { uniqueConceptIds: alreadyMapped.map(row => row.conceptId) })
+
     savedFilters =
       localStorageGetter('AthenaFilters') !== null ? new Map<string, string[]>() : localStorageGetter('AthenaFilters')
-    activatedAthenaFilters = savedFilters
-    savedFilters != null
-      ? (activatedAthenaFilters = savedFilters)
-      : (activatedAthenaFilters = new Map<string, string[]>())
+
+    if (savedFilters) activatedAthenaFilters = savedFilters
+    else activatedAthenaFilters = new Map<string, string[]>()
   }
 
   $: {
@@ -243,10 +230,10 @@
     </section>
     <section data-name="table-pop-up">
       <div data-name="table-head">
-        <div data-name="top-large">
+        <div data-name="top">
           <h2>Athena data</h2>
           <div data-name="currentRow">
-            <button id="left" on:click={onRowChange} disabled={selectedRowIndex == 0 ? true : false}>
+            <button id="left" on:click={() => onRowChange(false)} disabled={selectedRowIndex == 0 ? true : false}>
               <SvgIcon href="icons.svg" id="arrow-left" width="16px" height="16px" />
             </button>
             <table class="table">
@@ -263,7 +250,7 @@
                 {/if}
               </tr>
             </table>
-            <button id="right" on:click={onRowChange} disabled={lastRow}>
+            <button id="right" on:click={() => onRowChange(true)} disabled={lastRow}>
               <SvgIcon href="icons.svg" id="arrow-right" width="16px" height="16px" />
             </button>
           </div>
@@ -272,26 +259,16 @@
             <div data-name="columnFilter">
               <p>Filter on column:</p>
               <select class="columnSelect" name="columns" id="columns" on:change={changeFilteredColumnAthena}>
-                {#each filterColumns as column}
-                  <option value={column}>{column}</option>
-                {/each}
+                <option value="sourceName">sourceName</option>
+                <option value="sourceCode">sourceCode</option>
               </select>
             </div>
           </div>
         </div>
-        <div data-name="top-small">
-          <h2>Athena data</h2>
-          <Equivalence bind:Eq={equivalenceMapping} />
-          <select class="columnSelect" name="columns" id="columns" on:change={changeFilteredColumnAthena}>
-            {#each filterColumns as column}
-              <option value={column}>{column}</option>
-            {/each}
-          </select>
-        </div>
-        <div data-name="bottom-large">
+        <div data-name="bottom">
           <div data-name="mappedRows">
             <table>
-              {#if alreadyMapped.length == 1 && alreadyMapped[0].conceptId == undefined && alreadyMapped[0].conceptName == undefined}
+              {#if alreadyMapped.length > 0}
                 <div />
               {:else}
                 <tr>
@@ -324,6 +301,7 @@
             columns={athenaColumns}
             {mainTable}
             {selectedRowIndex}
+            {uniqueConceptIds}
             on:singleMapping={singleMapping}
             on:multipleMapping={multipleMapping}
           />
