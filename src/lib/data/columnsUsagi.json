@@ -1,0 +1,97 @@
+[
+  {
+    "id": "sourceCode",
+    "visible": true,
+    "editable": false
+  },
+  {
+    "id": "sourceName",
+    "visible": true,
+    "editable": false
+  },
+  {
+    "id": "sourceFrequency",
+    "visible": false,
+    "editable": false
+  },
+  {
+    "id": "conceptId",
+    "visible": true,
+    "editable": false
+  },
+  {
+    "id": "sourceAutoAssignedConceptIds",
+    "visible": true,
+    "editable": false
+  },
+  {
+    "id": "conceptName",
+    "visible": true,
+    "editable": false
+  },
+  {
+    "id": "domainId",
+    "visible": false,
+    "editable": false
+  },
+  {
+    "id": "matchScore",
+    "visible": false,
+    "editable": false
+  },
+  {
+    "id": "mappingStatus",
+    "visible": false,
+    "editable": false
+  },
+  {
+    "id": "equivalence",
+    "visible": false,
+    "editable": false
+  },
+  {
+    "id": "statusSetBy",
+    "visible": true,
+    "editable": false
+  },
+  {
+    "id": "statusSetOn",
+    "visible": false,
+    "editable": false
+  },
+  {
+    "id": "mappingType",
+    "visible": false,
+    "editable": false
+  },
+  {
+    "id": "comment",
+    "visible": false,
+    "editable": false
+  },
+  {
+    "id": "createdBy",
+    "visible": true,
+    "editable": false
+  },
+  {
+    "id": "createdOn",
+    "visible": false,
+    "editable": false
+  },
+  {
+    "id": "assignedReviewer",
+    "visible": true,
+    "editable": false
+  },
+  {
+    "id": "ADD_INFO:approvedBy",
+    "visible": true,
+    "editable": false
+  },
+  {
+    "id": "ADD_INFO:approvedOn",
+    "visible": false,
+    "editable": false
+  }
+]
