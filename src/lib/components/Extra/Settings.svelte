@@ -5,6 +5,8 @@
 
   export let settings: Record<string, any>
 
+  let settingsCount: number = 0
+
   let languages: Record<string, string> = {
     bg: 'Bulgarian',
     ca: 'Catalan',
@@ -27,17 +29,23 @@
   }
 
   let showModal = false,
-    mapToMultipleConcepts = false,
-    language = 'nl'
+    mapToMultipleConcepts: boolean,
+    language: string
 
   async function saveSettings(e: Event) {
-    // const element = e.target as HTMLSelectElement | HTMLInputElement
-    // const value = element.checked != undefined ? !element.checked : element.value
-    // const name = element.id
-
     settings.mapToMultipleConcepts = mapToMultipleConcepts
     settings.language = language
     localStorageSetter('settings', settings)
+  }
+
+  $: {
+    settings
+    // Count how many times settings has changed because the first time will be the initial values saved in page.svelte & the second time will be the values from the localStorage and after that we want to change the values
+    if (settingsCount <= 1) {
+      mapToMultipleConcepts = settings.mapToMultipleConcepts
+      language = settings.language
+      settingsCount += 1
+    }
   }
 </script>
 
@@ -50,34 +58,20 @@
     <h2 class="pop-up-title">Settings</h2>
     <div data-name="options">
       <div data-name="option">
-        <p>{name}</p>
+        <p>Map to multiple concepts?</p>
         <div data-name="switch">
-          <input type="checkbox" bind:checked={mapToMultipleConcepts} on:change={saveSettings} />
-          <label>Map to multiple concepts?</label>
+          <input id="MultipleConcepts" type="checkbox" bind:checked={mapToMultipleConcepts} on:change={saveSettings} />
+          <label for="MultipleConcepts" />
         </div>
       </div>
-
-      {#each Object.entries(settings) as [name, value]}
-        <div data-name="option">
-          <p>{name}</p>
-          {#if typeof value == 'boolean'}
-            <div data-name="switch">
-              <input id={name} type="checkbox" bind:checked={value} on:change={saveSettings} />
-              <label for={name}>Test</label>
-            </div>
-          {:else if typeof value == 'string'}
-            {#if name == 'Language'}
-              <select id={name} {value} on:change={saveSettings}>
-                {#each Object.keys(languages) as lang}
-                  <option value={lang}>{languages[lang]}</option>
-                {/each}
-              </select>
-            {/if}
-          {:else if typeof value == 'number'}
-            <input type="number" bind:value on:change={saveSettings} />
-          {/if}
-        </div>
-      {/each}
+      <div data-name="option">
+        <p>Language</p>
+        <select name="language" id="language" bind:value={language} on:change={saveSettings}>
+          {#each Object.keys(languages) as lang}
+            <option value={lang}>{languages[lang]}</option>
+          {/each}
+        </select>
+      </div>
     </div>
   </section>
 </Modal>
