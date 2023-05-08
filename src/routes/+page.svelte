@@ -28,11 +28,7 @@
 
   let file: File | undefined
 
-  let settings: Record<string, any> = {
-    mapToMultipleConcepts: false,
-    language: 'nl',
-    author: undefined,
-  }
+  let settings: Record<string, any> | undefined = undefined
 
   let mappingVisibility: boolean = false
   let errorVisibility: boolean = false
@@ -399,7 +395,12 @@
   onMount(async () => {
     const storedSettings = localStorageGetter('settings')
     if (storedSettings) settings = storedSettings
-    else localStorageSetter('settings', settings)
+    else
+      settings = {
+        mapToMultipleConcepts: false,
+        language: 'nl',
+        author: undefined,
+      }
   })
 </script>
 
