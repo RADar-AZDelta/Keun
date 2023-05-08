@@ -14,7 +14,7 @@ Although [Usagi](https://www.ohdsi.org/web/wiki/doku.php?id=documentation:softwa
 - It doesn't do translations
 - The [Athena](https://athena.ohdsi.org/) search result are much more better then the Usagi search results
 
-Therefor we decided to make a modern web variant of Usagi:
+Therefore we decided to make a modern web variant of Usagi:
 - No installation, just run it from your browser
 - Made with [Svelte](https://svelte.dev/): cybernetically enhanced web apps
 - Includes the super fast [svelte-radar-datatable](https://github.com/RADar-AZDelta/svelte-radar-datatable) component. So it can handle very, very lage CSV files.
