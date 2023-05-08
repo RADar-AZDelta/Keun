@@ -15,16 +15,14 @@
     VisibilityChangedEventDetail,
     ColumnFilterChangedEventDetail,
     UniqueConceptIdsChangedEventDetail,
+    RowChangeEventDetail,
   } from '$lib/components/Types'
   import type { IColumnMetaData, IPagination, SortDirection, TFilter } from 'svelte-radar-datatable'
-  import Modal from '$lib/components/Extra/Modal.svelte'
   import { localStorageGetter } from '$lib/utils'
-  import SvgIcon from '$lib/components/Extra/SvgIcon.svelte'
   import AthenaLayout from '$lib/components/Extra/AthenaLayout.svelte'
   import UsagiRow from '$lib/components/Mapping/UsagiRow.svelte'
   import { onMount, tick } from 'svelte'
-  import AthenaRow from '$lib/components/Mapping/AthenaRow.svelte'
-  import { op, query } from 'arquero'
+  import { query } from 'arquero'
   import Download from '$lib/components/Extra/Download.svelte'
   import ErrorLogging from '$lib/components/Extra/ErrorLogging.svelte'
   import Settings from '$lib/components/Extra/Settings.svelte'
@@ -37,11 +35,6 @@
     author: undefined,
   }
 
-  // let mounted: boolean = false
-  let settingsVisibility: boolean = false
-
-  let authorVisibility: boolean = false
-  let authorInput: string = ''
   let author: string = ''
   let mappingVisibility: boolean = false
   let errorVisibility: boolean = false
@@ -70,38 +63,6 @@
   let dataTableFile: DataTable
 
   let columns: IColumnMetaData[] | undefined = undefined // dataTableColumns
-
-  let dataTableAthena: DataTable
-
-  const athenaColumns: IColumnMetaData[] = [
-    {
-      id: 'id',
-    },
-    {
-      id: 'code',
-    },
-    {
-      id: 'name',
-    },
-    {
-      id: 'className',
-    },
-    {
-      id: 'standardConcept',
-    },
-    {
-      id: 'invalidReason',
-    },
-    {
-      id: 'domain',
-    },
-    {
-      id: 'vocabulary',
-    },
-    {
-      id: 'score',
-    },
-  ]
 
   let importantAthenaColumns = new Map<string, string>([
     ['id', 'conceptId'],
@@ -188,7 +149,7 @@
 
   async function autoMapRow(signal: AbortSignal, row: Record<string, any>, index: number) {
     if (signal.aborted) return
-    const url = assembleAthenaURL(row[athenaFilteredColumn])
+    const url = await assembleAthenaURL(row[athenaFilteredColumn])
     if (signal.aborted) return
     const res = await fetch(url)
     const resData = await res.json()
@@ -224,7 +185,7 @@
   }
 
   async function actionPerformed(event: CustomEvent<ActionPerformedEventDetail>) {
-    columns.find(column => column.id == 'mappingStatus') == undefined ? columns.push({ id: 'mappingStatus' }) : null
+    columns!.find(column => column.id == 'mappingStatus') == undefined ? columns!.push({ id: 'mappingStatus' }) : null
     const updatingObj: { [key: string]: any } = {}
 
     console.log('STATUSSETBY ', event.detail.row, ' & ACTION ', event.detail.action, ' & AUTHOR ', author)
@@ -246,24 +207,41 @@
         updatingObj.mappingStatus = event.detail.action
       } else {
         if (event.detail.action === 'APPROVED') {
-          updatingRow['ADD_INFO:approvedBy'] = author
-          updatingRow['ADD_INFO:approvedOn'] = Date.now()
-          updatingRow.mappingStatus = event.detail.action
+          updatingObj['ADD_INFO:approvedBy'] = author
+          updatingObj['ADD_INFO:approvedOn'] = Date.now()
+          updatingObj.mappingStatus = event.detail.action
         } else {
-          updatingRow.statusSetBy = author
-          updatingRow.statusSetOn = Date.now()
-          updatingRow['ADD_INFO:approvedBy'] = undefined
-          updatingRow['ADD_INFO:approvedOn'] = undefined
-          updatingRow.mappingStatus = event.detail.action
+          updatingObj.statusSetBy = author
+          updatingObj.statusSetOn = Date.now()
+          updatingObj['ADD_INFO:approvedBy'] = undefined
+          updatingObj['ADD_INFO:approvedOn'] = undefined
+          updatingObj.mappingStatus = event.detail.action
         }
       }
     }
 
-    await dataTableFile.updateRows(new Map([[event.detail.index, updatingRow]]))
+    await dataTableFile.updateRows(new Map([[event.detail.index, updatingObj]]))
   }
 
   async function deleteRow(event: CustomEvent<DeleteRowEventDetail>) {
     await dataTableFile.deleteRows(event.detail.indexes)
+  }
+
+  async function selectRow(event: CustomEvent<RowChangeEventDetail>) {
+    const tablePagination = await dataTableFile.getTablePagination()
+    if (event.detail.up && selectedRowIndex + 1 < tablePagination.totalRows!) selectedRowIndex += 1
+    if (!event.detail.up && selectedRowIndex - 1 >= 0) selectedRowIndex -= 1
+    lastRow = event.detail.up && selectedRowIndex === tablePagination.totalRows! - 1
+
+    if (event.detail.up && selectedRowIndex !== 0) {
+      if (selectedRowIndex % tablePagination.rowsPerPage! === 0) {
+        await changePagination({ currentPage: tablePagination.currentPage! + 1 })
+      }
+    }
+
+    selectedRow = await dataTableFile.getFullRow(selectedRowIndex)
+    athenaFiltering = selectedRow[athenaFilteredColumn]
+    fetchDataFunc = fetchData
   }
 
   function columnFilterChanged(event: CustomEvent<ColumnFilterChangedEventDetail>) {
@@ -293,11 +271,11 @@
 
     // Add sorting to URL if there is sorting
     if (athenaSorting && athenaNames[athenaSorting.column as keyof Object]) {
-      url += `&sort=${athenaNames[athenaSorting.column as keyof Object]}`
-      if (athenaSorting.sortDirection) url += `&order=${athenaSorting.sortDirection}`
+      mappingUrl += `&sort=${athenaNames[athenaSorting.column as keyof Object]}`
+      if (athenaSorting.sortDirection) mappingUrl += `&order=${athenaSorting.sortDirection}`
     }
 
-    return encodeURI(url)
+    return encodeURI(mappingUrl)
   }
 
   async function fetchData(
@@ -305,7 +283,7 @@
     sortedColumns1: Map<string, SortDirection>,
     pagination: IPagination
   ) {
-    const url = assembleAthenaURL(undefined, pagination)
+    const url = await assembleAthenaURL()
     const response = await fetch(url)
     const apiData = await response.json()
     return {
@@ -317,51 +295,46 @@
   async function rowMapping(
     usagiRow: Record<string, any>,
     athenaRow: Record<string, any>,
-    //dataTable: DataTable,
     autoMap = false,
     i?: number
   ) {
     let rowIndex: number = i !== undefined ? i : selectedRowIndex
     const mappedUsagiRow: Record<string, any> = usagiRow
 
-    let fullRow = await dataTable.getFullRow(rowIndex)
-
-    if (row != undefined) {
+    if (mappedUsagiRow != undefined) {
       for (let [name, alt] of importantAthenaColumns) {
-        const index = athenaColumns.findIndex(column => column.id === name)
-        if (row instanceof Array === false) rowObj[alt] = row[name as keyof object]
-        else rowObj[columns.findIndex(col => col.id == alt)] = row[index]
+        if (name === 'id' && autoMap) mappedUsagiRow['sourceAutoAssignedConceptIds'] = athenaRow[name]
+        else mappedUsagiRow[alt] = athenaRow[name]
       }
-
-    for (let [name, alt] of importantAthenaColumns) {
-      if (name === 'id' && autoMap) mappedUsagiRow['sourceAutoAssignedConceptIds'] = athenaRow[name]
-      else mappedUsagiRow[alt] = athenaRow[name]
-    }
-    for (let col of Object.keys(additionalFields)) {
-      switch (col) {
-        case 'equivalence':
-          mappedUsagiRow.equivalence = equivalenceMapping
-          break
+      for (let col of Object.keys(additionalFields)) {
+        switch (col) {
+          case 'equivalence':
+            mappedUsagiRow.equivalence = equivalenceMapping
+            break
 
           case 'createdBy':
           case 'createdOn':
-            originalRow.createdBy == '' || originalRow.createdBy == undefined
-              ? ((rowObj.createdBy = author), (rowObj.createdOn = Date.now()))
-              : ((rowObj.createdBy = fullRow.createdBy), (rowObj.createdOn = fullRow.createdOn))
+            if (mappedUsagiRow.createdBy == '' || mappedUsagiRow.createdBy == undefined) {
+              mappedUsagiRow.createdBy = author
+              mappedUsagiRow.createdOn = Date.now()
+            }
             break
 
-        case 'createdBy':
-        case 'createdOn':
-          if (!usagiRow.createdBy || usagiRow.createdBy.length === 0) {
-            mappedUsagiRow.createdBy = author
-            mappedUsagiRow.createdOn = Date.now()
-          }
-          break
+          case 'createdBy':
+          case 'createdOn':
+            if (!usagiRow.createdBy || usagiRow.createdBy.length === 0) {
+              mappedUsagiRow.createdBy = author
+              mappedUsagiRow.createdOn = Date.now()
+            }
+            break
 
           case 'mappingStatus':
-            originalRow.statusSetBy == author || originalRow.statusSetBy == '' || originalRow.statusSetBy == undefined
-              ? (rowObj.mappingStatus = 'UNAPPROVED')
-              : null
+            if (
+              mappedUsagiRow.statusSetBy == author ||
+              mappedUsagiRow.statusSetBy == '' ||
+              mappedUsagiRow.statusSetBy == undefined
+            )
+              mappedUsagiRow.mappingStatus == 'UNAPPROVED'
             break
         }
       }
@@ -370,23 +343,6 @@
       mappedIndex: rowIndex,
       mappedRow: mappedUsagiRow,
     }
-  }
-
-  async function selectRow(positionUp: boolean) {
-    const tablePagination = await dataTableFile.getTablePagination()
-    if (positionUp && selectedRowIndex + 1 < tablePagination.totalRows!) selectedRowIndex += 1
-    if (!positionUp && selectedRowIndex - 1 >= 0) selectedRowIndex -= 1
-    lastRow = positionUp && selectedRowIndex === tablePagination.totalRows! - 1
-
-    if (positionUp && selectedRowIndex !== 0) {
-      if (selectedRowIndex % tablePagination.rowsPerPage! === 0) {
-        await changePagination({ currentPage: tablePagination.currentPage! + 1 })
-      }
-    }
-
-    selectedRow = await dataTableFile.getFullRow(selectedRowIndex)
-    athenaFiltering = selectedRow[athenaFilteredColumn]
-    fetchDataURL = fetchData
   }
 
   async function insertRows(dataTable: DataTable, rows: any[]) {
@@ -398,14 +354,6 @@
     if (pagination.currentPage) pag['currentPage'] = pagination.currentPage
     if (pagination.rowsPerPage) pag['rowsPerPage'] = pagination.rowsPerPage
     await dataTableFile.changePagination(pag)
-  }
-
-  async function saveSettings(e: Event) {
-    const element = e.target as HTMLSelectElement | HTMLInputElement
-    // @ts-ignore
-    const value = element.checked != undefined ? !element.checked : element.value
-    const name = element.id
-    settings = await updateSettings(settings, name, value)
   }
 
   function dataTableInitialized() {
@@ -453,19 +401,9 @@
 
   let fetchDataFunc = fetchData
 
-  // $: {
-  //   if (mounted && (!author || author.length === 0)) authorVisibility = true
-  // }
-
   onMount(async () => {
-    // const storedAuthor = localStorageGetter('author')
-    // if (storedAuthor) {
-    //   author = storedAuthor.replaceAll('"', '')
-    //   authorInput = author
-    // }
-    // if (!author || author.length === 0) authorVisibility = true
-
     const storedSettings = localStorageGetter('settings')
+    console.log("STOREDSETTINGS ", storedSettings)
     if (storedSettings) settings = storedSettings
   })
 </script>
@@ -488,149 +426,20 @@
   <ErrorLogging visibility={errorVisibility} log={errorLog} />
 </div>
 
-<!-- MODALS -->
+<AthenaLayout
+  bind:urlFilters={apiFilters}
+  bind:equivalenceMapping
+  bind:athenaFilteredColumn
+  filterColumns={['sourceName', 'sourceCode']}
+  {selectedRow}
+  {selectedRowIndex}
+  mainTable={dataTableFile}
+  fetchData={fetchDataFunc}
+  {settings}
+  showModal={mappingVisibility}
+  on:rowChange={selectRow}
+/>
 
-<Modal on:generalVisibilityChanged={settingsVisibilityChanged} show={settingsVisibility} size="medium">
-  <section data-name="settings">
-    <h2 class="pop-up-title">Settings</h2>
-    <div data-name="options">
-      {#each [...settings] as [name, value]}
-        <div data-name="option">
-          <p>{name}</p>
-          {#if typeof value == 'boolean'}
-            <div data-name="switch">
-              <input id={name} type="checkbox" bind:checked={value} on:change={saveSettings} />
-              <label for={name}>Test</label>
-            </div>
-          {:else if typeof value == 'string'}
-            {#if name == 'Language'}
-              <select id={name} {value} on:change={saveSettings}>
-                {#each Object.keys(languages) as lang}
-                  <option
-                    value={languages[lang]}
-                    on:click={async () => {
-                      settings = await updateSettings(settings, name, value)
-                    }}>{lang}</option
-                  >
-                {/each}
-              </select>
-            {/if}
-          {:else if typeof value == 'number'}
-            <input
-              type="number"
-              bind:value
-              on:change={async () => {
-                settings = await updateSettings(settings, name, value)
-              }}
-            />
-          {/if}
-        </div>
-      {/each}
-    </div>
-  </section>
-</Modal>
-
-<Modal on:generalVisibilityChanged={authorVisibilityChanged} show={authorVisibility} size="small">
-  <section data-name="author">
-    <h2>Who is the author?</h2>
-    <input id="author" type="text" placeholder="John Wick" class="author-input" bind:value={authorInput} />
-    <div data-name="buttons-container">
-      <button data-name="cancel" on:click={cancelAuthorUpdate}>Cancel</button>
-      <button data-name="save" on:click={saveAuthorUpdate}>Save</button>
-    </div>
-  </section>
-</Modal>
-
-<Modal on:generalVisibilityChanged={mappingVisibilityChanged} show={mappingVisibility} size="large">
-  <AthenaLayout
-    on:filterOptionsChanged={filterOptionsChanged}
-    on:columnFilterChanged={columnFilterChanged}
-    on:uniqueConceptIdsChanged={uniqueConceptIdsChanged}
-    bind:urlFilters={apiFilters}
-    bind:equivalenceMapping
-    bind:athenaFilteredColumn
-    filterColumns={['sourceName', 'sourceCode']}
-    {selectedRow}
-    mainTable={dataTableFile}
-  >
-    <div slot="currentRow" data-name="currentRow">
-      <button id="left" on:click={() => selectRow(false)} disabled={selectedRowIndex == 0 ? true : false}>
-        <SvgIcon href="icons.svg" id="arrow-left" width="16px" height="16px" />
-      </button>
-      <table class="table">
-        <tr>
-          <th>sourceCode</th>
-          <th>sourceName</th>
-          <th>sourceFrequency</th>
-        </tr>
-        <tr>
-          {#if selectedRow != undefined}
-            <td>{selectedRow.sourceCode}</td>
-            <td>{selectedRow.sourceName}</td>
-            <td>{selectedRow.sourceFrequency}</td>
-          {/if}
-        </tr>
-      </table>
-      <button id="right" on:click={() => selectRow(true)} disabled={lastRow}>
-        <SvgIcon href="icons.svg" id="arrow-right" width="16px" height="16px" />
-      </button>
-    </div>
-    <div slot="table">
-      <DataTable
-        data={fetchDataFunc}
-        columns={athenaColumns}
-        options={{ id: 'Athena', actionColumn: true }}
-        bind:this={dataTableAthena}
-      >
-        <AthenaRow
-          slot="default"
-          let:renderedRow
-          on:singleMapping={singleRowMapping}
-          on:multipleMapping={multipleRowMapping}
-          {renderedRow}
-          columns={athenaColumns}
-          options={{ id: 'Athena', actionColumn: true }}
-          bind:this={dataTableAthena}
-        >
-          <AthenaRow
-            slot="default"
-            let:renderedRow
-            on:singleMapping={singleRowMapping}
-            on:multipleMapping={multipleRowMapping}
-            {renderedRow}
-            columns={athenaColumns}
-            {settings}
-            mainTable={dataTableFile}
-            {selectedRowIndex}
-            {uniqueConceptIds}
-          />
-        </DataTable>
-      {/if}
-    </div>
-    <div slot="mappedRows" data-name="mappedRows" let:mapped>
-      <table>
-        {#if mapped.length != 0}
-          {#if mapped.length == 1 && mapped[0].conceptId == undefined && mapped[0].conceptName == undefined}
-            <div />
-          {:else}
-            <tr>
-              <th>conceptId</th>
-              <th>conceptName</th>
-            </tr>
-            {#each mapped as row}
-              <tr>
-                <td>{row.conceptId}</td>
-                <td>{row.conceptName}</td>
-              </tr>
-            {/each}
-          {/if}
-        {/if}
-      </table>
-    </div>
-  </AthenaLayout>
-</Modal>
-
-<!-- DATATABLE -->
 <DataTable
   data={file}
   {columns}
