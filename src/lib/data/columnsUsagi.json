@@ -41,7 +41,7 @@
   },
   {
     "id": "mappingStatus",
-    "visible": false,
+    "visible": true,
     "editable": false
   },
   {
@@ -51,7 +51,7 @@
   },
   {
     "id": "statusSetBy",
-    "visible": true,
+    "visible": false,
     "editable": false
   },
   {
@@ -71,7 +71,7 @@
   },
   {
     "id": "createdBy",
-    "visible": true,
+    "visible": false,
     "editable": false
   },
   {
@@ -81,12 +81,12 @@
   },
   {
     "id": "assignedReviewer",
-    "visible": true,
+    "visible": false,
     "editable": false
   },
   {
     "id": "ADD_INFO:approvedBy",
-    "visible": true,
+    "visible": false,
     "editable": false
   },
   {

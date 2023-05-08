@@ -11,8 +11,8 @@ importers:
         specifier: ^4.0.8
         version: 4.0.8
       svelte-radar-datatable:
-        specifier: ^0.0.22
-        version: 0.0.22
+        specifier: ^0.0.24
+        version: 0.0.24
     devDependencies:
       '@playwright/test':
         specifier: ^1.33.0
@@ -2827,8 +2827,8 @@ packages:
       typescript: 5.0.4
     dev: true
 
-  /svelte-radar-datatable@0.0.22:
-    resolution: {integrity: sha512-w7fMcn0w5c9dcV7wNJWBCLwmyVgMjp7gBPAV2wIi2vx8Ie5rDZwMUXttqCBtoYO3HR4jgLEFeKC8TrHuAUHbYA==}
+  /svelte-radar-datatable@0.0.24:
+    resolution: {integrity: sha512-8h4Ts+Q37seWZvuQDebioGg76efBkq25rM6GyrOPtqtFQSWKAOTDnC0dFOcPhlJg7XeaPLvRZP7zHJ2NQtgauA==}
     dependencies:
       '@types/lodash': 4.14.194
       arquero: 5.2.0
