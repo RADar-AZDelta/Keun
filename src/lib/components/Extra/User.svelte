@@ -16,10 +16,13 @@
   }
 
   function setValues(settings: Record<string, any>) {
-    if (mounted) {
-      if (!settings.author) showModal = true
-      author = settings.author
-    }
+    if (mounted && !settings.author) {
+      const storedSettings = localStorageGetter('settings')
+      if (storedSettings) {
+        if (!storedSettings.author) showModal = true
+        else author = storedSettings.author
+      } else showModal = true
+    } else author = settings.author
   }
 
   async function cancelAuthorUpdate() {
@@ -44,9 +47,8 @@
       author = settings.author
       authorInput = settings.author
     }
-    console.log("AUTHOR ", author, " AND SETTINGS ", settings)
-    if (!author || author.length == 0) showModal = true
     mounted = true
+    setValues(settings)
   })
 </script>
 
