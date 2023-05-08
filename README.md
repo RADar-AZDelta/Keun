@@ -12,7 +12,7 @@ Although [Usagi](https://www.ohdsi.org/web/wiki/doku.php?id=documentation:softwa
 - It requires software installation (Java)
 - No [four-eye principle](https://en.wiktionary.org/wiki/four-eye_principle)
 - It doesn't do translations
-- The [Athena](https://athena.ohdsi.org/) search result are much more better then the Usagi search results
+- The search result of Usagi are not on par with [Athena](https://athena.ohdsi.org/)
 
 Therefore we decided to make a modern web variant of Usagi:
 - No installation, just run it from your browser
