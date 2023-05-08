@@ -42,10 +42,6 @@
     dispatch('deleteRow', { indexes: [index], sourceCode: sourceCode, conceptId: conceptId })
   }
 
-  // async function valueUpdate(e: CustomEvent<any>, i: number) {
-  //   dispatch('cellEdited', { index: index, update: Object.fromEntries([[columns![i].id, e.detail]]) })
-  // }
-
   function getColors() {
     switch (renderedRow['mappingStatus']) {
       case 'APPROVED':

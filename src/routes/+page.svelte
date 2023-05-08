@@ -13,8 +13,6 @@
     SingleMappingEventDetail,
     SingleSorting,
     VisibilityChangedEventDetail,
-    ColumnFilterChangedEventDetail,
-    UniqueConceptIdsChangedEventDetail,
     RowChangeEventDetail,
   } from '$lib/components/Types'
   import type { IColumnMetaData, IPagination, SortDirection, TFilter } from 'svelte-radar-datatable'
@@ -26,6 +24,7 @@
   import Download from '$lib/components/Extra/Download.svelte'
   import ErrorLogging from '$lib/components/Extra/ErrorLogging.svelte'
   import Settings from '$lib/components/Extra/Settings.svelte'
+  import type { ColumnFilterChangedEventDetail } from 'svelte-radar-datatable/components/DataTable'
 
   let file: File | undefined
 
@@ -35,7 +34,6 @@
     author: undefined,
   }
 
-  let author: string = ''
   let mappingVisibility: boolean = false
   let errorVisibility: boolean = false
   let errorLog: ILogger = { message: undefined, title: undefined, type: undefined }
@@ -43,18 +41,13 @@
   let apiFilters: string[]
   let equivalenceMapping: string = 'EQUAL'
   let athenaFilteredColumn: string = 'sourceName'
-  let athenaFilters = new Map<string, string[]>()
   let selectedRow: Record<string, any>
   let selectedRowIndex: number
-  let lastRow: boolean = false
   let rowsMapping = new Map<number, Record<string, any>>()
 
   let mappingUrl: string = 'https://athena.ohdsi.org/api/v1/concepts?'
-  let athenaSorting: SingleSorting
   let athenaFiltering: string
-  let athenaNames: Object = columnsAthena
-
-  let uniqueConceptIds: string[]
+  let athenaFilters: Map<string, string[]>
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // DATA
@@ -131,7 +124,6 @@
     }
     athenaFiltering = ''
     const tablePagination = dataTableFile.getTablePagination()
-    lastRow = selectedRowIndex == tablePagination.totalRows! - 1
   }
 
   function filterOptionsChanged(event: CustomEvent<FilterOptionsChangedEventDetail>) {
@@ -162,12 +154,12 @@
     }
   }
 
-  async function singleRowMapping(event: CustomEvent<SingleMappingEventDetail>) {
+  async function singleMapping(event: CustomEvent<SingleMappingEventDetail>) {
     const { mappedIndex, mappedRow } = await rowMapping(event.detail.originalRow, event.detail.row)
     await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
   }
 
-  async function multipleRowMapping(event: CustomEvent<MultipleMappingEventDetail>) {
+  async function multipleMapping(event: CustomEvent<MultipleMappingEventDetail>) {
     const { mappedIndex, mappedRow } = await rowMapping(event.detail.originalRow, event.detail.row)
     const q = query()
       .params({ value: mappedRow.sourceCode })
@@ -187,21 +179,23 @@
   async function actionPerformed(event: CustomEvent<ActionPerformedEventDetail>) {
     const updatingObj: { [key: string]: any } = {}
 
-    if (event.detail.action == 'APPROVED') {
-      if (event.detail.row.statusSetBy == undefined || event.detail.row.statusSetBy == settings.author) {
+    if (event.detail.row.conceptId || event.detail.row.sourceAutoAssignedConceptIds) {
+      if (event.detail.action == 'APPROVED') {
+        if (event.detail.row.statusSetBy == undefined || event.detail.row.statusSetBy == settings.author) {
+          updatingObj.statusSetBy = settings.author
+          updatingObj.statusSetOn = Date.now()
+          updatingObj.mappingStatus = 'UNAPPROVED'
+          updatingObj.conceptId = event.detail.row.sourceAutoAssignedConceptIds
+        } else if (event.detail.row.statusSetBy != settings.author) {
+          updatingObj['ADD_INFO:approvedBy'] = settings.author
+          updatingObj['ADD_INFO:approvedOn'] = Date.now()
+          updatingObj.mappingStatus = 'APPROVED'
+        }
+      } else {
         updatingObj.statusSetBy = settings.author
         updatingObj.statusSetOn = Date.now()
-        updatingObj.mappingStatus = 'UNAPPROVED'
-        updatingObj.conceptId = event.detail.row.sourceAutoAssignedConceptIds
-      } else if (event.detail.row.statusSetBy != settings.author) {
-        updatingObj['ADD_INFO:approvedBy'] = settings.author
-        updatingObj['ADD_INFO:approvedOn'] = Date.now()
-        updatingObj.mappingStatus = 'APPROVED'
+        updatingObj.mappingStatus = event.detail.action
       }
-    } else {
-      updatingObj.statusSetBy = settings.author
-      updatingObj.statusSetOn = Date.now()
-      updatingObj.mappingStatus = event.detail.action
     }
 
     await dataTableFile.updateRows(new Map([[event.detail.index, updatingObj]]))
@@ -215,7 +209,6 @@
     const tablePagination = await dataTableFile.getTablePagination()
     if (event.detail.up && selectedRowIndex + 1 < tablePagination.totalRows!) selectedRowIndex += 1
     if (!event.detail.up && selectedRowIndex - 1 >= 0) selectedRowIndex -= 1
-    lastRow = event.detail.up && selectedRowIndex === tablePagination.totalRows! - 1
 
     if (event.detail.up && selectedRowIndex !== 0) {
       if (selectedRowIndex % tablePagination.rowsPerPage! === 0) {
@@ -228,11 +221,16 @@
     fetchDataFunc = fetchData
   }
 
+  function columnFilterChanged(event: CustomEvent<ColumnFilterChangedEventDetail>) {
+    athenaFiltering = selectedRow[event.detail.filter as keyof Object]
+    fetchDataFunc = fetchData
+  }
+
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // METHODS
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
-  const assembleAthenaURL = async (filter?: string) => {
+  const assembleAthenaURL = async (filter?: string, sorting?: string[], pagination?: IPagination) => {
     if (filter == undefined) {
       if (athenaFiltering == undefined || athenaFiltering == '') {
         if (selectedRow == undefined) {
@@ -241,26 +239,41 @@
           athenaFiltering = String(selectedRow[athenaFilteredColumn])
         }
       }
-    } else athenaFiltering = filter
+    } else {
+      athenaFiltering = filter
+    }
 
     let url = mappingUrl
 
-    // Add sorting to URL if there is sorting
-    if (athenaSorting && athenaNames[athenaSorting.column as keyof Object]) {
-      url += `&sort=${athenaNames[athenaSorting.column as keyof Object]}`
-      if (athenaSorting.sortDirection) url += `&order=${athenaSorting.sortDirection}`
+    if (apiFilters) {
+      for (let filter of apiFilters) {
+        url += filter
+      }
     }
+
+    // Add sorting to URL if there is sorting
+    if (sorting) url += `&sort=${sorting[0]}&order=${sorting[1]}`
+
     // Add filter to URL if there is a filter
     if (athenaFiltering) url += `&query=${athenaFiltering}`
+
+    // Add pagination to URL if there is pagination
+    if (pagination) url += `&page=${pagination.currentPage}`
+    
     return encodeURI(url)
   }
 
   async function fetchData(
     filteredColumns: Map<String, TFilter>,
-    sortedColumns1: Map<string, SortDirection>,
+    sortedColumns: Map<string, SortDirection>,
     pagination: IPagination
   ) {
-    const url = await assembleAthenaURL()
+    console.log('SORTING ', sortedColumns)
+    const url = await assembleAthenaURL(
+      filteredColumns.entries().next().value,
+      sortedColumns.entries().next().value,
+      pagination
+    )
     const response = await fetch(url)
     const apiData = await response.json()
     return {
@@ -289,26 +302,29 @@
             mappedUsagiRow.equivalence = equivalenceMapping
             break
 
-          case 'createdBy':
-          case 'createdOn':
-            if (mappedUsagiRow.createdBy == '' || mappedUsagiRow.createdBy == undefined) {
-              mappedUsagiRow.createdBy = author
-              mappedUsagiRow.createdOn = Date.now()
+          case 'statusSetBy':
+          case 'statusSetOn':
+            if (
+              (String(mappedUsagiRow.statusSetBy).replaceAll(' ', '') == '' ||
+                mappedUsagiRow.statusSetBy == undefined) &&
+              !autoMap
+            ) {
+              mappedUsagiRow.statusSetBy = settings.author
+              mappedUsagiRow.statusSetOn = Date.now()
             }
             break
 
           case 'createdBy':
           case 'createdOn':
-            if (!usagiRow.createdBy || usagiRow.createdBy.length === 0) {
-              mappedUsagiRow.createdBy = author
+            if (!mappedUsagiRow.createdBy && mappedUsagiRow.createdBy != settings.author && !autoMap) {
+              mappedUsagiRow.createdBy = settings.author
               mappedUsagiRow.createdOn = Date.now()
             }
             break
 
           case 'mappingStatus':
-            console.log('INFORMATION ', mappedUsagiRow.statusSetBy)
             if (
-              mappedUsagiRow.statusSetBy == author ||
+              mappedUsagiRow.statusSetBy == settings.author ||
               mappedUsagiRow.statusSetBy == '' ||
               mappedUsagiRow.statusSetBy == undefined
             )
@@ -408,7 +424,6 @@
   bind:urlFilters={apiFilters}
   bind:equivalenceMapping
   bind:athenaFilteredColumn
-  filterColumns={['sourceName', 'sourceCode']}
   {selectedRow}
   {selectedRowIndex}
   mainTable={dataTableFile}
@@ -416,6 +431,10 @@
   {settings}
   showModal={mappingVisibility}
   on:rowChange={selectRow}
+  on:singleMapping={singleMapping}
+  on:multipleMapping={multipleMapping}
+  on:filterOptionsChanged={filterOptionsChanged}
+  on:columnFilterChanged={columnFilterChanged}
 />
 
 <DataTable
@@ -440,6 +459,6 @@
     {columns}
     {index}
     showMappingPopUp={mappingVisibility}
-    {author}
+    author={settings.author}
   />
 </DataTable>
