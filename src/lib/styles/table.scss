@@ -224,10 +224,6 @@ div[data-name='athena-layout'] {
   width: 100%;
   height: 90vh;
 
-  section[data-name='filters-container-small'] {
-    display: none;
-  }
-
   section[data-name='filters-container'] {
     min-width: 16.66%;
     max-width: 16.66%;
@@ -333,7 +329,7 @@ div[data-name='athena-layout'] {
       width: 80%;
       max-height: 45%;
 
-      div[data-name='top-large'] {
+      div[data-name='top'] {
         display: flex;
         align-items: center;
         justify-content: space-between;
@@ -383,11 +379,7 @@ div[data-name='athena-layout'] {
         }
       }
 
-      div[data-name='top-small'] {
-        display: none;
-      }
-
-      div[data-name='bottom-large'] {
+      div[data-name='bottom'] {
         display: flex;
         width: 95%;
         justify-content: center;
@@ -401,10 +393,6 @@ div[data-name='athena-layout'] {
             border: 1px solid lightgray;
           }
         }
-      }
-
-      div[data-name='bottom-small'] {
-        display: none;
       }
     }
 
@@ -459,10 +447,6 @@ section[data-name='header'] {
   }
 }
 
-section[data-name='header-small'] {
-  display: none;
-}
-
 div[data-name='table-options'] {
   display: flex;
   justify-content: space-between;
@@ -504,28 +488,6 @@ div[data-name='logger-seperate'] {
 }
 
 @media only screen and (min-width: 100px) {
-  section[data-component='modal-container-small'] {
-    div[data-component='modal'] {
-      width: 40%;
-      height: 30%;
-
-      h2 {
-        padding-top: 1.5rem;
-        font-size: 16px;
-      }
-
-      button[data-component='close'] {
-        right: 31vw;
-        margin: 0.5rem 0.5rem;
-        padding: 0;
-      }
-
-      div[data-component='modal-content'] {
-        padding: 5px;
-      }
-    }
-  }
-
   section[data-name='settings'] {
     h2 {
       font-size: 20px;
@@ -591,95 +553,16 @@ div[data-name='logger-seperate'] {
   }
 
   div[data-name='athena-layout'] {
-    section[data-name='filters-container-small'] {
-      display: block;
-      position: absolute;
-
-      button {
-        background-color: inherit;
-        border: none;
-        padding: 0.8rem;
-
-        svg {
-          width: 16px;
-          height: 16px;
-        }
-      }
-    }
-
-    section[data-name='filters-container'] {
-      display: none;
-    }
-
     section[data-name='table-pop-up'] {
       div[data-name='table-head'] {
         width: 100%;
 
-        div[data-name='top-large'] {
-          display: none;
-        }
-
-        div[data-name='top-small'] {
+        div[data-name='top'] {
           display: block;
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin: 2rem 0.25rem 1rem 0.25rem;
-
-          p,
-          select,
-          option {
-            font-size: 10px;
-            padding: 0.25rem;
-          }
         }
 
-        div[data-name='bottom-large'] {
-          display: none;
-        }
-
-        div[data-name='bottom-small'] {
+        div[data-name='bottom'] {
           display: block;
-
-          div[data-name='currentRow'] {
-            display: flex;
-            justify-content: space-between;
-
-            table {
-              margin-bottom: 0.5rem;
-            }
-          }
-
-          div[data-name='mappedRows'] {
-            width: 100%;
-
-            table {
-              margin: auto;
-              gap: 1rem;
-            }
-          }
-
-          p,
-          td,
-          th {
-            font-size: 10px;
-            padding: 5px;
-          }
-
-          td {
-            border-top: 1px solid lightgray;
-            border-bottom: 1px solid lightgray;
-          }
-
-          button {
-            border: none;
-            background-color: inherit;
-          }
-
-          svg {
-            width: 10px;
-            height: 10px;
-          }
         }
       }
 
@@ -832,13 +715,6 @@ div[data-name='logger-seperate'] {
     display: none;
   }
 
-  section[data-name='header-small'] {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 2rem 1rem 1rem 1rem;
-  }
-
   div[data-name='logger-seperate'] {
     display: block;
     padding: 0 0 1rem 0;
@@ -851,18 +727,6 @@ div[data-name='logger-seperate'] {
 }
 
 @media only screen and (min-width: 600px) {
-  section[data-component='modal-container-small'] {
-    div[data-component='modal'] {
-      width: 20%;
-      height: 20%;
-
-      button[data-component='close'] {
-        right: 41vw;
-        margin: 0.5rem 0 0 0;
-      }
-    }
-  }
-
   section[data-name='settings'] {
     h2 {
       font-size: 24px;
@@ -909,45 +773,6 @@ div[data-name='logger-seperate'] {
 
   div[data-name='athena-layout'] {
     section[data-name='table-pop-up'] {
-      div[data-name='table-head'] {
-        div[data-name='top-small'] {
-          margin: 2rem 1rem;
-
-          p,
-          select,
-          option {
-            font-size: 16px;
-            padding: 0rem;
-          }
-        }
-
-        div[data-name='bottom-small'] {
-          display: flex;
-          width: 100%;
-          justify-content: space-between;
-
-          div[data-name='currentRow'] {
-            max-width: 50%;
-          }
-
-          div[data-name='mappedRows'] {
-            width: 50%;
-          }
-
-          p,
-          td,
-          th {
-            font-size: 16px;
-            padding: 0.5rem;
-          }
-
-          svg {
-            width: 16px;
-            height: 16px;
-          }
-        }
-      }
-
       div[data-component='table'] {
         max-height: 85%;
 
@@ -1021,20 +846,6 @@ div[data-name='logger-seperate'] {
 }
 
 @media only screen and (min-width: 992px) {
-  section[data-component='modal-container-small'] {
-    div[data-component='modal'] {
-      h2 {
-        padding-top: 1rem;
-        font-size: 20px;
-      }
-
-      button[data-component='close'] {
-        right: 40vw;
-        margin: 0.5rem 0.5rem;
-      }
-    }
-  }
-
   section[data-name='settings'] {
     h2 {
       font-size: 24px;
@@ -1070,10 +881,6 @@ div[data-name='logger-seperate'] {
   }
 
   div[data-name='athena-layout'] {
-    section[data-name='filters-container-small'] {
-      display: none;
-    }
-
     section[data-name='filters-container'] {
       display: block;
 
@@ -1092,7 +899,7 @@ div[data-name='logger-seperate'] {
           font-size: 1.5rem;
         }
 
-        div[data-name='top-large'] {
+        div[data-name='top'] {
           display: flex;
 
           p,
@@ -1111,11 +918,7 @@ div[data-name='logger-seperate'] {
           }
         }
 
-        div[data-name='top-small'] {
-          display: none;
-        }
-
-        div[data-name='bottom-large'] {
+        div[data-name='bottom'] {
           display: flex;
           width: 100%;
 
@@ -1135,10 +938,6 @@ div[data-name='logger-seperate'] {
               font-size: 12px;
             }
           }
-        }
-
-        div[data-name='bottom-small'] {
-          display: none;
         }
       }
 
@@ -1178,10 +977,6 @@ div[data-name='logger-seperate'] {
     display: flex;
   }
 
-  section[data-name='header-small'] {
-    display: none;
-  }
-
   div[data-name='logger-seperate'] {
     display: none;
   }
@@ -1209,7 +1004,7 @@ div[data-name='logger-seperate'] {
   div[data-name='athena-layout'] {
     section[data-name='table-pop-up'] {
       div[data-name='table-head'] {
-        div[data-name='top-large'] {
+        div[data-name='top'] {
 
           p,
           td,
@@ -1220,7 +1015,7 @@ div[data-name='logger-seperate'] {
           }
         }
 
-        div[data-name='bottom-large'] {
+        div[data-name='bottom'] {
           table {
 
             td,
