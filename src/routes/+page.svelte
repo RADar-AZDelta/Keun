@@ -150,7 +150,6 @@
   async function autoMapRow(signal: AbortSignal, row: Record<string, any>, index: number) {
     if (signal.aborted) return
     const url = await assembleAthenaURL(row[athenaFilteredColumn])
-    console.log("IN AUTOMAPPING ", row[athenaFilteredColumn], " AND URL IS ", url)
     if (signal.aborted) return
     const res = await fetch(url)
     const resData = await res.json()
@@ -186,39 +185,23 @@
   }
 
   async function actionPerformed(event: CustomEvent<ActionPerformedEventDetail>) {
-    columns!.find(column => column.id == 'mappingStatus') == undefined ? columns!.push({ id: 'mappingStatus' }) : null
     const updatingObj: { [key: string]: any } = {}
 
-    console.log('STATUSSETBY ', event.detail.row, ' & ACTION ', event.detail.action, ' & AUTHOR ', author)
-    console.log('EQUATION ', event.detail.row.statusSetBy == author)
-    console.log('EQUATION 2 ', event.detail.action == 'APPROVED')
-
-    if (event.detail.row.statusSetBy == author && event.detail.action == 'APPROVED') {
-      errorLog = {
-        title: 'Invalid action',
-        message:
-          "You cannot approve a row where you edited the row. Only a reviewer that hasn't edited the row can approve this row.",
-        type: 'warning',
-      }
-      errorVisibility = true
-    } else {
-      if (event.detail.row.statusSetByIndex == author) {
-        updatingObj.statusSetBy = author
+    if (event.detail.action == 'APPROVED') {
+      if (event.detail.row.statusSetBy == undefined || event.detail.row.statusSetBy == settings.author) {
+        updatingObj.statusSetBy = settings.author
         updatingObj.statusSetOn = Date.now()
-        updatingObj.mappingStatus = event.detail.action
-      } else {
-        if (event.detail.action === 'APPROVED') {
-          updatingObj['ADD_INFO:approvedBy'] = author
-          updatingObj['ADD_INFO:approvedOn'] = Date.now()
-          updatingObj.mappingStatus = event.detail.action
-        } else {
-          updatingObj.statusSetBy = author
-          updatingObj.statusSetOn = Date.now()
-          updatingObj['ADD_INFO:approvedBy'] = undefined
-          updatingObj['ADD_INFO:approvedOn'] = undefined
-          updatingObj.mappingStatus = event.detail.action
-        }
+        updatingObj.mappingStatus = 'UNAPPROVED'
+        updatingObj.conceptId = event.detail.row.sourceAutoAssignedConceptIds
+      } else if (event.detail.row.statusSetBy != settings.author) {
+        updatingObj['ADD_INFO:approvedBy'] = settings.author
+        updatingObj['ADD_INFO:approvedOn'] = Date.now()
+        updatingObj.mappingStatus = 'APPROVED'
       }
+    } else {
+      updatingObj.statusSetBy = settings.author
+      updatingObj.statusSetOn = Date.now()
+      updatingObj.mappingStatus = event.detail.action
     }
 
     await dataTableFile.updateRows(new Map([[event.detail.index, updatingObj]]))
@@ -268,7 +251,7 @@
       if (athenaSorting.sortDirection) url += `&order=${athenaSorting.sortDirection}`
     }
     // Add filter to URL if there is a filter
-    if(athenaFiltering) url += `&query=${athenaFiltering}`
+    if (athenaFiltering) url += `&query=${athenaFiltering}`
     return encodeURI(url)
   }
 
@@ -323,6 +306,7 @@
             break
 
           case 'mappingStatus':
+            console.log('INFORMATION ', mappedUsagiRow.statusSetBy)
             if (
               mappedUsagiRow.statusSetBy == author ||
               mappedUsagiRow.statusSetBy == '' ||
