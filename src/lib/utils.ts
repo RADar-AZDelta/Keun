@@ -39,7 +39,7 @@ export const updateSettings = async (
   value: boolean | string | number
 ) => {
   settings.set(name, value)
-  localStorageSetter('options', settings, true)
+  localStorageSetter('settings', settings)
   return settings
 }
 

@@ -18,7 +18,7 @@
     RowChangeEventDetail,
   } from '$lib/components/Types'
   import type { IColumnMetaData, IPagination, SortDirection, TFilter } from 'svelte-radar-datatable'
-  import { localStorageGetter } from '$lib/utils'
+  import { localStorageGetter, localStorageSetter } from '$lib/utils'
   import AthenaLayout from '$lib/components/Extra/AthenaLayout.svelte'
   import UsagiRow from '$lib/components/Mapping/UsagiRow.svelte'
   import { onMount, tick } from 'svelte'
@@ -150,6 +150,7 @@
   async function autoMapRow(signal: AbortSignal, row: Record<string, any>, index: number) {
     if (signal.aborted) return
     const url = await assembleAthenaURL(row[athenaFilteredColumn])
+    console.log("IN AUTOMAPPING ", row[athenaFilteredColumn], " AND URL IS ", url)
     if (signal.aborted) return
     const res = await fetch(url)
     const resData = await res.json()
@@ -244,16 +245,6 @@
     fetchDataFunc = fetchData
   }
 
-  function columnFilterChanged(event: CustomEvent<ColumnFilterChangedEventDetail>) {
-    athenaFiltering = selectedRow[event.detail.filter]
-    fetchDataFunc = fetchData
-  }
-
-  function uniqueConceptIdsChanged(event: CustomEvent<UniqueConceptIdsChangedEventDetail>) {
-    uniqueConceptIds = event.detail.uniqueConceptIds
-    console.log('uniqueConceptIdsChanged ', uniqueConceptIds)
-  }
-
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // METHODS
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -267,15 +258,18 @@
           athenaFiltering = String(selectedRow[athenaFilteredColumn])
         }
       }
-    }
+    } else athenaFiltering = filter
+
+    let url = mappingUrl
 
     // Add sorting to URL if there is sorting
     if (athenaSorting && athenaNames[athenaSorting.column as keyof Object]) {
-      mappingUrl += `&sort=${athenaNames[athenaSorting.column as keyof Object]}`
-      if (athenaSorting.sortDirection) mappingUrl += `&order=${athenaSorting.sortDirection}`
+      url += `&sort=${athenaNames[athenaSorting.column as keyof Object]}`
+      if (athenaSorting.sortDirection) url += `&order=${athenaSorting.sortDirection}`
     }
-
-    return encodeURI(mappingUrl)
+    // Add filter to URL if there is a filter
+    if(athenaFiltering) url += `&query=${athenaFiltering}`
+    return encodeURI(url)
   }
 
   async function fetchData(
@@ -403,8 +397,8 @@
 
   onMount(async () => {
     const storedSettings = localStorageGetter('settings')
-    console.log("STOREDSETTINGS ", storedSettings)
     if (storedSettings) settings = storedSettings
+    else localStorageSetter('settings', settings)
   })
 </script>
 
