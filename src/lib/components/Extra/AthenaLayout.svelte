@@ -44,7 +44,7 @@
       activatedAthenaFilters.set(filter, [option])
     }
 
-    localStorageSetter('AthenaFilters', activatedAthenaFilters, true)
+    localStorageSetter('AthenaFilters', activatedAthenaFilters)
 
     let URLFilters: string[] = []
 
@@ -89,7 +89,7 @@
 
   function removeFilter(filter: string, option: string) {
     activatedAthenaFilters.get(filter)!.splice(activatedAthenaFilters.get(filter)!.indexOf(option), 1)
-    localStorageSetter('AthenaFilters', activatedAthenaFilters, true)
+    localStorageSetter('AthenaFilters', activatedAthenaFilters)
     dispatch('filterOptionsChanged', { filters: activatedAthenaFilters })
   }
 
@@ -106,16 +106,15 @@
     for (let row of res.queriedData) {
       alreadyMapped.push(row)
     }
-    dispatch('uniqueConceptIdsChanged', { uniqueConceptIds: alreadyMapped.map((row) => row.conceptId)})
+    dispatch('uniqueConceptIdsChanged', { uniqueConceptIds: alreadyMapped.map(row => row.conceptId) })
     savedFilters =
-      localStorageGetter('AthenaFilters') !== null
-        ? new Map<string, string[]>()
-        : localStorageGetter('AthenaFilters', true)
+      localStorageGetter('AthenaFilters') !== null ? new Map<string, string[]>() : localStorageGetter('AthenaFilters')
     activatedAthenaFilters = savedFilters
     savedFilters != null
       ? (activatedAthenaFilters = savedFilters)
       : (activatedAthenaFilters = new Map<string, string[]>())
-    activatedAthenaFilters != null ? dispatch('filterOptionsChanged', { filters: activatedAthenaFilters }) : null
+    //CAUSES INFINITE LOOP !!!!!!!!!!!!!!!!!!!!!!
+    //activatedAthenaFilters != null ? dispatch('filterOptionsChanged', { filters: activatedAthenaFilters }) : null
   })
 </script>
 
