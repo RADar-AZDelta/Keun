@@ -74,8 +74,7 @@
   <button
     on:click={onClickApproving}
     title="Approve"
-    disabled={renderedRow['statusSetBy'] === author ||
-      !['UNAPPROVED', 'FLAGGED'].includes(renderedRow['mappingStatus'])}
+    disabled={renderedRow['statusSetBy'] === author}
     ><SvgIcon href="icons.svg" id="check" width="16px" height="16px" /></button
   >
   <button on:click={onClickFlagging} title="Flag"
