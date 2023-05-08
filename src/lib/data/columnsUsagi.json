@@ -93,5 +93,10 @@
     "id": "ADD_INFO:approvedOn",
     "visible": false,
     "editable": false
+  },
+  {
+    "id": "ADD_INFO:numberOfConcepts",
+    "visible": false,
+    "editable": false
   }
 ]
