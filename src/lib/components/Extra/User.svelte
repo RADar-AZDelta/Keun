@@ -1,21 +1,25 @@
 <script lang="ts">
   import SvgIcon from './SvgIcon.svelte'
-  import { localStorageSetter } from '$lib/utils'
+  import { localStorageGetter, localStorageSetter } from '$lib/utils'
   import Modal from './Modal.svelte'
+  import { onMount } from 'svelte'
 
   export let settings: Record<string, any>
 
   let showModal = false,
-    author: string
+    author: string,
+    authorInput: string,
+    mounted: boolean = false
 
   $: {
     setValues(settings)
   }
 
   function setValues(settings: Record<string, any>) {
-    debugger
-    if (!settings.author) showModal = true
-    author = settings.author
+    if (mounted) {
+      if (!settings.author) showModal = true
+      author = settings.author
+    }
   }
 
   async function cancelAuthorUpdate() {
@@ -34,6 +38,16 @@
     if (!event.detail.visibility && !settings.author) return
     showModal = event.detail.visibility
   }
+
+  onMount(() => {
+    if (settings.author) {
+      author = settings.author
+      authorInput = settings.author
+    }
+    console.log("AUTHOR ", author, " AND SETTINGS ", settings)
+    if (!author || author.length == 0) showModal = true
+    mounted = true
+  })
 </script>
 
 <button on:click={() => (showModal = !showModal)} data-name="header-button">

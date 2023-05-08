@@ -11,8 +11,8 @@ importers:
         specifier: ^4.0.8
         version: 4.0.8
       svelte-radar-datatable:
-        specifier: ^0.0.21
-        version: 0.0.21
+        specifier: ^0.0.22
+        version: 0.0.22
     devDependencies:
       '@playwright/test':
         specifier: ^1.33.0
@@ -75,8 +75,8 @@ importers:
         specifier: ^4.9.5
         version: 4.9.5
       vite:
-        specifier: ^4.3.3
-        version: 4.3.3(sass@1.62.1)
+        specifier: ^4.3.5
+        version: 4.3.5(sass@1.62.1)
       vitest:
         specifier: ^0.29.8
         version: 0.29.8(sass@1.62.1)
@@ -599,7 +599,7 @@ packages:
       svelte: 3.59.0
       tiny-glob: 0.2.9
       undici: 5.22.0
-      vite: 4.3.3(sass@1.62.1)
+      vite: 4.3.5(sass@1.62.1)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -647,10 +647,10 @@ packages:
       deepmerge: 4.3.1
       kleur: 4.1.5
       magic-string: 0.30.0
-      svelte: 3.58.0
-      svelte-hmr: 0.15.1(svelte@3.58.0)
-      vite: 4.3.3(sass@1.62.1)
-      vitefu: 0.2.4(vite@4.3.3)
+      svelte: 3.59.0
+      svelte-hmr: 0.15.1(svelte@3.59.0)
+      vite: 4.3.5(sass@1.62.1)
+      vitefu: 0.2.4(vite@4.3.5)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -2827,8 +2827,8 @@ packages:
       typescript: 5.0.4
     dev: true
 
-  /svelte-radar-datatable@0.0.21:
-    resolution: {integrity: sha512-IUTSMLre2U0ay5Vn42GdwdQl/UtgpU9jbcyURPfeStfijJsvWEAtVBXjxFcyCosnsZkRLFLUYT/pJVQ5ycZhyg==}
+  /svelte-radar-datatable@0.0.22:
+    resolution: {integrity: sha512-w7fMcn0w5c9dcV7wNJWBCLwmyVgMjp7gBPAV2wIi2vx8Ie5rDZwMUXttqCBtoYO3HR4jgLEFeKC8TrHuAUHbYA==}
     dependencies:
       '@types/lodash': 4.14.194
       arquero: 5.2.0
@@ -3050,8 +3050,8 @@ packages:
       fsevents: 2.3.2
     dev: true
 
-  /vite@4.3.3(sass@1.62.1):
-    resolution: {integrity: sha512-MwFlLBO4udZXd+VBcezo3u8mC77YQk+ik+fbc0GZWGgzfbPP+8Kf0fldhARqvSYmtIWoAJ5BXPClUbMTlqFxrA==}
+  /vite@4.3.5(sass@1.62.1):
+    resolution: {integrity: sha512-0gEnL9wiRFxgz40o/i/eTBwm+NEbpUeTWhzKrZDSdKm6nplj+z4lKz8ANDgildxHm47Vg8EUia0aicKbawUVVA==}
     engines: {node: ^14.18.0 || >=16.0.0}
     hasBin: true
     peerDependencies:
@@ -3077,13 +3077,13 @@ packages:
     dependencies:
       esbuild: 0.17.18
       postcss: 8.4.23
-      rollup: 3.21.0
+      rollup: 3.21.5
       sass: 1.62.1
     optionalDependencies:
       fsevents: 2.3.2
     dev: true
 
-  /vitefu@0.2.4(vite@4.3.3):
+  /vitefu@0.2.4(vite@4.3.5):
     resolution: {integrity: sha512-fanAXjSaf9xXtOOeno8wZXIhgia+CZury481LsDaV++lSvcU2R9Ch2bPh3PYFyoHW+w9LqAeYRISVQjUIew14g==}
     peerDependencies:
       vite: ^3.0.0 || ^4.0.0
@@ -3091,7 +3091,7 @@ packages:
       vite:
         optional: true
     dependencies:
-      vite: 4.3.3(sass@1.62.1)
+      vite: 4.3.5(sass@1.62.1)
     dev: true
 
   /vitest@0.29.8(sass@1.62.1):

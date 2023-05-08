@@ -11,6 +11,7 @@ export interface CustomOptionsEvents {
   cellEdited: CellEditedEventDetail
   columnFilterChanged: ColumnFilterChangedEventDetail
   uniqueConceptIdsChanged: UniqueConceptIdsChangedEventDetail
+  rowChange: RowChangeEventDetail
 }
 
 export interface VisibilityChangedEventDetail {
@@ -60,6 +61,10 @@ export interface ColumnFilterChangedEventDetail {
 
 export interface UniqueConceptIdsChangedEventDetail {
   uniqueConceptIds: string[]
+}
+
+export interface RowChangeEventDetail {
+  up: boolean
 }
 
 export interface SingleSorting {

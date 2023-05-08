@@ -7,7 +7,7 @@
 
   export let renderedRow: Record<string, any>,
     columns: IColumnMetaData[],
-    settings: Map<string, boolean | string | number>,
+    settings: Record<string, any>,
     mainTable: DataTable,
     selectedRowIndex: number,
     uniqueConceptIds: string[] = []
@@ -15,8 +15,7 @@
   let alreadyMapped: boolean = false
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
-  let multipleConcepts =
-    settings.get('Map to multiple concepts') != undefined ? settings.get('Map to multiple concepts')! : false
+  let multipleConcepts = settings.mapToMultipleConcepts
 
   async function onClickMapping() {
     let originalRow = await mainTable.getFullRow(selectedRowIndex)
