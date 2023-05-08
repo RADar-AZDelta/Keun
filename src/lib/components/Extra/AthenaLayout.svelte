@@ -15,7 +15,7 @@
     equivalenceMapping: string,
     athenaFilteredColumn: string,
     filterColumns: string[],
-    selectedRow: any,
+    selectedRow: Record<string, any>,
     mainTable: DataTable
 
   let JSONFilters = new Map<string, ICategories>([])
@@ -99,7 +99,7 @@
 
   onMount(async () => {
     const q = query()
-      .params({ value: selectedRow[0] })
+      .params({ value: selectedRow.sourceCode })
       .filter((d: any, params: any) => d.sourceCode == params.value)
       .toObject()
     const res = await mainTable.executeQueryAndReturnResults(q)
