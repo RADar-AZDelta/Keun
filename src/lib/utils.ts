@@ -27,8 +27,3 @@ export function localStorageGetter(key: string) {
     return undefined
   return JSON.parse(item, jsonMapReviver)
 }
-
-export const checkForScroll = (list: any[], limit: number): 'scroll' | null | undefined => {
-  if (list.length > limit) return 'scroll'
-  else return null
-}

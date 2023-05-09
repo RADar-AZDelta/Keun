@@ -2,7 +2,7 @@
   export let Eq: string
 </script>
 
-<div data-component="equivalence">
+<div data-name="equivalence">
   <select name="equivalence" id="equivalence" bind:value={Eq}>
     <option value="EQUAL">EQUAL</option>
     <option value="EQUIVALENT">EQUIVALENT</option>

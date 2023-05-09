@@ -68,7 +68,7 @@
 
   let dataTableAthena: DataTable
 
-  let alreadyMapped: Record<string, any> = {}
+  let alreadyMapped: Record<string, Record<string, any>> = {}
   let uniqueConceptIds: string[]
 
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
@@ -165,20 +165,18 @@
   }
 
   async function getUniqueConceptIds() {
-    // const q = query()
-    //   .params({ value: selectedRow.sourceCode })
-    //   .filter((d: any, params: any) => d.sourceCode == params.value)
-    //   .toObject()
-    const q2 = query()
+    const q = query()
       .filter((d: any) => d.conceptId != null)
       .toObject()
-    // TODO: change this to get all concept ids for the page and not per row --> this does not work
-    const res = await mainTable.executeQueryAndReturnResults(q2)
+    const res = await mainTable.executeQueryAndReturnResults(q)
     for (let row of res.queriedData) {
       if (row.conceptId) {
-        // TODO: now the value is overwritten but it needs to be added
-        if (alreadyMapped[row.sourceCode]) alreadyMapped[row.sourceCode].push([row.conceptId, row.conceptName])
-        else alreadyMapped[row.sourceCode] = [row.conceptId, row.conceptName]
+        if (alreadyMapped[row.sourceCode]) {
+          if (!alreadyMapped[row.sourceCode].conceptId.includes(row.conceptId))
+            alreadyMapped[row.sourceCode].conceptId.push(row.conceptId)
+          if (!alreadyMapped[row.sourceCode].conceptName.includes(row.conceptName))
+            alreadyMapped[row.sourceCode].conceptName.push(row.conceptName)
+        } else alreadyMapped[row.sourceCode] = { conceptId: [row.conceptId], conceptName: [row.conceptName] }
       }
     }
 
@@ -208,37 +206,35 @@
   }
 </script>
 
-<dialog bind:this={layoutDialog}>
-  <button on:click={closeDialog}><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button>
+<dialog bind:this={layoutDialog} data-name="athena-dialog">
+  <button data-name="close-dialog" on:click={closeDialog}><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button>
   <div data-name="athena-layout">
     <section data-name="filters-container">
       <h2>Filters</h2>
-      <div data-name="filters-buttons">
-        <div data-name="filters">
-          {#each [...JSONFilters] as [key, options]}
-            <AthenaFilter filter={{ name: key, categories: options }} bind:openedFilter allowInput={true}>
-              <div slot="option" data-component="filter-option" let:option>
-                <input
-                  type="checkbox"
-                  checked={checkIfFilterExists(key, options.altName, option)}
-                  on:change={() =>
-                    event != undefined
-                      ? updateAPIFilters(event, options.altName != undefined ? options.altName : 'sourceName', option)
-                      : null}
-                />
-                <p>{option}</p>
-              </div>
-            </AthenaFilter>
-          {/each}
-          <AthenaActivatedFilter filters={activatedAthenaFilters} bind:openedFilter filterName="Activated filters">
-            <div slot="option" data-component="filter-option" let:filter let:option>
+      <div data-name="filters">
+        {#each [...JSONFilters] as [key, options]}
+          <AthenaFilter filter={{ name: key, categories: options }} bind:openedFilter allowInput={true}>
+            <div slot="option" data-name="filter-option" let:option>
+              <input
+                type="checkbox"
+                checked={checkIfFilterExists(key, options.altName, option)}
+                on:change={() =>
+                  event != undefined
+                    ? updateAPIFilters(event, options.altName != undefined ? options.altName : 'sourceName', option)
+                    : null}
+              />
               <p>{option}</p>
-              <button on:click={() => removeFilter(filter, option)}
-                ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
-              >
             </div>
-          </AthenaActivatedFilter>
-        </div>
+          </AthenaFilter>
+        {/each}
+        <AthenaActivatedFilter filters={activatedAthenaFilters} bind:openedFilter filterName="Activated filters">
+          <div slot="option" data-name="filter-option" let:filter let:option>
+            <button on:click={() => removeFilter(filter, option)}
+              ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
+            >
+            <p>{option}</p>
+          </div>
+        </AthenaActivatedFilter>
       </div>
     </section>
     <section data-name="table-pop-up">
@@ -249,7 +245,7 @@
             <button id="left" on:click={() => onRowChange(false)} disabled={selectedRowIndex == 0 ? true : false}>
               <SvgIcon href="icons.svg" id="arrow-left" width="16px" height="16px" />
             </button>
-            <table class="table">
+            <table>
               <tr>
                 <th>sourceCode</th>
                 <th>sourceName</th>
@@ -271,7 +267,7 @@
             <Equivalence bind:Eq={equivalenceMapping} />
             <div data-name="columnFilter">
               <p>Filter on column:</p>
-              <select class="columnSelect" name="columns" id="columns" on:change={changeFilteredColumnAthena}>
+              <select name="columns" id="columns" on:change={changeFilteredColumnAthena}>
                 <option value="sourceName">sourceName</option>
                 <option value="sourceCode">sourceCode</option>
               </select>
@@ -291,10 +287,12 @@
                   </tr>
                   {#each Object.keys(alreadyMapped) as code}
                     {#if selectedRow.sourceCode == code}
-                      <tr>
-                        <td>{alreadyMapped[code][0]}</td>
-                        <td>{alreadyMapped[code][1]}</td>
-                      </tr>
+                      {#each alreadyMapped[code].conceptId as id, i}
+                        <tr>
+                          <td>{alreadyMapped[code].conceptId[i]}</td>
+                          <td>{alreadyMapped[code].conceptName[i]}</td>
+                        </tr>
+                      {/each}
                     {/if}
                   {/each}
                 {/if}
@@ -303,7 +301,7 @@
           </div>
         {/if}
       </div>
-      <div data-component="table">
+      <div data-name="table">
         <DataTable
           data={fetchData}
           columns={athenaColumns}

@@ -6,11 +6,8 @@ export interface CustomOptionsEvents {
   singleMapping: SingleMappingEventDetail
   multipleMapping: MultipleMappingEventDetail
   actionPerformed: ActionPerformedEventDetail
-  autoMapping: AutoMappingEventDetail
   deleteRow: DeleteRowEventDetail
-  cellEdited: CellEditedEventDetail
   columnFilterChanged: ColumnFilterChangedEventDetail
-  uniqueConceptIdsChanged: UniqueConceptIdsChangedEventDetail
   rowChange: RowChangeEventDetail
 }
 
@@ -39,16 +36,6 @@ export interface ActionPerformedEventDetail {
   row: Record<string, any>
 }
 
-export interface AutoMappingEventDetail {
-  row: any[]
-  index: number
-}
-
-export interface CellEditedEventDetail {
-  index: number
-  update: Record<string, any>
-}
-
 export interface DeleteRowEventDetail {
   indexes: number[]
   sourceCode: string | number
@@ -59,17 +46,8 @@ export interface ColumnFilterChangedEventDetail {
   filter: string
 }
 
-export interface UniqueConceptIdsChangedEventDetail {
-  uniqueConceptIds: string[]
-}
-
 export interface RowChangeEventDetail {
   up: boolean
-}
-
-export interface SingleSorting {
-  column: string
-  sortDirection: SortDirection
 }
 
 export interface SingleFiltering {
@@ -92,10 +70,4 @@ interface IDependency {
   column: string
   status: string | null
   equal: boolean
-}
-
-export interface ILogger {
-  title: string | undefined
-  message: string | undefined
-  type: 'error' | 'warning' | undefined
 }

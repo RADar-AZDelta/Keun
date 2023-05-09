@@ -27,16 +27,16 @@
   }
 </script>
 
-<td class="actions">
+<td data-name="actions">
   {#if alreadyMapped == true}
-    <button class="apply"><SvgIcon href="icons.svg" id="check" width="16px" height="16px" /></button>
+    <button style='background-color: greenyellow;'><SvgIcon href="icons.svg" id="check" width="16px" height="16px" /></button>
   {:else}
     <button on:click={onClickMapping}><SvgIcon href="icons.svg" id="map" width="16px" height="16px" /></button>
   {/if}
 </td>
 {#each columns || [] as column (column.id)}
   <td>
-    <div class="field has-addons" data-component="cell-container">
+    <div data-name="cell-container">
       <p>{renderedRow[column.id]}</p>
     </div>
   </td>

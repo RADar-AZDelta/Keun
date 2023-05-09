@@ -8,24 +8,22 @@
     ActionPerformedEventDetail,
     DeleteRowEventDetail,
     FilterOptionsChangedEventDetail,
-    ILogger,
     MultipleMappingEventDetail,
     SingleMappingEventDetail,
-    SingleSorting,
     VisibilityChangedEventDetail,
     RowChangeEventDetail,
     ColumnFilterChangedEventDetail,
   } from '$lib/components/Types'
   import type { IColumnMetaData, IPagination, SortDirection, TFilter } from 'svelte-radar-datatable'
-  import { localStorageGetter, localStorageSetter } from '$lib/utils'
+  import { localStorageGetter } from '$lib/utils'
   import AthenaLayout from '$lib/components/Extra/AthenaLayout.svelte'
   import UsagiRow from '$lib/components/Mapping/UsagiRow.svelte'
   import { onMount, tick } from 'svelte'
   import { query } from 'arquero'
   import Download from '$lib/components/Extra/Download.svelte'
-  import ErrorLogging from '$lib/components/Extra/ErrorLogging.svelte'
   import Settings from '$lib/components/Extra/Settings.svelte'
   import { LatencyOptimisedTranslator } from '@browsermt/bergamot-translator/translator.js'
+  import SvgIcon from '$lib/components/Extra/SvgIcon.svelte'
 
   let file: File | undefined
 
@@ -33,8 +31,6 @@
   let translator: LatencyOptimisedTranslator
 
   let mappingVisibility: boolean = false
-  let errorVisibility: boolean = false
-  let errorLog: ILogger = { message: undefined, title: undefined, type: undefined }
 
   let apiFilters: string[]
   let equivalenceMapping: string = 'EQUAL'
@@ -103,13 +99,6 @@
       if (extension && allowedExtensions.includes(extension)) {
         file = f
         break
-      } else {
-        errorLog = {
-          title: 'File format',
-          message: "You inserted a file format that is not supported. The accepted format is '.csv'.",
-          type: 'error',
-        }
-        errorVisibility = true
       }
     }
   }
@@ -141,7 +130,6 @@
     let filter = row[athenaFilteredColumn]
     if (settings)
       if (settings.language != 'en') {
-        console.log("LANGUAGE ", settings.language)
         let translation = await translator.translate({
           from: settings.language,
           to: 'en',
@@ -176,6 +164,7 @@
       .filter((r: any, params: any) => r.sourceCode == params.value)
       .toObject()
     const res = await dataTableFile.executeQueryAndReturnResults(q)
+    console.log('RES ', res)
     mappedRow['ADD_INFO:numberOfConcepts'] = res.queriedData.length + 1
     mappedRow.mappingStatus = 'UNAPPROVED'
     mappedRow.statusSetBy = settings!.author
@@ -183,8 +172,14 @@
     for (let index of res.indices) {
       rowsToUpdate.set(index, { 'ADD_INFO:numberOfConcepts': res.queriedData.length + 1 })
     }
-    await dataTableFile.updateRows(rowsToUpdate)
+    console.log('ROWS TO UPDATE ', mappedRow)
     await insertRows(dataTableFile, [mappedRow])
+    // TODO: fix error when updating a row that is not visualised on the page --> can only update rows that are rendered
+    /*
+      ISSUE: Updaten van row (ADD_INFO:numberOfConcepts) smijt error omdat alleen de gerenderde rows geupdate kunnen worden --> update van renderedRows en bij multiple mapping wordt de nieuwe row achteraan toegevoegd dus deze is niet gevisualiseerd
+      POSSIBLE FIX: Verwijder ADD_INFO:numberOfConcepts of verander updateRows methode in DataTableRenderer
+    */
+    await dataTableFile.updateRows(rowsToUpdate)
   }
 
   async function actionPerformed(event: CustomEvent<ActionPerformedEventDetail>) {
@@ -346,6 +341,7 @@
         }
       }
     }
+    console.log('ROW ', mappedUsagiRow)
     return {
       mappedIndex: rowIndex,
       mappedRow: mappedUsagiRow,
@@ -440,7 +436,10 @@
   <Header />
 
   <div data-name="table-options">
-    <input type="file" accept=".csv, .json" on:change={onFileInputChange} />
+    <label for="file-upload" data-name="file-upload"
+      ><SvgIcon href="icons.svg" id="upload" width="16px" height="16px" /></label
+    >
+    <input id="file-upload" type="file" accept=".csv, .json" on:change={onFileInputChange} />
     <Download dataTable={dataTableFile} />
   </div>
 
@@ -449,10 +448,6 @@
     <User {settings} />
   </div>
 </section>
-
-<div data-name="logger-seperate">
-  <ErrorLogging visibility={errorVisibility} log={errorLog} />
-</div>
 
 <AthenaLayout
   bind:urlFilters={apiFilters}

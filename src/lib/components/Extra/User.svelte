@@ -50,12 +50,12 @@
   <SvgIcon href="icons.svg" id="user" width="16px" height="16px" />
 </button>
 
-<dialog bind:this={userDialog}>
+<dialog bind:this={userDialog} data-name="user-dialog">
   {#if settings}
-    <button on:click={closeDialog}><SvgIcon href="icons.svg" id="x" width="16px" height="16px"/></button>
+    <button data-name="close-dialog" on:click={closeDialog}><SvgIcon href="icons.svg" id="x" width="16px" height="16px"/></button>
     <section data-name="author">
       <h2>Who is the author?</h2>
-      <input id="author" type="text" placeholder="John Wick" class="author-input" bind:value={settings.author} />
+      <input id="author" type="text" placeholder="John Wick" bind:value={settings.author} />
       <div data-name="buttons-container">
         <button data-name="cancel" on:click={cancelAuthorUpdate} disabled={!settings?.author}>Cancel</button>
         <button data-name="save" on:click={saveAuthorUpdate} disabled={!settings?.author}>Save</button>
