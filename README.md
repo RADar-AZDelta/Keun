@@ -17,7 +17,7 @@ Although [Usagi](https://www.ohdsi.org/web/wiki/doku.php?id=documentation:softwa
 Therefore we decided to make a modern web variant of Usagi:
 - No installation, just run it from your browser
 - Made with [Svelte](https://svelte.dev/): cybernetically enhanced web apps
-- Includes the super fast [svelte-radar-datatable](https://github.com/RADar-AZDelta/svelte-radar-datatable) component. So it can handle very, very lage CSV files.
+- Includes the super fast [svelte-radar-datatable](https://github.com/RADar-AZDelta/svelte-radar-datatable) component. So it can handle very, very lage CSV files. It uses the [Arquero](https://uwdata.github.io/arquero/) library in a web worker.
 - Uses [Athena](https://athena.ohdsi.org/) in the background
 - Translation are done by [Bergamot](https://browser.mt/): machine translation done locally in your browser
 
