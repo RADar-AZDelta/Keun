@@ -14,6 +14,7 @@
     SingleSorting,
     VisibilityChangedEventDetail,
     RowChangeEventDetail,
+    ColumnFilterChangedEventDetail
   } from '$lib/components/Types'
   import type { IColumnMetaData, IPagination, SortDirection, TFilter } from 'svelte-radar-datatable'
   import { localStorageGetter, localStorageSetter } from '$lib/utils'
@@ -24,7 +25,6 @@
   import Download from '$lib/components/Extra/Download.svelte'
   import ErrorLogging from '$lib/components/Extra/ErrorLogging.svelte'
   import Settings from '$lib/components/Extra/Settings.svelte'
-  import type { ColumnFilterChangedEventDetail } from 'svelte-radar-datatable/components/DataTable'
 
   let file: File | undefined
 
@@ -163,6 +163,7 @@
     const res = await dataTableFile.executeQueryAndReturnResults(q)
     mappedRow['ADD_INFO:numberOfConcepts'] = res.queriedData.length + 1
     mappedRow.mappingStatus = 'UNAPPROVED'
+    mappedRow.statusSetBy = settings!.author
     const rowsToUpdate = new Map()
     for (let index of res.indices) {
       rowsToUpdate.set(index, { 'ADD_INFO:numberOfConcepts': res.queriedData.length + 1 })
@@ -176,18 +177,18 @@
 
     if (event.detail.row.conceptId || event.detail.row.sourceAutoAssignedConceptIds) {
       if (event.detail.action == 'APPROVED') {
-        if (event.detail.row.statusSetBy == undefined || event.detail.row.statusSetBy == settings.author) {
-          updatingObj.statusSetBy = settings.author
+        if (event.detail.row.statusSetBy == undefined || event.detail.row.statusSetBy == settings!.author) {
+          updatingObj.statusSetBy = settings!.author
           updatingObj.statusSetOn = Date.now()
           updatingObj.mappingStatus = 'UNAPPROVED'
           updatingObj.conceptId = event.detail.row.sourceAutoAssignedConceptIds
-        } else if (event.detail.row.statusSetBy != settings.author) {
-          updatingObj['ADD_INFO:approvedBy'] = settings.author
+        } else if (event.detail.row.statusSetBy != settings!.author) {
+          updatingObj['ADD_INFO:approvedBy'] = settings!.author
           updatingObj['ADD_INFO:approvedOn'] = Date.now()
           updatingObj.mappingStatus = 'APPROVED'
         }
       } else {
-        updatingObj.statusSetBy = settings.author
+        updatingObj.statusSetBy = settings!.author
         updatingObj.statusSetOn = Date.now()
         updatingObj.mappingStatus = event.detail.action
       }
@@ -306,22 +307,22 @@
                 mappedUsagiRow.statusSetBy == undefined) &&
               !autoMap
             ) {
-              mappedUsagiRow.statusSetBy = settings.author
+              mappedUsagiRow.statusSetBy = settings!.author
               mappedUsagiRow.statusSetOn = Date.now()
             }
             break
 
           case 'createdBy':
           case 'createdOn':
-            if (!mappedUsagiRow.createdBy && mappedUsagiRow.createdBy != settings.author) {
-              mappedUsagiRow.createdBy = settings.author
+            if (!mappedUsagiRow.createdBy && mappedUsagiRow.createdBy != settings!.author) {
+              mappedUsagiRow.createdBy = settings!.author
               mappedUsagiRow.createdOn = Date.now()
             }
             break
 
           case 'mappingStatus':
             if (
-              mappedUsagiRow.statusSetBy == settings.author ||
+              mappedUsagiRow.statusSetBy == settings!.author ||
               mappedUsagiRow.statusSetBy == '' ||
               mappedUsagiRow.statusSetBy == undefined
             )
@@ -404,6 +405,11 @@
   })
 </script>
 
+<svelte:head>
+  <title>POC-Keun</title>
+  <meta name="description" content="POC-Keun is a mapping tool to map concepts to OMOP concepts. It's the replacement of Usagi." />
+</svelte:head>
+
 <section data-name="header">
   <Header />
 
@@ -437,6 +443,7 @@
   on:multipleMapping={multipleMapping}
   on:filterOptionsChanged={filterOptionsChanged}
   on:columnFilterChanged={columnFilterChanged}
+  on:generalVisibilityChanged={mappingVisibilityChanged}
 />
 
 <DataTable
@@ -460,7 +467,5 @@
     {renderedRow}
     {columns}
     {index}
-    showMappingPopUp={mappingVisibility}
-    author={settings.author}
   />
 </DataTable>

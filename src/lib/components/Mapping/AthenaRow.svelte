@@ -8,8 +8,6 @@
   export let renderedRow: Record<string, any>,
     columns: IColumnMetaData[],
     settings: Record<string, any>,
-    mainTable: DataTable,
-    selectedRowIndex: number,
     uniqueConceptIds: string[] = []
 
   let alreadyMapped: boolean = false
@@ -18,9 +16,8 @@
   let multipleConcepts = settings.mapToMultipleConcepts
 
   async function onClickMapping() {
-    let originalRow = await mainTable.getFullRow(selectedRowIndex)
-    if (multipleConcepts == true) dispatch('multipleMapping', { originalRow, row: renderedRow })
-    else dispatch('singleMapping', { originalRow, row: renderedRow })
+    if (multipleConcepts == true) dispatch('multipleMapping', { row: renderedRow })
+    else dispatch('singleMapping', { row: renderedRow })
 
     multipleConcepts == true ? (alreadyMapped = true) : null
   }

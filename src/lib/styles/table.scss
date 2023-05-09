@@ -965,7 +965,8 @@ div[data-name='logger-seperate'] {
   }
 
   button[data-name='header-button'] {
-    padding: 0.5rem 0.5rem 1rem 0.5rem;
+    padding: 0.5rem;
+    height: min-content;
   }
 
   div[data-name='header-buttons-container'] {
@@ -1041,4 +1042,8 @@ div[data-name='logger-seperate'] {
       }
     }
   }
+}
+
+button {
+  height: min-content !important;
 }
