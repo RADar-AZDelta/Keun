@@ -7,9 +7,6 @@ importers:
       arquero:
         specifier: ^5.2.0
         version: 5.2.0
-      languagedetect:
-        specifier: ^2.0.0
-        version: 2.0.0
       lodash.debounce:
         specifier: ^4.0.8
         version: 4.0.8
@@ -1990,11 +1987,6 @@ packages:
     resolution: {integrity: sha512-o+NO+8WrRiQEE4/7nwRJhN1HWpVmJm511pBHUxPLtp0BUISzlBplORYSmTclCnJvQq2tKu/sgl3xVpkc7ZWuQQ==}
     engines: {node: '>=6'}
     dev: true
-
-  /languagedetect@2.0.0:
-    resolution: {integrity: sha512-AZb/liiQ+6ZoTj4f1J0aE6OkzhCo8fyH+tuSaPfSo8YHCWLFJrdSixhtO2TYdIkjcDQNaR4RmGaV2A5FJklDMQ==}
-    engines: {node: '>= 0.4.8'}
-    dev: false
 
   /levn@0.4.1:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}

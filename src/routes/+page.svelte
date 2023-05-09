@@ -25,35 +25,12 @@
   import Download from '$lib/components/Extra/Download.svelte'
   import ErrorLogging from '$lib/components/Extra/ErrorLogging.svelte'
   import Settings from '$lib/components/Extra/Settings.svelte'
-  import languagedetect from 'languagedetect'
   import { LatencyOptimisedTranslator } from '@browsermt/bergamot-translator/translator.js'
 
   let file: File | undefined
 
   let settings: Record<string, any> | undefined = undefined
   let translator: LatencyOptimisedTranslator
-
-  const languagedetector = new languagedetect()
-
-  let languages: Record<string, string> = {
-    bulgarion: 'bg',
-    catalan: 'ca',
-    czech: 'cs',
-    dutch: 'nl',
-    estonian: 'et',
-    german: 'de',
-    french: 'fr',
-    icelandic: 'is',
-    italian: 'it',
-    "norwegian Bokmål": 'nb',
-    "norwegian Nynorsk": 'nn',
-    persian: 'fa',
-    polish: 'pl',
-    portuguese: 'pt',
-    russian: 'ru',
-    spanish: 'es',
-    ukrainian: 'uk',
-  }
 
   let mappingVisibility: boolean = false
   let errorVisibility: boolean = false
@@ -162,19 +139,17 @@
   async function autoMapRow(signal: AbortSignal, row: Record<string, any>, index: number) {
     if (signal.aborted) return
     let filter = row[athenaFilteredColumn]
-    const detectedLanguage = languagedetector.detect(row[athenaFilteredColumn])[0][0]
-    for (let lang of Object.keys(languages)){
-      if(lang.toLowerCase().includes(detectedLanguage.toLowerCase())){
-        const fromLanguage = languages[lang]
+    if (settings)
+      if (settings.language != 'en') {
+        console.log("LANGUAGE ", settings.language)
         let translation = await translator.translate({
-          from: fromLanguage,
+          from: settings.language,
           to: 'en',
           text: filter,
-          html: true
+          html: true,
         })
         filter = translation.target.text
       }
-    }
     if (signal.aborted) return
     const url = await assembleAthenaURL(row[athenaFilteredColumn])
     if (signal.aborted) return
