@@ -14,7 +14,7 @@
     SingleSorting,
     VisibilityChangedEventDetail,
     RowChangeEventDetail,
-    ColumnFilterChangedEventDetail
+    ColumnFilterChangedEventDetail,
   } from '$lib/components/Types'
   import type { IColumnMetaData, IPagination, SortDirection, TFilter } from 'svelte-radar-datatable'
   import { localStorageGetter, localStorageSetter } from '$lib/utils'
@@ -25,10 +25,35 @@
   import Download from '$lib/components/Extra/Download.svelte'
   import ErrorLogging from '$lib/components/Extra/ErrorLogging.svelte'
   import Settings from '$lib/components/Extra/Settings.svelte'
+  import languagedetect from 'languagedetect'
+  import { LatencyOptimisedTranslator } from '@browsermt/bergamot-translator/translator.js'
 
   let file: File | undefined
 
   let settings: Record<string, any> | undefined = undefined
+  let translator: LatencyOptimisedTranslator
+
+  const languagedetector = new languagedetect()
+
+  let languages: Record<string, string> = {
+    bulgarion: 'bg',
+    catalan: 'ca',
+    czech: 'cs',
+    dutch: 'nl',
+    estonian: 'et',
+    german: 'de',
+    french: 'fr',
+    icelandic: 'is',
+    italian: 'it',
+    "norwegian Bokmål": 'nb',
+    "norwegian Nynorsk": 'nn',
+    persian: 'fa',
+    polish: 'pl',
+    portuguese: 'pt',
+    russian: 'ru',
+    spanish: 'es',
+    ukrainian: 'uk',
+  }
 
   let mappingVisibility: boolean = false
   let errorVisibility: boolean = false
@@ -136,6 +161,21 @@
 
   async function autoMapRow(signal: AbortSignal, row: Record<string, any>, index: number) {
     if (signal.aborted) return
+    let filter = row[athenaFilteredColumn]
+    const detectedLanguage = languagedetector.detect(row[athenaFilteredColumn])[0][0]
+    for (let lang of Object.keys(languages)){
+      if(lang.toLowerCase().includes(detectedLanguage.toLowerCase())){
+        const fromLanguage = languages[lang]
+        let translation = await translator.translate({
+          from: fromLanguage,
+          to: 'en',
+          text: filter,
+          html: true
+        })
+        filter = translation.target.text
+      }
+    }
+    if (signal.aborted) return
     const url = await assembleAthenaURL(row[athenaFilteredColumn])
     if (signal.aborted) return
     const res = await fetch(url)
@@ -150,12 +190,12 @@
   }
 
   async function singleMapping(event: CustomEvent<SingleMappingEventDetail>) {
-    const { mappedIndex, mappedRow } = await rowMapping(event.detail.originalRow, event.detail.row)
+    const { mappedIndex, mappedRow } = await rowMapping(event.detail.originalRow!, event.detail.row)
     await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
   }
 
   async function multipleMapping(event: CustomEvent<MultipleMappingEventDetail>) {
-    const { mappedIndex, mappedRow } = await rowMapping(event.detail.originalRow, event.detail.row)
+    const { mappedIndex, mappedRow } = await rowMapping(event.detail.originalRow!, event.detail.row)
     const q = query()
       .params({ value: mappedRow.sourceCode })
       .filter((r: any, params: any) => r.sourceCode == params.value)
@@ -402,12 +442,23 @@
         language: 'nl',
         author: undefined,
       }
+    translator = new LatencyOptimisedTranslator(
+      {
+        workers: 1,
+        batchSize: 1,
+        registryUrl: 'bergamot/registry.json',
+      },
+      undefined
+    )
   })
 </script>
 
 <svelte:head>
   <title>POC-Keun</title>
-  <meta name="description" content="POC-Keun is a mapping tool to map concepts to OMOP concepts. It's the replacement of Usagi." />
+  <meta
+    name="description"
+    content="POC-Keun is a mapping tool to map concepts to OMOP concepts. It's the replacement of Usagi."
+  />
 </svelte:head>
 
 <section data-name="header">
