@@ -9,7 +9,6 @@
   import AthenaActivatedFilter from './AthenaActivatedFilter.svelte'
   import DataTable, { type FetchDataFunc, type IColumnMetaData } from 'svelte-radar-datatable'
   import { query } from 'arquero'
-  import Modal from './Modal.svelte'
   import AthenaRow from '../Mapping/AthenaRow.svelte'
 
   export let urlFilters: string[],
@@ -27,6 +26,7 @@
   let openedFilter: string
   let savedFilters: Map<string, string[]>
   let lastRow: boolean = false
+  let layoutDialog: HTMLDialogElement
 
   const athenaColumns: IColumnMetaData[] = [
     {
@@ -89,10 +89,9 @@
     dispatch('multipleMapping', { originalRow: selectedRow, row: event.detail.row })
   }
 
-  function onGeneralVisibilityChanged(event: CustomEvent) {
-    if (!event.detail.visibility && !settings.author) return
-
-    dispatch('generalVisibilityChanged', { visibility: event.detail.visibility })
+  function closeDialog() {
+    layoutDialog.close()
+    dispatch('generalVisibilityChanged', { visibility: false })
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -200,11 +199,17 @@
   }
 
   $: {
-    if (showModal == true) getUniqueConceptIds()
+    if (showModal == true) {
+      getUniqueConceptIds()
+      layoutDialog.showModal()
+    } else {
+      if (layoutDialog) layoutDialog.close()
+    }
   }
 </script>
 
-<Modal on:generalVisibilityChanged={onGeneralVisibilityChanged} show={showModal} size="large">
+<dialog bind:this={layoutDialog}>
+  <button on:click={closeDialog}><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button>
   <div data-name="athena-layout">
     <section data-name="filters-container">
       <h2>Filters</h2>
@@ -273,28 +278,30 @@
             </div>
           </div>
         </div>
-        <div data-name="bottom">
-          <div data-name="mappedRows">
-            <table>
-              {#if Object.keys(alreadyMapped).length == 0 && Object.keys(alreadyMapped).includes(selectedRow.conceptName)}
-                <div />
-              {:else}
-                <tr>
-                  <th>conceptId</th>
-                  <th>conceptName</th>
-                </tr>
-                {#each Object.keys(alreadyMapped) as code}
-                  {#if selectedRow.sourceCode == code}
-                    <tr>
-                      <td>{alreadyMapped[code][0]}</td>
-                      <td>{alreadyMapped[code][1]}</td>
-                    </tr>
-                  {/if}
-                {/each}
-              {/if}
-            </table>
+        {#if selectedRow}
+          <div data-name="bottom">
+            <div data-name="mappedRows">
+              <table>
+                {#if Object.keys(alreadyMapped).length == 0 && Object.keys(alreadyMapped).includes(selectedRow.conceptName)}
+                  <div />
+                {:else}
+                  <tr>
+                    <th>conceptId</th>
+                    <th>conceptName</th>
+                  </tr>
+                  {#each Object.keys(alreadyMapped) as code}
+                    {#if selectedRow.sourceCode == code}
+                      <tr>
+                        <td>{alreadyMapped[code][0]}</td>
+                        <td>{alreadyMapped[code][1]}</td>
+                      </tr>
+                    {/if}
+                  {/each}
+                {/if}
+              </table>
+            </div>
           </div>
-        </div>
+        {/if}
       </div>
       <div data-component="table">
         <DataTable
@@ -318,4 +325,4 @@
       <slot name="extra" />
     </section>
   </div>
-</Modal>
+</dialog>
