@@ -44,11 +44,11 @@
   ><SvgIcon href="icons.svg" id="settings" width="16px" height="16px" /></button
 >
 
-<dialog bind:this={settingsDialog}>
+<dialog bind:this={settingsDialog} data-name="settings-dialog">
   {#if settings}
-    <button on:click={closeDialog}><SvgIcon href="icons.svg" id="x" width="16px" height="16px"/></button>
+    <button data-name="close-dialog" on:click={closeDialog}><SvgIcon href="icons.svg" id="x" width="16px" height="16px"/></button>
     <section data-name="settings">
-      <h2 class="pop-up-title">Settings</h2>
+      <h2>Settings</h2>
       <div data-name="options">
         <div data-name="option">
           <p>Map to multiple concepts?</p>

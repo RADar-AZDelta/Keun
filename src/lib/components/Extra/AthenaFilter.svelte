@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { checkForScroll } from '$lib/utils'
   import type { ICategories } from '../Types'
   import SvgIcon from './SvgIcon.svelte'
 
@@ -39,22 +38,18 @@
 </script>
 
 <div data-name="filter">
-  <button
-    data-component="filter-button"
-    on:click={showCategories}
-    class={`${openedFilter == filter.name ? 'border-radius-top' : null}`}
-  >
+  <button data-name="filter-button" on:click={showCategories}>
     <p>{filter.name}</p>
     <SvgIcon href="icons.svg" id="updown" width="16px" height="16px" />
   </button>
   {#if openedFilter == filter.name}
-    <div data-component="filter-item" class={checkForScroll(filter.categories.options, 3)}>
+    <div data-name="filter-item">
       {#if allowInput == true}
-        <div data-component="filter-input">
+        <div data-name="filter-input">
           <input
             type="text"
             placeholder="Filter"
-            data-component={filter.name}
+            data-name={filter.name}
             bind:value={filterInput}
             on:change={onChange}
           />

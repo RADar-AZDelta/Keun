@@ -58,7 +58,7 @@
   }
 </script>
 
-<td class="actions" style={`background-color: ${color}`}>
+<td data-name="actions-grid" style={`background-color: ${color}`}>
   <button on:click={onClickMapping} title="Map"><SvgIcon href="icons.svg" id="map" width="16px" height="16px" /></button
   >
   <button on:click={onClickDeletion} title="Delete"
@@ -86,11 +86,3 @@
     {/if}
   </td>
 {/each}
-
-<style>
-  .actions {
-    display: grid;
-    grid-template-columns: repeat(3, min-content);
-    grid-template-rows: repeat(2, min-content);
-  }
-</style>
