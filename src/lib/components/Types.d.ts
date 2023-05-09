@@ -24,12 +24,12 @@ export interface FilterOptionsChangedEventDetail {
 }
 
 export interface SingleMappingEventDetail {
-  originalRow: Record<string, any>
+  originalRow?: Record<string, any>
   row: Record<string, any>
 }
 
 export interface MultipleMappingEventDetail {
-  originalRow: Record<string, any>
+  originalRow?: Record<string, any>
   row: Record<string, any>
 }
 

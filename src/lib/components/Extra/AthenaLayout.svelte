@@ -31,44 +31,44 @@
   const athenaColumns: IColumnMetaData[] = [
     {
       id: 'id',
-      filterable: false
+      filterable: false,
     },
     {
       id: 'code',
-      filterable: false
+      filterable: false,
     },
     {
       id: 'name',
     },
     {
       id: 'className',
-      filterable: false
+      filterable: false,
     },
     {
       id: 'standardConcept',
-      filterable: false
+      filterable: false,
     },
     {
       id: 'invalidReason',
-      filterable: false
+      filterable: false,
     },
     {
       id: 'domain',
-      filterable: false
+      filterable: false,
     },
     {
       id: 'vocabulary',
-      filterable: false
+      filterable: false,
     },
     {
       id: 'score',
-      filterable: false
+      filterable: false,
     },
   ]
 
   let dataTableAthena: DataTable
 
-  let alreadyMapped: any[] = []
+  let alreadyMapped: Record<string, any> = {}
   let uniqueConceptIds: string[]
 
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
@@ -82,16 +82,17 @@
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function singleMapping(event: CustomEvent<SingleMappingEventDetail>) {
-    dispatch('singleMapping', { originalRow: event.detail.originalRow, row: event.detail.row })
+    dispatch('singleMapping', { originalRow: selectedRow, row: event.detail.row })
   }
 
   function multipleMapping(event: CustomEvent<MultipleMappingEventDetail>) {
-    dispatch('multipleMapping', { originalRow: event.detail.originalRow, row: event.detail.row })
+    dispatch('multipleMapping', { originalRow: selectedRow, row: event.detail.row })
   }
 
   function onGeneralVisibilityChanged(event: CustomEvent) {
     if (!event.detail.visibility && !settings.author) return
-    showModal = event.detail.visibility
+
+    dispatch('generalVisibilityChanged', { visibility: event.detail.visibility })
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -161,17 +162,24 @@
 
   function onRowChange(up: boolean) {
     dispatch('rowChange', { up })
+    getUniqueConceptIds()
   }
 
   async function getUniqueConceptIds() {
-    const q = query()
-      .params({ value: selectedRow.sourceCode })
-      .filter((d: any, params: any) => d.sourceCode == params.value)
+    // const q = query()
+    //   .params({ value: selectedRow.sourceCode })
+    //   .filter((d: any, params: any) => d.sourceCode == params.value)
+    //   .toObject()
+    const q2 = query()
+      .filter((d: any) => d.conceptId != null)
       .toObject()
-    const res = await mainTable.executeQueryAndReturnResults(q)
+    // TODO: change this to get all concept ids for the page and not per row --> this does not work
+    const res = await mainTable.executeQueryAndReturnResults(q2)
     for (let row of res.queriedData) {
-      if(row.conceptId) {
-        alreadyMapped.push(row)
+      if (row.conceptId) {
+        // TODO: now the value is overwritten but it needs to be added
+        if (alreadyMapped[row.sourceCode]) alreadyMapped[row.sourceCode].push([row.conceptId, row.conceptName])
+        else alreadyMapped[row.sourceCode] = [row.conceptId, row.conceptName]
       }
     }
 
@@ -268,18 +276,20 @@
         <div data-name="bottom">
           <div data-name="mappedRows">
             <table>
-              {#if alreadyMapped.length > 0}
+              {#if Object.keys(alreadyMapped).length == 0 && Object.keys(alreadyMapped).includes(selectedRow.conceptName)}
                 <div />
               {:else}
                 <tr>
                   <th>conceptId</th>
                   <th>conceptName</th>
                 </tr>
-                {#each alreadyMapped as row}
-                  <tr>
-                    <td>{row.conceptId}</td>
-                    <td>{row.conceptName}</td>
-                  </tr>
+                {#each Object.keys(alreadyMapped) as code}
+                  {#if selectedRow.sourceCode == code}
+                    <tr>
+                      <td>{alreadyMapped[code][0]}</td>
+                      <td>{alreadyMapped[code][1]}</td>
+                    </tr>
+                  {/if}
                 {/each}
               {/if}
             </table>
@@ -299,8 +309,6 @@
             {renderedRow}
             {settings}
             columns={athenaColumns}
-            {mainTable}
-            {selectedRowIndex}
             {uniqueConceptIds}
             on:singleMapping={singleMapping}
             on:multipleMapping={multipleMapping}

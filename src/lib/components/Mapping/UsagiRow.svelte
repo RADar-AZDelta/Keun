@@ -4,18 +4,16 @@
   import type { IColumnMetaData } from 'svelte-radar-datatable'
   import SvgIcon from '../Extra/SvgIcon.svelte'
 
-  export let showMappingPopUp: boolean = false,
-    renderedRow: Record<string, any>,
+  export let renderedRow: Record<string, any>,
     columns: IColumnMetaData[] | undefined,
-    index: number,
-    author: string
+    index: number
 
   let color: string = 'inherit'
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
   function onClickMapping() {
     const object = {
-      visibility: !showMappingPopUp,
+      visibility: true,
       data: {
         row: renderedRow,
         index: index,
