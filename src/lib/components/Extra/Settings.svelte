@@ -1,9 +1,10 @@
 <script lang="ts">
   import SvgIcon from './SvgIcon.svelte'
   import { localStorageSetter } from '$lib/utils'
-  import Modal from './Modal.svelte'
 
   export let settings: Record<string, any>
+
+  let settingsDialog: HTMLDialogElement
 
   let languages: Record<string, string> = {
     bg: 'Bulgarian',
@@ -26,19 +27,26 @@
     uk: 'Ukrainian',
   }
 
-  let showModal = false
+  function closeDialog () {
+    settingsDialog.close()
+  }
+
+  function openDialog () {
+    settingsDialog.showModal()
+  }
 
   async function saveSettings(e: Event) {
     localStorageSetter('settings', settings)
   }
 </script>
 
-<button on:click={() => (showModal = !showModal)} data-name="header-button"
+<button on:click={openDialog} data-name="header-button"
   ><SvgIcon href="icons.svg" id="settings" width="16px" height="16px" /></button
 >
 
-<Modal on:generalVisibilityChanged={event => (showModal = event.detail.visibility)} show={showModal} size="medium">
-  {#if { settings }}
+<dialog bind:this={settingsDialog}>
+  {#if settings}
+    <button on:click={closeDialog}><SvgIcon href="icons.svg" id="x" width="16px" height="16px"/></button>
     <section data-name="settings">
       <h2 class="pop-up-title">Settings</h2>
       <div data-name="options">
@@ -65,4 +73,4 @@
       </div>
     </section>
   {/if}
-</Modal>
+</dialog>
