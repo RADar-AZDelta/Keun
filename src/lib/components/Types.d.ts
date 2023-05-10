@@ -10,6 +10,7 @@ export interface CustomOptionsEvents {
   columnFilterChanged: ColumnFilterChangedEventDetail
   rowChange: RowChangeEventDetail
   reviewerChanged: ReviewerChangedEventDetail
+  updateUniqueConceptIds: UpdateUniqueConceptIdsEventDetail
 }
 
 export interface VisibilityChangedEventDetail {
@@ -24,13 +25,13 @@ export interface FilterOptionsChangedEventDetail {
 export interface SingleMappingEventDetail {
   originalRow?: Record<string, any>
   row: Record<string, any>
-  extra: ExtraData
+  extra?: ExtraData
 }
 
 export interface MultipleMappingEventDetail {
   originalRow?: Record<string, any>
   row: Record<string, any>
-  extra: ExtraData
+  extra?: ExtraData
 }
 
 export interface ActionPerformedEventDetail {
@@ -55,6 +56,11 @@ export interface RowChangeEventDetail {
 
 export interface ReviewerChangedEventDetail {
   reviewer: string
+}
+
+export interface UpdateUniqueConceptIdsEventDetail {
+  conceptId: string
+  conceptName: string
 }
 
 export interface SingleFiltering {

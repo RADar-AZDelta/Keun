@@ -4,9 +4,7 @@
   import type { IColumnMetaData } from 'svelte-radar-datatable'
   import SvgIcon from '../Extra/SvgIcon.svelte'
 
-  export let renderedRow: Record<string, any>,
-    columns: IColumnMetaData[] | undefined,
-    index: number
+  export let renderedRow: Record<string, any>, columns: IColumnMetaData[] | undefined, index: number
 
   let color: string = 'inherit'
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
@@ -64,10 +62,14 @@
   <button on:click={onClickDeletion} title="Delete"
     ><SvgIcon href="icons.svg" id="trash" width="16px" height="16px" /></button
   >
-  <div />
-  <button
-    on:click={onClickApproving}
-    title="Approve"
+  {#if renderedRow['ADD_INFO:numberOfConcepts']}
+    <div data-name="numberOfConceptIds">
+      <p>{renderedRow['ADD_INFO:numberOfConcepts']}</p>
+    </div>
+  {:else}
+    <div />
+  {/if}
+  <button on:click={onClickApproving} title="Approve"
     ><SvgIcon href="icons.svg" id="check" width="16px" height="16px" /></button
   >
   <button on:click={onClickFlagging} title="Flag"
