@@ -4,12 +4,13 @@
   import AthenaFilter from './AthenaFilter.svelte'
   import filtersJSON from '$lib/data/filters.json'
   import { localStorageGetter, localStorageSetter } from '$lib/utils'
-  import type { CustomOptionsEvents, ICategories, MultipleMappingEventDetail, SingleMappingEventDetail } from '../Types'
+  import type { CustomOptionsEvents, ICategories, MultipleMappingEventDetail, ReviewerChangedEventDetail, SingleMappingEventDetail } from '../Types'
   import SvgIcon from './SvgIcon.svelte'
   import AthenaActivatedFilter from './AthenaActivatedFilter.svelte'
   import DataTable, { type FetchDataFunc, type IColumnMetaData } from 'svelte-radar-datatable'
   import { query } from 'arquero'
   import AthenaRow from '../Mapping/AthenaRow.svelte'
+  import AutocompleteInput from './AutocompleteInput.svelte'
 
   export let urlFilters: string[],
     equivalenceMapping: string,
@@ -202,6 +203,10 @@
     else activatedAthenaFilters = new Map<string, string[]>()
   }
 
+  function reviewerChanged (e: CustomEvent<ReviewerChangedEventDetail>) {
+    reviewer = e.detail.reviewer
+  }
+
   $: {
     selectedRowIndex
     if (mainTable) {
@@ -338,8 +343,8 @@
         </DataTable>
         <div data-name="info-container">
           <div data-name="reviewer">
-            <p>Assigned reviewer</p>
-            <input type="text" bind:value={reviewer} />
+            <p>Assigned reviewer: {reviewer}</p>
+            <AutocompleteInput {settings} on:reviewerChanged={reviewerChanged}/>
           </div>
           <div>
             <p>Comments</p>

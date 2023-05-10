@@ -9,6 +9,7 @@ export interface CustomOptionsEvents {
   deleteRow: DeleteRowEventDetail
   columnFilterChanged: ColumnFilterChangedEventDetail
   rowChange: RowChangeEventDetail
+  reviewerChanged: ReviewerChangedEventDetail
 }
 
 export interface VisibilityChangedEventDetail {
@@ -50,6 +51,10 @@ export interface ColumnFilterChangedEventDetail {
 
 export interface RowChangeEventDetail {
   up: boolean
+}
+
+export interface ReviewerChangedEventDetail {
+  reviewer: string
 }
 
 export interface SingleFiltering {
