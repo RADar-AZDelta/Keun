@@ -23,11 +23,13 @@ export interface FilterOptionsChangedEventDetail {
 export interface SingleMappingEventDetail {
   originalRow?: Record<string, any>
   row: Record<string, any>
+  extra: ExtraData
 }
 
 export interface MultipleMappingEventDetail {
   originalRow?: Record<string, any>
   row: Record<string, any>
+  extra: ExtraData
 }
 
 export interface ActionPerformedEventDetail {
@@ -70,4 +72,9 @@ interface IDependency {
   column: string
   status: string | null
   equal: boolean
+}
+
+export interface ExtraData {
+  comment: string
+  assignedReviewer: string
 }
