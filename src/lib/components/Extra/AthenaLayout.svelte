@@ -94,6 +94,11 @@
     dispatch('generalVisibilityChanged', { visibility: false })
   }
 
+  function openDialog() {
+    layoutDialog.showModal()
+    fetchData = fetchData
+  }
+
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // METHODS
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -199,9 +204,9 @@
   $: {
     if (showModal == true) {
       getUniqueConceptIds()
-      layoutDialog.showModal()
+      openDialog()
     } else {
-      if (layoutDialog) layoutDialog.close()
+      if (layoutDialog) closeDialog()
     }
   }
 </script>

@@ -104,6 +104,7 @@
   }
 
   function mappingVisibilityChanged(event: CustomEvent<VisibilityChangedEventDetail>) {
+    if (autoMappingPromise) autoMappingAbortController.abort()
     mappingVisibility = event.detail.visibility
     if (event.detail.data) {
       selectedRow = event.detail.data.row
@@ -148,12 +149,14 @@
       rowsMapping.set(mappedIndex, mappedRow)
       mappedRow['ADD_INFO:numberOfConcepts'] = 1
       if (signal.aborted) return
+      console.log("UPDATEROWS IN AUTOMAPROW ", new Map([[mappedIndex, mappedRow]]))
       await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
     }
   }
 
   async function singleMapping(event: CustomEvent<SingleMappingEventDetail>) {
     const { mappedIndex, mappedRow } = await rowMapping(event.detail.originalRow!, event.detail.row)
+    console.log("UPDATEROWS IN SINGLEMAPPING ", new Map([[mappedIndex, mappedRow]]))
     await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
   }
 
@@ -164,7 +167,6 @@
       .filter((r: any, params: any) => r.sourceCode == params.value)
       .toObject()
     const res = await dataTableFile.executeQueryAndReturnResults(q)
-    console.log('RES ', res)
     mappedRow['ADD_INFO:numberOfConcepts'] = res.queriedData.length + 1
     mappedRow.mappingStatus = 'UNAPPROVED'
     mappedRow.statusSetBy = settings!.author
@@ -172,17 +174,13 @@
     for (let index of res.indices) {
       rowsToUpdate.set(index, { 'ADD_INFO:numberOfConcepts': res.queriedData.length + 1 })
     }
-    console.log('ROWS TO UPDATE ', mappedRow)
-    await insertRows(dataTableFile, [mappedRow])
-    // TODO: fix error when updating a row that is not visualised on the page --> can only update rows that are rendered
-    /*
-      ISSUE: Updaten van row (ADD_INFO:numberOfConcepts) smijt error omdat alleen de gerenderde rows geupdate kunnen worden --> update van renderedRows en bij multiple mapping wordt de nieuwe row achteraan toegevoegd dus deze is niet gevisualiseerd
-      POSSIBLE FIX: Verwijder ADD_INFO:numberOfConcepts of verander updateRows methode in DataTableRenderer
-    */
+    console.log("UPDATEROWS IN MULTIPLEMAPPING ", rowsToUpdate)
     await dataTableFile.updateRows(rowsToUpdate)
+    await insertRows(dataTableFile, [mappedRow])
   }
 
   async function actionPerformed(event: CustomEvent<ActionPerformedEventDetail>) {
+    if (autoMappingPromise) autoMappingAbortController.abort()
     const updatingObj: { [key: string]: any } = {}
 
     if (event.detail.row.conceptId || event.detail.row.sourceAutoAssignedConceptIds) {
@@ -203,11 +201,12 @@
         updatingObj.mappingStatus = event.detail.action
       }
     }
-
+    console.log("UPDATEROWS IN ACTION PERFORMED ", new Map([[event.detail.index, updatingObj]]))
     await dataTableFile.updateRows(new Map([[event.detail.index, updatingObj]]))
   }
 
   async function deleteRow(event: CustomEvent<DeleteRowEventDetail>) {
+    if (autoMappingPromise) autoMappingAbortController.abort()
     await dataTableFile.deleteRows(event.detail.indexes)
   }
 
@@ -341,7 +340,6 @@
         }
       }
     }
-    console.log('ROW ', mappedUsagiRow)
     return {
       mappedIndex: rowIndex,
       mappedRow: mappedUsagiRow,
@@ -368,19 +366,25 @@
   }
 
   function autoMapPage() {
-    if (autoMappingPromise) autoMappingAbortController.abort()
+    if (settings!.autoMap) {
+      if (autoMappingPromise) autoMappingAbortController.abort()
 
-    autoMappingAbortController = new AbortController()
-    const signal = autoMappingAbortController.signal
+      autoMappingAbortController = new AbortController()
+      const signal = autoMappingAbortController.signal
 
-    autoMappingPromise = new Promise(async (resolve, reject) => {
-      const pag = dataTableFile.getTablePagination()
-      for (let index of Array(pag.rowsPerPage!).keys()) {
-        if (signal.aborted) return Promise.resolve()
-        const row = await dataTableFile.getFullRow(index)
-        if (row.conceptId == undefined) await autoMapRow(signal, row, index)
-      }
-    })
+      autoMappingPromise = new Promise(async (resolve, reject) => {
+        const pag = dataTableFile.getTablePagination()
+        // TODO: when a column is sorted and a row is multiple mapped --> the next row is duplicated and updates every other row on the page
+        // await dataTableFile.getFullRow(index) returns that next row always
+        console.log("PAGINATION ", pag.rowsPerPage)
+        for (let index of Array(pag.rowsPerPage!).keys()) {
+          if (signal.aborted) return Promise.resolve()
+          const row = await dataTableFile.getFullRow(index)
+          console.log("ROW ", row, " WITH INDEX ", index)
+          if (row.conceptId == undefined) await autoMapRow(signal, row, index)
+        }
+      })
+    }
   }
 
   function modifyUsagiColumnMetadata(columns: IColumnMetaData[]): IColumnMetaData[] {
@@ -410,6 +414,7 @@
     else
       settings = {
         mapToMultipleConcepts: false,
+        autoMap: false,
         language: 'nl',
         author: undefined,
       }
@@ -481,12 +486,12 @@
     slot="default"
     let:renderedRow
     let:columns
-    let:index
+    let:originalIndex
     on:generalVisibilityChanged={mappingVisibilityChanged}
     on:actionPerformed={actionPerformed}
     on:deleteRow={deleteRow}
     {renderedRow}
     {columns}
-    {index}
+    index={originalIndex}
   />
 </DataTable>
