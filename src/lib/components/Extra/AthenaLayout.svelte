@@ -4,7 +4,14 @@
   import AthenaFilter from './AthenaFilter.svelte'
   import filtersJSON from '$lib/data/filters.json'
   import { localStorageGetter, localStorageSetter } from '$lib/utils'
-  import type { CustomOptionsEvents, ICategories, MultipleMappingEventDetail, ReviewerChangedEventDetail, SingleMappingEventDetail } from '../Types'
+  import type {
+    CustomOptionsEvents,
+    ICategories,
+    MultipleMappingEventDetail,
+    ReviewerChangedEventDetail,
+    SingleMappingEventDetail,
+    UpdateUniqueConceptIdsEventDetail,
+  } from '../Types'
   import SvgIcon from './SvgIcon.svelte'
   import AthenaActivatedFilter from './AthenaActivatedFilter.svelte'
   import DataTable, { type FetchDataFunc, type IColumnMetaData } from 'svelte-radar-datatable'
@@ -72,7 +79,7 @@
   let dataTableAthena: DataTable
 
   let alreadyMapped: Record<string, Record<string, any>> = {}
-  let uniqueConceptIds: string[]
+  let uniqueConceptIds: string[] = []
 
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
@@ -98,6 +105,21 @@
       row: event.detail.row,
       extra: { comment: comment, assignedReviewer: reviewer },
     })
+  }
+
+  function updateUniqueConceptIds(e: CustomEvent<UpdateUniqueConceptIdsEventDetail>) {
+    if (!Object.values(alreadyMapped).find((row: any) => row.conceptId.includes(e.detail.conceptId))) {
+      if (!alreadyMapped[selectedRow.sourceCode]) {
+        alreadyMapped[selectedRow.sourceCode] = {
+          conceptId: [e.detail.conceptId],
+          conceptName: [e.detail.conceptName],
+        }
+      } else {
+        alreadyMapped[selectedRow.sourceCode].conceptId.push(e.detail.conceptId)
+        alreadyMapped[selectedRow.sourceCode].conceptName.push(e.detail.conceptName)
+        alreadyMapped = alreadyMapped
+      }
+    }
   }
 
   function closeDialog() {
@@ -181,12 +203,16 @@
   }
 
   async function getUniqueConceptIds() {
+    alreadyMapped = {}
+    uniqueConceptIds = []
     const q = query()
-      .filter((d: any) => d.conceptId != null)
+      .params({ source: selectedRow.sourceCode })
+      .filter((d: any, params: any) => d.sourceCode == params.source)
       .toObject()
     const res = await mainTable.executeQueryAndReturnResults(q)
     for (let row of res.queriedData) {
       if (row.conceptId) {
+        if (!uniqueConceptIds.includes(row.conceptId)) uniqueConceptIds.push(row.conceptId)
         if (alreadyMapped[row.sourceCode]) {
           if (!alreadyMapped[row.sourceCode].conceptId.includes(row.conceptId))
             alreadyMapped[row.sourceCode].conceptId.push(row.conceptId)
@@ -203,7 +229,7 @@
     else activatedAthenaFilters = new Map<string, string[]>()
   }
 
-  function reviewerChanged (e: CustomEvent<ReviewerChangedEventDetail>) {
+  function reviewerChanged(e: CustomEvent<ReviewerChangedEventDetail>) {
     reviewer = e.detail.reviewer
   }
 
@@ -214,6 +240,13 @@
       if (pagination.totalRows == selectedRowIndex) lastRow = true
       else lastRow = false
     }
+  }
+
+  $: {
+    if (layoutDialog)
+      layoutDialog.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') dispatch('generalVisibilityChanged', { visibility: false })
+      })
   }
 
   $: {
@@ -339,12 +372,13 @@
             {uniqueConceptIds}
             on:singleMapping={singleMapping}
             on:multipleMapping={multipleMapping}
+            on:updateUniqueConceptIds={updateUniqueConceptIds}
           />
         </DataTable>
         <div data-name="info-container">
           <div data-name="reviewer">
             <p>Assigned reviewer: {reviewer}</p>
-            <AutocompleteInput {settings} on:reviewerChanged={reviewerChanged}/>
+            <AutocompleteInput {settings} on:reviewerChanged={reviewerChanged} />
           </div>
           <div>
             <p>Comments</p>

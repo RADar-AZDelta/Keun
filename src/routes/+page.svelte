@@ -149,15 +149,17 @@
       rowsMapping.set(mappedIndex, mappedRow)
       mappedRow['ADD_INFO:numberOfConcepts'] = 1
       if (signal.aborted) return
-      console.log('UPDATEROWS IN AUTOMAPROW ', new Map([[mappedIndex, mappedRow]]))
       await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
     }
   }
 
   async function singleMapping(event: CustomEvent<SingleMappingEventDetail>) {
     const { mappedIndex, mappedRow } = await rowMapping(event.detail.originalRow!, event.detail.row)
-    mappedRow.comment = event.detail.extra.comment
-    mappedRow.assignedReviewer = event.detail.extra.assignedReviewer
+    if (!mappedRow['ADD_INFO:numberOfConcepts']) mappedRow['ADD_INFO:numberOfConcepts'] = 1
+    if (event.detail.extra) {
+      mappedRow.comment = event.detail.extra.comment
+      mappedRow.assignedReviewer = event.detail.extra.assignedReviewer
+    }
     await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
   }
 
@@ -168,18 +170,22 @@
       .filter((r: any, params: any) => r.sourceCode == params.value)
       .toObject()
     const res = await dataTableFile.executeQueryAndReturnResults(q)
-    mappedRow['ADD_INFO:numberOfConcepts'] = res.queriedData.length + 1
     mappedRow.mappingStatus = 'UNAPPROVED'
     mappedRow.statusSetBy = settings!.author
     mappedRow.comment = event.detail.extra.comment
     mappedRow.assignedReviewer = event.detail.extra.assignedReviewer
-    const rowsToUpdate = new Map()
-    for (let index of res.indices) {
-      rowsToUpdate.set(index, { 'ADD_INFO:numberOfConcepts': res.queriedData.length + 1 })
+    if (res.queriedData.length === 1 && !res.queriedData[0].conceptId) {
+      mappedRow['ADD_INFO:numberOfConcepts'] = 1
+      await dataTableFile.updateRows(new Map([[res.indices[0], mappedRow]]))
+    } else {
+      mappedRow['ADD_INFO:numberOfConcepts'] = res.queriedData.length + 1
+      const rowsToUpdate = new Map()
+      for (let index of res.indices) {
+        rowsToUpdate.set(index, { 'ADD_INFO:numberOfConcepts': res.queriedData.length + 1 })
+      }
+      await dataTableFile.updateRows(rowsToUpdate)
+      await insertRows(dataTableFile, [mappedRow])
     }
-    console.log('UPDATEROWS IN MULTIPLEMAPPING ', rowsToUpdate)
-    await dataTableFile.updateRows(rowsToUpdate)
-    await insertRows(dataTableFile, [mappedRow])
   }
 
   async function actionPerformed(event: CustomEvent<ActionPerformedEventDetail>) {
@@ -192,7 +198,8 @@
           updatingObj.statusSetBy = settings!.author
           updatingObj.statusSetOn = Date.now()
           updatingObj.mappingStatus = 'UNAPPROVED'
-          updatingObj.conceptId = event.detail.row.sourceAutoAssignedConceptIds
+          if (!event.detail.row.conceptId) updatingObj.conceptId = event.detail.row.sourceAutoAssignedConceptIds
+          else updatingObj.conceptId = event.detail.row.conceptId
         } else if (event.detail.row.statusSetBy != settings!.author) {
           updatingObj['ADD_INFO:approvedBy'] = settings!.author
           updatingObj['ADD_INFO:approvedOn'] = Date.now()
@@ -204,7 +211,6 @@
         updatingObj.mappingStatus = event.detail.action
       }
     }
-    console.log('UPDATEROWS IN ACTION PERFORMED ', new Map([[event.detail.index, updatingObj]]))
     await dataTableFile.updateRows(new Map([[event.detail.index, updatingObj]]))
   }
 
@@ -269,7 +275,10 @@
     if (athenaFiltering) url += `&query=${athenaFiltering}`
 
     // Add pagination to URL if there is pagination
-    if (pagination) url += `&page=${pagination.currentPage}`
+    if (pagination) {
+      url += `&page=${pagination.currentPage}`
+      url += `&pageSize=${pagination.rowsPerPage}`
+    }
 
     return encodeURI(url)
   }
@@ -377,13 +386,9 @@
 
       autoMappingPromise = new Promise(async (resolve, reject) => {
         const pag = dataTableFile.getTablePagination()
-        // TODO: when a column is sorted and a row is multiple mapped --> the next row is duplicated and updates every other row on the page
-        // await dataTableFile.getFullRow(index) returns that next row always
-        console.log('PAGINATION ', pag.rowsPerPage)
         for (let index of Array(pag.rowsPerPage!).keys()) {
           if (signal.aborted) return Promise.resolve()
           const row = await dataTableFile.getFullRow(index)
-          console.log('ROW ', row, ' WITH INDEX ', index)
           if (row.conceptId == undefined) await autoMapRow(signal, row, index)
         }
       })
@@ -420,7 +425,7 @@
         autoMap: false,
         language: 'nl',
         author: undefined,
-        savedAuthors: []
+        savedAuthors: [],
       }
     translator = new LatencyOptimisedTranslator(
       {

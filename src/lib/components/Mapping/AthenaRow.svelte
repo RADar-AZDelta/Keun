@@ -16,8 +16,13 @@
   let multipleConcepts = settings.mapToMultipleConcepts
 
   async function onClickMapping() {
-    if (multipleConcepts == true) dispatch('multipleMapping', { row: renderedRow })
-    else dispatch('singleMapping', { row: renderedRow })
+    if (multipleConcepts == true) {
+      dispatch('multipleMapping', { row: renderedRow })
+      dispatch('updateUniqueConceptIds', { conceptId: renderedRow.id, conceptName: renderedRow.name })
+    } else {
+      dispatch('singleMapping', { row: renderedRow })
+      dispatch('updateUniqueConceptIds', { conceptId: renderedRow.id, conceptName: renderedRow.name })
+    }
 
     multipleConcepts == true ? (alreadyMapped = true) : null
   }
@@ -29,7 +34,9 @@
 
 <td data-name="actions">
   {#if alreadyMapped == true}
-    <button style='background-color: greenyellow;'><SvgIcon href="icons.svg" id="check" width="16px" height="16px" /></button>
+    <button style="background-color: greenyellow;"
+      ><SvgIcon href="icons.svg" id="check" width="16px" height="16px" /></button
+    >
   {:else}
     <button on:click={onClickMapping}><SvgIcon href="icons.svg" id="map" width="16px" height="16px" /></button>
   {/if}
