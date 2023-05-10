@@ -40,7 +40,7 @@
   }
 </script>
 
-<button on:click={openDialog} data-name="header-button"
+<button aria-label="Settings button" on:click={openDialog} data-name="header-button"
   ><SvgIcon href="icons.svg" id="settings" width="16px" height="16px" /></button
 >
 
@@ -60,6 +60,18 @@
               on:change={saveSettings}
             />
             <label for="MultipleConcepts" />
+          </div>
+        </div>
+        <div data-name="option">
+          <p>Automatic mapping?</p>
+          <div data-name="switch">
+            <input
+              id="Automap"
+              type="checkbox"
+              bind:checked={settings.autoMap}
+              on:change={saveSettings}
+            />
+            <label for="Automap" />
           </div>
         </div>
         <div data-name="option">

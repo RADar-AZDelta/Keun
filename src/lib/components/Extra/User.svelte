@@ -45,7 +45,7 @@
   }
 </script>
 
-<button on:click={openDialog} data-name="header-button">
+<button aria-label="User button" on:click={openDialog} data-name="header-button">
   <p>{settings?.author ?? ''}</p>
   <SvgIcon href="icons.svg" id="user" width="16px" height="16px" />
 </button>
