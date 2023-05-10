@@ -420,6 +420,7 @@
         autoMap: false,
         language: 'nl',
         author: undefined,
+        savedAuthors: []
       }
     translator = new LatencyOptimisedTranslator(
       {
