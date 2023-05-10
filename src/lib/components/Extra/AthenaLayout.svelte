@@ -27,6 +27,8 @@
   let savedFilters: Map<string, string[]>
   let lastRow: boolean = false
   let layoutDialog: HTMLDialogElement
+  let reviewer: string = ''
+  let comment: string = ''
 
   const athenaColumns: IColumnMetaData[] = [
     {
@@ -82,11 +84,19 @@
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
   function singleMapping(event: CustomEvent<SingleMappingEventDetail>) {
-    dispatch('singleMapping', { originalRow: selectedRow, row: event.detail.row })
+    dispatch('singleMapping', {
+      originalRow: selectedRow,
+      row: event.detail.row,
+      extra: { comment: comment, assignedReviewer: reviewer },
+    })
   }
 
   function multipleMapping(event: CustomEvent<MultipleMappingEventDetail>) {
-    dispatch('multipleMapping', { originalRow: selectedRow, row: event.detail.row })
+    dispatch('multipleMapping', {
+      originalRow: selectedRow,
+      row: event.detail.row,
+      extra: { comment: comment, assignedReviewer: reviewer },
+    })
   }
 
   function closeDialog() {
@@ -212,7 +222,9 @@
 </script>
 
 <dialog bind:this={layoutDialog} data-name="athena-dialog">
-  <button data-name="close-dialog" on:click={closeDialog}><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button>
+  <button data-name="close-dialog" on:click={closeDialog}
+    ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
+  >
   <div data-name="athena-layout">
     <section data-name="filters-container">
       <h2>Filters</h2>
@@ -228,7 +240,7 @@
                     ? updateAPIFilters(event, options.altName != undefined ? options.altName : 'sourceName', option)
                     : null}
               />
-              <p>{option}</p>
+              <p>{option.replaceAll('/', ' / ')}</p>
             </div>
           </AthenaFilter>
         {/each}
@@ -306,7 +318,7 @@
           </div>
         {/if}
       </div>
-      <div data-name="table">
+      <div data-name="table-container">
         <DataTable
           data={fetchData}
           columns={athenaColumns}
@@ -324,6 +336,16 @@
             on:multipleMapping={multipleMapping}
           />
         </DataTable>
+        <div data-name="info-container">
+          <div data-name="reviewer">
+            <p>Assigned reviewer</p>
+            <input type="text" bind:value={reviewer} />
+          </div>
+          <div>
+            <p>Comments</p>
+            <textarea name="" id="" cols="30" rows="10" bind:value={comment} />
+          </div>
+        </div>
       </div>
       <slot name="extra" />
     </section>

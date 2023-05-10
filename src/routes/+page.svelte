@@ -149,14 +149,15 @@
       rowsMapping.set(mappedIndex, mappedRow)
       mappedRow['ADD_INFO:numberOfConcepts'] = 1
       if (signal.aborted) return
-      console.log("UPDATEROWS IN AUTOMAPROW ", new Map([[mappedIndex, mappedRow]]))
+      console.log('UPDATEROWS IN AUTOMAPROW ', new Map([[mappedIndex, mappedRow]]))
       await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
     }
   }
 
   async function singleMapping(event: CustomEvent<SingleMappingEventDetail>) {
     const { mappedIndex, mappedRow } = await rowMapping(event.detail.originalRow!, event.detail.row)
-    console.log("UPDATEROWS IN SINGLEMAPPING ", new Map([[mappedIndex, mappedRow]]))
+    mappedRow.comment = event.detail.extra.comment
+    mappedRow.assignedReviewer = event.detail.extra.assignedReviewer
     await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
   }
 
@@ -170,11 +171,13 @@
     mappedRow['ADD_INFO:numberOfConcepts'] = res.queriedData.length + 1
     mappedRow.mappingStatus = 'UNAPPROVED'
     mappedRow.statusSetBy = settings!.author
+    mappedRow.comment = event.detail.extra.comment
+    mappedRow.assignedReviewer = event.detail.extra.assignedReviewer
     const rowsToUpdate = new Map()
     for (let index of res.indices) {
       rowsToUpdate.set(index, { 'ADD_INFO:numberOfConcepts': res.queriedData.length + 1 })
     }
-    console.log("UPDATEROWS IN MULTIPLEMAPPING ", rowsToUpdate)
+    console.log('UPDATEROWS IN MULTIPLEMAPPING ', rowsToUpdate)
     await dataTableFile.updateRows(rowsToUpdate)
     await insertRows(dataTableFile, [mappedRow])
   }
@@ -201,7 +204,7 @@
         updatingObj.mappingStatus = event.detail.action
       }
     }
-    console.log("UPDATEROWS IN ACTION PERFORMED ", new Map([[event.detail.index, updatingObj]]))
+    console.log('UPDATEROWS IN ACTION PERFORMED ', new Map([[event.detail.index, updatingObj]]))
     await dataTableFile.updateRows(new Map([[event.detail.index, updatingObj]]))
   }
 
@@ -376,11 +379,11 @@
         const pag = dataTableFile.getTablePagination()
         // TODO: when a column is sorted and a row is multiple mapped --> the next row is duplicated and updates every other row on the page
         // await dataTableFile.getFullRow(index) returns that next row always
-        console.log("PAGINATION ", pag.rowsPerPage)
+        console.log('PAGINATION ', pag.rowsPerPage)
         for (let index of Array(pag.rowsPerPage!).keys()) {
           if (signal.aborted) return Promise.resolve()
           const row = await dataTableFile.getFullRow(index)
-          console.log("ROW ", row, " WITH INDEX ", index)
+          console.log('ROW ', row, ' WITH INDEX ', index)
           if (row.conceptId == undefined) await autoMapRow(signal, row, index)
         }
       })

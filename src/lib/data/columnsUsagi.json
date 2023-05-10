@@ -67,7 +67,7 @@
   {
     "id": "comment",
     "visible": false,
-    "editable": false
+    "editable": true
   },
   {
     "id": "createdBy",
@@ -82,7 +82,7 @@
   {
     "id": "assignedReviewer",
     "visible": false,
-    "editable": false
+    "editable": true
   },
   {
     "id": "ADD_INFO:approvedBy",
