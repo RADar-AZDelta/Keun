@@ -216,6 +216,15 @@
 
   async function deleteRow(event: CustomEvent<DeleteRowEventDetail>) {
     if (autoMappingPromise) autoMappingAbortController.abort()
+    const q = query().params({ source: event.detail.sourceCode }).filter((r: any, params: any) => r.sourceCode == params.source).toObject()
+    const res = await dataTableFile.executeQueryAndReturnResults(q)
+    if(res.queriedData.length >= 1) {
+      const rowsToUpdate = new Map()
+      for (let index of res.indices) {
+        rowsToUpdate.set(index, { 'ADD_INFO:numberOfConcepts': res.queriedData.length - 1 })
+      }
+      await dataTableFile.updateRows(rowsToUpdate)
+    }
     await dataTableFile.deleteRows(event.detail.indexes)
   }
 
