@@ -4,6 +4,7 @@
 
   export let dataTable: DataTable
 
+  // A method to save the file
   async function onClick() {
     await dataTable.saveToFile()
   }

@@ -9,7 +9,7 @@
     userDialog: HTMLDialogElement
 
   $: {
-    if(showModal == true) openDialog()
+    if (showModal == true) openDialog()
   }
 
   $: {
@@ -23,11 +23,13 @@
     }
   }
 
+  // A method to cancel the update of the author
   async function cancelAuthorUpdate() {
     closeDialog()
     settings.author = backupAuthor
   }
 
+  // A method to save the author and close the dialog
   async function saveAuthorUpdate() {
     closeDialog()
     settings = settings
@@ -35,11 +37,11 @@
     localStorageSetter('settings', settings)
   }
 
-  function closeDialog () {
+  function closeDialog() {
     userDialog.close()
   }
 
-  function openDialog () {
+  function openDialog() {
     if (!backupAuthor) backupAuthor = settings?.author
     userDialog.showModal()
   }
@@ -52,7 +54,9 @@
 
 <dialog bind:this={userDialog} data-name="user-dialog">
   {#if settings}
-    <button data-name="close-dialog" on:click={closeDialog}><SvgIcon href="icons.svg" id="x" width="16px" height="16px"/></button>
+    <button data-name="close-dialog" on:click={closeDialog}
+      ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
+    >
     <section data-name="author">
       <h2>Who is the author?</h2>
       <input id="author" type="text" placeholder="John Wick" bind:value={settings.author} />

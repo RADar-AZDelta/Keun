@@ -12,6 +12,7 @@
 
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
+  // A method for when the input needs to be saved
   function onSave() {
     value = inputValue
     if (!settings.savedAuthors.includes(inputValue)) {
@@ -21,6 +22,7 @@
     dispatch('reviewerChanged', { reviewer: value })
   }
 
+  // A method to apply a suggestion to the input field
   function onClickAutoComplete(e: Event) {
     inputValue = (e.target as HTMLLIElement).id
     value = inputValue
@@ -32,10 +34,12 @@
     dispatch('reviewerChanged', { reviewer: value })
   }
 
+  // A method to save the settings to the localstorage
   async function saveSettings() {
     localStorageSetter('settings', settings)
   }
 
+  // A method to search for suggestions to apply to the input field
   function filterNames() {
     let filteredNames = []
     if (inputValue) {

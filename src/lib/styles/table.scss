@@ -648,12 +648,11 @@ dialog[data-name='athena-dialog'] {
           padding: 1rem 3rem 2rem 3rem;
           justify-content: center;
 
-          div[data-name="mappedRows"] {
+          div[data-name='mappedRows'] {
             max-height: 100px;
             overflow-y: auto;
 
             table {
-
               th,
               td {
                 padding: 0.5rem 1rem;
@@ -671,7 +670,7 @@ dialog[data-name='athena-dialog'] {
         justify-content: space-between;
         padding: 0 1rem;
 
-        div[data-component="svelte-radar-datatable"] {
+        div[data-component='svelte-radar-datatable'] {
           table {
             overflow-y: auto;
           }
@@ -766,7 +765,7 @@ td[data-name='actions-grid'] {
   width: max-content;
   padding-right: 1.5rem;
 
-  div[data-name="numberOfConceptIds"] {
+  div[data-name='numberOfConceptIds'] {
     border: 1px solid $darkgray;
     border-radius: 100%;
     display: flex;

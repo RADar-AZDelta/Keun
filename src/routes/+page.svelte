@@ -218,8 +218,11 @@
     await dataTableFile.updateRows(new Map([[event.detail.index, updatingObj]]))
   }
 
+  // When the delete button is clicked (left-side of the table in the action column)
   async function deleteRow(event: CustomEvent<DeleteRowEventDetail>) {
+    // Check if the automapping proces is running and if this is happening, abort the promise because it could give unexpected results.
     if (autoMappingPromise) autoMappingAbortController.abort()
+    // Create a query to get all the rows that has the same sourceCode (row mapped to multiple concepts)
     const q = query()
       .params({ source: event.detail.sourceCode })
       .filter((r: any, params: any) => r.sourceCode == params.source)
@@ -227,6 +230,7 @@
     const res = await dataTableFile.executeQueryAndReturnResults(q)
     if (res.queriedData.length >= 1) {
       const rowsToUpdate = new Map()
+      // Update the all the rows and set the number of concepts - 1
       for (let index of res.indices) {
         rowsToUpdate.set(index, { 'ADD_INFO:numberOfConcepts': res.queriedData.length - 1 })
       }
@@ -235,11 +239,13 @@
     await dataTableFile.deleteRows(event.detail.indexes)
   }
 
+  // When the arrow button in the Athena pop-up is clicked to navigate to a different row
   async function selectRow(event: CustomEvent<RowChangeEventDetail>) {
     const tablePagination = await dataTableFile.getTablePagination()
     if (event.detail.up && selectedRowIndex + 1 < tablePagination.totalRows!) selectedRowIndex += 1
     if (!event.detail.up && selectedRowIndex - 1 >= 0) selectedRowIndex -= 1
 
+    // When the index exceeds the number of rows per page, go to the next page
     if (event.detail.up && selectedRowIndex !== 0) {
       if (selectedRowIndex % tablePagination.rowsPerPage! === 0) {
         await changePagination({ currentPage: tablePagination.currentPage! + 1 })
@@ -251,6 +257,7 @@
     fetchDataFunc = fetchData
   }
 
+  // When the column filter (pop-up Athena on the right upper side) changes
   function columnFilterChanged(event: CustomEvent<ColumnFilterChangedEventDetail>) {
     athenaFiltering = selectedRow[event.detail.filter as keyof Object]
     fetchDataFunc = fetchData
@@ -260,9 +267,12 @@
   // METHODS
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
+  // A method to automatically map a given row
   async function autoMapRow(signal: AbortSignal, row: Record<string, any>, index: number) {
+    // When the signal is aborted quit the method
     if (signal.aborted) return
     let filter = row[athenaFilteredColumn]
+    // Check the language set in the settings and translate the filter to English if it's not English
     if (settings)
       if (settings.language != 'en') {
         let translation = await translator.translate({
@@ -274,11 +284,14 @@
         filter = translation.target.text
       }
     if (signal.aborted) return
+    // Assembe the Athena URL
     const url = await assembleAthenaURL(row[athenaFilteredColumn])
     if (signal.aborted) return
+    // Get the first result of the Athena API call
     const res = await fetch(url)
     const resData = await res.json()
     if (resData.content && resData.content.length !== 0) {
+      // Map the row with the first result
       const { mappedIndex, mappedRow } = await rowMapping(row, resData.content[0], true, index)
       rowsMapping.set(mappedIndex, mappedRow)
       mappedRow['ADD_INFO:numberOfConcepts'] = 1
@@ -287,6 +300,7 @@
     }
   }
 
+  // A method to create the Athena URL
   const assembleAthenaURL = async (filter?: string, sorting?: string[], pagination?: IPagination) => {
     if (filter == undefined) {
       if (athenaFiltering == undefined || athenaFiltering == '') {
@@ -326,6 +340,7 @@
     return encodeURI(url)
   }
 
+  // A method to fetch the data from the Athena API, this method is used for the DataTable in the Athena pop-up
   async function fetchData(
     filteredColumns: Map<String, TFilter>,
     sortedColumns: Map<string, SortDirection>,
@@ -344,6 +359,7 @@
     }
   }
 
+  // A method to map a certain row to a given Athena concept
   async function rowMapping(
     usagiRow: Record<string, any>,
     athenaRow: Record<string, any>,
@@ -354,10 +370,12 @@
     const mappedUsagiRow: Record<string, any> = usagiRow
 
     if (mappedUsagiRow != undefined) {
+      // Map the import columns that are given from Athena
       for (let [name, alt] of importantAthenaColumns) {
         if (name === 'id' && autoMap) mappedUsagiRow['sourceAutoAssignedConceptIds'] = athenaRow[name]
         else mappedUsagiRow[alt] = athenaRow[name]
       }
+      // Map the extra columns that are not from Athena
       for (let col of Object.keys(additionalFields)) {
         switch (col) {
           case 'equivalence':
@@ -401,10 +419,12 @@
     }
   }
 
+  // A method to insert a row
   async function insertRows(dataTable: DataTable, rows: any[]) {
     await dataTable.insertRows(rows)
   }
 
+  // A method to change the pagination
   async function changePagination(pagination: { currentPage?: number; rowsPerPage?: number }) {
     const pag: Record<string, any> = {}
     if (pagination.currentPage) pag['currentPage'] = pagination.currentPage
@@ -412,18 +432,23 @@
     await dataTableFile.changePagination(pag)
   }
 
+  // A method to show that the table has been initialized
   function dataTableInitialized() {
     dataTableInit = true
   }
 
+  // A method to abort the auto mapping
   function abortAutoMap() {
     if (autoMappingPromise) autoMappingAbortController.abort()
   }
 
+  // A method to start the auto mapping
   function autoMapPage() {
     if (settings!.autoMap) {
+      // Abort any automapping that is happening at the moment
       if (autoMappingPromise) autoMappingAbortController.abort()
 
+      // Create a abortcontroller to abort the auto mapping in the future if needed
       autoMappingAbortController = new AbortController()
       const signal = autoMappingAbortController.signal
 
@@ -438,6 +463,7 @@
     }
   }
 
+  // A method to create the meta data per column
   function modifyUsagiColumnMetadata(columns: IColumnMetaData[]): IColumnMetaData[] {
     const usagiColumnsMap = columnsUsagi.reduce((acc, cur) => {
       acc.set(cur.id, cur)
@@ -460,6 +486,7 @@
   let fetchDataFunc = fetchData
 
   onMount(async () => {
+    // Get the settings from the local storage
     const storedSettings = localStorageGetter('settings')
     if (storedSettings) settings = storedSettings
     else
@@ -470,6 +497,7 @@
         author: undefined,
         savedAuthors: [],
       }
+    // Create a translator object to translate the concepts in the future
     translator = new LatencyOptimisedTranslator(
       {
         workers: 1,
