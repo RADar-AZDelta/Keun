@@ -1,6 +1,25 @@
-$neutral-x-light: #e5ecf4;
-$neutral-xx-light: #effffa;
-$neutral: #3587a4;
+$neutral-xxx-light: #f6f6f6;
+$neutral-x-light: #d8d8d8;
+$neutral-xx-light: #e2e2e2;
+$neutral: #cecece;
+$neutral-x-dark: #c5c5c5;
+$neutral-xx-dark: #bbbbbb;
+
+$darkgray-xx-light: #636363;
+$darkgray-x-light: #595959;
+$darkgray: #4f4f4f;
+$darkgray-x-dark: #454545;
+$darkgray-xx-dark: #3b3b3b;
+
+$blue-xx-light: #9ed1e1;
+$blue-x-light: #8fcadd;
+$blue: #80c3d8;
+$blue-x-dark: #71bbd4;
+$blue-xx-dark: #62b4cf;
+
+$brightblue: #0094d3;
+$brightblue-x-dark: #0082ba;
+$brightblue-xx-dark: #0070a0;
 
 body {
   font-family: BlinkMacSystemFont, -apple-system, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans',
@@ -34,18 +53,22 @@ section[data-name='header'] {
     label[data-name='file-upload'] {
       border: 1px solid $neutral-x-light;
       border-radius: 5px;
-      background-color: $neutral-xx-light;
+      background-color: $neutral-xxx-light;
       display: flex;
       align-items: center;
       justify-content: center;
       cursor: pointer;
       color: black;
-      height: 40px;
-      width: 40px;
+      width: 38px;
     }
 
     label[data-name='file-upload']:hover {
       background-color: $neutral-x-light;
+    }
+
+    label[data-name='file-upload']:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px $neutral-x-dark;
     }
 
     button[data-name='header-button'] {
@@ -54,13 +77,18 @@ section[data-name='header'] {
       display: flex;
       align-items: center;
       justify-content: center;
-      background-color: $neutral-xx-light;
+      background-color: $neutral-xxx-light;
       width: 40px;
       height: 40px !important;
     }
 
     button[data-name='header-button']:hover {
       background-color: $neutral-x-light;
+    }
+
+    button[data-name='header-button']:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px $neutral-x-dark;
     }
   }
 
@@ -76,13 +104,19 @@ section[data-name='header'] {
       gap: 0.5rem;
       align-items: center;
       justify-content: center;
-      background-color: $neutral-xx-light;
+      background-color: $neutral-xxx-light;
       min-width: 40px;
       height: 40px !important;
+      font-size: 1rem;
     }
 
     button[data-name='header-button']:hover {
       background-color: $neutral-x-light;
+    }
+
+    button[data-name='header-button']:focus {
+      outline: none;
+      box-shadow: 0 0 0 2px $neutral-x-dark;
     }
 
     dialog[data-name='settings-dialog'] {
@@ -93,10 +127,20 @@ section[data-name='header'] {
 
       button[data-name='close-dialog'] {
         position: absolute;
-        right: 0;
-        margin-right: 1rem;
+        right: 1rem;
+        top: 1rem;
         border: none;
         background-color: inherit;
+        color: $darkgray;
+      }
+
+      button[data-name='close-dialog']:hover {
+        color: $darkgray-xx-dark;
+      }
+
+      button[data-name='close-dialog']:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px $neutral;
       }
 
       section[data-name='settings'] {
@@ -104,6 +148,7 @@ section[data-name='header'] {
           font-size: 24px;
           text-align: center;
           font-weight: 600;
+          margin: 0;
         }
 
         div[data-name='options'] {
@@ -112,6 +157,7 @@ section[data-name='header'] {
           div[data-name='option'] {
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 2rem;
             margin-bottom: 1rem;
             font-size: 20px;
@@ -130,10 +176,28 @@ section[data-name='header'] {
               top: -15px;
               width: 60px;
               height: 30px;
-              background: grey;
+              background: $neutral-x-dark;
               display: block;
               border-radius: 20px;
               position: relative;
+            }
+
+            label:hover {
+              background: $neutral-xx-dark;
+            }
+
+            input:checked + label:hover {
+              background: $brightblue-x-dark;
+            }
+
+            label:focus {
+              outline: none;
+              box-shadow: 0 0 0 2px $neutral;
+            }
+
+            input:checked + label:focus {
+              outline: none;
+              box-shadow: 0 0 0 2px $brightblue-xx-dark;
             }
 
             label:after {
@@ -143,13 +207,13 @@ section[data-name='header'] {
               left: 4px;
               width: 22px;
               height: 22px;
-              background: #fff;
+              background: white;
               border-radius: 20px;
               transition: 0.3s;
             }
 
             input:checked + label {
-              background: #0094d3;
+              background: $brightblue;
             }
 
             input:checked + label:after {
@@ -163,72 +227,118 @@ section[data-name='header'] {
           }
 
           select {
-            width: 80px;
+            width: auto;
             height: 40px;
             padding: 0.5rem;
             font-size: 1rem;
             border-radius: 10px;
+            border: 1px solid $neutral;
+          }
+
+          select:hover {
+            border: 1px solid $neutral-xx-dark;
+          }
+
+          select:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px $neutral-x-dark;
           }
         }
       }
     }
 
     dialog[data-name='user-dialog'] {
-      width: 20%;
-      height: 20%;
       border-radius: 10px;
       border: none;
 
       button[data-name='close-dialog'] {
         position: absolute;
-        right: 0;
-        margin-right: 1rem;
+        right: 1rem;
+        top: 1rem;
         border: none;
         background-color: inherit;
+        color: $darkgray;
+      }
+
+      button[data-name='close-dialog']:hover {
+        color: $darkgray-xx-dark;
+      }
+
+      button[data-name='close-dialog']:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px $neutral;
       }
 
       section[data-name='author'] {
-        min-width: 100%;
-        max-height: 100%;
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
+        gap: 1rem;
 
         h2 {
           text-align: center;
-          font-size: 20px;
+          font-size: 24px;
           font-weight: 600;
-          padding-bottom: 1rem;
+          padding: 0 2rem;
+          margin: 0;
         }
 
         input {
           width: 80%;
-          padding: 1rem 0.5rem;
-          border: 1px solid lightgray;
+          padding: 0.5rem;
+          border: 1px solid $neutral;
           border-radius: 5px;
+          font-size: 1rem;
+        }
+
+        input:hover {
+          border: 1px solid $neutral-xx-dark;
+        }
+
+        input:focus {
+          outline: none;
+          box-shadow: 0 0 0 2px $neutral-x-dark;
         }
 
         div[data-name='buttons-container'] {
-          padding-top: 1rem;
           display: flex;
-          width: 80%;
           align-items: center;
           justify-content: space-between;
+          width: 85%;
 
           button {
+            height: auto;
             padding: 0.5rem 1rem;
-            border-radius: 5px;
+            font-size: 1rem;
           }
 
           button[data-name='cancel'] {
-            background-color: lightgray;
+            background-color: $neutral-xx-light;
             color: black;
           }
 
+          button[data-name='cancel']:hover {
+            background-color: $neutral-x-light;
+          }
+
+          button[data-name='cancel']:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px $neutral-x-dark;
+          }
+
           button[data-name='save'] {
-            background-color: $neutral;
-            color: white;
+            background-color: $blue;
+            color: black;
+          }
+
+          button[data-name='save']:hover {
+            background-color: $blue-x-dark;
+          }
+
+          button[data-name='save']:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px $blue-xx-dark;
           }
         }
       }
@@ -244,12 +354,21 @@ dialog[data-name='athena-dialog'] {
   padding: 0;
 
   button[data-name='close-dialog'] {
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
     border: none;
     background-color: inherit;
-    position: absolute;
-    right: 0;
-    top: 10px;
-    margin-right: 1rem;
+    color: $darkgray;
+  }
+
+  button[data-name='close-dialog']:hover {
+    color: $darkgray-xx-dark;
+  }
+
+  button[data-name='close-dialog']:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px $neutral;
   }
 
   div[data-name='athena-layout'] {
@@ -286,6 +405,16 @@ dialog[data-name='athena-dialog'] {
             justify-content: space-between;
             padding: 0.5rem 1rem;
             border: none;
+            background-color: $neutral-xx-light;
+          }
+
+          button[data-name='filter-button']:hover {
+            background: $neutral-x-light;
+          }
+
+          button[data-name='filter-button']:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px $neutral-x-dark;
           }
 
           div[data-name='filter-item'] {
@@ -308,11 +437,32 @@ dialog[data-name='athena-dialog'] {
                 max-width: 80%;
                 min-width: 50%;
                 margin-left: 0.5rem;
+                border: 1px solid $neutral-x-light;
+                font-size: 1rem;
+              }
+
+              input:hover {
+                border: 1px solid $neutral-xx-dark;
+              }
+
+              input:focus {
+                outline: none;
+                box-shadow: 0 0 0 2px $neutral-xx-dark;
               }
 
               button {
                 border: none;
                 background-color: inherit;
+                color: $darkgray;
+              }
+
+              button:hover {
+                color: $darkgray-xx-dark;
+              }
+
+              button:focus {
+                outline: none;
+                box-shadow: 0 0 0 2px $neutral;
               }
             }
 
@@ -325,6 +475,15 @@ dialog[data-name='athena-dialog'] {
 
               p {
                 max-width: 80%;
+              }
+
+              input {
+                border: 1px solid $darkgray;
+              }
+
+              input:hover {
+                cursor: pointer;
+                border: 1px solid $darkgray-xx-dark;
               }
             }
           }
@@ -343,6 +502,16 @@ dialog[data-name='athena-dialog'] {
             justify-content: space-between;
             padding: 0.5rem 1rem;
             border: none;
+            background-color: $neutral-xx-light;
+          }
+
+          button[data-name='filter-button']:hover {
+            background: $neutral-x-light;
+          }
+
+          button[data-name='filter-button']:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px $neutral-x-dark;
           }
 
           div[data-name='filter-item'] {
@@ -359,6 +528,16 @@ dialog[data-name='athena-dialog'] {
               button {
                 border: none;
                 background-color: inherit;
+                color: $darkgray;
+              }
+
+              button:hover {
+                color: $darkgray-xx-dark;
+              }
+
+              button:focus {
+                outline: none;
+                box-shadow: 0 0 0 2px $neutral;
               }
             }
           }
@@ -382,6 +561,7 @@ dialog[data-name='athena-dialog'] {
           h2 {
             font-size: 24px;
             font-weight: 600;
+            margin: 0;
           }
 
           div[data-name='currentRow'] {
@@ -392,6 +572,16 @@ dialog[data-name='athena-dialog'] {
             button {
               border: none;
               background-color: inherit;
+              color: $darkgray;
+            }
+
+            button:hover {
+              color: $darkgray-xx-dark;
+            }
+
+            button:focus {
+              outline: none;
+              box-shadow: 0 0 0 2px $neutral;
             }
 
             table {
@@ -415,9 +605,18 @@ dialog[data-name='athena-dialog'] {
 
               select {
                 border-radius: 5px;
-                border: 1px solid lightgray;
+                border: 1px solid $neutral;
                 padding: 0.5rem 1rem;
                 width: 100%;
+              }
+
+              select:hover {
+                border: 1px solid $neutral-xx-dark;
+              }
+
+              select:focus {
+                outline: none;
+                box-shadow: 0 0 0 2px $neutral-x-dark;
               }
             }
 
@@ -426,9 +625,18 @@ dialog[data-name='athena-dialog'] {
 
               select {
                 border-radius: 5px;
-                border: 1px solid lightgray;
+                border: 1px solid $neutral;
                 padding: 0.5rem 1rem;
                 width: 100%;
+              }
+
+              select:hover {
+                border: 1px solid $neutral-xx-dark;
+              }
+
+              select:focus {
+                outline: none;
+                box-shadow: 0 0 0 2px $neutral-x-dark;
               }
             }
           }
@@ -437,25 +645,110 @@ dialog[data-name='athena-dialog'] {
         div[data-name='bottom'] {
           display: flex;
           width: 100%;
-          padding: 1rem 3rem;
+          padding: 1rem 3rem 2rem 3rem;
           justify-content: center;
 
-          table {
-            th,
-            td {
-              padding: 0.5rem 1rem;
-            }
-            td {
-              border-bottom: 1px solid lightgray;
-              border-top: 1px solid lightgray;
+          div[data-name="mappedRows"] {
+            max-height: 100px;
+            overflow-y: auto;
+
+            table {
+
+              th,
+              td {
+                padding: 0.5rem 1rem;
+              }
+              td {
+                border-bottom: 1px solid lightgray;
+                border-top: 1px solid lightgray;
+              }
             }
           }
         }
       }
-      div[data-name='table'] {
-        padding: 0.5rem;
-        max-height: 60%;
-        overflow-y: auto;
+      div[data-name='table-container'] {
+        display: flex;
+        justify-content: space-between;
+        padding: 0 1rem;
+
+        div[data-component="svelte-radar-datatable"] {
+          table {
+            overflow-y: auto;
+          }
+        }
+
+        div[data-name='info-container'] {
+          div[data-name='reviewer'] {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+
+            div[data-name='autocomplete-input'] {
+              input {
+                border: 1px solid $neutral-x-light;
+                font-size: 1rem;
+                padding: 0.5rem 1rem;
+              }
+
+              input:hover {
+                border: 1px solid $neutral-xx-dark;
+              }
+
+              input:focus {
+                outline: none;
+                box-shadow: 0 0 0 2px $neutral-x-dark;
+              }
+
+              ul {
+                list-style-type: none;
+                padding: 0.5rem 0 2rem 0;
+                margin: 0;
+
+                li {
+                  border-top: 1px solid $neutral;
+                  border-left: 1px solid $neutral;
+                  border-right: 1px solid $neutral;
+                  padding: 0.5rem 1rem;
+                }
+
+                li:last-child {
+                  border: 1px solid $neutral;
+                }
+
+                li:hover {
+                  background-color: $neutral-xx-light;
+                }
+
+                li:focus {
+                  outline: none;
+                  box-shadow: 0 0 0 2px $neutral-x-dark;
+                }
+              }
+            }
+          }
+
+          div[data-name='comments'] {
+            padding-top: 2rem;
+            p {
+              padding-bottom: 1rem;
+            }
+
+            textarea {
+              border: 1px solid $neutral-x-light;
+              resize: none;
+              border-radius: 10px;
+            }
+
+            textarea:hover {
+              border: 1px solid $neutral-xx-dark;
+            }
+
+            textarea:focus {
+              outline: none;
+              box-shadow: 0 0 0 2px $neutral-x-dark;
+            }
+          }
+        }
       }
     }
   }
@@ -472,4 +765,12 @@ td[data-name='actions-grid'] {
   grid-template-rows: repeat(2, min-content);
   width: max-content;
   padding-right: 1.5rem;
+
+  div[data-name="numberOfConceptIds"] {
+    border: 1px solid $darkgray;
+    border-radius: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 }

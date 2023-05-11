@@ -2,6 +2,7 @@
   import { localStorageSetter } from '$lib/utils'
   import { createEventDispatcher } from 'svelte'
   import type { CustomOptionsEvents } from '../Types'
+  import { clickOutside } from '$lib/actions/clickOutside'
 
   export let settings: Record<string, any>
 
@@ -11,7 +12,7 @@
 
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
-  function onClickSave() {
+  function onSave() {
     value = inputValue
     if (!settings.savedAuthors.includes(inputValue)) {
       settings.savedAuthors.push(inputValue)
@@ -27,6 +28,7 @@
       settings.savedAuthors.push(inputValue)
       saveSettings()
     }
+    filterNames()
     dispatch('reviewerChanged', { reviewer: value })
   }
 
@@ -34,18 +36,14 @@
     localStorageSetter('settings', settings)
   }
 
-  function onKeydownInput(e: KeyboardEvent) {
-    if (e.key === 'Enter') {
-      onClickSave()
-    }
-  }
-
   function filterNames() {
     let filteredNames = []
     if (inputValue) {
       for (let name of settings.savedAuthors) {
-        if (name.toLowerCase().startsWith(inputValue.toLowerCase())) {
-          filteredNames.push(name)
+        if (name) {
+          if (name.toLowerCase().startsWith(inputValue.toLowerCase())) {
+            if (name.toLowerCase() != inputValue.toLowerCase()) filteredNames.push(name)
+          }
         }
       }
     }
@@ -54,7 +52,7 @@
 </script>
 
 <div data-name="autocomplete-input">
-  <input type="text" bind:value={inputValue} on:input={filterNames} on:keydown={onKeydownInput} />
+  <input type="text" bind:value={inputValue} on:input={filterNames} use:clickOutside on:outClick={onSave} />
   {#if filteredValues.length > 0}
     <ul>
       {#each filteredValues as name}
@@ -62,5 +60,4 @@
       {/each}
     </ul>
   {/if}
-  <button on:click={onClickSave}>Save</button>
 </div>

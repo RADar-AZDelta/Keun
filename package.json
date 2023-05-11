@@ -39,7 +39,6 @@
   "type": "module",
   "dependencies": {
     "arquero": "^5.2.0",
-    "lodash.debounce": "^4.0.8",
     "svelte-radar-datatable": "^0.0.24",
     "vite-plugin-static-copy": "^0.14.0"
   }
