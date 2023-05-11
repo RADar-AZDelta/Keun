@@ -16,7 +16,7 @@
     height: 50px;
     display: inline-block;
     position: relative;
-    background-image: url(keun.svg);
+    background-image: url('keun.svg');
     background-size: cover;
   }
 

@@ -28,11 +28,11 @@
   }
 
   function closeDialog() {
-    settingsDialog.close()
+    if (settingsDialog.attributes.getNamedItem('open') != null) settingsDialog.close()
   }
 
   function openDialog() {
-    settingsDialog.showModal()
+    if (settingsDialog.attributes.getNamedItem('open') == null) settingsDialog.showModal()
   }
 
   // A method to set the settings in the localstorage
