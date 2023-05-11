@@ -5,7 +5,8 @@
 
   // A method to change the section that needs to be opened
   const showCategories = async (): Promise<void> => {
-    openedFilter == filterName ? (openedFilter = '') : (openedFilter = filterName)
+    if (openedFilter == filter.name) openedFilter = ''
+    else openedFilter = filter.name
   }
 </script>
 
