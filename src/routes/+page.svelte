@@ -84,7 +84,9 @@
   // EVENTS
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
+  // When there is a new file uploaded
   async function onFileInputChange(e: Event) {
+    // Check if the automapping proces is running and if this is happening, abort the promise because it could give unexpected results.
     if (autoMappingPromise) autoMappingAbortController.abort()
     columns = undefined
     file = undefined
@@ -94,6 +96,7 @@
     const inputFiles = (e.target as HTMLInputElement).files
     if (!inputFiles) return
 
+    // Check the files if the extension is allowed
     for (const f of inputFiles) {
       const extension = f.name.split('.').pop()
       if (extension && allowedExtensions.includes(extension)) {
@@ -103,83 +106,79 @@
     }
   }
 
+  // When the visibility of the mapping pop-up changes
   function mappingVisibilityChanged(event: CustomEvent<VisibilityChangedEventDetail>) {
+    // Check if the automapping proces is running and if this is happening, abort the promise because it could give unexpected results.
     if (autoMappingPromise) autoMappingAbortController.abort()
+
+    // Change the visiblity and update the selected row and index if there is a new row selected
     mappingVisibility = event.detail.visibility
     if (event.detail.data) {
       selectedRow = event.detail.data.row
       selectedRowIndex = event.detail.data.index
     }
+    // Reset the athena filter
     athenaFiltering = ''
   }
 
+  // When the filters in the Athena pop-up change (filters on the left-side for the query)
   function filterOptionsChanged(event: CustomEvent<FilterOptionsChangedEventDetail>) {
     if (event.detail.filters) {
       athenaFilters = event.detail.filters
       apiFilters = []
+      // Transform the filters to a string that can be used in the query for Athena
       for (let [filter, options] of athenaFilters) {
         const substring = options.map(option => `&${filter}=${option}`).join()
         apiFilters.push(substring)
       }
       apiFilters = apiFilters
+      // Update the update fetch function so the table will be initialized again
       fetchDataFunc = fetchData
     }
   }
 
-  async function autoMapRow(signal: AbortSignal, row: Record<string, any>, index: number) {
-    if (signal.aborted) return
-    let filter = row[athenaFilteredColumn]
-    if (settings)
-      if (settings.language != 'en') {
-        let translation = await translator.translate({
-          from: settings.language,
-          to: 'en',
-          text: filter,
-          html: true,
-        })
-        filter = translation.target.text
-      }
-    if (signal.aborted) return
-    const url = await assembleAthenaURL(row[athenaFilteredColumn])
-    if (signal.aborted) return
-    const res = await fetch(url)
-    const resData = await res.json()
-    if (resData.content && resData.content.length !== 0) {
-      const { mappedIndex, mappedRow } = await rowMapping(row, resData.content[0], true, index)
-      rowsMapping.set(mappedIndex, mappedRow)
-      mappedRow['ADD_INFO:numberOfConcepts'] = 1
-      if (signal.aborted) return
-      await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
-    }
-  }
-
+  // When the mapping button in the Athena pop-up is clicked and the settins "Map to multiple concepts" is disabled
   async function singleMapping(event: CustomEvent<SingleMappingEventDetail>) {
+    // Map the selected row with the selected concept
     const { mappedIndex, mappedRow } = await rowMapping(event.detail.originalRow!, event.detail.row)
+    // Add extra information like the number of concepts mapped for this row, comments & the assigned reviewer to the row
     if (!mappedRow['ADD_INFO:numberOfConcepts']) mappedRow['ADD_INFO:numberOfConcepts'] = 1
     if (event.detail.extra) {
       mappedRow.comment = event.detail.extra.comment
       mappedRow.assignedReviewer = event.detail.extra.assignedReviewer
     }
+    // Update the selected row to the updated row
     await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
   }
 
+  // When the mapping button in the Athena pop-up is clicked and the settins "Map to multiple concepts" is enabled
   async function multipleMapping(event: CustomEvent<MultipleMappingEventDetail>) {
+    // Map the selected row with the selected concept
     const { mappedIndex, mappedRow } = await rowMapping(event.detail.originalRow!, event.detail.row)
+
+    // Create a query and execute it to get all the rows that are already mapped and got the same sourceCode
     const q = query()
       .params({ value: mappedRow.sourceCode })
       .filter((r: any, params: any) => r.sourceCode == params.value)
       .toObject()
     const res = await dataTableFile.executeQueryAndReturnResults(q)
+
+    // Add extra information like the number of concepts mapped for this row, comments & the assigned reviewer to the row
     mappedRow.mappingStatus = 'UNAPPROVED'
     mappedRow.statusSetBy = settings!.author
-    mappedRow.comment = event.detail.extra.comment
-    mappedRow.assignedReviewer = event.detail.extra.assignedReviewer
+    mappedRow.comment = event.detail.extra!.comment
+    mappedRow.assignedReviewer = event.detail.extra!.assignedReviewer
+
+    // Check if it's the first concept that will be mapped to this row
     if (res.queriedData.length === 1 && !res.queriedData[0].conceptId) {
+      // This is the first concepts mapped to the row and the current row wil be updated
       mappedRow['ADD_INFO:numberOfConcepts'] = 1
       await dataTableFile.updateRows(new Map([[res.indices[0], mappedRow]]))
     } else {
+      // This is not the first concept mapped to the row and the current row will be added to the table and the others will be updated
       mappedRow['ADD_INFO:numberOfConcepts'] = res.queriedData.length + 1
       const rowsToUpdate = new Map()
+      // Update the number of concepts in the already mapped rows
       for (let index of res.indices) {
         rowsToUpdate.set(index, { 'ADD_INFO:numberOfConcepts': res.queriedData.length + 1 })
       }
@@ -188,19 +187,24 @@
     }
   }
 
+  // When a action (approve, flag, unapprove) button is clicked (left-side of the table in the action column)
   async function actionPerformed(event: CustomEvent<ActionPerformedEventDetail>) {
+    // Check if the automapping proces is running and if this is happening, abort the promise because it could give unexpected results.
     if (autoMappingPromise) autoMappingAbortController.abort()
     const updatingObj: { [key: string]: any } = {}
 
+    // Check if there is a conceptId or a sourceAutoAssignedConceptIds (this is the conceptId that is assigned by the automapping proces)
     if (event.detail.row.conceptId || event.detail.row.sourceAutoAssignedConceptIds) {
       if (event.detail.action == 'APPROVED') {
         if (event.detail.row.statusSetBy == undefined || event.detail.row.statusSetBy == settings!.author) {
+          // If statusSetBy is empty, it means the author is the first reviewer of this row
           updatingObj.statusSetBy = settings!.author
           updatingObj.statusSetOn = Date.now()
           updatingObj.mappingStatus = 'UNAPPROVED'
           if (!event.detail.row.conceptId) updatingObj.conceptId = event.detail.row.sourceAutoAssignedConceptIds
           else updatingObj.conceptId = event.detail.row.conceptId
         } else if (event.detail.row.statusSetBy != settings!.author) {
+          // StatusSetBy is not empty and it's not the current author so it means it's the second reviewer
           updatingObj['ADD_INFO:approvedBy'] = settings!.author
           updatingObj['ADD_INFO:approvedOn'] = Date.now()
           updatingObj.mappingStatus = 'APPROVED'
@@ -216,9 +220,12 @@
 
   async function deleteRow(event: CustomEvent<DeleteRowEventDetail>) {
     if (autoMappingPromise) autoMappingAbortController.abort()
-    const q = query().params({ source: event.detail.sourceCode }).filter((r: any, params: any) => r.sourceCode == params.source).toObject()
+    const q = query()
+      .params({ source: event.detail.sourceCode })
+      .filter((r: any, params: any) => r.sourceCode == params.source)
+      .toObject()
     const res = await dataTableFile.executeQueryAndReturnResults(q)
-    if(res.queriedData.length >= 1) {
+    if (res.queriedData.length >= 1) {
       const rowsToUpdate = new Map()
       for (let index of res.indices) {
         rowsToUpdate.set(index, { 'ADD_INFO:numberOfConcepts': res.queriedData.length - 1 })
@@ -252,6 +259,33 @@
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // METHODS
   ///////////////////////////////////////////////////////////////////////////////////////////////
+
+  async function autoMapRow(signal: AbortSignal, row: Record<string, any>, index: number) {
+    if (signal.aborted) return
+    let filter = row[athenaFilteredColumn]
+    if (settings)
+      if (settings.language != 'en') {
+        let translation = await translator.translate({
+          from: settings.language,
+          to: 'en',
+          text: filter,
+          html: true,
+        })
+        filter = translation.target.text
+      }
+    if (signal.aborted) return
+    const url = await assembleAthenaURL(row[athenaFilteredColumn])
+    if (signal.aborted) return
+    const res = await fetch(url)
+    const resData = await res.json()
+    if (resData.content && resData.content.length !== 0) {
+      const { mappedIndex, mappedRow } = await rowMapping(row, resData.content[0], true, index)
+      rowsMapping.set(mappedIndex, mappedRow)
+      mappedRow['ADD_INFO:numberOfConcepts'] = 1
+      if (signal.aborted) return
+      await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
+    }
+  }
 
   const assembleAthenaURL = async (filter?: string, sorting?: string[], pagination?: IPagination) => {
     if (filter == undefined) {
