@@ -15,6 +15,7 @@
 
   let multipleConcepts = settings.mapToMultipleConcepts
 
+  // A method to map a certain concept to a certain row (can be single mapping or multiple mapping depending on the settings)
   async function onClickMapping() {
     if (multipleConcepts == true) {
       dispatch('multipleMapping', { row: renderedRow })

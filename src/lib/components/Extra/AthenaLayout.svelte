@@ -91,6 +91,7 @@
   // EVENTS
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
+  // A method that catches the event for single mapping and throws an event to the parent
   function singleMapping(event: CustomEvent<SingleMappingEventDetail>) {
     dispatch('singleMapping', {
       originalRow: selectedRow,
@@ -99,6 +100,7 @@
     })
   }
 
+  // A method that catches the event for multiple mapping and throws an event to the parent
   function multipleMapping(event: CustomEvent<MultipleMappingEventDetail>) {
     dispatch('multipleMapping', {
       originalRow: selectedRow,
@@ -107,6 +109,7 @@
     })
   }
 
+  // A method to update the already mapped concepts (used to see the already mapped concepts for a certain row)
   function updateUniqueConceptIds(e: CustomEvent<UpdateUniqueConceptIdsEventDetail>) {
     if (!Object.values(alreadyMapped).find((row: any) => row.conceptId.includes(e.detail.conceptId))) {
       if (!alreadyMapped[selectedRow.sourceCode]) {
@@ -122,25 +125,18 @@
     }
   }
 
-  function closeDialog() {
-    layoutDialog.close()
-    dispatch('generalVisibilityChanged', { visibility: false })
-  }
-
-  function openDialog() {
-    layoutDialog.showModal()
-    fetchData = fetchData
-  }
-
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // METHODS
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
+  // A method to update the API filters applied on the API call for Athena
   const updateAPIFilters = async (event: Event, filter: string, option: string): Promise<void> => {
     let chosenFilter = activatedAthenaFilters.get(filter)
     const inputElement = event.target as HTMLInputElement
     const inputValue = inputElement.checked
+    // If the filter is checked, add it
     if (chosenFilter != undefined && inputValue == true) chosenFilter.push(option)
+    // If the filter is unchecked and was already in the list, remove it
     else if (chosenFilter != undefined && inputValue == false) {
       if (chosenFilter.includes(option) == true) activatedAthenaFilters.delete(filter)
       else chosenFilter.splice(chosenFilter.indexOf(option), 1)
@@ -152,6 +148,7 @@
 
     let URLFilters: string[] = []
 
+    // Create a list of string to add to the API call with the filters in it
     for (let [filter, options] of activatedAthenaFilters) {
       let substring: string = ''
       for (let option of options) {
@@ -164,6 +161,7 @@
     dispatch('filterOptionsChanged', { filters: activatedAthenaFilters })
   }
 
+  // A method to check if the filter is already applied to the API call
   const checkIfFilterExists = (filter: string, altName: string | undefined, option: string): boolean => {
     let allFilters: Map<string, string[]> = activatedAthenaFilters
     const chosenFilter =
@@ -184,6 +182,7 @@
     }
   }
 
+  // A method when the column on which the Athena API is filtered is changed (on the right upper side: sourceCode or sourceName)
   function changeFilteredColumnAthena(e: Event) {
     const inputElement = e.target as HTMLInputElement
     const inputValue = inputElement.value
@@ -191,6 +190,7 @@
     dispatch('columnFilterChanged', { filter: athenaFilteredColumn })
   }
 
+  // A method to delete a filter when a filter for the Athena API call is removed in the section "Activated filters"
   function removeFilter(filter: string, option: string) {
     activatedAthenaFilters.get(filter)!.splice(activatedAthenaFilters.get(filter)!.indexOf(option), 1)
     activatedAthenaFilters = activatedAthenaFilters
@@ -198,11 +198,13 @@
     dispatch('filterOptionsChanged', { filters: activatedAthenaFilters })
   }
 
+  // When a arrow button is clicked in the Athena pop-up to navigate between rows
   function onRowChange(up: boolean) {
     dispatch('rowChange', { up })
     getUniqueConceptIds()
   }
 
+  // A method to get all the mapped concept ids for a certain row
   async function getUniqueConceptIds() {
     alreadyMapped = {}
     uniqueConceptIds = []
@@ -230,9 +232,20 @@
     else activatedAthenaFilters = new Map<string, string[]>()
   }
 
+  // A method for when the assigned reviewer has changed
   function reviewerChanged(e: CustomEvent<ReviewerChangedEventDetail>) {
-    if(e.detail.reviewer) reviewer = e.detail.reviewer
-    else reviewer = ""
+    if (e.detail.reviewer) reviewer = e.detail.reviewer
+    else reviewer = ''
+  }
+
+  function closeDialog() {
+    layoutDialog.close()
+    dispatch('generalVisibilityChanged', { visibility: false })
+  }
+
+  function openDialog() {
+    layoutDialog.showModal()
+    fetchData = fetchData
   }
 
   $: {

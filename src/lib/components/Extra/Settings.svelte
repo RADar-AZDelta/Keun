@@ -27,14 +27,15 @@
     uk: 'Ukrainian',
   }
 
-  function closeDialog () {
+  function closeDialog() {
     settingsDialog.close()
   }
 
-  function openDialog () {
+  function openDialog() {
     settingsDialog.showModal()
   }
 
+  // A method to set the settings in the localstorage
   async function saveSettings(e: Event) {
     localStorageSetter('settings', settings)
   }
@@ -46,7 +47,9 @@
 
 <dialog bind:this={settingsDialog} data-name="settings-dialog">
   {#if settings}
-    <button data-name="close-dialog" on:click={closeDialog}><SvgIcon href="icons.svg" id="x" width="16px" height="16px"/></button>
+    <button data-name="close-dialog" on:click={closeDialog}
+      ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
+    >
     <section data-name="settings">
       <h2>Settings</h2>
       <div data-name="options">
@@ -59,19 +62,14 @@
               bind:checked={settings.mapToMultipleConcepts}
               on:change={saveSettings}
             />
-            <label for="MultipleConcepts" tabindex="0"/>
+            <label for="MultipleConcepts" tabindex="0" />
           </div>
         </div>
         <div data-name="option">
           <p>Automatic mapping?</p>
           <div data-name="switch">
-            <input
-              id="Automap"
-              type="checkbox"
-              bind:checked={settings.autoMap}
-              on:change={saveSettings}
-            />
-            <label for="Automap" tabindex="0"/>
+            <input id="Automap" type="checkbox" bind:checked={settings.autoMap} on:change={saveSettings} />
+            <label for="Automap" tabindex="0" />
           </div>
         </div>
         <div data-name="option">

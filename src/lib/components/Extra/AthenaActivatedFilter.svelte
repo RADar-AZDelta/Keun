@@ -3,6 +3,7 @@
 
   export let filters: Map<string, string[]>, openedFilter: string, filterName: string
 
+  // A method to change the section that needs to be opened
   const showCategories = async (): Promise<void> => {
     openedFilter == filterName ? (openedFilter = '') : (openedFilter = filterName)
   }

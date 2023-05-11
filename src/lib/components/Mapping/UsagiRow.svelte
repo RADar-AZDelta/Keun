@@ -9,6 +9,7 @@
   let color: string = 'inherit'
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
+  // A method to open the Athena pop-up to map a row
   function onClickMapping() {
     const object = {
       visibility: true,
@@ -20,24 +21,29 @@
     dispatch('generalVisibilityChanged', object)
   }
 
+  // A method to throw an event to the parent to approve a row
   async function onClickApproving() {
     dispatch('actionPerformed', { action: 'APPROVED', index: index, row: renderedRow })
   }
 
+  // A method to throw an event to the parent to flag a row
   async function onClickFlagging() {
     dispatch('actionPerformed', { action: 'FLAGGED', index: index, row: renderedRow })
   }
 
+  // A method to throw an event to the parent to unapprove a row
   async function onClickUnapproving() {
     dispatch('actionPerformed', { action: 'UNAPPROVED', index: index, row: renderedRow })
   }
 
+  // A method to throw an event to the parent to delete a row
   function onClickDeletion() {
     const conceptId = renderedRow['conceptId']
     const sourceCode = renderedRow['sourceCode']
     dispatch('deleteRow', { indexes: [index], sourceCode: sourceCode, conceptId: conceptId })
   }
 
+  // A method to get the color for the cell depending on the status of the row
   function getColors() {
     switch (renderedRow['mappingStatus']) {
       case 'APPROVED':

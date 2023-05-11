@@ -12,6 +12,7 @@
   let filterInput: string
   let filteredFilterOptions: ICategories = filter.categories
 
+  // A method for when the input (search for a filter) has changed
   function onChange(
     event: Event & {
       currentTarget: EventTarget & HTMLInputElement
@@ -22,15 +23,18 @@
     updateOptionsFromFilter(inputValue)
   }
 
+  // A method to change the section that needs to be opened
   const showCategories = async (): Promise<void> => {
-    openedFilter == filter.name ? (openedFilter = '') : (openedFilter = filter.name)
+    openedFilter == filter.name ? '' : filter.name
   }
 
+  // A method to remove the criteria from the input field to search for a filter
   const removeInputFromFilter = async (): Promise<void> => {
     filterInput = ''
     filteredFilterOptions = filter.categories
   }
 
+  // A method to update the filters with a certain criteria
   const updateOptionsFromFilter = async (input: string): Promise<void> => {
     const options = filter.categories.options.filter(op => op.toLowerCase().includes(input.toLowerCase()))
     filteredFilterOptions = { options: options }
