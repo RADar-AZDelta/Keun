@@ -193,6 +193,7 @@
 
   function removeFilter(filter: string, option: string) {
     activatedAthenaFilters.get(filter)!.splice(activatedAthenaFilters.get(filter)!.indexOf(option), 1)
+    activatedAthenaFilters = activatedAthenaFilters
     localStorageSetter('AthenaFilters', activatedAthenaFilters)
     dispatch('filterOptionsChanged', { filters: activatedAthenaFilters })
   }
@@ -230,7 +231,8 @@
   }
 
   function reviewerChanged(e: CustomEvent<ReviewerChangedEventDetail>) {
-    reviewer = e.detail.reviewer
+    if(e.detail.reviewer) reviewer = e.detail.reviewer
+    else reviewer = ""
   }
 
   $: {
@@ -380,9 +382,9 @@
             <p>Assigned reviewer: {reviewer}</p>
             <AutocompleteInput {settings} on:reviewerChanged={reviewerChanged} />
           </div>
-          <div>
+          <div data-name="comments">
             <p>Comments</p>
-            <textarea name="" id="" cols="30" rows="10" bind:value={comment} />
+            <textarea name="" id="" cols="28" rows="10" bind:value={comment} />
           </div>
         </div>
       </div>

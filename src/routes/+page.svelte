@@ -459,7 +459,7 @@
   <Header />
 
   <div data-name="table-options">
-    <label for="file-upload" data-name="file-upload"
+    <label tabindex="0" for="file-upload" data-name="file-upload"
       ><SvgIcon href="icons.svg" id="upload" width="16px" height="16px" /></label
     >
     <input id="file-upload" type="file" accept=".csv, .json" on:change={onFileInputChange} />

@@ -59,7 +59,7 @@
               bind:checked={settings.mapToMultipleConcepts}
               on:change={saveSettings}
             />
-            <label for="MultipleConcepts" />
+            <label for="MultipleConcepts" tabindex="0"/>
           </div>
         </div>
         <div data-name="option">
@@ -71,7 +71,7 @@
               bind:checked={settings.autoMap}
               on:change={saveSettings}
             />
-            <label for="Automap" />
+            <label for="Automap" tabindex="0"/>
           </div>
         </div>
         <div data-name="option">
