@@ -25,7 +25,8 @@
 
   // A method to change the section that needs to be opened
   const showCategories = async (): Promise<void> => {
-    openedFilter == filter.name ? '' : filter.name
+    if (openedFilter == filter.name) openedFilter = ''
+    else openedFilter = filter.name
   }
 
   // A method to remove the criteria from the input field to search for a filter
