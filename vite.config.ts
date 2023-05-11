@@ -15,6 +15,10 @@ export default defineConfig({
           src: 'node_modules/@browsermt/bergamot-translator/worker/bergamot-translator-worker.js',
           dest: '_app/immutable/workers',
         },
+        {
+          src: 'static/keun.svg',
+          dest: '_app/immutable/assets'
+        }
       ],
     }),
   ],

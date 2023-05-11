@@ -38,12 +38,12 @@
   }
 
   function closeDialog() {
-    userDialog.close()
+    if (userDialog.attributes.getNamedItem('open') != null) userDialog.close()
   }
 
   function openDialog() {
     if (!backupAuthor) backupAuthor = settings?.author
-    userDialog.showModal()
+    if (userDialog.attributes.getNamedItem('open') == null) userDialog.showModal()
   }
 </script>
 

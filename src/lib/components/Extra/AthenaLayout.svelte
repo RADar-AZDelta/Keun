@@ -239,12 +239,12 @@
   }
 
   function closeDialog() {
-    layoutDialog.close()
+    if (layoutDialog.attributes.getNamedItem('open') != null) layoutDialog.close()
     dispatch('generalVisibilityChanged', { visibility: false })
   }
 
   function openDialog() {
-    layoutDialog.showModal()
+    if (layoutDialog.attributes.getNamedItem('open') == null) layoutDialog.showModal()
     fetchData = fetchData
   }
 
