@@ -551,205 +551,180 @@ dialog[data-name='athena-dialog'] {
 
       div[data-name='table-head'] {
         max-height: 40%;
+        display: flex;
+        gap: 4rem;
+        align-items: center;
+        padding: 1rem 3rem 3rem 3rem;
 
-        div[data-name='top'] {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          padding: 1rem 3rem;
-
-          h2 {
-            font-size: 24px;
-            font-weight: 600;
-            margin: 0;
-          }
-
-          div[data-name='currentRow'] {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-
-            button {
-              border: none;
-              background-color: inherit;
-              color: $darkgray;
-            }
-
-            button:disabled {
-              color: $neutral;
-            }
-
-            button:hover {
-              color: $darkgray-xx-dark;
-            }
-
-            button:focus {
-              outline: none;
-              box-shadow: 0 0 0 2px $neutral;
-            }
-
-            table {
-              td {
-                border-top: 1px solid lightgray;
-                border-bottom: 1px solid lightgray;
-              }
-
-              td,
-              th {
-                padding: 0.5rem 0.75rem;
-              }
-            }
-          }
-
-          div[data-name='options'] {
-            width: 15%;
-
-            div[data-name='equivalence'] {
-              margin-bottom: 1rem;
-
-              select {
-                border-radius: 5px;
-                border: 1px solid $neutral;
-                padding: 0.5rem 1rem;
-                width: 100%;
-              }
-
-              select:hover {
-                border: 1px solid $neutral-xx-dark;
-              }
-
-              select:focus {
-                outline: none;
-                box-shadow: 0 0 0 2px $neutral-x-dark;
-              }
-            }
-
-            div[data-name='columnFilter'] {
-              width: 100%;
-
-              select {
-                border-radius: 5px;
-                border: 1px solid $neutral;
-                padding: 0.5rem 1rem;
-                width: 100%;
-              }
-
-              select:hover {
-                border: 1px solid $neutral-xx-dark;
-              }
-
-              select:focus {
-                outline: none;
-                box-shadow: 0 0 0 2px $neutral-x-dark;
-              }
-            }
-          }
+        h2 {
+          font-size: 24px;
+          font-weight: 600;
+          margin: 0;
         }
 
-        div[data-name='bottom'] {
+        div[data-name='currentRow'] {
           display: flex;
-          width: 100%;
-          padding: 1rem 3rem 2rem 3rem;
-          justify-content: center;
+          align-items: center;
+          gap: 1rem;
 
-          div[data-name='mappedRows'] {
-            max-height: 100px;
-            overflow-y: auto;
+          button {
+            border: none;
+            background-color: inherit;
+            color: $darkgray;
+          }
 
-            table {
-              th,
-              td {
-                padding: 0.5rem 1rem;
-              }
-              td {
-                border-bottom: 1px solid lightgray;
-                border-top: 1px solid lightgray;
-              }
+          button:disabled {
+            color: $neutral;
+          }
+
+          button:hover {
+            color: $darkgray-xx-dark;
+          }
+
+          button:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px $neutral;
+          }
+
+          table {
+            td {
+              border-top: 1px solid lightgray;
+              border-bottom: 1px solid lightgray;
+            }
+
+            td,
+            th {
+              padding: 0.5rem 0.75rem;
             }
           }
         }
       }
       div[data-name='table-container'] {
-        display: flex;
-        justify-content: space-between;
         padding: 0 1rem;
+        max-height: 75%;
+        overflow-y: auto;
 
         div[data-component='svelte-radar-datatable'] {
+          max-height: 50%;
+          overflow-y: auto;
           table {
             overflow-y: auto;
           }
         }
+      }
+    }
 
-        div[data-name='info-container'] {
-          div[data-name='reviewer'] {
-            display: flex;
-            flex-direction: column;
-            gap: 1rem;
+    section[data-name='additional-information'] {
+      border-left: 1px solid lightgray;
+      height: 100%;
+      padding: 2.5rem 1.5rem 0 2.5rem;
 
-            div[data-name='autocomplete-input'] {
-              input {
-                border: 1px solid $neutral-x-light;
-                font-size: 1rem;
-                padding: 0.5rem 1rem;
-              }
+      div[data-name='info-container'] {
+        height: 80%;
 
-              input:hover {
-                border: 1px solid $neutral-xx-dark;
-              }
+        div[data-name='mappedRows'] {
+          max-height: 50%;
+          overflow-y: auto;
+          margin: 0.5rem 0 2rem 0;
 
-              input:focus {
-                outline: none;
-                box-shadow: 0 0 0 2px $neutral-x-dark;
-              }
-
-              ul {
-                list-style-type: none;
-                padding: 0.5rem 0 2rem 0;
-                margin: 0;
-
-                li {
-                  border-top: 1px solid $neutral;
-                  border-left: 1px solid $neutral;
-                  border-right: 1px solid $neutral;
-                  padding: 0.5rem 1rem;
-                }
-
-                li:last-child {
-                  border: 1px solid $neutral;
-                }
-
-                li:hover {
-                  background-color: $neutral-xx-light;
-                }
-
-                li:focus {
-                  outline: none;
-                  box-shadow: 0 0 0 2px $neutral-x-dark;
-                }
-              }
+          table {
+            td,
+            th {
+              padding: 0.5rem;
+              border-top: 1px solid lightgray;
             }
           }
+        }
 
-          div[data-name='comments'] {
-            padding-top: 2rem;
-            p {
-              padding-bottom: 1rem;
-            }
+        div[data-name='equivalence'] {
+          margin-bottom: 1rem;
 
-            textarea {
+          select {
+            border-radius: 5px;
+            border: 1px solid $neutral;
+            padding: 0.5rem 1rem;
+          }
+
+          select:hover {
+            border: 1px solid $neutral-xx-dark;
+          }
+
+          select:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px $neutral-x-dark;
+          }
+        }
+
+        div[data-name='reviewer'] {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+
+          div[data-name='autocomplete-input'] {
+            input {
               border: 1px solid $neutral-x-light;
-              resize: none;
-              border-radius: 10px;
+              font-size: 1rem;
+              padding: 0.5rem 1rem;
             }
 
-            textarea:hover {
+            input:hover {
               border: 1px solid $neutral-xx-dark;
             }
 
-            textarea:focus {
+            input:focus {
               outline: none;
               box-shadow: 0 0 0 2px $neutral-x-dark;
             }
+
+            ul {
+              list-style-type: none;
+              padding: 0.5rem 0 2rem 0;
+              margin: 0;
+              position: absolute;
+
+              li {
+                border-top: 1px solid $neutral;
+                border-left: 1px solid $neutral;
+                border-right: 1px solid $neutral;
+                padding: 0.5rem 1rem;
+                background-color: white;
+              }
+
+              li:last-child {
+                border: 1px solid $neutral;
+              }
+
+              li:hover {
+                background-color: $neutral-xx-light;
+              }
+
+              li:focus {
+                outline: none;
+                box-shadow: 0 0 0 2px $neutral-x-dark;
+              }
+            }
+          }
+        }
+
+        div[data-name='comments'] {
+          padding-top: 2rem;
+          p {
+            padding-bottom: 1rem;
+          }
+
+          textarea {
+            border: 1px solid $neutral-x-light;
+            resize: none;
+            border-radius: 10px;
+          }
+
+          textarea:hover {
+            border: 1px solid $neutral-xx-dark;
+          }
+
+          textarea:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px $neutral-x-dark;
           }
         }
       }

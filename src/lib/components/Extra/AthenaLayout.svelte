@@ -310,81 +310,42 @@
     </section>
     <section data-name="table-pop-up">
       <div data-name="table-head">
-        <div data-name="top">
-          <h2>Athena data</h2>
-          <div data-name="currentRow">
-            <button
-              title="Previous row"
-              id="left"
-              on:click={() => {
-                console.log('SELECTED ', selectedRowIndex)
-                onRowChange(false)
-              }}
-              disabled={selectedRowIndex == 0 ? true : false}
-            >
-              <SvgIcon href="icons.svg" id="arrow-left" width="16px" height="16px" />
-            </button>
-            <table>
-              <tr>
-                <th>sourceCode</th>
-                <th>sourceName</th>
-                <th>sourceFrequency</th>
-              </tr>
-              <tr>
-                {#if selectedRow != undefined}
-                  <td>{selectedRow.sourceCode}</td>
-                  <td>{selectedRow.sourceName}</td>
-                  <td>{selectedRow.sourceFrequency}</td>
-                {/if}
-              </tr>
-            </table>
-            <button title="Next row" id="right" on:click={() => onRowChange(true)} disabled={lastRow}>
-              <SvgIcon href="icons.svg" id="arrow-right" width="16px" height="16px" />
-            </button>
-          </div>
-          <div data-name="options">
-            <Equivalence bind:Eq={equivalenceMapping} />
-            <div data-name="columnFilter">
-              <p>Filter on column:</p>
-              <select title="Athena filter on" name="columns" id="columns" on:change={changeFilteredColumnAthena}>
-                <option value="sourceName">sourceName</option>
-                <option value="sourceCode">sourceCode</option>
-              </select>
-            </div>
-          </div>
+        <h2>Athena data</h2>
+        <div data-name="currentRow">
+          <button
+            title="Previous row"
+            id="left"
+            on:click={() => {
+              onRowChange(false)
+            }}
+            disabled={selectedRowIndex == 0 ? true : false}
+          >
+            <SvgIcon href="icons.svg" id="arrow-left" width="16px" height="16px" />
+          </button>
+          <table>
+            <tr>
+              <th>sourceCode</th>
+              <th>sourceName</th>
+              <th>sourceFrequency</th>
+            </tr>
+            <tr>
+              {#if selectedRow != undefined}
+                <td>{selectedRow.sourceCode}</td>
+                <td>{selectedRow.sourceName}</td>
+                <td>{selectedRow.sourceFrequency}</td>
+              {/if}
+            </tr>
+          </table>
+          <button title="Next row" id="right" on:click={() => onRowChange(true)} disabled={lastRow}>
+            <SvgIcon href="icons.svg" id="arrow-right" width="16px" height="16px" />
+          </button>
         </div>
-        {#if selectedRow}
-          <div data-name="bottom">
-            <div data-name="mappedRows">
-              <table>
-                {#if Object.keys(alreadyMapped).length == 0 && Object.keys(alreadyMapped).includes(selectedRow.conceptName)}
-                  <div />
-                {:else}
-                  <tr>
-                    <th>conceptId</th>
-                    <th>conceptName</th>
-                  </tr>
-                  {#each Object.keys(alreadyMapped) as code}
-                    {#if selectedRow.sourceCode == code}
-                      {#each alreadyMapped[code].conceptId as id, i}
-                        <tr>
-                          <td>{alreadyMapped[code].conceptId[i]}</td>
-                          <td>{alreadyMapped[code].conceptName[i]}</td>
-                        </tr>
-                      {/each}
-                    {/if}
-                  {/each}
-                {/if}
-              </table>
-            </div>
-          </div>
-        {/if}
       </div>
       <div data-name="table-container">
         <DataTable
           data={fetchData}
           columns={athenaColumns}
-          options={{ id: 'Athena', actionColumn: true }}
+          options={{ id: 'Athena', actionColumn: true, rowsPerPageOptions: [5, 10, 15, 20] }}
           bind:this={dataTableAthena}
         >
           <AthenaRow
@@ -399,18 +360,45 @@
             on:updateUniqueConceptIds={updateUniqueConceptIds}
           />
         </DataTable>
-        <div data-name="info-container">
-          <div data-name="reviewer">
-            <p>Assigned reviewer: {reviewer}</p>
-            <AutocompleteInput {settings} on:reviewerChanged={reviewerChanged} />
+      </div>
+    </section>
+    <section data-name="additional-information">
+      <h2>Extra</h2>
+      <div data-name="info-container">
+        {#if selectedRow}
+          <div data-name="mappedRows">
+            <table>
+              {#if Object.keys(alreadyMapped).length == 0 && Object.keys(alreadyMapped).includes(selectedRow.conceptName)}
+                <div />
+              {:else}
+                <tr>
+                  <th>conceptId</th>
+                  <th>conceptName</th>
+                </tr>
+                {#each Object.keys(alreadyMapped) as code}
+                  {#if selectedRow.sourceCode == code}
+                    {#each alreadyMapped[code].conceptId as id, i}
+                      <tr>
+                        <td>{alreadyMapped[code].conceptId[i]}</td>
+                        <td>{alreadyMapped[code].conceptName[i]}</td>
+                      </tr>
+                    {/each}
+                  {/if}
+                {/each}
+              {/if}
+            </table>
           </div>
-          <div data-name="comments">
-            <p>Comments</p>
-            <textarea title="Comments" name="Comments" id="Comments" cols="28" rows="10" bind:value={comment} />
-          </div>
+        {/if}
+        <Equivalence bind:Eq={equivalenceMapping} />
+        <div data-name="reviewer">
+          <p>Assigned reviewer: {reviewer}</p>
+          <AutocompleteInput {settings} on:reviewerChanged={reviewerChanged} />
+        </div>
+        <div data-name="comments">
+          <p>Comments</p>
+          <textarea title="Comments" name="Comments" id="Comments" cols="28" rows="10" bind:value={comment} />
         </div>
       </div>
-      <slot name="extra" />
     </section>
   </div>
 </dialog>

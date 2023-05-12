@@ -76,7 +76,7 @@
           <p>Language</p>
           <select name="language" id="language" bind:value={settings.language} on:change={saveSettings}>
             {#each Object.keys(languages) as lang}
-              <option value={lang} selected={lang == 'en' ? true : false}>{languages[lang]}</option>
+              <option value={lang} selected={lang == settings.language ? true : false}>{languages[lang]}</option>
             {/each}
           </select>
         </div>
