@@ -3,7 +3,7 @@
 </script>
 
 <div data-name="equivalence">
-  <select name="equivalence" id="equivalence" bind:value={Eq}>
+  <select title="Equivalence" name="equivalence" id="equivalence" bind:value={Eq}>
     <option value="EQUAL">EQUAL</option>
     <option value="EQUIVALENT">EQUIVALENT</option>
     <option value="WIDER">WIDER</option>

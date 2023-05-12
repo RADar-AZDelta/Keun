@@ -41,7 +41,7 @@
   }
 </script>
 
-<button aria-label="Settings button" on:click={openDialog} data-name="header-button"
+<button title="Settings" aria-label="Settings button" on:click={openDialog} data-name="header-button"
   ><SvgIcon href="icons.svg" id="settings" width="16px" height="16px" /></button
 >
 
@@ -76,7 +76,7 @@
           <p>Language</p>
           <select name="language" id="language" bind:value={settings.language} on:change={saveSettings}>
             {#each Object.keys(languages) as lang}
-              <option value={lang}>{languages[lang]}</option>
+              <option value={lang} selected={lang == 'en' ? true : false}>{languages[lang]}</option>
             {/each}
           </select>
         </div>

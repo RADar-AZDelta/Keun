@@ -15,6 +15,9 @@
   // A method for when the input needs to be saved
   function onSave() {
     value = inputValue
+    if (!settings.savedAuthors) {
+      settings.savedAuthors = []
+    }
     if (!settings.savedAuthors.includes(inputValue)) {
       settings.savedAuthors.push(inputValue)
       saveSettings()
@@ -26,6 +29,9 @@
   function onClickAutoComplete(e: Event) {
     inputValue = (e.target as HTMLLIElement).id
     value = inputValue
+    if (!settings.savedAuthors) {
+      settings.savedAuthors = []
+    }
     if (!settings.savedAuthors.includes(inputValue)) {
       settings.savedAuthors.push(inputValue)
       saveSettings()
@@ -43,10 +49,12 @@
   function filterNames() {
     let filteredNames = []
     if (inputValue) {
-      for (let name of settings.savedAuthors) {
-        if (name) {
-          if (name.toLowerCase().startsWith(inputValue.toLowerCase())) {
-            if (name.toLowerCase() != inputValue.toLowerCase()) filteredNames.push(name)
+      if (settings.savedAuthors) {
+        for (let name of settings.savedAuthors) {
+          if (name) {
+            if (name.toLowerCase().startsWith(inputValue.toLowerCase())) {
+              if (name.toLowerCase() != inputValue.toLowerCase()) filteredNames.push(name)
+            }
           }
         }
       }
@@ -56,7 +64,14 @@
 </script>
 
 <div data-name="autocomplete-input">
-  <input type="text" bind:value={inputValue} on:input={filterNames} use:clickOutside on:outClick={onSave} />
+  <input
+    title="Assigned Reviewer"
+    type="text"
+    bind:value={inputValue}
+    on:input={filterNames}
+    use:clickOutside
+    on:outClick={onSave}
+  />
   {#if filteredValues.length > 0}
     <ul>
       {#each filteredValues as name}
