@@ -7,24 +7,24 @@
   let settingsDialog: HTMLDialogElement
 
   let languages: Record<string, string> = {
-    bg: 'Bulgarian',
-    ca: 'Catalan',
-    cs: 'Czech',
+    // bg: 'Bulgarian',
+    // ca: 'Catalan',
+    // cs: 'Czech',
     nl: 'Dutch',
     en: 'English',
-    et: 'Estonian',
+    // et: 'Estonian',
     de: 'German',
     fr: 'French',
-    is: 'Icelandic',
+    // is: 'Icelandic',
     it: 'Italian',
-    nb: 'Norwegian Bokmål',
-    nn: 'Norwegian Nynorsk',
-    fa: 'Persian',
-    pl: 'Polish',
-    pt: 'Portuguese',
-    ru: 'Russian',
+    // nb: 'Norwegian Bokmål',
+    // nn: 'Norwegian Nynorsk',
+    // fa: 'Persian',
+    // pl: 'Polish',
+    // pt: 'Portuguese',
+    // ru: 'Russian',
     es: 'Spanish',
-    uk: 'Ukrainian',
+    // uk: 'Ukrainian',
   }
 
   function closeDialog() {
