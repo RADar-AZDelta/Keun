@@ -274,7 +274,7 @@
     let filter = row[athenaFilteredColumn]
     // Check the language set in the settings and translate the filter to English if it's not English
     if (settings) {
-      if (!settings.lanuage) settings.language = 'en'
+      if (!settings.language) settings.language = 'en'
       if (settings.language) {
         if (settings.language != 'en') {
           let translation = await translator.translate({
@@ -460,8 +460,9 @@
         const pag = dataTableFile.getTablePagination()
         for (let index of Array(pag.rowsPerPage!).keys()) {
           if (signal.aborted) return Promise.resolve()
-          const row = await dataTableFile.getFullRow(index)
-          if (row.conceptId == undefined) await autoMapRow(signal, row, index)
+          const indexOfPage = index + (pag!.rowsPerPage! * (pag!.currentPage! - 1))
+          const row = await dataTableFile.getFullRow(indexOfPage)
+          if (row.conceptId == undefined) await autoMapRow(signal, row, indexOfPage)
         }
       })
     }

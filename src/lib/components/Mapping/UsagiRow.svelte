@@ -3,6 +3,7 @@
   import type { CustomOptionsEvents } from '../Types'
   import type { IColumnMetaData } from 'svelte-radar-datatable'
   import SvgIcon from '../Extra/SvgIcon.svelte'
+  import { doubleClick } from '$lib/actions/doubleClick'
 
   export let renderedRow: Record<string, any>, columns: IColumnMetaData[] | undefined, index: number
 
@@ -86,7 +87,7 @@
   >
 </td>
 {#each columns || [] as column, i (column.id)}
-  <td style={`background-color: ${color}`}>
+  <td use:doubleClick on:doubleClick={onClickMapping} style={`background-color: ${color}`}>
     {#if ['statusSetOn', 'createdOn', 'ADD_INFO:approvedOn'].includes(column.id)}
       <p>{new Date(parseInt(renderedRow[column.id])).toLocaleString()}</p>
     {:else}
