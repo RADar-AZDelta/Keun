@@ -8,6 +8,11 @@ jobs:
   build_site:
     runs-on: ubuntu-latest
     steps:
+      - name: Remove old artifacts
+        uses: c-hive/gha-remove-artifacts@v1
+        with:
+          age: '0 days'
+        
       - name: Checkout
         uses: actions/checkout@v3
 
