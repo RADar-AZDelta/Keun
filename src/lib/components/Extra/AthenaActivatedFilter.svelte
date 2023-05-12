@@ -11,7 +11,7 @@
 </script>
 
 <div data-name="activated-filter">
-  <button data-name="filter-button" on:click={showCategories}>
+  <button title="Open filter activated filters" data-name="filter-button" on:click={showCategories}>
     <p>{filterName}</p>
     <SvgIcon href="icons.svg" id="updown" width="16px" height="16px" />
   </button>

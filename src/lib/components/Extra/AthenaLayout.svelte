@@ -244,7 +244,7 @@
   }
 
   function openDialog() {
-    if (layoutDialog.attributes.getNamedItem('open') == null) layoutDialog.showModal()
+    if (layoutDialog) if (layoutDialog.attributes.getNamedItem('open') == null) layoutDialog.showModal()
     fetchData = fetchData
   }
 
@@ -287,6 +287,7 @@
             <div slot="option" data-name="filter-option" let:option>
               <input
                 type="checkbox"
+                title="Activate/deactivate filter"
                 checked={checkIfFilterExists(key, options.altName, option)}
                 on:change={() =>
                   event != undefined
@@ -299,7 +300,7 @@
         {/each}
         <AthenaActivatedFilter filters={activatedAthenaFilters} bind:openedFilter filterName="Activated filters">
           <div slot="option" data-name="filter-option" let:filter let:option>
-            <button on:click={() => removeFilter(filter, option)}
+            <button title="Remove filter" on:click={() => removeFilter(filter, option)}
               ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
             >
             <p>{option}</p>
@@ -312,7 +313,15 @@
         <div data-name="top">
           <h2>Athena data</h2>
           <div data-name="currentRow">
-            <button id="left" on:click={() => onRowChange(false)} disabled={selectedRowIndex == 0 ? true : false}>
+            <button
+              title="Previous row"
+              id="left"
+              on:click={() => {
+                console.log('SELECTED ', selectedRowIndex)
+                onRowChange(false)
+              }}
+              disabled={selectedRowIndex == 0 ? true : false}
+            >
               <SvgIcon href="icons.svg" id="arrow-left" width="16px" height="16px" />
             </button>
             <table>
@@ -329,7 +338,7 @@
                 {/if}
               </tr>
             </table>
-            <button id="right" on:click={() => onRowChange(true)} disabled={lastRow}>
+            <button title="Next row" id="right" on:click={() => onRowChange(true)} disabled={lastRow}>
               <SvgIcon href="icons.svg" id="arrow-right" width="16px" height="16px" />
             </button>
           </div>
@@ -337,7 +346,7 @@
             <Equivalence bind:Eq={equivalenceMapping} />
             <div data-name="columnFilter">
               <p>Filter on column:</p>
-              <select name="columns" id="columns" on:change={changeFilteredColumnAthena}>
+              <select title="Athena filter on" name="columns" id="columns" on:change={changeFilteredColumnAthena}>
                 <option value="sourceName">sourceName</option>
                 <option value="sourceCode">sourceCode</option>
               </select>
@@ -397,7 +406,7 @@
           </div>
           <div data-name="comments">
             <p>Comments</p>
-            <textarea name="" id="" cols="28" rows="10" bind:value={comment} />
+            <textarea title="Comments" name="Comments" id="Comments" cols="28" rows="10" bind:value={comment} />
           </div>
         </div>
       </div>

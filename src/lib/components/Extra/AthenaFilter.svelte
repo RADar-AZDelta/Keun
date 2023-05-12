@@ -43,7 +43,7 @@
 </script>
 
 <div data-name="filter">
-  <button data-name="filter-button" on:click={showCategories}>
+  <button title="Open filter {filter.name}" data-name="filter-button" on:click={showCategories}>
     <p>{filter.name}</p>
     <SvgIcon href="icons.svg" id="updown" width="16px" height="16px" />
   </button>
@@ -53,12 +53,13 @@
         <div data-name="filter-input">
           <input
             type="text"
+            title="Search for filter"
             placeholder="Filter"
             data-name={filter.name}
             bind:value={filterInput}
             on:change={onChange}
           />
-          <button on:click={removeInputFromFilter}>
+          <button title="Remove input filter" on:click={removeInputFromFilter}>
             <SvgIcon href="icons.svg" id="x" height="16px" width="16px" />
           </button>
         </div>

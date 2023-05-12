@@ -13,7 +13,9 @@
   let alreadyMapped: boolean = false
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
-  let multipleConcepts = settings.mapToMultipleConcepts
+  let multipleConcepts: boolean
+  if (!settings.mapToMultipleConcepts) multipleConcepts = false
+  else multipleConcepts = settings.mapToMultipleConcepts
 
   // A method to map a certain concept to a certain row (can be single mapping or multiple mapping depending on the settings)
   async function onClickMapping() {
@@ -35,7 +37,7 @@
 
 <td data-name="actions">
   {#if alreadyMapped == true}
-    <button style="background-color: greenyellow;"
+    <button title="Map to row" style="background-color: greenyellow;"
       ><SvgIcon href="icons.svg" id="check" width="16px" height="16px" /></button
     >
   {:else}

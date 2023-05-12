@@ -575,6 +575,10 @@ dialog[data-name='athena-dialog'] {
               color: $darkgray;
             }
 
+            button:disabled {
+              color: $neutral;
+            }
+
             button:hover {
               color: $darkgray-xx-dark;
             }

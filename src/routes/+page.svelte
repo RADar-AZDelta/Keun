@@ -273,16 +273,20 @@
     if (signal.aborted) return
     let filter = row[athenaFilteredColumn]
     // Check the language set in the settings and translate the filter to English if it's not English
-    if (settings)
-      if (settings.language != 'en') {
-        let translation = await translator.translate({
-          from: settings.language,
-          to: 'en',
-          text: filter,
-          html: true,
-        })
-        filter = translation.target.text
+    if (settings) {
+      if (!settings.lanuage) settings.language = 'en'
+      if (settings.language) {
+        if (settings.language != 'en') {
+          let translation = await translator.translate({
+            from: settings.language,
+            to: 'en',
+            text: filter,
+            html: true,
+          })
+          filter = translation.target.text
+        }
       }
+    }
     if (signal.aborted) return
     // Assembe the Athena URL
     const url = await assembleAthenaURL(row[athenaFilteredColumn])
@@ -521,7 +525,7 @@
   <Header />
 
   <div data-name="table-options">
-    <label tabindex="0" for="file-upload" data-name="file-upload"
+    <label title="Upload" tabindex="0" for="file-upload" data-name="file-upload"
       ><SvgIcon href="icons.svg" id="upload" width="16px" height="16px" /></label
     >
     <input id="file-upload" type="file" accept=".csv, .json" on:change={onFileInputChange} />
