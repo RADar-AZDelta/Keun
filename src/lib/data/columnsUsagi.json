@@ -21,7 +21,7 @@
   },
   {
     "id": "sourceAutoAssignedConceptIds",
-    "visible": true,
+    "visible": false,
     "editable": false
   },
   {

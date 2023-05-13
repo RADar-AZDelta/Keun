@@ -62,14 +62,14 @@
               bind:checked={settings.mapToMultipleConcepts}
               on:change={saveSettings}
             />
-            <label for="MultipleConcepts" tabindex="0" />
+            <label for="MultipleConcepts" />
           </div>
         </div>
         <div data-name="option">
           <p>Automatic mapping?</p>
           <div data-name="switch">
             <input id="Automap" type="checkbox" bind:checked={settings.autoMap} on:change={saveSettings} />
-            <label for="Automap" tabindex="0" />
+            <label for="Automap" />
           </div>
         </div>
         <div data-name="option">
