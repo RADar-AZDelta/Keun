@@ -6,7 +6,7 @@
     "preinstall": "npx only-allow pnpm",
     "dev": "vite dev --host=127.0.0.1",
     "build": "vite build",
-    "preview": "vite preview",
+    "preview": "vite preview --host=127.0.0.1",
     "test": "playwright test",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
