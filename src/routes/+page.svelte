@@ -460,7 +460,7 @@
         const pag = dataTableFile.getTablePagination()
         for (let index of Array(pag.rowsPerPage!).keys()) {
           if (signal.aborted) return Promise.resolve()
-          const indexOfPage = index + (pag!.rowsPerPage! * (pag!.currentPage! - 1))
+          const indexOfPage = index + pag!.rowsPerPage! * (pag!.currentPage! - 1)
           const row = await dataTableFile.getFullRow(indexOfPage)
           if (row.conceptId == undefined) await autoMapRow(signal, row, indexOfPage)
         }
@@ -515,10 +515,10 @@
 </script>
 
 <svelte:head>
-  <title>POC-Keun</title>
+  <title>Keun</title>
   <meta
     name="description"
-    content="POC-Keun is a mapping tool to map concepts to OMOP concepts. It's the replacement of Usagi."
+    content="Keun is a mapping tool to map concepts to OMOP concepts. It's a web based modern variant of Usagi."
   />
 </svelte:head>
 
@@ -526,7 +526,7 @@
   <Header />
 
   <div data-name="table-options">
-    <label title="Upload" tabindex="0" for="file-upload" data-name="file-upload"
+    <label title="Upload" for="file-upload" data-name="file-upload"
       ><SvgIcon href="icons.svg" id="upload" width="16px" height="16px" /></label
     >
     <input id="file-upload" type="file" accept=".csv, .json" on:change={onFileInputChange} />
