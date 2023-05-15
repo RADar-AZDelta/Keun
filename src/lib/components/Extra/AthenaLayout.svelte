@@ -396,7 +396,7 @@
         </div>
         <div data-name="comments">
           <p>Comments</p>
-          <textarea title="Comments" name="Comments" id="Comments" cols="28" rows="10" bind:value={comment} />
+          <textarea title="Comments" name="Comments" id="Comments" cols="28" rows="6" bind:value={comment} />
         </div>
       </div>
     </section>
