@@ -61,6 +61,7 @@
     {
       id: 'invalidReason',
       filterable: false,
+      visible: false,
     },
     {
       id: 'domain',
@@ -73,6 +74,7 @@
     {
       id: 'score',
       filterable: false,
+      visible: false,
     },
   ]
 
@@ -345,15 +347,16 @@
         <DataTable
           data={fetchData}
           columns={athenaColumns}
-          options={{ id: 'Athena', actionColumn: true, rowsPerPageOptions: [5, 10, 15, 20] }}
+          options={{ id: 'athena', actionColumn: true, rowsPerPageOptions: [5, 10, 15, 20] }}
           bind:this={dataTableAthena}
         >
           <AthenaRow
             slot="default"
             let:renderedRow
+            let:columns
             {renderedRow}
             {settings}
-            columns={athenaColumns}
+            {columns}
             {uniqueConceptIds}
             on:singleMapping={singleMapping}
             on:multipleMapping={multipleMapping}
