@@ -7,7 +7,6 @@ export interface CustomOptionsEvents {
   multipleMapping: MultipleMappingEventDetail
   actionPerformed: ActionPerformedEventDetail
   deleteRow: DeleteRowEventDetail
-  columnFilterChanged: ColumnFilterChangedEventDetail
   rowChange: RowChangeEventDetail
   reviewerChanged: ReviewerChangedEventDetail
   updateUniqueConceptIds: UpdateUniqueConceptIdsEventDetail
@@ -44,10 +43,6 @@ export interface DeleteRowEventDetail {
   indexes: number[]
   sourceCode: string | number
   conceptId: string | number
-}
-
-export interface ColumnFilterChangedEventDetail {
-  filter: string
 }
 
 export interface RowChangeEventDetail {

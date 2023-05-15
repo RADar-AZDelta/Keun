@@ -7,7 +7,8 @@
       categories: ICategories
     },
     openedFilter: string,
-    allowInput: boolean = true
+    allowInput: boolean = true,
+    color: string
 
   let filterInput: string
   let filteredFilterOptions: ICategories = filter.categories
@@ -44,7 +45,10 @@
 
 <div data-name="filter">
   <button title="Open filter {filter.name}" data-name="filter-button" on:click={showCategories}>
-    <p>{filter.name}</p>
+    <div data-name="filter-name">
+      <span data-name="filter-color" style={`background-color: ${color};`} />
+      <p>{filter.name}</p>
+    </div>
     <SvgIcon href="icons.svg" id="updown" width="16px" height="16px" />
   </button>
   {#if openedFilter == filter.name}
