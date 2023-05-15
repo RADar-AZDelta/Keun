@@ -59,7 +59,7 @@ pnpm dev
 
 ## User manual
 ### User
-When accessing POC-Keun for the first time there will be a pop-up that asks for your name. This is needed to fill in who has mapped a row. Your name can always be changed in the upper right side with a click on the button with your name.
+When accessing Keun for the first time there will be a pop-up that asks for your name. This is needed to fill in who has mapped a row. Your name can always be changed in the upper right side with a click on the button with your name.
 
 ![author](https://github.com/RADar-AZDelta/Keun/assets/71939691/3166759f-6150-4d60-971d-910b6fc0b717)
 ![author-popup](https://github.com/RADar-AZDelta/Keun/assets/71939691/b2f79fb4-5d4f-4975-9cfe-d42e512784d6)
