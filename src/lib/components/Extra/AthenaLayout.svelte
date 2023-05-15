@@ -13,7 +13,6 @@
     UpdateUniqueConceptIdsEventDetail,
   } from '../Types'
   import SvgIcon from './SvgIcon.svelte'
-  import AthenaActivatedFilter from './AthenaActivatedFilter.svelte'
   import DataTable, { type FetchDataFunc, type IColumnMetaData } from 'svelte-radar-datatable'
   import { query } from 'arquero'
   import AthenaRow from '../Mapping/AthenaRow.svelte'
@@ -30,13 +29,28 @@
     showModal: boolean = false
 
   let JSONFilters = new Map<string, ICategories>([])
-  let activatedAthenaFilters = new Map<string, string[]>()
+  let activatedAthenaFilters = new Map<string, string[]>([['standardConcept', ['Standard']]])
   let openedFilter: string
   let savedFilters: Map<string, string[]>
   let lastRow: boolean = false
   let layoutDialog: HTMLDialogElement
   let reviewer: string = ''
   let comment: string = ''
+
+  let filterColors: Record<string, string> = {
+    domain: '#ec3d31',
+    concept: '#50a5ba',
+    class: '#6967d2',
+    vocab: '#ffa200',
+    validity: '#ad007c',
+  }
+  let filterNames: Record<string, string> = {
+    domain: 'domain',
+    standardConcept: 'concept',
+    conceptClass: 'class',
+    vocabulary: 'vocab',
+    invalidReason: 'validity',
+  }
 
   const athenaColumns: IColumnMetaData[] = [
     {
@@ -161,6 +175,7 @@
 
     urlFilters = URLFilters
     dispatch('filterOptionsChanged', { filters: activatedAthenaFilters })
+    activatedAthenaFilters = activatedAthenaFilters
   }
 
   // A method to check if the filter is already applied to the API call
@@ -182,14 +197,6 @@
         return false
       }
     }
-  }
-
-  // A method when the column on which the Athena API is filtered is changed (on the right upper side: sourceCode or sourceName)
-  function changeFilteredColumnAthena(e: Event) {
-    const inputElement = e.target as HTMLInputElement
-    const inputValue = inputElement.value
-    athenaFilteredColumn = inputValue
-    dispatch('columnFilterChanged', { filter: athenaFilteredColumn })
   }
 
   // A method to delete a filter when a filter for the Athena API call is removed in the section "Activated filters"
@@ -227,11 +234,9 @@
       }
     }
 
-    savedFilters =
-      localStorageGetter('AthenaFilters') !== null ? new Map<string, string[]>() : localStorageGetter('AthenaFilters')
-
+    savedFilters = localStorageGetter('AthenaFilters')
     if (savedFilters) activatedAthenaFilters = savedFilters
-    else activatedAthenaFilters = new Map<string, string[]>()
+    else activatedAthenaFilters = new Map<string, string[]>([['standardConcept', ['Standard']]])
   }
 
   // A method for when the assigned reviewer has changed
@@ -285,7 +290,12 @@
       <h2>Filters</h2>
       <div data-name="filters">
         {#each [...JSONFilters] as [key, options]}
-          <AthenaFilter filter={{ name: key, categories: options }} bind:openedFilter allowInput={true}>
+          <AthenaFilter
+            filter={{ name: key, categories: options }}
+            bind:openedFilter
+            allowInput={true}
+            color={filterColors[key.toLowerCase()]}
+          >
             <div slot="option" data-name="filter-option" let:option>
               <input
                 type="checkbox"
@@ -300,14 +310,18 @@
             </div>
           </AthenaFilter>
         {/each}
-        <AthenaActivatedFilter filters={activatedAthenaFilters} bind:openedFilter filterName="Activated filters">
-          <div slot="option" data-name="filter-option" let:filter let:option>
-            <button title="Remove filter" on:click={() => removeFilter(filter, option)}
-              ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
-            >
-            <p>{option}</p>
-          </div>
-        </AthenaActivatedFilter>
+        <div data-name="activated-filters">
+          {#each [...activatedAthenaFilters] as [filter, values]}
+            {#each values as value}
+              <div data-name="activated-filter" style={`background-color: ${filterColors[filterNames[filter]]}`}>
+                <button on:click={() => removeFilter(filter, value)}
+                  ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
+                >
+                <p>{value}</p>
+              </div>
+            {/each}
+          {/each}
+        </div>
       </div>
     </section>
     <section data-name="table-pop-up">

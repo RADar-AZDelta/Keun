@@ -12,7 +12,6 @@
     SingleMappingEventDetail,
     VisibilityChangedEventDetail,
     RowChangeEventDetail,
-    ColumnFilterChangedEventDetail,
   } from '$lib/components/Types'
   import type { IColumnMetaData, IPagination, SortDirection, TFilter } from 'svelte-radar-datatable'
   import { localStorageGetter } from '$lib/utils'
@@ -32,7 +31,7 @@
 
   let mappingVisibility: boolean = false
 
-  let apiFilters: string[]
+  let apiFilters: string[] = '&standardConcept=Standard'
   let equivalenceMapping: string = 'EQUAL'
   let athenaFilteredColumn: string = 'sourceName'
   let selectedRow: Record<string, any>
@@ -254,12 +253,6 @@
 
     selectedRow = await dataTableFile.getFullRow(selectedRowIndex)
     athenaFiltering = selectedRow[athenaFilteredColumn]
-    fetchDataFunc = fetchData
-  }
-
-  // When the column filter (pop-up Athena on the right upper side) changes
-  function columnFilterChanged(event: CustomEvent<ColumnFilterChangedEventDetail>) {
-    athenaFiltering = selectedRow[event.detail.filter as keyof Object]
     fetchDataFunc = fetchData
   }
 
@@ -553,7 +546,6 @@
   on:singleMapping={singleMapping}
   on:multipleMapping={multipleMapping}
   on:filterOptionsChanged={filterOptionsChanged}
-  on:columnFilterChanged={columnFilterChanged}
   on:generalVisibilityChanged={mappingVisibilityChanged}
 />
 

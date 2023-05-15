@@ -392,6 +392,7 @@ dialog[data-name='athena-dialog'] {
       }
 
       div[data-name='filters'] {
+        height: 80%;
         div[data-name='filter'] {
           margin-top: 1rem;
           border: 1px solid lightgray;
@@ -406,6 +407,17 @@ dialog[data-name='athena-dialog'] {
             padding: 0.5rem 1rem;
             border: none;
             background-color: $neutral-xx-light;
+
+            div[data-name='filter-name'] {
+              display: flex;
+              gap: 1rem;
+
+              span {
+                width: 12px;
+                height: 12px;
+                border-radius: 100%;
+              }
+            }
           }
 
           button[data-name='filter-button']:hover {
@@ -489,56 +501,25 @@ dialog[data-name='athena-dialog'] {
           }
         }
 
-        div[data-name='activated-filter'] {
+        div[data-name='activated-filters'] {
           margin-top: 1rem;
-          border: 1px solid lightgray;
-          border-radius: 5px;
+          max-height: 20%;
+          overflow-y: auto;
+          overflow-x: hidden;
 
-          button[data-name='filter-button'] {
-            width: 100%;
-            height: 100%;
+          div[data-name='activated-filter'] {
+            margin-bottom: 0.5rem;
             display: flex;
+            gap: 1rem;
             align-items: center;
-            justify-content: space-between;
-            padding: 0.5rem 1rem;
-            border: none;
-            background-color: $neutral-xx-light;
-          }
+            padding: 0.25rem 0.5rem;
+            border-radius: 10px;
+            color: white;
 
-          button[data-name='filter-button']:hover {
-            background: $neutral-x-light;
-          }
-
-          button[data-name='filter-button']:focus {
-            outline: none;
-            box-shadow: 0 0 0 2px $neutral-x-dark;
-          }
-
-          div[data-name='filter-item'] {
-            max-height: 250px;
-            overflow-y: auto;
-            overflow-x: hidden;
-
-            div[data-name='filter-option'] {
-              display: flex;
-              align-items: center;
-              padding: 0.5rem;
-              gap: 1rem;
-
-              button {
-                border: none;
-                background-color: inherit;
-                color: $darkgray;
-              }
-
-              button:hover {
-                color: $darkgray-xx-dark;
-              }
-
-              button:focus {
-                outline: none;
-                box-shadow: 0 0 0 2px $neutral;
-              }
+            button {
+              background-color: inherit;
+              border: none;
+              color: white;
             }
           }
         }
