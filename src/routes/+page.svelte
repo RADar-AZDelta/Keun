@@ -456,13 +456,11 @@
 
       autoMappingPromise = new Promise(async (resolve, reject) => {
         const pag = dataTableFile.getTablePagination()
-        const columns = localStorageGetter('datatable_usagi_columns')
-        const sortedColumns = columns.filter((col: IColumnMetaData) => col.sortDirection != undefined)
-        let sorting: Record<string, string> = {}
-        for (let sortedCol of sortedColumns) {
+        const columns = dataTableFile.getColumns()
+        let sorting: Record<string, any> = {}
+        for (let sortedCol of columns!) {
           sorting[sortedCol.id] = sortedCol.sortDirection == 'desc' ? desc(sortedCol.id) : sortedCol.id
         }
-        // TODO: change this query because the indices are not correct with the data that needs to be mapped
         const q = query()
           .orderby(sorting)
           .slice(pag.rowsPerPage! * (pag.currentPage! - 1), pag.rowsPerPage! * pag.currentPage!)
