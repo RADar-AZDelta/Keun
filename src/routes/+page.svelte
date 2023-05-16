@@ -18,7 +18,7 @@
   import AthenaLayout from '$lib/components/Extra/AthenaLayout.svelte'
   import UsagiRow from '$lib/components/Mapping/UsagiRow.svelte'
   import { onMount, tick } from 'svelte'
-  import { query } from 'arquero'
+  import { desc, query } from 'arquero'
   import Download from '$lib/components/Extra/Download.svelte'
   import Settings from '$lib/components/Extra/Settings.svelte'
   import { LatencyOptimisedTranslator } from '@browsermt/bergamot-translator/translator.js'
@@ -31,7 +31,7 @@
 
   let mappingVisibility: boolean = false
 
-  let apiFilters: string[] = '&standardConcept=Standard'
+  let apiFilters: string[] = ['&standardConcept=Standard']
   let equivalenceMapping: string = 'EQUAL'
   let athenaFilteredColumn: string = 'sourceName'
   let selectedRow: Record<string, any>
@@ -41,6 +41,8 @@
   let mappingUrl: string = 'https://athena.ohdsi.org/api/v1/concepts?'
   let athenaFiltering: string
   let athenaFilters: Map<string, string[]>
+
+  let currentRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>()
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // DATA
@@ -57,24 +59,22 @@
   ])
   let additionalFields: Record<string, any> = {
     mappingStatus: '',
-    matchScore: 1,
+    matchScore: '',
     statusSetBy: '',
-    statusSetOn: new Date().getTime(),
-    mappingType: 'MAPS_TO',
-    comment: 'AUTO MAPPED',
-    createdBy: 'ctl',
-    createdOn: new Date().getTime(),
+    statusSetOn: '',
+    mappingType: '',
+    comment: '',
+    createdBy: '',
+    createdOn: '',
     assignedReviewer: '',
-    equivalence: 'EQUAL',
+    equivalence: '',
     sourceAutoAssignedConceptIds: '',
     'ADD_INFO:approvedBy': '',
-    'ADD_INFO:approvedOn': new Date().getTime(),
+    'ADD_INFO:approvedOn': '',
     'ADD_INFO:additionalInfo': '',
     'ADD_INFO:prescriptionID': '',
     'ADD_INFO:ATC': '',
   }
-
-  let dataTableInit: boolean = false
 
   let autoMappingAbortController: AbortController
   let autoMappingPromise: Promise<void> | undefined
@@ -199,7 +199,7 @@
           // If statusSetBy is empty, it means the author is the first reviewer of this row
           updatingObj.statusSetBy = settings!.author
           updatingObj.statusSetOn = Date.now()
-          updatingObj.mappingStatus = 'UNAPPROVED'
+          updatingObj.mappingStatus = 'APPROVED'
           if (!event.detail.row.conceptId) updatingObj.conceptId = event.detail.row.sourceAutoAssignedConceptIds
           else updatingObj.conceptId = event.detail.row.conceptId
         } else if (event.detail.row.statusSetBy != settings!.author) {
@@ -221,21 +221,32 @@
   async function deleteRow(event: CustomEvent<DeleteRowEventDetail>) {
     // Check if the automapping proces is running and if this is happening, abort the promise because it could give unexpected results.
     if (autoMappingPromise) autoMappingAbortController.abort()
-    // Create a query to get all the rows that has the same sourceCode (row mapped to multiple concepts)
-    const q = query()
-      .params({ source: event.detail.sourceCode })
-      .filter((r: any, params: any) => r.sourceCode == params.source)
-      .toObject()
-    const res = await dataTableFile.executeQueryAndReturnResults(q)
-    if (res.queriedData.length >= 1) {
-      const rowsToUpdate = new Map()
-      // Update the all the rows and set the number of concepts - 1
-      for (let index of res.indices) {
-        rowsToUpdate.set(index, { 'ADD_INFO:numberOfConcepts': res.queriedData.length - 1 })
+
+    // If it not the only concept that is mapped for that row (multiple mapping), erase the row
+    if (event.detail.erase == true) {
+      // Create a query to get all the rows that has the same sourceCode (row mapped to multiple concepts)
+      const q = query()
+        .params({ source: event.detail.sourceCode })
+        .filter((r: any, params: any) => r.sourceCode == params.source)
+        .toObject()
+      const res = await dataTableFile.executeQueryAndReturnResults(q)
+      if (res.queriedData.length >= 1) {
+        const rowsToUpdate = new Map()
+        // Update the all the rows and set the number of concepts - 1
+        for (let index of res.indices) {
+          rowsToUpdate.set(index, { 'ADD_INFO:numberOfConcepts': res.queriedData.length - 1 })
+        }
+        await dataTableFile.updateRows(rowsToUpdate)
       }
-      await dataTableFile.updateRows(rowsToUpdate)
+      await dataTableFile.deleteRows(event.detail.indexes)
+    } else {
+      // When the mapping is one on one, erase the mapping from that row
+      const updatedFields = additionalFields
+      updatedFields.conceptId = ''
+      updatedFields.domainId = ''
+      updatedFields.conceptName = ''
+      await dataTableFile.updateRows(new Map([[event.detail.indexes[0], updatedFields]]))
     }
-    await dataTableFile.deleteRows(event.detail.indexes)
   }
 
   // When the arrow button in the Athena pop-up is clicked to navigate to a different row
@@ -428,15 +439,10 @@
     if (pagination.rowsPerPage) pag['rowsPerPage'] = pagination.rowsPerPage
     await dataTableFile.changePagination(pag)
   }
-
-  // A method to show that the table has been initialized
-  function dataTableInitialized() {
-    dataTableInit = true
-  }
-
   // A method to abort the auto mapping
   function abortAutoMap() {
     if (autoMappingPromise) autoMappingAbortController.abort()
+    currentRows = new Map<number, Record<string, any>>()
   }
 
   // A method to start the auto mapping
@@ -444,19 +450,28 @@
     if (settings!.autoMap) {
       // Abort any automapping that is happening at the moment
       if (autoMappingPromise) autoMappingAbortController.abort()
-
       // Create a abortcontroller to abort the auto mapping in the future if needed
       autoMappingAbortController = new AbortController()
       const signal = autoMappingAbortController.signal
 
       autoMappingPromise = new Promise(async (resolve, reject) => {
         const pag = dataTableFile.getTablePagination()
-        for (let index of Array(pag.rowsPerPage!).keys()) {
-          if (signal.aborted) return Promise.resolve()
-          const indexOfPage = index + pag!.rowsPerPage! * (pag!.currentPage! - 1)
-          const row = await dataTableFile.getFullRow(indexOfPage)
-          if (row.conceptId == undefined) await autoMapRow(signal, row, indexOfPage)
+        const columns = localStorageGetter('datatable_usagi_columns')
+        const sortedColumns = columns.filter((col: IColumnMetaData) => col.sortDirection != undefined)
+        let sorting: Record<string, string> = {}
+        for (let sortedCol of sortedColumns) {
+          sorting[sortedCol.id] = sortedCol.sortDirection == 'desc' ? desc(sortedCol.id) : sortedCol.id
         }
+        // TODO: change this query because the indices are not correct with the data that needs to be mapped
+        const q = query().orderby(sorting).slice(pag.rowsPerPage! * (pag.currentPage! - 1), pag.rowsPerPage! * pag.currentPage!).toObject()
+        const res = await dataTableFile.executeQueryAndReturnResults(q)
+        for (let i = 0; i < res.queriedData.length; i++) {
+          if (signal.aborted) return Promise.resolve()
+          const row = res.queriedData[i]
+          const index = res.indices[i]
+          if (row.conceptId == undefined) await autoMapRow(signal, row, index)
+        }
+        fetchDataFunc = fetchData
       })
     }
   }
@@ -479,6 +494,22 @@
       return acc
     }, [])
     return modifiedColumns.concat(addedColumns)
+  }
+
+  async function approvePage() {
+    for (let [index, row] of currentRows) {
+      if (row.conceptId) {
+        if (row.statusSetBy) {
+          if (row.statusSetBy != settings!.author) {
+            row['ADD_INFO:approvedBy'] = settings!.author
+          }
+        } else {
+          row.statusSetBy = settings!.author
+        }
+        row.mappingStatus == 'APPROVED'
+      }
+    }
+    await dataTableFile.updateRows(currentRows)
   }
 
   let fetchDataFunc = fetchData
@@ -556,7 +587,6 @@
   options={{ id: 'usagi', rowsPerPage: 15, rowsPerPageOptions: [5, 10, 15, 20, 50, 100], actionColumn: true }}
   on:rendering={abortAutoMap}
   on:renderingComplete={autoMapPage}
-  on:initialized={dataTableInitialized}
   modifyColumnMetadata={modifyUsagiColumnMetadata}
 >
   <UsagiRow
@@ -570,5 +600,8 @@
     {renderedRow}
     {columns}
     index={originalIndex}
+    bind:currentRows
   />
 </DataTable>
+
+<button on:click={approvePage}>Approve page</button>
