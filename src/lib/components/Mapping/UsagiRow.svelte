@@ -75,7 +75,7 @@
   <button on:click={onClickDeletion} title="Delete"
     ><SvgIcon href="icons.svg" id="eraser" width="16px" height="16px" /></button
   >
-  {#if renderedRow['ADD_INFO:numberOfConcepts']}
+  {#if renderedRow['ADD_INFO:numberOfConcepts'] && renderedRow['ADD_INFO:numberOfConcepts'] > 1}
     <div data-name="numberOfConceptIds">
       <p>{renderedRow['ADD_INFO:numberOfConcepts']}</p>
     </div>
