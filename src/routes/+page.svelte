@@ -463,7 +463,10 @@
           sorting[sortedCol.id] = sortedCol.sortDirection == 'desc' ? desc(sortedCol.id) : sortedCol.id
         }
         // TODO: change this query because the indices are not correct with the data that needs to be mapped
-        const q = query().orderby(sorting).slice(pag.rowsPerPage! * (pag.currentPage! - 1), pag.rowsPerPage! * pag.currentPage!).toObject()
+        const q = query()
+          .orderby(sorting)
+          .slice(pag.rowsPerPage! * (pag.currentPage! - 1), pag.rowsPerPage! * pag.currentPage!)
+          .toObject()
         const res = await dataTableFile.executeQueryAndReturnResults(q)
         for (let i = 0; i < res.queriedData.length; i++) {
           if (signal.aborted) return Promise.resolve()
@@ -497,8 +500,10 @@
   }
 
   async function approvePage() {
+    let approvedRows = new Map<number, Record<string, any>>()
     for (let [index, row] of currentRows) {
-      if (row.conceptId) {
+      if (row.conceptId || row.sourceAutoAssignedConceptIds) {
+        if (!row.conceptId) row.conceptId = row.sourceAutoAssignedConceptIds
         if (row.statusSetBy) {
           if (row.statusSetBy != settings!.author) {
             row['ADD_INFO:approvedBy'] = settings!.author
@@ -506,10 +511,11 @@
         } else {
           row.statusSetBy = settings!.author
         }
-        row.mappingStatus == 'APPROVED'
+        row.mappingStatus = 'APPROVED'
       }
+      approvedRows.set(index, row)
     }
-    await dataTableFile.updateRows(currentRows)
+    await dataTableFile.updateRows(approvedRows)
   }
 
   let fetchDataFunc = fetchData
