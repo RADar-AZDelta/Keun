@@ -5,9 +5,13 @@
   import SvgIcon from '../Extra/SvgIcon.svelte'
   import { doubleClick } from '$lib/actions/doubleClick'
 
-  export let renderedRow: Record<string, any>, columns: IColumnMetaData[] | undefined, index: number
+  export let renderedRow: Record<string, any>,
+    columns: IColumnMetaData[] | undefined,
+    index: number,
+    currentRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>([])
 
   let color: string = 'inherit'
+  currentRows.set(index, renderedRow)
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
   // A method to open the Athena pop-up to map a row
@@ -41,14 +45,16 @@
   function onClickDeletion() {
     const conceptId = renderedRow['conceptId']
     const sourceCode = renderedRow['sourceCode']
-    dispatch('deleteRow', { indexes: [index], sourceCode: sourceCode, conceptId: conceptId })
+    const multiple = renderedRow['ADD_INFO:numberOfConcepts'] > 1
+    dispatch('deleteRow', { indexes: [index], sourceCode: sourceCode, conceptId: conceptId, erase: multiple })
   }
 
   // A method to get the color for the cell depending on the status of the row
   function getColors() {
     switch (renderedRow['mappingStatus']) {
       case 'APPROVED':
-        return 'hsl(156, 100%, 35%)'
+        if (renderedRow['ADD_INFO:approvedBy']) return 'hsl(156, 100%, 35%)'
+        else return 'hsl(112, 50%, 66%)'
       case 'FLAGGED':
         return 'hsl(54, 89%, 64%)'
       case 'UNAPPROVED':
@@ -67,7 +73,7 @@
   <button on:click={onClickMapping} title="Map"><SvgIcon href="icons.svg" id="map" width="16px" height="16px" /></button
   >
   <button on:click={onClickDeletion} title="Delete"
-    ><SvgIcon href="icons.svg" id="trash" width="16px" height="16px" /></button
+    ><SvgIcon href="icons.svg" id="eraser" width="16px" height="16px" /></button
   >
   {#if renderedRow['ADD_INFO:numberOfConcepts']}
     <div data-name="numberOfConceptIds">

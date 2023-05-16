@@ -70,7 +70,7 @@ importers:
         version: 4.9.5
       vite:
         specifier: ^4.3.5
-        version: 4.3.5(@types/node@20.1.2)(sass@1.62.1)
+        version: 4.3.5(sass@1.62.1)
       vite-plugin-static-copy:
         specifier: ^0.15.0
         version: 0.15.0(vite@4.3.5)
@@ -532,7 +532,7 @@ packages:
       svelte: 3.59.1
       tiny-glob: 0.2.9
       undici: 5.22.1
-      vite: 4.3.5(@types/node@20.1.2)(sass@1.62.1)
+      vite: 4.3.5(sass@1.62.1)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -582,7 +582,7 @@ packages:
       magic-string: 0.30.0
       svelte: 3.59.1
       svelte-hmr: 0.15.1(svelte@3.59.1)
-      vite: 4.3.5(@types/node@20.1.2)(sass@1.62.1)
+      vite: 4.3.5(sass@1.62.1)
       vitefu: 0.2.4(vite@4.3.5)
     transitivePeerDependencies:
       - supports-color
@@ -2884,7 +2884,7 @@ packages:
       fast-glob: 3.2.12
       fs-extra: 11.1.1
       picocolors: 1.0.0
-      vite: 4.3.5(@types/node@20.1.2)(sass@1.62.1)
+      vite: 4.3.5(sass@1.62.1)
     dev: true
 
   /vite@4.3.5(@types/node@20.1.2)(sass@1.62.1):
@@ -2921,6 +2921,39 @@ packages:
       fsevents: 2.3.2
     dev: true
 
+  /vite@4.3.5(sass@1.62.1):
+    resolution: {integrity: sha512-0gEnL9wiRFxgz40o/i/eTBwm+NEbpUeTWhzKrZDSdKm6nplj+z4lKz8ANDgildxHm47Vg8EUia0aicKbawUVVA==}
+    engines: {node: ^14.18.0 || >=16.0.0}
+    hasBin: true
+    peerDependencies:
+      '@types/node': '>= 14'
+      less: '*'
+      sass: '*'
+      stylus: '*'
+      sugarss: '*'
+      terser: ^5.4.0
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+      less:
+        optional: true
+      sass:
+        optional: true
+      stylus:
+        optional: true
+      sugarss:
+        optional: true
+      terser:
+        optional: true
+    dependencies:
+      esbuild: 0.17.18
+      postcss: 8.4.23
+      rollup: 3.21.6
+      sass: 1.62.1
+    optionalDependencies:
+      fsevents: 2.3.2
+    dev: true
+
   /vitefu@0.2.4(vite@4.3.5):
     resolution: {integrity: sha512-fanAXjSaf9xXtOOeno8wZXIhgia+CZury481LsDaV++lSvcU2R9Ch2bPh3PYFyoHW+w9LqAeYRISVQjUIew14g==}
     peerDependencies:
@@ -2929,7 +2962,7 @@ packages:
       vite:
         optional: true
     dependencies:
-      vite: 4.3.5(@types/node@20.1.2)(sass@1.62.1)
+      vite: 4.3.5(sass@1.62.1)
     dev: true
 
   /vitest@0.29.8(sass@1.62.1):

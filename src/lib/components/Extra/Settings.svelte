@@ -73,7 +73,7 @@
           </div>
         </div>
         <div data-name="option">
-          <p>Language</p>
+          <p>Language of CSV</p>
           <select name="language" id="language" bind:value={settings.language} on:change={saveSettings}>
             {#each Object.keys(languages) as lang}
               <option value={lang} selected={lang == settings.language ? true : false}>{languages[lang]}</option>

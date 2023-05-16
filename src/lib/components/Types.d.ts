@@ -43,6 +43,7 @@ export interface DeleteRowEventDetail {
   indexes: number[]
   sourceCode: string | number
   conceptId: string | number
+  erase: boolean
 }
 
 export interface RowChangeEventDetail {
