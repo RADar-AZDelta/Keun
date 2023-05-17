@@ -46,8 +46,9 @@
   let athenaFilters: Map<string, string[]>
 
   let tableInit: boolean = false
+  let progressInit: boolean = false
   let currentRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>()
-  let totalRows = 0
+  let totalRows = 10
   let mappedRows = 0
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -253,7 +254,6 @@
       const updatedFields = additionalFields
       updatedFields.conceptId = null
       updatedFields.domainId = null
-      updatedFields.conceptName = null
       delete updatedFields.sourceAutoAssignedConceptIds
       await dataTableFile.updateRows(new Map([[event.detail.indexes[0], updatedFields]]))
     }
@@ -282,7 +282,6 @@
       const updatedFields = additionalFields
       updatedFields.conceptId = null
       updatedFields.domainId = null
-      updatedFields.conceptName = null
       updatedFields['ADD_INFO:numberOfConcepts'] = 1
       delete updatedFields.sourceAutoAssignedConceptIds
       await dataTableFile.updateRows(new Map([[res.indices[0], updatedFields]]))
@@ -485,8 +484,12 @@
   }
 
   // A method to abort the auto mapping
-  function abortAutoMap() {
+  async function abortAutoMap() {
     if (autoMappingPromise) autoMappingAbortController.abort()
+    if (progressInit == false) {
+      await calculateProgress()
+      progressInit = true
+    }
     currentRows = new Map<number, Record<string, any>>()
   }
 
@@ -518,7 +521,12 @@
           if (row.conceptId == undefined) await autoMapRow(signal, row, index)
         }
         resolve(null)
-      }).then(() => calculateProgress())
+      }).then(() => {
+        if (progressInit == false) {
+          calculateProgress()
+          progressInit = true
+        }
+      })
     }
   }
 
@@ -574,9 +582,9 @@
   let fetchDataFunc = fetchData
 
   onMount(async () => {
-    for(let param of params){
+    for (let param of params) {
       const urlParam = $page.url.searchParams.get(param)
-      if(urlParam) apiFilters.push(`&${param}=${urlParam}`)
+      if (urlParam) apiFilters.push(`&${param}=${urlParam}`)
     }
 
     // Get the settings from the local storage
