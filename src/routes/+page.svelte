@@ -24,8 +24,10 @@
   import Settings from '$lib/components/Extra/Settings.svelte'
   import { LatencyOptimisedTranslator } from '@browsermt/bergamot-translator/translator.js'
   import SvgIcon from '$lib/components/Extra/SvgIcon.svelte'
+  import { page } from '$app/stores'
 
   let file: File | undefined
+  let params = ['standardConcept', 'vocabulary', 'invalidReason', 'domain', 'conceptClass']
 
   let settings: Record<string, any> | undefined = undefined
   let translator: LatencyOptimisedTranslator
@@ -562,7 +564,7 @@
   async function calculateProgress() {
     const expressions = {
       total: 'd => op.count()',
-      valid: "d => op.valid(d.conceptId)",
+      valid: 'd => op.valid(d.conceptId)',
     }
     const expressionResults = await dataTableFile.executeExpressionsAndReturnResults(expressions)
     totalRows = expressionResults.expressionData[0].total
@@ -572,6 +574,11 @@
   let fetchDataFunc = fetchData
 
   onMount(async () => {
+    for(let param of params){
+      const urlParam = $page.url.searchParams.get(param)
+      if(urlParam) apiFilters.push(`&${param}=${urlParam}`)
+    }
+
     // Get the settings from the local storage
     const storedSettings = localStorageGetter('settings')
     if (storedSettings) settings = storedSettings
@@ -616,7 +623,7 @@
 
   {#if tableInit == true}
     <div data-name="progress-bar">
-      <div data-name="progress-bar-inner" style={`width: ${(mappedRows/totalRows) * 100}%`} />
+      <div data-name="progress-bar-inner" style={`width: ${(mappedRows / totalRows) * 100}%`} />
     </div>
   {/if}
 
