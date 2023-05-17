@@ -45,6 +45,8 @@
 
   let tableInit: boolean = false
   let currentRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>()
+  let totalRows = 0
+  let mappedRows = 0
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // DATA
@@ -60,22 +62,22 @@
     ['domain', 'domainId'],
   ])
   let additionalFields: Record<string, any> = {
-    mappingStatus: '',
-    matchScore: '',
-    statusSetBy: '',
-    statusSetOn: '',
-    mappingType: '',
-    comment: '',
-    createdBy: '',
-    createdOn: '',
-    assignedReviewer: '',
-    equivalence: '',
-    sourceAutoAssignedConceptIds: '',
-    'ADD_INFO:approvedBy': '',
-    'ADD_INFO:approvedOn': '',
-    'ADD_INFO:additionalInfo': '',
-    'ADD_INFO:prescriptionID': '',
-    'ADD_INFO:ATC': '',
+    mappingStatus: null,
+    matchScore: null,
+    statusSetBy: null,
+    statusSetOn: null,
+    mappingType: null,
+    comment: null,
+    createdBy: null,
+    createdOn: null,
+    assignedReviewer: null,
+    equivalence: null,
+    sourceAutoAssignedConceptIds: null,
+    'ADD_INFO:approvedBy': null,
+    'ADD_INFO:approvedOn': null,
+    'ADD_INFO:additionalInfo': null,
+    'ADD_INFO:prescriptionID': null,
+    'ADD_INFO:ATC': null,
   }
 
   let autoMappingAbortController: AbortController
@@ -150,6 +152,7 @@
     }
     // Update the selected row to the updated row
     await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
+    calculateProgress()
   }
 
   // When the mapping button in the Athena pop-up is clicked and the settins "Map to multiple concepts" is enabled
@@ -186,6 +189,7 @@
       await dataTableFile.updateRows(rowsToUpdate)
       await insertRows(dataTableFile, [mappedRow])
     }
+    calculateProgress()
   }
 
   // When a action (approve, flag, unapprove) button is clicked (left-side of the table in the action column)
@@ -217,6 +221,7 @@
       }
     }
     await dataTableFile.updateRows(new Map([[event.detail.index, updatingObj]]))
+    calculateProgress()
   }
 
   // When the delete button is clicked (left-side of the table in the action column)
@@ -244,12 +249,13 @@
     } else {
       // When the mapping is one on one, erase the mapping from that row
       const updatedFields = additionalFields
-      updatedFields.conceptId = ''
-      updatedFields.domainId = ''
-      updatedFields.conceptName = ''
+      updatedFields.conceptId = null
+      updatedFields.domainId = null
+      updatedFields.conceptName = null
       delete updatedFields.sourceAutoAssignedConceptIds
       await dataTableFile.updateRows(new Map([[event.detail.indexes[0], updatedFields]]))
     }
+    calculateProgress()
   }
 
   async function deleteRowInnerMapping(event: CustomEvent<DeleteRowInnerMappingEventDetail>) {
@@ -259,7 +265,10 @@
       .toObject()
     const res = await dataTableFile.executeQueryAndReturnResults(q, ['sourceCode', 'conceptId'])
     if (event.detail.erase) {
-      const q = query().params({ sourceCode: selectedRow.sourceCode }).filter((r: any, params: any) => r.sourceCode == params.sourceCode).toObject()
+      const q = query()
+        .params({ sourceCode: selectedRow.sourceCode })
+        .filter((r: any, params: any) => r.sourceCode == params.sourceCode)
+        .toObject()
       const res2 = await dataTableFile.executeQueryAndReturnResults(q, ['sourceCode'])
       const updatedRows = new Map<number, Record<string, any>>()
       res2.indices.forEach((index: number) => {
@@ -269,9 +278,9 @@
       await dataTableFile.deleteRows(res.indices)
     } else {
       const updatedFields = additionalFields
-      updatedFields.conceptId = ''
-      updatedFields.domainId = ''
-      updatedFields.conceptName = ''
+      updatedFields.conceptId = null
+      updatedFields.domainId = null
+      updatedFields.conceptName = null
       updatedFields['ADD_INFO:numberOfConcepts'] = 1
       delete updatedFields.sourceAutoAssignedConceptIds
       await dataTableFile.updateRows(new Map([[res.indices[0], updatedFields]]))
@@ -442,7 +451,7 @@
           case 'mappingStatus':
             if (
               mappedUsagiRow.statusSetBy == settings!.author ||
-              mappedUsagiRow.statusSetBy == '' ||
+              mappedUsagiRow.statusSetBy == null ||
               mappedUsagiRow.statusSetBy == undefined
             )
               mappedUsagiRow.mappingStatus == 'APPROVED'
@@ -506,7 +515,8 @@
           const index = res.indices[i]
           if (row.conceptId == undefined) await autoMapRow(signal, row, index)
         }
-      })
+        resolve(null)
+      }).then(() => calculateProgress())
     }
   }
 
@@ -547,6 +557,16 @@
       approvedRows.set(index, row)
     }
     await dataTableFile.updateRows(approvedRows)
+  }
+
+  async function calculateProgress() {
+    const expressions = {
+      total: 'd => op.count()',
+      valid: "d => op.valid(d.conceptId)",
+    }
+    const expressionResults = await dataTableFile.executeExpressionsAndReturnResults(expressions)
+    totalRows = expressionResults.expressionData[0].total
+    mappedRows = expressionResults.expressionData[1].valid
   }
 
   let fetchDataFunc = fetchData
@@ -593,6 +613,12 @@
     <input id="file-upload" type="file" accept=".csv, .json" on:change={onFileInputChange} />
     <Download dataTable={dataTableFile} />
   </div>
+
+  {#if tableInit == true}
+    <div data-name="progress-bar">
+      <div data-name="progress-bar-inner" style={`width: ${(mappedRows/totalRows) * 100}%`} />
+    </div>
+  {/if}
 
   <div data-name="header-buttons-container" id="settings">
     <Settings {settings} />

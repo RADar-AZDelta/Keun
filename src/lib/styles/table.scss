@@ -92,6 +92,19 @@ section[data-name='header'] {
     }
   }
 
+  div[data-name='progress-bar'] {
+    height: 1rem;
+    width: 40%;
+    background-color: $neutral;
+    border-radius: 5px;
+
+    div[data-name='progress-bar-inner'] {
+      height: 100%;
+      background-color: $blue;
+      border-radius: 5px;
+    }
+  }
+
   div[data-name='header-buttons-container'] {
     display: flex;
     gap: 1rem;
