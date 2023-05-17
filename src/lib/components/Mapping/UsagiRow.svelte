@@ -1,14 +1,13 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte'
+  import { createEventDispatcher, onMount } from 'svelte'
   import type { CustomOptionsEvents } from '../Types'
   import type { IColumnMetaData } from 'svelte-radar-datatable'
   import SvgIcon from '../Extra/SvgIcon.svelte'
-  import { doubleClick } from '$lib/actions/doubleClick'
-  import { singleClick } from '$lib/actions/singleClick'
 
   export let renderedRow: Record<string, any>,
     columns: IColumnMetaData[] | undefined,
     index: number,
+    selectedRowIndex: number,
     currentRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>([])
 
   let color: string = 'inherit'
@@ -18,22 +17,15 @@
   let clickedRowIndex: number
 
   // A method to open the Athena pop-up to map a row
-  function onClickMapping(e: any) {
-    if (clickedRowIndex == e.detail.index) {
-      const object = {
-        visibility: true,
-        data: {
-          row: e.detail.renderedRow,
-          index: e.detail.index,
-        },
-      }
-      console.log('HERE ', clickedRowIndex)
-      dispatch('generalVisibilityChanged', object)
+  function onClickMapping() {
+    const object = {
+      visibility: true,
+      data: {
+        row: renderedRow,
+        index: index,
+      },
     }
-  }
-
-  function onSingleClickMapping(e: any) {
-    clickedRowIndex = e.detail.index
+    dispatch('generalVisibilityChanged', object)
   }
 
   // A method to throw an event to the parent to approve a row
@@ -73,6 +65,20 @@
     return 'inherit'
   }
 
+  onMount(() => {
+    for (let col of columns!) {
+      document.getElementById(`${col.id}-${index}`)!.addEventListener('click', function () {
+        if (selectedRowIndex == index) {
+          console.log('OPENING ', index)
+          onClickMapping()
+        } else {
+          selectedRowIndex = index
+          console.log('SETTING ', index)
+        }
+      })
+    }
+  })
+
   $: {
     renderedRow, index
     color = getColors()
@@ -102,14 +108,8 @@
     ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
   >
 </td>
-{#each columns || [] as column, i (column.id)}
-  <td
-    use:doubleClick={{ index, renderedRow }}
-    use:singleClick={{ index }}
-    on:doubleClick={onClickMapping}
-    on:singleClick={onSingleClickMapping}
-    style={`background-color: ${color}`}
-  >
+{#each columns || [] as column, i}
+  <td id={`${column.id}-${index}`} style={`background-color: ${color}`}>
     {#if ['statusSetOn', 'createdOn', 'ADD_INFO:approvedOn'].includes(column.id)}
       <p>{new Date(parseInt(renderedRow[column.id])).toLocaleString()}</p>
     {:else}

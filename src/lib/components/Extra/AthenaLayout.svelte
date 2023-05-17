@@ -228,7 +228,7 @@
       .params({ source: selectedRow.sourceCode })
       .filter((d: any, params: any) => d.sourceCode == params.source)
       .toObject()
-    const res = await mainTable.executeQueryAndReturnResults(q, ['sourceCode'])
+    const res = await mainTable.executeQueryAndReturnResults(q)
     for (let row of res.queriedData) {
       if (row.conceptId) {
         if (!uniqueConceptIds.includes(row.conceptId)) uniqueConceptIds.push(row.conceptId)

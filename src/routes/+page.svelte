@@ -168,7 +168,7 @@
       .params({ value: mappedRow.sourceCode })
       .filter((r: any, params: any) => r.sourceCode == params.value)
       .toObject()
-    const res = await dataTableFile.executeQueryAndReturnResults(q, ['sourceCode'])
+    const res = await dataTableFile.executeQueryAndReturnResults(q)
 
     // Add extra information like the number of concepts mapped for this row, comments & the assigned reviewer to the row
     mappedRow.mappingStatus = 'APPROVED'
@@ -239,7 +239,7 @@
         .params({ source: event.detail.sourceCode })
         .filter((r: any, params: any) => r.sourceCode == params.source)
         .toObject()
-      const res = await dataTableFile.executeQueryAndReturnResults(q, ['sourceCode'])
+      const res = await dataTableFile.executeQueryAndReturnResults(q)
       if (res.queriedData.length >= 1) {
         const rowsToUpdate = new Map()
         // Update the all the rows and set the number of concepts - 1
@@ -255,6 +255,7 @@
       updatedFields.conceptId = null
       updatedFields.domainId = null
       delete updatedFields.sourceAutoAssignedConceptIds
+      console.log("HERE ", event)
       await dataTableFile.updateRows(new Map([[event.detail.indexes[0], updatedFields]]))
     }
     calculateProgress()
@@ -265,13 +266,13 @@
       .params({ conceptId: event.detail.conceptId, sourceCode: selectedRow.sourceCode })
       .filter((r: any, params: any) => r.conceptId == params.conceptId && r.sourceCode == params.sourceCode)
       .toObject()
-    const res = await dataTableFile.executeQueryAndReturnResults(q, ['sourceCode', 'conceptId'])
+    const res = await dataTableFile.executeQueryAndReturnResults(q)
     if (event.detail.erase) {
       const q = query()
         .params({ sourceCode: selectedRow.sourceCode })
         .filter((r: any, params: any) => r.sourceCode == params.sourceCode)
         .toObject()
-      const res2 = await dataTableFile.executeQueryAndReturnResults(q, ['sourceCode'])
+      const res2 = await dataTableFile.executeQueryAndReturnResults(q)
       const updatedRows = new Map<number, Record<string, any>>()
       res2.indices.forEach((index: number) => {
         updatedRows.set(index, { 'ADD_INFO:numberOfConcepts': res2.indices.length - 1 })
@@ -513,7 +514,7 @@
           .orderby(sorting)
           .slice(pag.rowsPerPage! * (pag.currentPage! - 1), pag.rowsPerPage! * pag.currentPage!)
           .toObject()
-        const res = await dataTableFile.executeQueryAndReturnResults(q, ['sourceCode'])
+        const res = await dataTableFile.executeQueryAndReturnResults(q)
         for (let i = 0; i < res.queriedData.length; i++) {
           if (signal.aborted) return Promise.resolve()
           const row = res.queriedData[i]
@@ -608,6 +609,10 @@
       undefined
     )
   })
+
+  function testing () {
+    console.log("TESTING THIS ON CLICK")
+  }
 </script>
 
 <svelte:head>
@@ -680,6 +685,7 @@
     {renderedRow}
     {columns}
     index={originalIndex}
+    bind:selectedRowIndex
     bind:currentRows
   />
 </DataTable>
