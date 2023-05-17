@@ -2,7 +2,6 @@
   import { createEventDispatcher } from 'svelte'
   import type { CustomOptionsEvents } from '../Types'
   import SvgIcon from '../Extra/SvgIcon.svelte'
-  import type DataTable from 'svelte-radar-datatable'
   import type { IColumnMetaData } from 'svelte-radar-datatable'
 
   export let renderedRow: Record<string, any>,
@@ -21,16 +20,17 @@
   async function onClickMapping() {
     if (multipleConcepts == true) {
       dispatch('multipleMapping', { row: renderedRow })
-      dispatch('updateUniqueConceptIds', { conceptId: renderedRow.id, conceptName: renderedRow.name })
+      dispatch('updateUniqueConceptIds', { conceptId: renderedRow.id, conceptName: renderedRow.name, multiple: true })
     } else {
       dispatch('singleMapping', { row: renderedRow })
-      dispatch('updateUniqueConceptIds', { conceptId: renderedRow.id, conceptName: renderedRow.name })
+      dispatch('updateUniqueConceptIds', { conceptId: renderedRow.id, conceptName: renderedRow.name, multiple: false })
     }
 
     multipleConcepts == true ? (alreadyMapped = true) : null
   }
 
   $: {
+    // TODO: in single mapping --> when click for other mapping the color of the previous must be reset but that component does not come in this reactive statement
     uniqueConceptIds.includes(renderedRow.id) ? (alreadyMapped = true) : (alreadyMapped = false)
   }
 </script>
