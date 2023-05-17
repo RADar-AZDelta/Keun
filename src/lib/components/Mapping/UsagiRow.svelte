@@ -4,6 +4,7 @@
   import type { IColumnMetaData } from 'svelte-radar-datatable'
   import SvgIcon from '../Extra/SvgIcon.svelte'
   import { doubleClick } from '$lib/actions/doubleClick'
+  import { singleClick } from '$lib/actions/singleClick'
 
   export let renderedRow: Record<string, any>,
     columns: IColumnMetaData[] | undefined,
@@ -14,16 +15,25 @@
   currentRows.set(index, renderedRow)
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
+  let clickedRowIndex: number
+
   // A method to open the Athena pop-up to map a row
-  function onClickMapping() {
-    const object = {
-      visibility: true,
-      data: {
-        row: renderedRow,
-        index: index,
-      },
+  function onClickMapping(e: any) {
+    if (clickedRowIndex == e.detail.index) {
+      const object = {
+        visibility: true,
+        data: {
+          row: e.detail.renderedRow,
+          index: e.detail.index,
+        },
+      }
+      console.log('HERE ', clickedRowIndex)
+      dispatch('generalVisibilityChanged', object)
     }
-    dispatch('generalVisibilityChanged', object)
+  }
+
+  function onSingleClickMapping(e: any) {
+    clickedRowIndex = e.detail.index
   }
 
   // A method to throw an event to the parent to approve a row
@@ -93,7 +103,13 @@
   >
 </td>
 {#each columns || [] as column, i (column.id)}
-  <td use:doubleClick on:doubleClick={onClickMapping} style={`background-color: ${color}`}>
+  <td
+    use:doubleClick={{ index, renderedRow }}
+    use:singleClick={{ index }}
+    on:doubleClick={onClickMapping}
+    on:singleClick={onSingleClickMapping}
+    style={`background-color: ${color}`}
+  >
     {#if ['statusSetOn', 'createdOn', 'ADD_INFO:approvedOn'].includes(column.id)}
       <p>{new Date(parseInt(renderedRow[column.id])).toLocaleString()}</p>
     {:else}
