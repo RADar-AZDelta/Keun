@@ -7,6 +7,7 @@ export interface CustomOptionsEvents {
   multipleMapping: MultipleMappingEventDetail
   actionPerformed: ActionPerformedEventDetail
   deleteRow: DeleteRowEventDetail
+  deleteRowInnerMapping: DeleteRowInnerMappingEventDetail
   rowChange: RowChangeEventDetail
   reviewerChanged: ReviewerChangedEventDetail
   updateUniqueConceptIds: UpdateUniqueConceptIdsEventDetail
@@ -46,6 +47,12 @@ export interface DeleteRowEventDetail {
   erase: boolean
 }
 
+export interface DeleteRowInnerMappingEventDetail {
+  conceptId: string
+  conceptName: string
+  erase: boolean
+}
+
 export interface RowChangeEventDetail {
   up: boolean
 }
@@ -57,6 +64,7 @@ export interface ReviewerChangedEventDetail {
 export interface UpdateUniqueConceptIdsEventDetail {
   conceptId: string
   conceptName: string
+  multiple: boolean
 }
 
 export interface SingleFiltering {

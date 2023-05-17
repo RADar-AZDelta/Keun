@@ -12,6 +12,7 @@
     SingleMappingEventDetail,
     VisibilityChangedEventDetail,
     RowChangeEventDetail,
+    DeleteRowInnerMappingEventDetail,
   } from '$lib/components/Types'
   import type { IColumnMetaData, IPagination, SortDirection, TFilter } from 'svelte-radar-datatable'
   import { localStorageGetter } from '$lib/utils'
@@ -42,6 +43,7 @@
   let athenaFiltering: string
   let athenaFilters: Map<string, string[]>
 
+  let tableInit: boolean = false
   let currentRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>()
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -160,10 +162,10 @@
       .params({ value: mappedRow.sourceCode })
       .filter((r: any, params: any) => r.sourceCode == params.value)
       .toObject()
-    const res = await dataTableFile.executeQueryAndReturnResults(q)
+    const res = await dataTableFile.executeQueryAndReturnResults(q, ['sourceCode'])
 
     // Add extra information like the number of concepts mapped for this row, comments & the assigned reviewer to the row
-    mappedRow.mappingStatus = 'UNAPPROVED'
+    mappedRow.mappingStatus = 'APPROVED'
     mappedRow.statusSetBy = settings!.author
     mappedRow.comment = event.detail.extra!.comment
     mappedRow.assignedReviewer = event.detail.extra!.assignedReviewer
@@ -229,7 +231,7 @@
         .params({ source: event.detail.sourceCode })
         .filter((r: any, params: any) => r.sourceCode == params.source)
         .toObject()
-      const res = await dataTableFile.executeQueryAndReturnResults(q)
+      const res = await dataTableFile.executeQueryAndReturnResults(q, ['sourceCode'])
       if (res.queriedData.length >= 1) {
         const rowsToUpdate = new Map()
         // Update the all the rows and set the number of concepts - 1
@@ -245,7 +247,34 @@
       updatedFields.conceptId = ''
       updatedFields.domainId = ''
       updatedFields.conceptName = ''
+      delete updatedFields.sourceAutoAssignedConceptIds
       await dataTableFile.updateRows(new Map([[event.detail.indexes[0], updatedFields]]))
+    }
+  }
+
+  async function deleteRowInnerMapping(event: CustomEvent<DeleteRowInnerMappingEventDetail>) {
+    const q = query()
+      .params({ conceptId: event.detail.conceptId, sourceCode: selectedRow.sourceCode })
+      .filter((r: any, params: any) => r.conceptId == params.conceptId && r.sourceCode == params.sourceCode)
+      .toObject()
+    const res = await dataTableFile.executeQueryAndReturnResults(q, ['sourceCode', 'conceptId'])
+    if (event.detail.erase) {
+      const q = query().params({ sourceCode: selectedRow.sourceCode }).filter((r: any, params: any) => r.sourceCode == params.sourceCode).toObject()
+      const res2 = await dataTableFile.executeQueryAndReturnResults(q, ['sourceCode'])
+      const updatedRows = new Map<number, Record<string, any>>()
+      res2.indices.forEach((index: number) => {
+        updatedRows.set(index, { 'ADD_INFO:numberOfConcepts': res2.indices.length - 1 })
+      })
+      await dataTableFile.updateRows(updatedRows)
+      await dataTableFile.deleteRows(res.indices)
+    } else {
+      const updatedFields = additionalFields
+      updatedFields.conceptId = ''
+      updatedFields.domainId = ''
+      updatedFields.conceptName = ''
+      updatedFields['ADD_INFO:numberOfConcepts'] = 1
+      delete updatedFields.sourceAutoAssignedConceptIds
+      await dataTableFile.updateRows(new Map([[res.indices[0], updatedFields]]))
     }
   }
 
@@ -416,7 +445,7 @@
               mappedUsagiRow.statusSetBy == '' ||
               mappedUsagiRow.statusSetBy == undefined
             )
-              mappedUsagiRow.mappingStatus == 'UNAPPROVED'
+              mappedUsagiRow.mappingStatus == 'APPROVED'
             break
         }
       }
@@ -439,6 +468,11 @@
     if (pagination.rowsPerPage) pag['rowsPerPage'] = pagination.rowsPerPage
     await dataTableFile.changePagination(pag)
   }
+
+  function dataTableInitialized() {
+    tableInit = true
+  }
+
   // A method to abort the auto mapping
   function abortAutoMap() {
     if (autoMappingPromise) autoMappingAbortController.abort()
@@ -465,14 +499,13 @@
           .orderby(sorting)
           .slice(pag.rowsPerPage! * (pag.currentPage! - 1), pag.rowsPerPage! * pag.currentPage!)
           .toObject()
-        const res = await dataTableFile.executeQueryAndReturnResults(q)
+        const res = await dataTableFile.executeQueryAndReturnResults(q, ['sourceCode'])
         for (let i = 0; i < res.queriedData.length; i++) {
           if (signal.aborted) return Promise.resolve()
           const row = res.queriedData[i]
           const index = res.indices[i]
           if (row.conceptId == undefined) await autoMapRow(signal, row, index)
         }
-        fetchDataFunc = fetchData
       })
     }
   }
@@ -580,6 +613,7 @@
   on:rowChange={selectRow}
   on:singleMapping={singleMapping}
   on:multipleMapping={multipleMapping}
+  on:deleteRowInnerMapping={deleteRowInnerMapping}
   on:filterOptionsChanged={filterOptionsChanged}
   on:generalVisibilityChanged={mappingVisibilityChanged}
 />
@@ -590,6 +624,7 @@
   bind:this={dataTableFile}
   options={{ id: 'usagi', rowsPerPage: 15, rowsPerPageOptions: [5, 10, 15, 20, 50, 100], actionColumn: true }}
   on:rendering={abortAutoMap}
+  on:initialized={dataTableInitialized}
   on:renderingComplete={autoMapPage}
   modifyColumnMetadata={modifyUsagiColumnMetadata}
 >
@@ -608,4 +643,6 @@
   />
 </DataTable>
 
-<button on:click={approvePage}>Approve page</button>
+{#if tableInit == true}
+  <button on:click={approvePage}>Approve page</button>
+{/if}

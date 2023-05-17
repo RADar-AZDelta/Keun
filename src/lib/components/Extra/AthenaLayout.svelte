@@ -126,17 +126,24 @@
   }
 
   // A method to update the already mapped concepts (used to see the already mapped concepts for a certain row)
-  function updateUniqueConceptIds(e: CustomEvent<UpdateUniqueConceptIdsEventDetail>) {
-    if (!Object.values(alreadyMapped).find((row: any) => row.conceptId.includes(e.detail.conceptId))) {
-      if (!alreadyMapped[selectedRow.sourceCode]) {
-        alreadyMapped[selectedRow.sourceCode] = {
-          conceptId: [e.detail.conceptId],
-          conceptName: [e.detail.conceptName],
+  function updateUniqueConceptIds(event: CustomEvent<UpdateUniqueConceptIdsEventDetail>) {
+    if (event.detail.multiple == true) {
+      if (!Object.values(alreadyMapped).find((row: any) => row.conceptId.includes(event.detail.conceptId))) {
+        if (!alreadyMapped[selectedRow.sourceCode]) {
+          alreadyMapped[selectedRow.sourceCode] = {
+            conceptId: [event.detail.conceptId],
+            conceptName: [event.detail.conceptName],
+          }
+        } else {
+          alreadyMapped[selectedRow.sourceCode].conceptId.push(event.detail.conceptId)
+          alreadyMapped[selectedRow.sourceCode].conceptName.push(event.detail.conceptName)
+          alreadyMapped = alreadyMapped
         }
-      } else {
-        alreadyMapped[selectedRow.sourceCode].conceptId.push(e.detail.conceptId)
-        alreadyMapped[selectedRow.sourceCode].conceptName.push(e.detail.conceptName)
-        alreadyMapped = alreadyMapped
+      }
+    } else {
+      alreadyMapped[selectedRow.sourceCode] = {
+        conceptId: [event.detail.conceptId],
+        conceptName: [event.detail.conceptName],
       }
     }
   }
@@ -221,7 +228,7 @@
       .params({ source: selectedRow.sourceCode })
       .filter((d: any, params: any) => d.sourceCode == params.source)
       .toObject()
-    const res = await mainTable.executeQueryAndReturnResults(q)
+    const res = await mainTable.executeQueryAndReturnResults(q, ['sourceCode'])
     for (let row of res.queriedData) {
       if (row.conceptId) {
         if (!uniqueConceptIds.includes(row.conceptId)) uniqueConceptIds.push(row.conceptId)
@@ -237,6 +244,7 @@
     savedFilters = localStorageGetter('AthenaFilters')
     if (savedFilters) activatedAthenaFilters = savedFilters
     else activatedAthenaFilters = new Map<string, string[]>([['standardConcept', ['Standard']]])
+    uniqueConceptIds = uniqueConceptIds
   }
 
   // A method for when the assigned reviewer has changed
@@ -253,6 +261,22 @@
   function openDialog() {
     if (layoutDialog) if (layoutDialog.attributes.getNamedItem('open') == null) layoutDialog.showModal()
     fetchData = fetchData
+  }
+
+  function removeMapping(conceptId: string, conceptName: string) {
+    let erase = alreadyMapped[selectedRow.sourceCode].conceptId.length > 1
+    dispatch('deleteRowInnerMapping', { conceptId, conceptName, erase })
+    removeUniqueConcept(conceptId, conceptName)
+  }
+
+  function removeUniqueConcept(conceptId: string, conceptName: string) {
+    if(alreadyMapped[selectedRow.sourceCode].conceptId.length > 1){
+      alreadyMapped[selectedRow.sourceCode].conceptId.splice(alreadyMapped[selectedRow.sourceCode].conceptId.indexOf(conceptId), 1)
+      alreadyMapped[selectedRow.sourceCode].conceptName.splice(alreadyMapped[selectedRow.sourceCode].conceptName.indexOf(conceptName), 1)
+    } else {
+      delete alreadyMapped[selectedRow.sourceCode]
+    }
+    alreadyMapped = alreadyMapped
   }
 
   $: {
@@ -298,6 +322,7 @@
           >
             <div slot="option" data-name="filter-option" let:option>
               <input
+                id={option}
                 type="checkbox"
                 title="Activate/deactivate filter"
                 checked={checkIfFilterExists(key, options.altName, option)}
@@ -306,7 +331,7 @@
                     ? updateAPIFilters(event, options.altName != undefined ? options.altName : 'sourceName', option)
                     : null}
               />
-              <p>{option.replaceAll('/', ' / ')}</p>
+              <label for={option}>{option.replaceAll('/', ' / ')}</label>
             </div>
           </AthenaFilter>
         {/each}
@@ -371,7 +396,7 @@
             {renderedRow}
             {settings}
             {columns}
-            {uniqueConceptIds}
+            bind:uniqueConceptIds={uniqueConceptIds}
             on:singleMapping={singleMapping}
             on:multipleMapping={multipleMapping}
             on:updateUniqueConceptIds={updateUniqueConceptIds}
@@ -389,6 +414,7 @@
                 <div />
               {:else}
                 <tr>
+                  <th />
                   <th>conceptId</th>
                   <th>conceptName</th>
                 </tr>
@@ -396,6 +422,7 @@
                   {#if selectedRow.sourceCode == code}
                     {#each alreadyMapped[code].conceptId as id, i}
                       <tr>
+                        <td><button on:click={() => removeMapping(alreadyMapped[code].conceptId[i], alreadyMapped[code].conceptName[i])}><SvgIcon href="icons.svg" id="x" width="12px" height="12px" /></button></td>
                         <td>{alreadyMapped[code].conceptId[i]}</td>
                         <td>{alreadyMapped[code].conceptName[i]}</td>
                       </tr>
