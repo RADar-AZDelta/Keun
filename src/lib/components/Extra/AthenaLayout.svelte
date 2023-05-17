@@ -228,7 +228,7 @@
       .params({ source: selectedRow.sourceCode })
       .filter((d: any, params: any) => d.sourceCode == params.source)
       .toObject()
-    const res = await mainTable.executeQueryAndReturnResults(q, ['sourceCode'])
+    const res = await mainTable.executeQueryAndReturnResults(q)
     for (let row of res.queriedData) {
       if (row.conceptId) {
         if (!uniqueConceptIds.includes(row.conceptId)) uniqueConceptIds.push(row.conceptId)
@@ -270,9 +270,15 @@
   }
 
   function removeUniqueConcept(conceptId: string, conceptName: string) {
-    if(alreadyMapped[selectedRow.sourceCode].conceptId.length > 1){
-      alreadyMapped[selectedRow.sourceCode].conceptId.splice(alreadyMapped[selectedRow.sourceCode].conceptId.indexOf(conceptId), 1)
-      alreadyMapped[selectedRow.sourceCode].conceptName.splice(alreadyMapped[selectedRow.sourceCode].conceptName.indexOf(conceptName), 1)
+    if (alreadyMapped[selectedRow.sourceCode].conceptId.length > 1) {
+      alreadyMapped[selectedRow.sourceCode].conceptId.splice(
+        alreadyMapped[selectedRow.sourceCode].conceptId.indexOf(conceptId),
+        1
+      )
+      alreadyMapped[selectedRow.sourceCode].conceptName.splice(
+        alreadyMapped[selectedRow.sourceCode].conceptName.indexOf(conceptName),
+        1
+      )
     } else {
       delete alreadyMapped[selectedRow.sourceCode]
     }
@@ -396,7 +402,7 @@
             {renderedRow}
             {settings}
             {columns}
-            bind:uniqueConceptIds={uniqueConceptIds}
+            bind:uniqueConceptIds
             on:singleMapping={singleMapping}
             on:multipleMapping={multipleMapping}
             on:updateUniqueConceptIds={updateUniqueConceptIds}
@@ -422,7 +428,13 @@
                   {#if selectedRow.sourceCode == code}
                     {#each alreadyMapped[code].conceptId as id, i}
                       <tr>
-                        <td><button on:click={() => removeMapping(alreadyMapped[code].conceptId[i], alreadyMapped[code].conceptName[i])}><SvgIcon href="icons.svg" id="x" width="12px" height="12px" /></button></td>
+                        <td
+                          ><button
+                            on:click={() =>
+                              removeMapping(alreadyMapped[code].conceptId[i], alreadyMapped[code].conceptName[i])}
+                            ><SvgIcon href="icons.svg" id="x" width="12px" height="12px" /></button
+                          ></td
+                        >
                         <td>{alreadyMapped[code].conceptId[i]}</td>
                         <td>{alreadyMapped[code].conceptName[i]}</td>
                       </tr>
