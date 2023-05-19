@@ -14,6 +14,7 @@
     RowChangeEventDetail,
     DeleteRowInnerMappingEventDetail,
     CustomMappingEventDetail,
+    FileUploadedEventDetail,
   } from '$lib/components/Types'
   import type { IColumnMetaData, IPagination, SortDirection, TFilter } from 'svelte-radar-datatable'
   import { localStorageGetter, localStorageSetter } from '$lib/utils'
@@ -26,7 +27,8 @@
   import { LatencyOptimisedTranslator } from '@browsermt/bergamot-translator/translator.js'
   import SvgIcon from '$lib/components/Extra/SvgIcon.svelte'
   import { page } from '$app/stores'
-    import { browser } from '$app/environment'
+  import { browser } from '$app/environment'
+    import DragAndDrop from '$lib/components/Extra/DragAndDrop.svelte'
 
   let file: File | undefined
   let params = ['standardConcept', 'vocabulary', 'invalidReason', 'domain', 'conceptClass']
@@ -35,6 +37,7 @@
   let translator: LatencyOptimisedTranslator
 
   let mappingVisibility: boolean = false
+  let uploaded: boolean = false
 
   let apiFilters: string[] = ['&standardConcept=Standard']
   let equivalenceMapping: string = 'EQUAL'
@@ -94,6 +97,7 @@
 
   // When there is a new file uploaded
   async function onFileInputChange(e: Event) {
+    uploaded = true
     // Check if the automapping proces is running and if this is happening, abort the promise because it could give unexpected results.
     if (autoMappingPromise) autoMappingAbortController.abort()
     columns = undefined
@@ -112,6 +116,11 @@
         break
       }
     }
+  }
+
+  async function fileUploaded(e: CustomEvent<FileUploadedEventDetail>) {
+    uploaded = true
+    file = e.detail.file
   }
 
   // When the visibility of the mapping pop-up changes
@@ -161,7 +170,7 @@
   }
 
   async function customMapping(event: CustomEvent<CustomMappingEventDetail>) {
-     // TODO: allow custom mapping, create the columns in the datatable? are those additional info columns? 
+    // TODO: allow custom mapping, create the columns in the datatable? are those additional info columns?
   }
 
   // When the mapping button in the Athena pop-up is clicked and the settins "Map to multiple concepts" is enabled
@@ -624,10 +633,10 @@
     )
   })
 
-  if(browser) {
-    window.onbeforeunload = function() {
+  if (browser) {
+    window.onbeforeunload = function () {
       dataTableFile.saveToFile()
-      return "Are you sure you want to leave?"
+      return 'Are you sure you want to leave?'
     }
   }
 </script>
@@ -644,11 +653,13 @@
   <Header />
 
   <div data-name="table-options">
-    <label title="Upload" for="file-upload" data-name="file-upload"
-      ><SvgIcon href="icons.svg" id="upload" width="16px" height="16px" /></label
-    >
-    <input id="file-upload" type="file" accept=".csv, .json" on:change={onFileInputChange} />
-    <Download dataTable={dataTableFile} />
+    {#if uploaded == true}
+      <label title="Upload" for="file-upload" data-name="file-upload"
+        ><SvgIcon href="icons.svg" id="upload" width="16px" height="16px" /></label
+      >
+      <input id="file-upload" type="file" accept=".csv, .json" on:change={onFileInputChange} />
+      <Download dataTable={dataTableFile} />
+    {/if}
   </div>
 
   {#if tableInit == true}
@@ -682,31 +693,35 @@
   on:customMapping={customMapping}
 />
 
-<DataTable
-  data={file}
-  {columns}
-  bind:this={dataTableFile}
-  options={{ id: 'usagi', rowsPerPage: 15, rowsPerPageOptions: [5, 10, 15, 20, 50, 100], actionColumn: true }}
-  on:rendering={abortAutoMap}
-  on:initialized={dataTableInitialized}
-  on:renderingComplete={autoMapPage}
-  modifyColumnMetadata={modifyUsagiColumnMetadata}
->
-  <UsagiRow
-    slot="default"
-    let:renderedRow
-    let:columns
-    let:originalIndex
-    on:generalVisibilityChanged={mappingVisibilityChanged}
-    on:actionPerformed={actionPerformed}
-    on:deleteRow={deleteRow}
-    {renderedRow}
+{#if uploaded == true}
+  <DataTable
+    data={file}
     {columns}
-    index={originalIndex}
-    bind:selectedRowIndex
-    bind:currentRows
-  />
-</DataTable>
+    bind:this={dataTableFile}
+    options={{ id: 'usagi', rowsPerPage: 15, rowsPerPageOptions: [5, 10, 15, 20, 50, 100], actionColumn: true }}
+    on:rendering={abortAutoMap}
+    on:initialized={dataTableInitialized}
+    on:renderingComplete={autoMapPage}
+    modifyColumnMetadata={modifyUsagiColumnMetadata}
+  >
+    <UsagiRow
+      slot="default"
+      let:renderedRow
+      let:columns
+      let:originalIndex
+      on:generalVisibilityChanged={mappingVisibilityChanged}
+      on:actionPerformed={actionPerformed}
+      on:deleteRow={deleteRow}
+      {renderedRow}
+      {columns}
+      index={originalIndex}
+      bind:selectedRowIndex
+      bind:currentRows
+    />
+  </DataTable>
+{:else}
+  <DragAndDrop on:fileUploaded={fileUploaded} />
+{/if}
 
 {#if tableInit == true}
   <button on:click={approvePage}>Approve page</button>

@@ -12,6 +12,7 @@ export interface CustomOptionsEvents {
   reviewerChanged: ReviewerChangedEventDetail
   updateUniqueConceptIds: UpdateUniqueConceptIdsEventDetail
   customMapping: CustomMappingEventDetail
+  fileUploaded: FileUploadedEventDetail
 }
 
 export interface VisibilityChangedEventDetail {
@@ -79,6 +80,10 @@ export interface CustomMappingEventDetail {
   validStartDate: string
   validEndDate: string
   invalidReason: string
+}
+
+export interface FileUploadedEventDetail {
+  file: File
 }
 
 export interface SingleFiltering {
