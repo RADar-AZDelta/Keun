@@ -8,7 +8,6 @@
   export let renderedRow: Record<string, any>,
     columns: IColumnMetaData[] | undefined,
     index: number,
-    selectedRowIndex: number,
     currentRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>([])
 
   let color: string = 'inherit'
@@ -67,15 +66,6 @@
     return 'inherit'
   }
 
-  onMount(() => {
-    for (let col of columns!) {
-      document.getElementById(`${col.id}-${index}`)!.addEventListener('click', function () {
-        if (selectedRowIndex == index) onClickMapping()
-        else selectedRowIndex = index
-      })
-    }
-  })
-
   $: {
     renderedRow, index
     color = getColors()
@@ -106,7 +96,7 @@
   >
 </td>
 {#each columns || [] as column, i}
-  <td id="{column.id}-{index}" on:dblclick={onClickMapping} style={`background-color: ${color}`}>
+  <td on:dblclick={onClickMapping} on:dblclick={onClickMapping} style={`background-color: ${color}`}>
     {#if ['statusSetOn', 'createdOn', 'ADD_INFO:approvedOn'].includes(column.id)}
       <p>{new Date(parseInt(renderedRow[column.id])).toLocaleString()}</p>
     {:else}
