@@ -28,7 +28,7 @@
   import SvgIcon from '$lib/components/Extra/SvgIcon.svelte'
   import { page } from '$app/stores'
   import { browser } from '$app/environment'
-    import DragAndDrop from '$lib/components/Extra/DragAndDrop.svelte'
+  import DragAndDrop from '$lib/components/Extra/DragAndDrop.svelte'
 
   let file: File | undefined
   let params = ['standardConcept', 'vocabulary', 'invalidReason', 'domain', 'conceptClass']
@@ -52,6 +52,7 @@
 
   let tableInit: boolean = false
   let progressInit: boolean = false
+  let mappingStatusChanged: boolean = false
   let currentRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>()
   let totalRows = 10
   let mappedRows = 0
@@ -70,7 +71,6 @@
     ['domain', 'domainId'],
   ])
   let additionalFields: Record<string, any> = {
-    mappingStatus: null,
     matchScore: null,
     statusSetBy: null,
     statusSetOn: null,
@@ -86,6 +86,7 @@
     'ADD_INFO:additionalInfo': null,
     'ADD_INFO:prescriptionID': null,
     'ADD_INFO:ATC': null,
+    mappingStatus: null,
   }
 
   let autoMappingAbortController: AbortController
@@ -186,7 +187,7 @@
     const res = await dataTableFile.executeQueryAndReturnResults(q)
 
     // Add extra information like the number of concepts mapped for this row, comments & the assigned reviewer to the row
-    mappedRow.mappingStatus = 'APPROVED'
+    mappedRow.mappingStatus = 'SEMI-APPROVED'
     mappedRow.statusSetBy = settings!.author
     mappedRow.comment = event.detail.extra!.comment
     mappedRow.assignedReviewer = event.detail.extra!.assignedReviewer
@@ -223,7 +224,7 @@
           // If statusSetBy is empty, it means the author is the first reviewer of this row
           updatingObj.statusSetBy = settings!.author
           updatingObj.statusSetOn = Date.now()
-          updatingObj.mappingStatus = 'APPROVED'
+          updatingObj.mappingStatus = 'SEMI-APPROVED'
           if (!event.detail.row.conceptId) updatingObj.conceptId = event.detail.row.sourceAutoAssignedConceptIds
           else updatingObj.conceptId = event.detail.row.conceptId
         } else if (event.detail.row.statusSetBy != settings!.author) {
@@ -465,13 +466,12 @@
             break
 
           case 'mappingStatus':
-            if (
-              mappedUsagiRow.statusSetBy == settings!.author ||
-              mappedUsagiRow.statusSetBy == null ||
-              mappedUsagiRow.statusSetBy == undefined
-            )
+            if (mappedUsagiRow.statusSetBy == null || mappedUsagiRow.statusSetBy == undefined) {
+              mappedUsagiRow.mappingStatus == 'SEMI-APPROVED'
+              break
+            } else if (mappedUsagiRow.statusSetBy == settings!.author) {
               mappedUsagiRow.mappingStatus == 'APPROVED'
-            break
+            }
         }
       }
     }
@@ -509,7 +509,24 @@
   }
 
   // A method to start the auto mapping
-  function autoMapPage() {
+  async function autoMapPage() {
+    if (mappingStatusChanged == false) {
+      // Check for APPROVED values in mappingStatus and check how many authors there were already.
+      // If there is only one author, the value will be changed to SEMI-APPROVED
+      const q = query()
+        .filter(
+          (r: any) =>
+            r.mappingStatus == 'APPROVED' && (r['ADD_INFO:approvedBy'] == null || r['ADD_INFO:approvedBy'] == undefined)
+        )
+        .toObject()
+      const res = await dataTableFile.executeQueryAndReturnResults(q)
+      const updatedRows = new Map<number, Record<string, any>>()
+      for (let i = 0; i < res.queriedData.length; i++) {
+        updatedRows.set(res.indices[i], { mappingStatus: 'SEMI-APPROVED' })
+      }
+      await dataTableFile.updateRows(updatedRows)
+      mappingStatusChanged = true
+    }
     if (settings!.autoMap) {
       // Abort any automapping that is happening at the moment
       if (autoMappingPromise) autoMappingAbortController.abort()
@@ -574,10 +591,11 @@
           if (row.statusSetBy != settings!.author) {
             row['ADD_INFO:approvedBy'] = settings!.author
           }
+          row.mappingStatus = 'APPROVED'
         } else {
           row.statusSetBy = settings!.author
+          row.mappingStatus = 'SEMI-APPROVED'
         }
-        row.mappingStatus = 'APPROVED'
       }
       approvedRows.set(index, row)
     }

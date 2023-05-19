@@ -6,6 +6,7 @@
 
   // A method to save the file
   async function onClick() {
+    await dataTable.replaceValuesOfColumn('SEMI-APPROVED', 'APPROVED', 'mappingStatus')
     await dataTable.saveToFile()
   }
 </script>
