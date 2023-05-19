@@ -856,7 +856,6 @@
       {renderedRow}
       {columns}
       index={originalIndex}
-      bind:selectedRowIndex
       bind:currentRows
     />
   </DataTable>
