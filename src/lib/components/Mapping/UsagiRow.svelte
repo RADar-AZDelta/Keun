@@ -3,6 +3,7 @@
   import type { CustomOptionsEvents } from '../Types'
   import type { IColumnMetaData } from 'svelte-radar-datatable'
   import SvgIcon from '../Extra/SvgIcon.svelte'
+  import { dev } from '$app/environment'
 
   export let renderedRow: Record<string, any>,
     columns: IColumnMetaData[] | undefined,
@@ -20,9 +21,10 @@
       visibility: true,
       data: {
         row: renderedRow,
-        index: index,
+        index,
       },
     }
+    if (dev) console.log(`onClickMapping: ${index}`)
     dispatch('generalVisibilityChanged', object)
   }
 
@@ -102,7 +104,7 @@
   >
 </td>
 {#each columns || [] as column, i}
-  <td id={`${column.id}-${index}`} style={`background-color: ${color}`}>
+  <td on:dblclick={onClickMapping} style={`background-color: ${color}`}>
     {#if ['statusSetOn', 'createdOn', 'ADD_INFO:approvedOn'].includes(column.id)}
       <p>{new Date(parseInt(renderedRow[column.id])).toLocaleString()}</p>
     {:else}
