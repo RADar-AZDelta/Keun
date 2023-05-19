@@ -98,5 +98,10 @@
     "id": "ADD_INFO:numberOfConcepts",
     "visible": false,
     "editable": false
+  },
+  {
+    "id": "ADD_INFO:customConcept",
+    "visible": false,
+    "editable": false
   }
 ]
