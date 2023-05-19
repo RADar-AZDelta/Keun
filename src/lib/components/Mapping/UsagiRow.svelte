@@ -59,8 +59,10 @@
         else return 'hsl(112, 50%, 66%)'
       case 'FLAGGED':
         return 'hsl(54, 89%, 64%)'
-      case 'UNAPPROVED':
+      case 'SEMI-APPROVED':
         if (renderedRow['statusSetBy']) return 'hsl(84, 100%, 70%)'
+      case 'UNAPPROVED':
+        return 'hsl(8, 100%, 59%)'
     }
     return 'inherit'
   }
