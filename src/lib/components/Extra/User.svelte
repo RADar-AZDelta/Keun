@@ -1,6 +1,7 @@
 <script lang="ts">
   import SvgIcon from './SvgIcon.svelte'
   import { localStorageSetter } from '$lib/utils'
+  import { dev } from '$app/environment'
 
   export let settings: Record<string, any>
 
@@ -31,6 +32,7 @@
 
   // A method to save the author and close the dialog
   async function saveAuthorUpdate() {
+    if (dev) console.log('saveAuthorUpdate: Saving author update')
     closeDialog()
     settings = settings
     backupAuthor = settings.author
