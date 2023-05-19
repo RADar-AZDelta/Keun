@@ -20,7 +20,6 @@
 
   export let urlFilters: string[],
     equivalenceMapping: string,
-    athenaFilteredColumn: string,
     selectedRow: Record<string, any>,
     selectedRowIndex: number,
     mainTable: DataTable,
@@ -36,6 +35,11 @@
   let layoutDialog: HTMLDialogElement
   let reviewer: string = ''
   let comment: string = ''
+  let customConcept: Record<string, string> = {
+    vocabularyId: '',
+    domainId: '',
+    conceptClassId: '',
+  }
 
   let filterColors: Record<string, string> = {
     domain: '#ec3d31',
@@ -242,8 +246,17 @@
     }
 
     savedFilters = localStorageGetter('AthenaFilters')
-    if (savedFilters) activatedAthenaFilters = savedFilters
-    else activatedAthenaFilters = new Map<string, string[]>([['standardConcept', ['Standard']]])
+    if (savedFilters) {
+      activatedAthenaFilters = savedFilters
+      if (activatedAthenaFilters.get('standardConcept')) {
+        const currentValues = activatedAthenaFilters.get('standardConcept')
+        currentValues!.push('Standard')
+        activatedAthenaFilters.set('standardConcept', currentValues!)
+      } else {
+        activatedAthenaFilters.set('standardConcept', ['Standard'])
+      }
+    } else activatedAthenaFilters = new Map<string, string[]>([['standardConcept', ['Standard']]])
+    dispatch('filterOptionsChanged', { filters: activatedAthenaFilters })
     uniqueConceptIds = uniqueConceptIds
   }
 
@@ -285,6 +298,21 @@
     alreadyMapped = alreadyMapped
   }
 
+  function customMapping() {
+    dispatch('customMapping', {
+      conceptId: selectedRow.sourceCode,
+      conceptName: selectedRow.sourceName,
+      domainId: customConcept.domainId,
+      vocabularyId: customConcept.vocabularyId,
+      conceptClassId: customConcept.conceptClassId,
+      standardConcept: '',
+      conceptCode: selectedRow.sourceCode,
+      validStartDate: `${new Date().getFullYear()}-${new Date().getMonth()}-${new Date().getDate()}`,
+      validEndDate: '2099-12-31',
+      invalidReason: '',
+    })
+  }
+
   $: {
     selectedRowIndex
     if (mainTable) {
@@ -307,6 +335,13 @@
       openDialog()
     } else {
       if (layoutDialog) closeDialog()
+    }
+  }
+
+  $: {
+    if (settings) {
+      if (settings.hasOwnProperty('vocabularyIdCustomConcept'))
+        customConcept.vocabularyId = settings.vocabularyIdCustomConcept
     }
   }
 </script>
@@ -409,6 +444,23 @@
           />
         </DataTable>
       </div>
+      <table data-name="custom-concept-table">
+        <tr>
+          <th />
+          <th>domain_id</th>
+          <th>vocabulary_id</th>
+          <th>concept_class_id</th>
+        </tr>
+        <tr>
+          <td
+            ><button on:click={customMapping}><SvgIcon href="icons.svg" id="plus" width="16px" height="16px" /></button
+            ></td
+          >
+          <td><input type="text" bind:value={customConcept.domainId} /></td>
+          <td><input type="text" bind:value={customConcept.vocabularyId} /></td>
+          <td><input type="text" bind:value={customConcept.conceptClassId} /></td>
+        </tr>
+      </table>
     </section>
     <section data-name="additional-information">
       <h2>Extra</h2>

@@ -11,6 +11,7 @@ export interface CustomOptionsEvents {
   rowChange: RowChangeEventDetail
   reviewerChanged: ReviewerChangedEventDetail
   updateUniqueConceptIds: UpdateUniqueConceptIdsEventDetail
+  customMapping: CustomMappingEventDetail
 }
 
 export interface VisibilityChangedEventDetail {
@@ -65,6 +66,19 @@ export interface UpdateUniqueConceptIdsEventDetail {
   conceptId: string
   conceptName: string
   multiple: boolean
+}
+
+export interface CustomMappingEventDetail {
+  conceptId: string
+  conceptName: string
+  domainId: string
+  vocabularyId: string
+  conceptClassId: string
+  standardConcept: string
+  conceptCode: string
+  validStartDate: string
+  validEndDate: string
+  invalidReason: string
 }
 
 export interface SingleFiltering {
