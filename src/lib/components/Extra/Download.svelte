@@ -2,7 +2,7 @@
   import type DataTable from 'svelte-radar-datatable/components/DataTable.svelte'
   import SvgIcon from './SvgIcon.svelte'
 
-  export let dataTable: DataTable
+  export let dataTable: DataTable, title: string, svgId: string
 
   // A method to save the file
   async function onClick() {
@@ -11,6 +11,6 @@
   }
 </script>
 
-<button title="Download" aria-label="Download button" on:click={onClick} data-name="header-button">
-  <SvgIcon href="icons.svg" id="download" width="16px" height="16px" />
+<button {title} aria-label="Download button" on:click={onClick} data-name="header-button">
+  <SvgIcon href="icons.svg" id={svgId} width="16px" height="16px" />
 </button>

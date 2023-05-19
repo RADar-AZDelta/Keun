@@ -62,8 +62,43 @@
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
   let dataTableFile: DataTable
+  let dataTableCustomConcepts: DataTable
 
   let columns: IColumnMetaData[] | undefined = undefined // dataTableColumns
+  let customConceptsColumns: IColumnMetaData[] = [
+    {
+      id: 'concept_id',
+    },
+    {
+      id: 'concept_name',
+    },
+    {
+      id: 'domain_id',
+    },
+    {
+      id: 'vocabulary_id',
+    },
+    {
+      id: 'concept_class_id',
+    },
+    {
+      id: 'standard_concept',
+    },
+    {
+      id: 'concept_code',
+    },
+    {
+      id: 'valid_start_date',
+    },
+    {
+      id: 'valid_end_date',
+    },
+    {
+      id: 'invalid_reason',
+    },
+  ]
+
+  let customConceptsArrayOfObjects: Record<string, any>[] = [{}]
 
   let importantAthenaColumns = new Map<string, string>([
     ['id', 'conceptId'],
@@ -171,7 +206,29 @@
   }
 
   async function customMapping(event: CustomEvent<CustomMappingEventDetail>) {
-    // TODO: allow custom mapping, create the columns in the datatable? are those additional info columns?
+    // Remove the first empty object from the array (this empty object is needed to determain the datatype)
+    if (Object.keys(customConceptsArrayOfObjects[0]).length == 0) {
+      customConceptsArrayOfObjects = []
+    }
+    const customConcept = {
+      concept_id: event.detail.conceptId,
+      concept_name: event.detail.conceptName,
+      domain_id: event.detail.domainId,
+      vocabulary_id: event.detail.vocabularyId,
+      concept_class_id: event.detail.conceptClassId,
+      standard_concept: event.detail.standardConcept,
+      concept_code: event.detail.conceptCode,
+      valid_start_date: event.detail.validStartDate,
+      valid_end_date: event.detail.validEndDate,
+      invalid_reason: event.detail.invalidReason,
+    }
+    customConceptsArrayOfObjects.push(customConcept)
+
+    // Map the selected row with the custom concept
+    const { mappedIndex, mappedRow } = await customRowMapping(selectedRow, customConcept)
+
+    await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
+    calculateProgress()
   }
 
   // When the mapping button in the Athena pop-up is clicked and the settins "Map to multiple concepts" is enabled
@@ -448,8 +505,7 @@
           case 'statusSetBy':
           case 'statusSetOn':
             if (
-              (String(mappedUsagiRow.statusSetBy).replaceAll(' ', '') == '' ||
-                mappedUsagiRow.statusSetBy == undefined) &&
+              (String(usagiRow.statusSetBy).replaceAll(' ', '') == '' || usagiRow.statusSetBy == undefined) &&
               !autoMap
             ) {
               mappedUsagiRow.statusSetBy = settings!.author
@@ -459,24 +515,87 @@
 
           case 'createdBy':
           case 'createdOn':
-            if (!mappedUsagiRow.createdBy && mappedUsagiRow.createdBy != settings!.author) {
+            if (!usagiRow.createdBy && usagiRow.createdBy != settings!.author) {
               mappedUsagiRow.createdBy = settings!.author
               mappedUsagiRow.createdOn = Date.now()
             }
             break
 
           case 'mappingStatus':
-            if (mappedUsagiRow.statusSetBy == null || mappedUsagiRow.statusSetBy == undefined) {
-              mappedUsagiRow.mappingStatus == 'SEMI-APPROVED'
+            if (
+              usagiRow.statusSetBy == null ||
+              usagiRow.statusSetBy == undefined ||
+              usagiRow.statusSetBy == settings!.author
+            ) {
+              mappedUsagiRow.mappingStatus = 'SEMI-APPROVED'
               break
-            } else if (mappedUsagiRow.statusSetBy == settings!.author) {
-              mappedUsagiRow.mappingStatus == 'APPROVED'
+            } else if (usagiRow.statusSetBy != settings!.author) {
+              mappedUsagiRow.mappingStatus = 'APPROVED'
+              break
             }
         }
       }
     }
     return {
       mappedIndex: rowIndex,
+      mappedRow: mappedUsagiRow,
+    }
+  }
+
+  // A method to map a certain row to a custom concept
+  async function customRowMapping(usagiRow: Record<string, any>, customRow: Record<string, any>) {
+    const mappedUsagiRow: Record<string, any> = usagiRow
+    for (let col of Object.keys(customRow)) {
+      switch (col) {
+        case 'concept_id':
+          mappedUsagiRow.conceptId = customRow[col]
+          break
+        case 'concept_name':
+          mappedUsagiRow.conceptName = customRow[col]
+          break
+      }
+    }
+    for (let col of Object.keys(additionalFields)) {
+      switch (col) {
+        case 'equivalence':
+          mappedUsagiRow.equivalence = equivalenceMapping
+          break
+
+        case 'statusSetBy':
+        case 'statusSetOn':
+          if (String(usagiRow.statusSetBy).replaceAll(' ', '') == '' || usagiRow.statusSetBy == undefined) {
+            mappedUsagiRow.statusSetBy = settings!.author
+            mappedUsagiRow.statusSetOn = Date.now()
+          }
+          break
+
+        case 'createdBy':
+        case 'createdOn':
+          if (!usagiRow.createdBy && usagiRow.createdBy != settings!.author) {
+            mappedUsagiRow.createdBy = settings!.author
+            mappedUsagiRow.createdOn = Date.now()
+          }
+          break
+
+        case 'mappingStatus':
+          if (
+            usagiRow.statusSetBy == null ||
+            usagiRow.statusSetBy == undefined ||
+            usagiRow.statusSetBy == settings!.author
+          ) {
+            mappedUsagiRow.mappingStatus = 'SEMI-APPROVED'
+            break
+          } else if (usagiRow.statusSetBy != settings!.author) {
+            mappedUsagiRow.mappingStatus = 'APPROVED'
+            break
+          }
+      }
+    }
+
+    mappedUsagiRow['ADD_INFO:customConcept'] = true
+
+    return {
+      mappedIndex: selectedRowIndex,
       mappedRow: mappedUsagiRow,
     }
   }
@@ -676,7 +795,11 @@
         ><SvgIcon href="icons.svg" id="upload" width="16px" height="16px" /></label
       >
       <input id="file-upload" type="file" accept=".csv, .json" on:change={onFileInputChange} />
-      <Download dataTable={dataTableFile} />
+      <Download dataTable={dataTableFile} title="Download file" svgId="download" />
+
+      {#if Object.keys(customConceptsArrayOfObjects[0]).length != 0}
+        <Download dataTable={dataTableCustomConcepts} title="Download custom concepts" svgId="download" />
+      {/if}
     {/if}
   </div>
 
@@ -740,6 +863,10 @@
 {:else}
   <DragAndDrop on:fileUploaded={fileUploaded} />
 {/if}
+
+<div data-name="custom-concepts">
+  <DataTable data={customConceptsArrayOfObjects} columns={customConceptsColumns} bind:this={dataTableCustomConcepts} />
+</div>
 
 {#if tableInit == true}
   <button on:click={approvePage}>Approve page</button>
