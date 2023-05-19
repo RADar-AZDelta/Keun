@@ -595,7 +595,7 @@ dialog[data-name='athena-dialog'] {
       }
       div[data-name='table-container'] {
         padding: 0 1rem;
-        max-height: 75%;
+        max-height: 60%;
         overflow-y: auto;
 
         div[data-component='svelte-radar-datatable'] {

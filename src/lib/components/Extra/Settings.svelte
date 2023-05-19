@@ -1,6 +1,7 @@
 <script lang="ts">
   import SvgIcon from './SvgIcon.svelte'
   import { localStorageSetter } from '$lib/utils'
+  import { clickOutside } from '$lib/actions/clickOutside'
 
   export let settings: Record<string, any>
 
@@ -79,6 +80,15 @@
               <option value={lang} selected={lang == settings.language ? true : false}>{languages[lang]}</option>
             {/each}
           </select>
+        </div>
+        <div data-name="option">
+          <p>Vocabulary id custom concept</p>
+          <input
+            type="text"
+            use:clickOutside
+            bind:value={settings.vocabularyIdCustomConcept}
+            on:outClick={saveSettings}
+          />
         </div>
       </div>
     </section>

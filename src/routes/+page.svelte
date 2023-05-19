@@ -13,9 +13,10 @@
     VisibilityChangedEventDetail,
     RowChangeEventDetail,
     DeleteRowInnerMappingEventDetail,
+    CustomMappingEventDetail,
   } from '$lib/components/Types'
   import type { IColumnMetaData, IPagination, SortDirection, TFilter } from 'svelte-radar-datatable'
-  import { localStorageGetter } from '$lib/utils'
+  import { localStorageGetter, localStorageSetter } from '$lib/utils'
   import AthenaLayout from '$lib/components/Extra/AthenaLayout.svelte'
   import UsagiRow from '$lib/components/Mapping/UsagiRow.svelte'
   import { onMount, tick } from 'svelte'
@@ -25,6 +26,7 @@
   import { LatencyOptimisedTranslator } from '@browsermt/bergamot-translator/translator.js'
   import SvgIcon from '$lib/components/Extra/SvgIcon.svelte'
   import { page } from '$app/stores'
+    import { browser } from '$app/environment'
 
   let file: File | undefined
   let params = ['standardConcept', 'vocabulary', 'invalidReason', 'domain', 'conceptClass']
@@ -158,6 +160,10 @@
     calculateProgress()
   }
 
+  async function customMapping(event: CustomEvent<CustomMappingEventDetail>) {
+     // TODO: allow custom mapping, create the columns in the datatable? are those additional info columns? 
+  }
+
   // When the mapping button in the Athena pop-up is clicked and the settins "Map to multiple concepts" is enabled
   async function multipleMapping(event: CustomEvent<MultipleMappingEventDetail>) {
     // Map the selected row with the selected concept
@@ -255,7 +261,6 @@
       updatedFields.conceptId = null
       updatedFields.domainId = null
       delete updatedFields.sourceAutoAssignedConceptIds
-      console.log("HERE ", event)
       await dataTableFile.updateRows(new Map([[event.detail.indexes[0], updatedFields]]))
     }
     calculateProgress()
@@ -355,7 +360,7 @@
         if (selectedRow == undefined) {
           athenaFiltering = ''
         } else {
-          athenaFiltering = String(selectedRow[athenaFilteredColumn])
+          athenaFiltering = selectedRow.sourceName
         }
       }
     } else {
@@ -589,15 +594,24 @@
     }
 
     // Get the settings from the local storage
-    const storedSettings = localStorageGetter('settings')
-    if (storedSettings) settings = storedSettings
-    else
+    const storedSettings: Record<string, any> = localStorageGetter('settings')
+    if (storedSettings) {
+      settings = storedSettings
+      if (!settings.hasOwnProperty('mapToMultipleConcepts')) settings!.mapToMultipleConcepts = false
+      if (!settings.hasOwnProperty('autoMap')) settings!.autoMap = false
+      if (!settings.hasOwnProperty('language')) settings!.language = 'nl'
+      if (!settings.hasOwnProperty('author')) settings!.author = undefined
+      if (!settings.hasOwnProperty('savedAuthors')) settings!.savedAuthors = []
+      if (!settings.hasOwnProperty('vocabularyIdCustomConcept')) settings!.vocabularyIdCustomConcept = undefined
+      localStorageSetter('settings', settings)
+    } else
       settings = {
         mapToMultipleConcepts: false,
         autoMap: false,
         language: 'nl',
         author: undefined,
         savedAuthors: [],
+        vocabularyIdCustomConcept: undefined,
       }
     // Create a translator object to translate the concepts in the future
     translator = new LatencyOptimisedTranslator(
@@ -610,8 +624,11 @@
     )
   })
 
-  function testing () {
-    console.log("TESTING THIS ON CLICK")
+  if(browser) {
+    window.onbeforeunload = function() {
+      dataTableFile.saveToFile()
+      return "Are you sure you want to leave?"
+    }
   }
 </script>
 
@@ -662,6 +679,7 @@
   on:deleteRowInnerMapping={deleteRowInnerMapping}
   on:filterOptionsChanged={filterOptionsChanged}
   on:generalVisibilityChanged={mappingVisibilityChanged}
+  on:customMapping={customMapping}
 />
 
 <DataTable

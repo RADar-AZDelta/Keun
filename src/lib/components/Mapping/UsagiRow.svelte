@@ -14,8 +14,6 @@
   currentRows.set(index, renderedRow)
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
-  let clickedRowIndex: number
-
   // A method to open the Athena pop-up to map a row
   function onClickMapping() {
     const object = {
@@ -68,13 +66,8 @@
   onMount(() => {
     for (let col of columns!) {
       document.getElementById(`${col.id}-${index}`)!.addEventListener('click', function () {
-        if (selectedRowIndex == index) {
-          console.log('OPENING ', index)
-          onClickMapping()
-        } else {
-          selectedRowIndex = index
-          console.log('SETTING ', index)
-        }
+        if (selectedRowIndex == index) onClickMapping()
+        else selectedRowIndex = index
       })
     }
   })
