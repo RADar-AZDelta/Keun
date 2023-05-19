@@ -1,20 +1,18 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount } from 'svelte'
+  import { createEventDispatcher } from 'svelte'
   import type { CustomOptionsEvents } from '../Types'
   import type { IColumnMetaData } from 'svelte-radar-datatable'
   import SvgIcon from '../Extra/SvgIcon.svelte'
+  import { dev } from '$app/environment'
 
   export let renderedRow: Record<string, any>,
     columns: IColumnMetaData[] | undefined,
     index: number,
-    selectedRowIndex: number,
     currentRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>([])
 
   let color: string = 'inherit'
   currentRows.set(index, renderedRow)
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
-
-  let clickedRowIndex: number
 
   // A method to open the Athena pop-up to map a row
   function onClickMapping() {
@@ -22,9 +20,10 @@
       visibility: true,
       data: {
         row: renderedRow,
-        index: index,
+        index,
       },
     }
+    if (dev) console.log(`onClickMapping: ${index}`)
     dispatch('generalVisibilityChanged', object)
   }
 
@@ -65,20 +64,6 @@
     return 'inherit'
   }
 
-  onMount(() => {
-    for (let col of columns!) {
-      document.getElementById(`${col.id}-${index}`)!.addEventListener('click', function () {
-        if (selectedRowIndex == index) {
-          console.log('OPENING ', index)
-          onClickMapping()
-        } else {
-          selectedRowIndex = index
-          console.log('SETTING ', index)
-        }
-      })
-    }
-  })
-
   $: {
     renderedRow, index
     color = getColors()
@@ -109,7 +94,7 @@
   >
 </td>
 {#each columns || [] as column, i}
-  <td id={`${column.id}-${index}`} style={`background-color: ${color}`}>
+  <td on:dblclick={onClickMapping} style={`background-color: ${color}`}>
     {#if ['statusSetOn', 'createdOn', 'ADD_INFO:approvedOn'].includes(column.id)}
       <p>{new Date(parseInt(renderedRow[column.id])).toLocaleString()}</p>
     {:else}
