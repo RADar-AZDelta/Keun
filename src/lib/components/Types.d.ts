@@ -13,6 +13,7 @@ export interface CustomOptionsEvents {
   updateUniqueConceptIds: UpdateUniqueConceptIdsEventDetail
   customMapping: CustomMappingEventDetail
   fileUploaded: FileUploadedEventDetail
+  settingsChanged: SettingsChangedEventDetail
 }
 
 export interface VisibilityChangedEventDetail {
@@ -84,6 +85,10 @@ export interface CustomMappingEventDetail {
 
 export interface FileUploadedEventDetail {
   file: File
+}
+
+export interface SettingsChangedEventDetail {
+  settings: Record<string, any>
 }
 
 export interface SingleFiltering {

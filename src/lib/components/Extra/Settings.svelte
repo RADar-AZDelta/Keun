@@ -2,10 +2,13 @@
   import SvgIcon from './SvgIcon.svelte'
   import { localStorageSetter } from '$lib/utils'
   import { clickOutside } from '$lib/actions/clickOutside'
+  import { createEventDispatcher } from 'svelte'
+  import type { CustomOptionsEvents } from '../Types'
 
   export let settings: Record<string, any>
 
   let settingsDialog: HTMLDialogElement
+  let dispatch = createEventDispatcher<CustomOptionsEvents>()
 
   let languages: Record<string, string> = {
     // bg: 'Bulgarian',
@@ -39,6 +42,7 @@
   // A method to set the settings in the localstorage
   async function saveSettings(e: Event) {
     localStorageSetter('settings', settings)
+    dispatch('settingsChanged', { settings })
   }
 </script>
 
