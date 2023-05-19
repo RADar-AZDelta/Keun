@@ -750,3 +750,15 @@ td[data-name='actions-grid'] {
     justify-content: center;
   }
 }
+
+div[data-name="drag-drop"] {
+  width: 100%;
+  height: auto;
+
+  div[data-name='drag-drop-container'] {
+    width: min-content;
+    margin: auto;
+    padding: 10rem 0;
+    z-index: 10;
+  }
+}
