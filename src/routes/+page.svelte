@@ -732,7 +732,7 @@
           if (signal.aborted) return Promise.resolve()
           const row = res.queriedData[i]
           const index = res.indices[i]
-          if (row.conceptId == undefined) await autoMapRow(signal, row, index)
+          if (!row.conceptId && !row.sourceAutoAssignedConceptIds) await autoMapRow(signal, row, index)
         }
         if (dev) {
           end = performance.now()
@@ -801,7 +801,7 @@
     mappedRows = expressionResults.expressionData[1].valid
   }
 
-  function settingsChanged (e: CustomEvent<SettingsChangedEventDetail>) {
+  function settingsChanged(e: CustomEvent<SettingsChangedEventDetail>) {
     settings = e.detail.settings
   }
 

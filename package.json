@@ -40,6 +40,6 @@
   "type": "module",
   "dependencies": {
     "arquero": "^5.2.0",
-    "svelte-radar-datatable": "^0.0.25"
+    "svelte-radar-datatable": "^0.0.26"
   }
 }

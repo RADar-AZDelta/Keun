@@ -8,8 +8,8 @@ importers:
         specifier: ^5.2.0
         version: 5.2.0
       svelte-radar-datatable:
-        specifier: ^0.0.25
-        version: 0.0.25
+        specifier: ^0.0.26
+        version: 0.0.26
     devDependencies:
       '@browsermt/bergamot-translator':
         specifier: ^0.4.9
@@ -2680,8 +2680,8 @@ packages:
       typescript: 5.0.4
     dev: true
 
-  /svelte-radar-datatable@0.0.25:
-    resolution: {integrity: sha512-GCB3KYacNuVS65qtqIdQcvUQI86aV1Sgd/EVpyx+8nHUHg9iFjuP4a4C+27GKLuyFoNYWEC7oAhU7MEAQIDsaw==}
+  /svelte-radar-datatable@0.0.26:
+    resolution: {integrity: sha512-KfozeEJCf0tAt1ASAR1gGFFbipTp5kg0M7OcROMZBFMvr5sxSibMpuyMIsmeZf+kBXhZYwPfkIECuqvPcP6U5Q==}
     dependencies:
       '@types/lodash': 4.14.194
       arquero: 5.2.0
