@@ -813,6 +813,7 @@
     }
     console.log('APPROVED ROWS ', approveRows)
     await dataTableFile.updateRows(approveRows)
+    calculateProgress()
   }
 
   async function calculateProgress() {
