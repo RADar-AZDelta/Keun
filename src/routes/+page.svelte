@@ -456,12 +456,10 @@
   const assembleAthenaURL = async (filter?: string, sorting?: string[], pagination?: IPagination) => {
     if (dev) console.log('assembleAthenaURL: Assemble Athena URL')
     if (filter == undefined) {
-      if (athenaFiltering == undefined || athenaFiltering == '') {
-        if (selectedRow == undefined) {
-          athenaFiltering = ''
-        } else {
-          athenaFiltering = selectedRow.sourceName
-        }
+      if (selectedRow == undefined) {
+        athenaFiltering = ''
+      } else {
+        athenaFiltering = selectedRow.sourceName
       }
     } else {
       athenaFiltering = filter
@@ -501,7 +499,7 @@
     pagination: IPagination
   ) {
     const url = await assembleAthenaURL(
-      filteredColumns.entries().next().value,
+      filteredColumns.values().next().value,
       sortedColumns.entries().next().value,
       pagination
     )
@@ -844,10 +842,12 @@
     )
   })
 
-  if (browser) {
-    window.onbeforeunload = function () {
-      dataTableFile.saveToFile()
-      return 'Are you sure you want to leave?'
+  if (!dev) {
+    if (browser) {
+      window.onbeforeunload = function () {
+        dataTableFile.saveToFile()
+        return 'Are you sure you want to leave?'
+      }
     }
   }
 
