@@ -92,21 +92,37 @@ section[data-name='header'] {
     }
   }
 
-  div[data-name='progress-bar'] {
-    height: 1rem;
+  div[data-name='progress'] {
     width: 40%;
-    background-color: $neutral;
-    border-radius: 5px;
 
-    div[data-name='progress-bar-inner'] {
-      height: 100%;
-      background-color: $blue;
+    div[data-name='progress-bar'] {
+      height: 1rem;
+      width: 100%;
+      background-color: $neutral;
       border-radius: 5px;
 
-      div[data-name='progress-bar-inner-inner'] {
-        background-color: green;
+      div[data-name='progress-bar-inner'] {
         height: 100%;
+        background-color: $blue;
         border-radius: 5px;
+
+        div[data-name='progress-bar-inner-inner'] {
+          background-color: green;
+          height: 100%;
+          border-radius: 5px;
+        }
+      }
+    }
+    div[data-name='progress-text'] {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      justify-content: space-between;
+
+      div {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
       }
     }
   }
