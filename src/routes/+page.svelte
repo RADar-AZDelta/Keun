@@ -531,11 +531,25 @@
     sortedColumns: Map<string, SortDirection>,
     pagination: IPagination
   ) {
-    const url = await assembleAthenaURL(
-      filteredColumns.values().next().value,
-      sortedColumns.entries().next().value,
-      pagination
-    )
+    let filter = undefined
+    if (filteredColumns.values().next().value) {
+      filter = filteredColumns.values().next().value
+      if (settings) {
+        if (!settings.language) settings.language = 'en'
+        if (settings.language) {
+          if (settings.language != 'en') {
+            let translation = await translator.translate({
+              from: settings.language,
+              to: 'en',
+              text: filter,
+              html: true,
+            })
+            filter = translation.target.text
+          }
+        }
+      }
+    }
+    const url = await assembleAthenaURL(filter, sortedColumns.entries().next().value, pagination)
     const response = await fetch(url)
     const apiData = await response.json()
     return {
@@ -742,13 +756,7 @@
 
       autoMappingPromise = new Promise(async (resolve, reject): Promise<void> => {
         const pag = dataTableFile.getTablePagination()
-        const columns = dataTableFile.getColumns()
-        let sorting: Record<string, any> = {}
-        for (let sortedCol of columns!) {
-          sorting[sortedCol.id] = sortedCol.sortDirection == 'desc' ? desc(sortedCol.id) : sortedCol.id
-        }
         const q = query()
-          .orderby(sorting)
           .slice(pag.rowsPerPage! * (pag.currentPage! - 1), pag.rowsPerPage! * pag.currentPage!)
           .toObject()
         const res = await dataTableFile.executeQueryAndReturnResults(q)
@@ -910,7 +918,7 @@
       <Download dataTable={dataTableFile} title="Download file" svgId="download" />
 
       {#if Object.keys(customConceptsArrayOfObjects[0]).length != 0}
-      <p>Custom concepts download:</p>
+        <p>Custom concepts download:</p>
         <Download dataTable={dataTableCustomConcepts} title="Download custom concepts" svgId="download" />
       {/if}
     {/if}
