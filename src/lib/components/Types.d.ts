@@ -14,6 +14,7 @@ export interface CustomOptionsEvents {
   customMapping: CustomMappingEventDetail
   fileUploaded: FileUploadedEventDetail
   settingsChanged: SettingsChangedEventDetail
+  autoMapRow: AutoMapRowEventDetail
 }
 
 export interface VisibilityChangedEventDetail {
@@ -81,6 +82,11 @@ export interface CustomMappingEventDetail {
   validStartDate: string
   validEndDate: string
   invalidReason: string
+}
+
+export interface AutoMapRowEventDetail {
+  index: number
+  sourceName: string
 }
 
 export interface FileUploadedEventDetail {

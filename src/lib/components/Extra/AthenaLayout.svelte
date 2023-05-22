@@ -409,15 +409,15 @@
           </button>
           <table>
             <tr>
-              <th>sourceCode</th>
-              <th>sourceName</th>
-              <th>sourceFrequency</th>
+              <th data-name="normal-cell">sourceCode</th>
+              <th data-name="sourceName">sourceName</th>
+              <th data-name="normal-cell">sourceFrequency</th>
             </tr>
             <tr>
               {#if selectedRow != undefined}
-                <td>{selectedRow.sourceCode}</td>
-                <td>{selectedRow.sourceName}</td>
-                <td>{selectedRow.sourceFrequency}</td>
+                <td data-name="normal-cell">{selectedRow.sourceCode}</td>
+                <td data-name="sourceName">{selectedRow.sourceName}</td>
+                <td data-name="normal-cell">{selectedRow.sourceFrequency}</td>
               {/if}
             </tr>
           </table>
