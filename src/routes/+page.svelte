@@ -910,6 +910,7 @@
       <Download dataTable={dataTableFile} title="Download file" svgId="download" />
 
       {#if Object.keys(customConceptsArrayOfObjects[0]).length != 0}
+      <p>Custom concepts download:</p>
         <Download dataTable={dataTableCustomConcepts} title="Download custom concepts" svgId="download" />
       {/if}
     {/if}

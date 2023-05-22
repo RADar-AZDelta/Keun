@@ -277,6 +277,7 @@
   function openDialog() {
     if (layoutDialog) if (layoutDialog.attributes.getNamedItem('open') == null) layoutDialog.showModal()
     fetchData = fetchData
+    setVocabularyId()
   }
 
   function removeMapping(conceptId: string, conceptName: string) {
@@ -316,6 +317,12 @@
     })
   }
 
+  function setVocabularyId () {
+    if(settings) {
+        if(settings.hasOwnProperty('vocabularyIdCustomConcept')) customConcept.vocabularyId = settings.vocabularyIdCustomConcept
+      }
+  }
+
   $: {
     selectedRowIndex
     if (mainTable) {
@@ -338,13 +345,6 @@
       openDialog()
     } else {
       if (layoutDialog) closeDialog()
-    }
-  }
-
-  $: {
-    if (settings) {
-      if (settings.hasOwnProperty('vocabularyIdCustomConcept'))
-        customConcept.vocabularyId = settings.vocabularyIdCustomConcept
     }
   }
 </script>
