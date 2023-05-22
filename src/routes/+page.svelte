@@ -404,18 +404,22 @@
     if (event.detail.up && selectedRowIndex + 1 < tablePagination.totalRows!) selectedRowIndex += 1
     if (!event.detail.up && selectedRowIndex - 1 >= 0) selectedRowIndex -= 1
 
-    // When the index exceeds the number of rows per page, go to the next page
-    if (event.detail.up && selectedRowIndex !== 0) {
-      if (selectedRowIndex % tablePagination.rowsPerPage! === 0) {
-        await changePagination({ currentPage: tablePagination.currentPage! + 1 })
-      }
-    }
-
     if (dev) console.log('selectRow: Select row with index ', selectedRowIndex)
 
     selectedRow = await dataTableFile.getFullRow(selectedRowIndex)
     athenaFiltering = selectedRow.sourceName
     fetchDataFunc = fetchData
+
+    // When the index exceeds the number of rows per page, go to the next page
+    if (event.detail.up && selectedRowIndex !== 0) {
+      if (selectedRowIndex % tablePagination.rowsPerPage! === 0) {
+        dataTableFile.changePagination({ currentPage: tablePagination.currentPage! + 1 })
+      }
+    } else if (!event.detail.up && selectedRowIndex !== 0) {
+      if ((selectedRowIndex + 1) % tablePagination.rowsPerPage! === 0) {
+        dataTableFile.changePagination({ currentPage: tablePagination.currentPage! - 1 })
+      }
+    }
   }
 
   async function autoMapSingleRow(event: CustomEvent<AutoMapRowEventDetail>) {
@@ -591,8 +595,9 @@
           case 'mappingStatus':
             if (
               (usagiRow.statusSetBy == null ||
-              usagiRow.statusSetBy == undefined ||
-              usagiRow.statusSetBy == settings!.author) && !autoMap
+                usagiRow.statusSetBy == undefined ||
+                usagiRow.statusSetBy == settings!.author) &&
+              !autoMap
             ) {
               mappedUsagiRow.mappingStatus = 'SEMI-APPROVED'
               break
@@ -687,15 +692,6 @@
       mappedIndex: selectedRowIndex,
       mappedRow: mappedUsagiRow,
     }
-  }
-
-  // A method to change the pagination
-  async function changePagination(pagination: { currentPage?: number; rowsPerPage?: number }) {
-    if (dev) console.log('changePagination: Changing pagination to ', pagination)
-    const pag: Record<string, any> = {}
-    if (pagination.currentPage) pag['currentPage'] = pagination.currentPage
-    if (pagination.rowsPerPage) pag['rowsPerPage'] = pagination.rowsPerPage
-    await dataTableFile.changePagination(pag)
   }
 
   function dataTableInitialized() {
@@ -823,7 +819,7 @@
     if (dev) console.log('calculateProgress: Calculating progress')
     const expressions = {
       total: 'd => op.count()',
-      valid: 'd => op.valid(d.conceptId)'
+      valid: 'd => op.valid(d.conceptId)',
     }
     const expressionResults = await dataTableFile.executeExpressionsAndReturnResults(expressions)
     const qAppr = query()
