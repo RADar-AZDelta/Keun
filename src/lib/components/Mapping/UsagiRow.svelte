@@ -74,7 +74,7 @@
 </script>
 
 <td data-name="actions-grid" style={`background-color: ${color}`}>
-  <button on:click={onClickMapping} title="Map"><SvgIcon href="icons.svg" id="map" width="16px" height="16px" /></button
+  <button on:click={onClickMapping} title="Map">MAP</button
   >
   <button on:click={onClickDeletion} title="Delete"
     ><SvgIcon href="icons.svg" id="eraser" width="16px" height="16px" /></button

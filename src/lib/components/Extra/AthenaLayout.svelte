@@ -165,8 +165,11 @@
     if (chosenFilter != undefined && inputValue == true) chosenFilter.push(option)
     // If the filter is unchecked and was already in the list, remove it
     else if (chosenFilter != undefined && inputValue == false) {
-      if (chosenFilter.includes(option) == true) activatedAthenaFilters.delete(filter)
-      else chosenFilter.splice(chosenFilter.indexOf(option), 1)
+      if (chosenFilter.includes(option) == true) {
+        chosenFilter.splice(chosenFilter.indexOf(option), 1)
+        if(chosenFilter.length == 0) activatedAthenaFilters.delete(filter)
+        else activatedAthenaFilters.set(filter, chosenFilter)
+      }
     } else {
       activatedAthenaFilters.set(filter, [option])
     }
@@ -444,23 +447,26 @@
           />
         </DataTable>
       </div>
-      <table data-name="custom-concept-table">
-        <tr>
-          <th />
-          <th>domain_id</th>
-          <th>vocabulary_id</th>
-          <th>concept_class_id</th>
-        </tr>
-        <tr>
-          <td
-            ><button on:click={customMapping}><SvgIcon href="icons.svg" id="plus" width="16px" height="16px" /></button
-            ></td
-          >
-          <td><input type="text" bind:value={customConcept.domainId} /></td>
-          <td><input type="text" bind:value={customConcept.vocabularyId} /></td>
-          <td><input type="text" bind:value={customConcept.conceptClassId} /></td>
-        </tr>
-      </table>
+      <div data-name="custom-concept-container">
+        <h2>Custom concept</h2>
+        <table data-name="custom-concept-table">
+          <tr>
+            <th />
+            <th>domain_id</th>
+            <th>vocabulary_id</th>
+            <th>concept_class_id</th>
+          </tr>
+          <tr>
+            <td data-name='custom-concept-actions'
+              ><button on:click={customMapping}><SvgIcon href="icons.svg" id="plus" width="16px" height="16px" /></button
+              ></td
+            >
+            <td><input type="text" bind:value={customConcept.domainId} /></td>
+            <td><input type="text" bind:value={customConcept.vocabularyId} /></td>
+            <td><input type="text" bind:value={customConcept.conceptClassId} /></td>
+          </tr>
+        </table>
+      </div>
     </section>
     <section data-name="additional-information">
       <h2>Extra</h2>
