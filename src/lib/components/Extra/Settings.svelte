@@ -86,7 +86,7 @@
           </select>
         </div>
         <div data-name="option">
-          <p>Vocabulary id custom concept</p>
+          <p>Vocabulary id of custom concepts</p>
           <input
             type="text"
             use:clickOutside

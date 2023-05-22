@@ -262,6 +262,23 @@ section[data-name='header'] {
             outline: none;
             box-shadow: 0 0 0 2px $neutral-x-dark;
           }
+
+          input {
+            padding: 0 0.5rem;
+            font-size: 1rem;
+            border: 1px solid $neutral;
+            border-radius: 10px;
+            height: 40px;
+          }
+
+          input:hover {
+            border: 1px solid $neutral-xx-dark;
+          }
+
+          input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px $neutral-x-dark;
+          }
         }
       }
     }
