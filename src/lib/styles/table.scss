@@ -102,6 +102,12 @@ section[data-name='header'] {
       height: 100%;
       background-color: $blue;
       border-radius: 5px;
+
+      div[data-name='progress-bar-inner-inner'] {
+        background-color: green;
+        height: 100%;
+        border-radius: 5px;
+      }
     }
   }
 
@@ -555,7 +561,8 @@ dialog[data-name='athena-dialog'] {
     }
 
     section[data-name='table-pop-up'] {
-      width: 100%;
+      min-width: 63%;
+      max-width: 63%;
       height: 100%;
 
       div[data-name='table-head'] {
@@ -596,6 +603,11 @@ dialog[data-name='athena-dialog'] {
           }
 
           table {
+            table-layout: fixed;
+            width: 400px;
+            max-width: 400px;
+            min-width: 400px;
+
             td {
               border-top: 1px solid lightgray;
               border-bottom: 1px solid lightgray;
@@ -605,13 +617,27 @@ dialog[data-name='athena-dialog'] {
             th {
               padding: 0.5rem 0.75rem;
             }
+
+            th[data-name='normal-cell'],
+            td[data-name='normal-cell'] {
+              width: 100px;
+            }
+
+            th[data-name='sourceName'],
+            td[data-name='sourceName'] {
+              width: 200px;
+              padding: 0;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+            }
           }
         }
       }
       div[data-name='table-container'] {
         padding: 0 1rem;
         max-height: 60%;
-        overflow-y: auto;
+        overflow: auto;
 
         div[data-component='svelte-radar-datatable'] {
           max-height: 50%;
@@ -680,6 +706,8 @@ dialog[data-name='athena-dialog'] {
 
     section[data-name='additional-information'] {
       border-left: 1px solid lightgray;
+      min-width: 15%;
+      max-width: 15%;
       height: 100%;
       padding-left: 1rem;
 
@@ -1040,7 +1068,7 @@ div[data-component='full-datatable'] {
         tr {
           td[data-name='actions-grid'] {
             display: grid;
-            grid-template-columns: repeat(3, min-content);
+            grid-template-columns: repeat(4, min-content);
             grid-template-rows: repeat(2, min-content);
             width: max-content;
             padding-right: 1.5rem;
@@ -1110,6 +1138,11 @@ div[data-component='full-datatable'] {
               overflow: hidden;
               text-overflow: ellipsis;
               margin: 0;
+              -webkit-line-clamp: 2;
+              white-space: initial;
+              display: -webkit-box;
+              -webkit-line-clamp: 2;
+              -webkit-box-orient: vertical;
             }
           }
         }

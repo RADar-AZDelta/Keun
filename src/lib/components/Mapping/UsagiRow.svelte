@@ -50,6 +50,11 @@
     dispatch('deleteRow', { indexes: [index], sourceCode: sourceCode, conceptId: conceptId, erase: multiple })
   }
 
+  function onClickAutoMap() {
+    const sourceName = renderedRow['sourceName']
+    dispatch('autoMapRow', { index, sourceName })
+  }
+
   // A method to get the color for the cell depending on the status of the row
   function getColors() {
     switch (renderedRow['mappingStatus']) {
@@ -79,6 +84,7 @@
   <button on:click={onClickDeletion} title="Delete"
     ><SvgIcon href="icons.svg" id="eraser" width="16px" height="16px" /></button
   >
+  <button on:click={onClickAutoMap} title="Automap">AUTO</button>
   {#if renderedRow['ADD_INFO:numberOfConcepts'] && renderedRow['ADD_INFO:numberOfConcepts'] > 1}
     <div data-name="numberOfConceptIds">
       <p>{renderedRow['ADD_INFO:numberOfConcepts']}</p>
@@ -97,7 +103,7 @@
   >
 </td>
 {#each columns || [] as column, i}
-  <td on:dblclick={onClickMapping} on:dblclick={onClickMapping} style={`background-color: ${color}`}>
+  <td on:dblclick={onClickMapping} on:dblclick={onClickMapping} style={`background-color: ${color}`} title={renderedRow[column.id]}>
     {#if ['statusSetOn', 'createdOn', 'ADD_INFO:approvedOn'].includes(column.id)}
       <p>{new Date(parseInt(renderedRow[column.id])).toLocaleString()}</p>
     {:else}

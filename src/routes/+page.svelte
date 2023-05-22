@@ -16,6 +16,7 @@
     CustomMappingEventDetail,
     FileUploadedEventDetail,
     SettingsChangedEventDetail,
+    AutoMapRowEventDetail,
   } from '$lib/components/Types'
   import type { IColumnMetaData, IPagination, SortDirection, TFilter } from 'svelte-radar-datatable'
   import { localStorageGetter, localStorageSetter } from '$lib/utils'
@@ -56,6 +57,7 @@
   let currentRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>()
   let totalRows = 10
   let mappedRows = 0
+  let approvedRows = 0
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // DATA
@@ -287,26 +289,39 @@
     if (autoMappingPromise) autoMappingAbortController.abort()
     const updatingObj: { [key: string]: any } = {}
 
-    // Check if there is a conceptId or a sourceAutoAssignedConceptIds (this is the conceptId that is assigned by the automapping proces)
-    if (event.detail.row.conceptId || event.detail.row.sourceAutoAssignedConceptIds) {
-      if (event.detail.action == 'APPROVED') {
-        if (event.detail.row.statusSetBy == undefined || event.detail.row.statusSetBy == settings!.author) {
-          // If statusSetBy is empty, it means the author is the first reviewer of this row
+    // Check if the action is already set for the row and if so, remove it
+    if (event.detail.action === event.detail.row.mappingStatus && event.detail.action !== 'APPROVED') {
+      updatingObj.mappingStatus = null
+      if (event.detail.row['ADD_INFO:approvedBy']) {
+        updatingObj['ADD_INFO:approvedBy'] = null
+        updatingObj['ADD_INFO:approvedOn'] = null
+      }
+      if (event.detail.row.statusSetBy) {
+        updatingObj.statusSetBy = null
+        updatingObj.statusSetOn = null
+      }
+    } else {
+      // Check if there is a conceptId or a sourceAutoAssignedConceptIds (this is the conceptId that is assigned by the automapping proces)
+      if (event.detail.row.conceptId || event.detail.row.sourceAutoAssignedConceptIds) {
+        if (event.detail.action == 'APPROVED') {
+          if (event.detail.row.statusSetBy == undefined || event.detail.row.statusSetBy == settings!.author) {
+            // If statusSetBy is empty, it means the author is the first reviewer of this row
+            updatingObj.statusSetBy = settings!.author
+            updatingObj.statusSetOn = Date.now()
+            updatingObj.mappingStatus = 'SEMI-APPROVED'
+            if (!event.detail.row.conceptId) updatingObj.conceptId = event.detail.row.sourceAutoAssignedConceptIds
+            else updatingObj.conceptId = event.detail.row.conceptId
+          } else if (event.detail.row.statusSetBy != settings!.author) {
+            // StatusSetBy is not empty and it's not the current author so it means it's the second reviewer
+            updatingObj['ADD_INFO:approvedBy'] = settings!.author
+            updatingObj['ADD_INFO:approvedOn'] = Date.now()
+            updatingObj.mappingStatus = 'APPROVED'
+          }
+        } else {
           updatingObj.statusSetBy = settings!.author
           updatingObj.statusSetOn = Date.now()
-          updatingObj.mappingStatus = 'SEMI-APPROVED'
-          if (!event.detail.row.conceptId) updatingObj.conceptId = event.detail.row.sourceAutoAssignedConceptIds
-          else updatingObj.conceptId = event.detail.row.conceptId
-        } else if (event.detail.row.statusSetBy != settings!.author) {
-          // StatusSetBy is not empty and it's not the current author so it means it's the second reviewer
-          updatingObj['ADD_INFO:approvedBy'] = settings!.author
-          updatingObj['ADD_INFO:approvedOn'] = Date.now()
-          updatingObj.mappingStatus = 'APPROVED'
+          updatingObj.mappingStatus = event.detail.action
         }
-      } else {
-        updatingObj.statusSetBy = settings!.author
-        updatingObj.statusSetOn = Date.now()
-        updatingObj.mappingStatus = event.detail.action
       }
     }
     await dataTableFile.updateRows(new Map([[event.detail.index, updatingObj]]))
@@ -347,6 +362,7 @@
       const updatedFields = additionalFields
       updatedFields.conceptId = null
       updatedFields.domainId = null
+      updatedFields.conceptName = null
       delete updatedFields.sourceAutoAssignedConceptIds
       await dataTableFile.updateRows(new Map([[event.detail.indexes[0], updatedFields]]))
     }
@@ -402,6 +418,19 @@
     fetchDataFunc = fetchData
   }
 
+  async function autoMapSingleRow(event: CustomEvent<AutoMapRowEventDetail>) {
+    if (dev) console.log('autoMapSingleRow: automap the row with index ', event.detail.index)
+    // Automap a row manually
+    if (autoMappingPromise) autoMappingAbortController.abort()
+    // Create a abortcontroller to abort the auto mapping in the future if needed
+    autoMappingAbortController = new AbortController()
+    const signal = autoMappingAbortController.signal
+    autoMappingPromise = new Promise(async (resolve, reject): Promise<void> => {
+      const row = await dataTableFile.getFullRow(event.detail.index)
+      await autoMapRow(signal, row, event.detail.index)
+    })
+  }
+
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // METHODS
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -433,7 +462,7 @@
     }
     if (signal.aborted) return
     // Assembe the Athena URL
-    const url = await assembleAthenaURL(row.sourceName)
+    const url = await assembleAthenaURL(filter)
     if (signal.aborted) return
     // Get the first result of the Athena API call
     const res = await fetch(url)
@@ -529,8 +558,9 @@
     if (mappedUsagiRow != undefined) {
       // Map the import columns that are given from Athena
       for (let [name, alt] of importantAthenaColumns) {
-        if (name === 'id' && autoMap) mappedUsagiRow['sourceAutoAssignedConceptIds'] = athenaRow[name]
-        else mappedUsagiRow[alt] = athenaRow[name]
+        if (name === 'id' && autoMap) {
+          mappedUsagiRow['sourceAutoAssignedConceptIds'] = athenaRow[name]
+        } else mappedUsagiRow[alt] = athenaRow[name]
       }
       // Map the extra columns that are not from Athena
       for (let col of Object.keys(additionalFields)) {
@@ -552,7 +582,7 @@
 
           case 'createdBy':
           case 'createdOn':
-            if (!usagiRow.createdBy && usagiRow.createdBy != settings!.author) {
+            if (!usagiRow.createdBy && usagiRow.createdBy != settings!.author && !autoMap) {
               mappedUsagiRow.createdBy = settings!.author
               mappedUsagiRow.createdOn = Date.now()
             }
@@ -560,13 +590,13 @@
 
           case 'mappingStatus':
             if (
-              usagiRow.statusSetBy == null ||
+              (usagiRow.statusSetBy == null ||
               usagiRow.statusSetBy == undefined ||
-              usagiRow.statusSetBy == settings!.author
+              usagiRow.statusSetBy == settings!.author) && !autoMap
             ) {
               mappedUsagiRow.mappingStatus = 'SEMI-APPROVED'
               break
-            } else if (usagiRow.statusSetBy != settings!.author) {
+            } else if (usagiRow.statusSetBy != settings!.author && !autoMap) {
               mappedUsagiRow.mappingStatus = 'APPROVED'
               break
             }
@@ -736,7 +766,7 @@
           end = performance.now()
           console.log('autoMapPage: Finished auto mapping in ', Math.round(end - start!), ' ms')
         }
-        Promise.resolve()
+        resolve(null)
       }).then(() => {
         if (progressInit == false) {
           calculateProgress()
@@ -769,7 +799,7 @@
 
   async function approvePage() {
     if (dev) console.log('approvePage: Approving page')
-    let approvedRows = new Map<number, Record<string, any>>()
+    let approveRows = new Map<number, Record<string, any>>()
     for (let [index, row] of currentRows) {
       if (row.conceptId || row.sourceAutoAssignedConceptIds) {
         if (!row.conceptId) row.conceptId = row.sourceAutoAssignedConceptIds
@@ -783,20 +813,26 @@
           row.mappingStatus = 'SEMI-APPROVED'
         }
       }
-      approvedRows.set(index, row)
+      approveRows.set(index, row)
     }
-    await dataTableFile.updateRows(approvedRows)
+    console.log('APPROVED ROWS ', approveRows)
+    await dataTableFile.updateRows(approveRows)
   }
 
   async function calculateProgress() {
     if (dev) console.log('calculateProgress: Calculating progress')
     const expressions = {
       total: 'd => op.count()',
-      valid: 'd => op.valid(d.conceptId)',
+      valid: 'd => op.valid(d.conceptId)'
     }
     const expressionResults = await dataTableFile.executeExpressionsAndReturnResults(expressions)
+    const qAppr = query()
+      .filter((r: any) => r.mappingStatus == 'APPROVED')
+      .toObject()
+    const resAppr = await dataTableFile.executeQueryAndReturnResults(qAppr)
     totalRows = expressionResults.expressionData[0].total
     mappedRows = expressionResults.expressionData[1].valid
+    approvedRows = resAppr.queriedData.length
   }
 
   function settingsChanged(e: CustomEvent<SettingsChangedEventDetail>) {
@@ -884,7 +920,9 @@
 
   {#if tableInit == true}
     <div data-name="progress-bar">
-      <div data-name="progress-bar-inner" style={`width: ${(mappedRows / totalRows) * 100}%`} />
+      <div data-name="progress-bar-inner" style={`width: ${(mappedRows / totalRows) * 100}%`}>
+        <div data-name="progress-bar-inner-inner" style={`width: ${(approvedRows / mappedRows) * 100}%`} />
+      </div>
     </div>
   {/if}
 
@@ -931,6 +969,7 @@
       on:generalVisibilityChanged={mappingVisibilityChanged}
       on:actionPerformed={actionPerformed}
       on:deleteRow={deleteRow}
+      on:autoMapRow={autoMapSingleRow}
       {renderedRow}
       {columns}
       index={originalIndex}
