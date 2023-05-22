@@ -925,9 +925,25 @@
   </div>
 
   {#if tableInit == true}
-    <div data-name="progress-bar">
-      <div data-name="progress-bar-inner" style={`width: ${(mappedRows / totalRows) * 100}%`}>
-        <div data-name="progress-bar-inner-inner" style={`width: ${(approvedRows / mappedRows) * 100}%`} />
+    <div data-name="progress">
+      <div data-name="progress-bar">
+        <div data-name="progress-bar-inner" style={`width: ${(mappedRows / totalRows) * 100}%`}>
+          <div data-name="progress-bar-inner-inner" style={`width: ${(approvedRows / mappedRows) * 100}%`} />
+        </div>
+      </div>
+      <div data-name="progress-text">
+        <div>
+          <p>Total rows:</p>
+          <p>{totalRows}</p>
+        </div>
+        <div>
+          <p>Semi approved rows:</p>
+          <p>{mappedRows}</p>
+        </div>
+        <div>
+          <p>Approved rows:</p>
+          <p>{approvedRows}</p>
+        </div>
       </div>
     </div>
   {/if}
