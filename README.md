@@ -70,12 +70,15 @@ There are also some settings that can be customised. These settings can be acces
 - Enable mapping to multiple concepts
 - Enable automapping
 - Language of concepts
+- Vocabulary id of custom concepts
 
 The option to enable mapping to multiple concepts let's the user map multiple concepts to a row. Per extra concept after the first one, there will be a new row inserted at the end of the table.
 
 The option for automapping let's the system map every row automatically. The sourceName will be extracted per row and translated from the chosen language in the settings to English. This value will then be placed in a API call to Athena. The first value that Athena gives back will then be mapped to that row.
 
-![automap](https://github.com/RADar-AZDelta/Keun/assets/71939691/7a1ea119-791b-47e9-a903-a2613265673d)
+The option for the vocabulary id of a custom concept is to set a id because this will almost always be the same id.
+
+![settings](https://github.com/RADar-AZDelta/Keun/assets/71939691/dd7e1f5b-5cb2-43ae-9b06-5824d5767855)
 
 ### Upload & download
 To upload a CSV-file, the user can click on the upload button on the upper side in the middle of the page.
@@ -86,14 +89,21 @@ The mapped CSV-file can also be downloaded again. To download the file the user 
 
 ![download](https://github.com/RADar-AZDelta/Keun/assets/71939691/5dad5a32-90a1-4351-aa07-bbfef4ee23d2)
 
+The CSV-file with custom concepts (if there are custom concepts assigned) can be downloaded. To download this file, the user needs to click the download button on the upper side in the middle of the page with the text on the left.
+
+![image](https://github.com/RADar-AZDelta/Keun/assets/71939691/f73c382e-ac16-4a3e-b2da-1b07ba6c14fe)
+
 ### Actions
 There are a couple of actions the user can utilize per row. These actions can be found on the left side of the table. The actions are the following:
 
 - Map
-- Delete
+- Delete/Erase
+- Automap
 - Approve
 - Flag
 - Unapprove
+
+![image](https://github.com/RADar-AZDelta/Keun/assets/71939691/3db3b734-7c90-4685-9fbe-85967cb2c70f)
 
 ###### Map
 To map a row the mapping button can be clicked and a pop-up will open. On the left side of the pop-up, some filters can be applied to have better results. When clicked on a certain filter, the user will be able to enable certain options. These options can also be removed in the last filter called "activated filters".
@@ -114,8 +124,12 @@ Here are some examples where a row is mapped with a single concepts and with mul
 
 ![multiplemapping](https://github.com/RADar-AZDelta/Keun/assets/71939691/c00e95b1-c934-4af9-8996-dec3e743dc04)
 
-###### Delete
-A row can be deleted if the user by accident maps a concept to a row. This action can be done with a click of the delete button of that row.
+When there are no correct concepts to map to, the user is able to create a custom concept. This custom concept can be created in the row under the table.
+
+![image](https://github.com/RADar-AZDelta/Keun/assets/71939691/c99ad9da-c5ee-4a09-bbae-f0faf536b3e3)
+
+###### Delete/erase
+A row can be deleted/erased if the user by accident maps a concept to a row. If a row is mapped to a single concept (multiple mapping is off), and the user click on the delete/erase button, the row will get erased and the mapped columns will be set empty. If a row is mapped to multiple concepts (multiple mapping is on), and the user clicks on the delete/erase button, the row will be deleted. 
 
 ###### Approve, flag & unapprove
 The mapping of a row can be approved, flagged or unapproved. According to these conditions the row will get a color so that the user sees which rows need to be worked on. There is a 4-eyes principle applied so the first author can't approve a mapping. He can only flag or unapprove the mapping. The second author can approve, flag or unapprove a mapping of a row.
