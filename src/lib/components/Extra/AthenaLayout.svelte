@@ -167,7 +167,7 @@
     else if (chosenFilter != undefined && inputValue == false) {
       if (chosenFilter.includes(option) == true) {
         chosenFilter.splice(chosenFilter.indexOf(option), 1)
-        if(chosenFilter.length == 0) activatedAthenaFilters.delete(filter)
+        if (chosenFilter.length == 0) activatedAthenaFilters.delete(filter)
         else activatedAthenaFilters.set(filter, chosenFilter)
       }
     } else {
@@ -317,10 +317,11 @@
     })
   }
 
-  function setVocabularyId () {
-    if(settings) {
-        if(settings.hasOwnProperty('vocabularyIdCustomConcept')) customConcept.vocabularyId = settings.vocabularyIdCustomConcept
-      }
+  function setVocabularyId() {
+    if (settings) {
+      if (settings.hasOwnProperty('vocabularyIdCustomConcept'))
+        customConcept.vocabularyId = settings.vocabularyIdCustomConcept
+    }
   }
 
   $: {
@@ -430,7 +431,15 @@
         <DataTable
           data={fetchData}
           columns={athenaColumns}
-          options={{ id: 'athena', actionColumn: true, rowsPerPageOptions: [5, 10, 15, 20] }}
+          options={{
+            id: 'athena',
+            actionColumn: true,
+            rowsPerPageOptions: [5, 10, 15, 20],
+            globalFilter: {
+              column: 'sourceName',
+              filter: undefined,
+            },
+          }}
           bind:this={dataTableAthena}
         >
           <AthenaRow
@@ -457,8 +466,9 @@
             <th>concept_class_id</th>
           </tr>
           <tr>
-            <td data-name='custom-concept-actions'
-              ><button on:click={customMapping}><SvgIcon href="icons.svg" id="plus" width="16px" height="16px" /></button
+            <td data-name="custom-concept-actions"
+              ><button on:click={customMapping}
+                ><SvgIcon href="icons.svg" id="plus" width="16px" height="16px" /></button
               ></td
             >
             <td><input type="text" bind:value={customConcept.domainId} /></td>
