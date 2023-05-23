@@ -17,6 +17,12 @@ const config = {
     }),
   ],
 
+  vitePlugin: {
+    inspector: {
+      toggleKeyCombo: 'control-shift'
+    }
+  },
+
   kit: {
     adapter: adapter(),
     paths: {
