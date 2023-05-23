@@ -436,7 +436,7 @@
             actionColumn: true,
             rowsPerPageOptions: [5, 10, 15, 20],
             globalFilter: {
-              column: 'sourceName',
+              column: 'all',
               filter: undefined,
             },
           }}
