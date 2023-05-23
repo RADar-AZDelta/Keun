@@ -33,6 +33,7 @@
   import DragAndDrop from '$lib/components/Extra/DragAndDrop.svelte'
 
   let file: File | undefined
+  let currentFileName: string | undefined = undefined
   let params = ['standardConcept', 'vocabulary', 'invalidReason', 'domain', 'conceptClass']
 
   let settings: Record<string, any> | undefined = undefined
@@ -152,6 +153,7 @@
       const extension = f.name.split('.').pop()
       if (extension && allowedExtensions.includes(extension)) {
         file = f
+        currentFileName = f.name
         break
       }
     }
@@ -162,6 +164,7 @@
     if (dev) console.log('fileUploaded: New file uploaded')
     uploaded = true
     file = e.detail.file
+    currentFileName = e.detail.file.name
   }
 
   // When the visibility of the mapping pop-up changes
@@ -911,6 +914,7 @@
 
   <div data-name="table-options">
     {#if uploaded == true}
+      <p>{currentFileName}</p>
       <label title="Upload" for="file-upload" data-name="file-upload"
         ><SvgIcon href="icons.svg" id="upload" width="16px" height="16px" /></label
       >
