@@ -366,6 +366,7 @@
       updatedFields.conceptId = null
       updatedFields.domainId = null
       updatedFields.conceptName = null
+      updatedFields['ADD_INFO:customConcept'] = null
       delete updatedFields.sourceAutoAssignedConceptIds
       await dataTableFile.updateRows(new Map([[event.detail.indexes[0], updatedFields]]))
     }
