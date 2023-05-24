@@ -1,5 +1,3 @@
-import type { IColumnMetaData, SortDirection } from 'svelte-radar-datatable'
-
 export interface CustomOptionsEvents {
   generalVisibilityChanged: VisibilityChangedEventDetail
   filterOptionsChanged: FilterOptionsChangedEventDetail

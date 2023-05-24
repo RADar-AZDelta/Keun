@@ -40,7 +40,7 @@
   },
   "type": "module",
   "dependencies": {
-    "arquero": "^5.2.0",
-    "svelte-radar-datatable": "^0.0.27"
+    "@radar-azdelta/svelte-datatable": "^0.0.28",
+    "arquero": "^5.2.0"
   }
 }

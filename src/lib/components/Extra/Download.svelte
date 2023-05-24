@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type DataTable from 'svelte-radar-datatable/components/DataTable.svelte'
+  import type DataTable from '@radar-azdelta/svelte-datatable'
   import SvgIcon from './SvgIcon.svelte'
 
   export let dataTable: DataTable, title: string, svgId: string
