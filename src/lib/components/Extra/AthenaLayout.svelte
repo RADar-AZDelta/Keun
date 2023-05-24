@@ -16,7 +16,9 @@
   import DataTable, { type FetchDataFunc, type IColumnMetaData } from '@radar-azdelta/svelte-datatable'
   import { query } from 'arquero'
   import AthenaRow from '../Mapping/AthenaRow.svelte'
+  import AutocompleteInputSettings from './AutocompleteInputSettings.svelte'
   import AutocompleteInput from './AutocompleteInput.svelte'
+  import customConceptInfo from '$lib/data/customConceptInfo.json'
 
   export let urlFilters: string[],
     equivalenceMapping: string,
@@ -443,7 +445,7 @@
             {renderedRow}
             {settings}
             {columns}
-            bind:alreadyMapped={alreadyMapped}
+            bind:alreadyMapped
             on:singleMapping={singleMapping}
             on:multipleMapping={multipleMapping}
             on:updateUniqueConceptIds={updateUniqueConceptIds}
@@ -465,9 +467,9 @@
                 ><SvgIcon href="icons.svg" id="plus" width="16px" height="16px" /></button
               ></td
             >
-            <td><input type="text" bind:value={customConcept.domainId} /></td>
+            <td><AutocompleteInput id="domainId" list={customConceptInfo.domain} /></td>
             <td><input type="text" bind:value={customConcept.vocabularyId} /></td>
-            <td><input type="text" bind:value={customConcept.conceptClassId} /></td>
+            <td><AutocompleteInput id="domainId" list={customConceptInfo.concept} /></td>
           </tr>
         </table>
       </div>
@@ -510,7 +512,7 @@
         <Equivalence bind:Eq={equivalenceMapping} />
         <div data-name="reviewer">
           <p>Assigned reviewer: {reviewer}</p>
-          <AutocompleteInput {settings} on:reviewerChanged={reviewerChanged} />
+          <AutocompleteInputSettings {settings} on:reviewerChanged={reviewerChanged} />
         </div>
         <div data-name="comments">
           <p>Comments</p>
