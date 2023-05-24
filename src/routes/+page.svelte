@@ -781,6 +781,8 @@
           progressInit = true
         }
       })
+    } else {
+      calculateProgress()
     }
   }
 
