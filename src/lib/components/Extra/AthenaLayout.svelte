@@ -25,6 +25,7 @@
     mainTable: DataTable,
     fetchData: FetchDataFunc,
     settings: Record<string, any>,
+    globalFilter: { column: string; filter: string },
     showModal: boolean = false
 
   let JSONFilters = new Map<string, ICategories>([])
@@ -435,10 +436,7 @@
             id: 'athena',
             actionColumn: true,
             rowsPerPageOptions: [5, 10, 15, 20],
-            globalFilter: {
-              column: 'all',
-              filter: undefined,
-            },
+            globalFilter: globalFilter,
           }}
           bind:this={dataTableAthena}
         >
