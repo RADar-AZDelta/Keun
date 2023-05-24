@@ -60,7 +60,7 @@
   let totalRows: number | undefined = undefined
   let mappedRows: number | undefined = undefined
   let approvedRows: number | undefined = undefined
-  let globalAthenaFilter = { column: 'all', filter: "test" }
+  let globalAthenaFilter = { column: 'all', filter: undefined }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // DATA
@@ -531,21 +531,7 @@
     let filter = undefined
     if (filteredColumns.values().next().value) {
       filter = filteredColumns.values().next().value
-      if (settings) {
-        if (!settings.language) settings.language = 'en'
-        if (settings.language) {
-          if (settings.language != 'en') {
-            let translation = await translator.translate({
-              from: settings.language,
-              to: 'en',
-              text: filter,
-              html: true,
-            })
-            filter = translation.target.text
-          }
-        }
-      }
-    } else if(selectedRow) {
+    } else if (selectedRow) {
       if (settings) {
         if (!settings.language) settings.language = 'en'
         if (settings.language) {
@@ -562,10 +548,9 @@
       }
     }
 
-    if(globalAthenaFilter.filter !== filter) {
+    if (filteredColumns.values().next().value == null && globalAthenaFilter.filter !== filter) {
       globalAthenaFilter.filter = filter
       globalAthenaFilter = globalAthenaFilter
-      console.log("GLOBAL ATHENA FILTER ", globalAthenaFilter)
     }
     
     const url = await assembleAthenaURL(filter, sortedColumns.entries().next().value, pagination)
@@ -987,7 +972,7 @@
   mainTable={dataTableFile}
   fetchData={fetchDataFunc}
   {settings}
-  globalFilter={globalAthenaFilter}
+  bind:globalFilter={globalAthenaFilter}
   showModal={mappingVisibility}
   on:rowChange={selectRow}
   on:singleMapping={singleMapping}
