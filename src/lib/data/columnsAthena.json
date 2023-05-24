@@ -2,7 +2,7 @@
   "id": "concept_id",
   "name": "concept_name",
   "code": "concept_code",
-  "className": "concept_class",
+  "className": "concept_class_id",
   "concept": "standard_concept",
   "invalidReason": "invalid_reason",
   "domain": "domain_id",
