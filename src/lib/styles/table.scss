@@ -822,6 +822,25 @@ dialog[data-name='athena-dialog'] {
             }
           }
         }
+
+        div[data-name='errormessage'] {
+          display: flex;
+          width: max-content;
+          border-radius: 5px;
+          align-items: center;
+          gap: 1rem;
+          border: 1px solid red;
+          background-color: lightcoral;
+          padding: 0.5rem 1rem;
+
+          button {
+            background-color: inherit;
+            border: none;
+            cursor: pointer;
+            padding: 0;
+            height: auto;
+          }
+        }
       }
     }
 
