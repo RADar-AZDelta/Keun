@@ -896,7 +896,7 @@ div[data-component='svelte-radar-datatable'] {
   div[data-component='datatable-content'] {
     max-width: none;
     max-height: none;
-    overflow: hidden;
+    overflow-y: hidden;
 
     table {
       colgroup {

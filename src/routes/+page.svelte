@@ -31,6 +31,7 @@
   import { page } from '$app/stores'
   import { browser, dev } from '$app/environment'
   import DragAndDrop from '$lib/components/Extra/DragAndDrop.svelte'
+  import Spinner from '$lib/components/Extra/Spinner.svelte'
 
   let file: File | undefined
   let currentFileName: string | undefined = undefined
@@ -56,9 +57,10 @@
   let progressInit: boolean = false
   let mappingStatusChanged: boolean = false
   let currentRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>()
-  let totalRows = 10
-  let mappedRows = 0
-  let approvedRows = 0
+  let totalRows: number | undefined = undefined
+  let mappedRows: number | undefined = undefined
+  let approvedRows: number | undefined = undefined
+  let globalAthenaFilter = { column: 'all', filter: "test" }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // DATA
@@ -492,15 +494,6 @@
   // A method to create the Athena URL
   const assembleAthenaURL = async (filter?: string, sorting?: string[], pagination?: IPagination) => {
     if (dev) console.log('assembleAthenaURL: Assemble Athena URL')
-    if (filter == undefined) {
-      if (selectedRow == undefined) {
-        athenaFiltering = ''
-      } else {
-        athenaFiltering = selectedRow.sourceName
-      }
-    } else {
-      athenaFiltering = filter
-    }
 
     let url = mappingUrl
 
@@ -517,7 +510,7 @@
     }
 
     // Add filter to URL if there is a filter
-    if (athenaFiltering) url += `&query=${athenaFiltering}`
+    if (filter) url += `&query=${filter}`
 
     // Add pagination to URL if there is pagination
     if (pagination) {
@@ -552,7 +545,29 @@
           }
         }
       }
+    } else if(selectedRow) {
+      if (settings) {
+        if (!settings.language) settings.language = 'en'
+        if (settings.language) {
+          if (settings.language != 'en') {
+            let translation = await translator.translate({
+              from: settings.language,
+              to: 'en',
+              text: selectedRow.sourceName,
+              html: true,
+            })
+            filter = translation.target.text
+          }
+        }
+      }
     }
+
+    if(globalAthenaFilter.filter !== filter) {
+      globalAthenaFilter.filter = filter
+      globalAthenaFilter = globalAthenaFilter
+      console.log("GLOBAL ATHENA FILTER ", globalAthenaFilter)
+    }
+    
     const url = await assembleAthenaURL(filter, sortedColumns.entries().next().value, pagination)
     const response = await fetch(url)
     const apiData = await response.json()
@@ -933,15 +948,27 @@
     <div data-name="progress">
       <div>
         <p>Total rows:</p>
-        <p>{totalRows}</p>
+        {#if !totalRows}
+          <Spinner />
+        {:else}
+          <p>{totalRows}</p>
+        {/if}
       </div>
       <div>
         <p>Semi approved rows:</p>
-        <p>{mappedRows}</p>
+        {#if mappedRows == undefined}
+          <Spinner />
+        {:else}
+          <p>{mappedRows}</p>
+        {/if}
       </div>
       <div>
         <p>Approved rows:</p>
-        <p>{approvedRows}</p>
+        {#if approvedRows == undefined}
+          <Spinner />
+        {:else}
+          <p>{approvedRows}</p>
+        {/if}
       </div>
     </div>
   {/if}
@@ -960,6 +987,7 @@
   mainTable={dataTableFile}
   fetchData={fetchDataFunc}
   {settings}
+  globalFilter={globalAthenaFilter}
   showModal={mappingVisibility}
   on:rowChange={selectRow}
   on:singleMapping={singleMapping}
