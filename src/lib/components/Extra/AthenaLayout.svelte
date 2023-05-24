@@ -100,7 +100,6 @@
   let dataTableAthena: DataTable
 
   let alreadyMapped: Record<string, Record<string, any>> = {}
-  let uniqueConceptIds: string[] = []
 
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
@@ -231,7 +230,6 @@
   // A method to get all the mapped concept ids for a certain row
   async function getUniqueConceptIds() {
     alreadyMapped = {}
-    uniqueConceptIds = []
     const q = query()
       .params({ source: selectedRow.sourceCode })
       .filter((d: any, params: any) => d.sourceCode == params.source)
@@ -239,7 +237,6 @@
     const res = await mainTable.executeQueryAndReturnResults(q)
     for (let row of res.queriedData) {
       if (row.conceptId) {
-        if (!uniqueConceptIds.includes(row.conceptId)) uniqueConceptIds.push(row.conceptId)
         if (alreadyMapped[row.sourceCode]) {
           if (!alreadyMapped[row.sourceCode].conceptId.includes(row.conceptId))
             alreadyMapped[row.sourceCode].conceptId.push(row.conceptId)
@@ -261,7 +258,6 @@
       }
     } else activatedAthenaFilters = new Map<string, string[]>([['standardConcept', ['Standard']]])
     dispatch('filterOptionsChanged', { filters: activatedAthenaFilters })
-    uniqueConceptIds = uniqueConceptIds
   }
 
   // A method for when the assigned reviewer has changed
@@ -447,7 +443,7 @@
             {renderedRow}
             {settings}
             {columns}
-            bind:uniqueConceptIds
+            bind:alreadyMapped={alreadyMapped}
             on:singleMapping={singleMapping}
             on:multipleMapping={multipleMapping}
             on:updateUniqueConceptIds={updateUniqueConceptIds}
