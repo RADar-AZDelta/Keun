@@ -25,7 +25,7 @@
     mainTable: DataTable,
     fetchData: FetchDataFunc,
     settings: Record<string, any>,
-    globalFilter: { column: string; filter: string },
+    globalFilter: { column: string; filter: string | undefined },
     showModal: boolean = false
 
   let JSONFilters = new Map<string, ICategories>([])
