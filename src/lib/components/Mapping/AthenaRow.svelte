@@ -7,9 +7,9 @@
   export let renderedRow: Record<string, any>,
     columns: IColumnMetaData[],
     settings: Record<string, any>,
-    uniqueConceptIds: string[] = []
+    alreadyMapped: Record<string, any>
 
-  let alreadyMapped: boolean = false
+  let mapped: boolean = false
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
   let multipleConcepts: boolean
@@ -25,18 +25,18 @@
       dispatch('singleMapping', { row: renderedRow })
       dispatch('updateUniqueConceptIds', { conceptId: renderedRow.id, conceptName: renderedRow.name, multiple: false })
     }
-
-    multipleConcepts == true ? (alreadyMapped = true) : null
   }
 
   $: {
-    // TODO: in single mapping --> when click for other mapping the color of the previous must be reset but that component does not come in this reactive statement
-    uniqueConceptIds.includes(renderedRow.id) ? (alreadyMapped = true) : (alreadyMapped = false)
+    if (Object.keys(alreadyMapped).length > 0) {
+      if (alreadyMapped[Object.keys(alreadyMapped)[0]].conceptId.includes(renderedRow.id)) mapped = true
+      else mapped = false
+    } else mapped = false
   }
 </script>
 
 <td data-name="actions">
-  {#if alreadyMapped == true}
+  {#if mapped == true}
     <button title="Map to row" style="background-color: greenyellow;"
       ><SvgIcon href="icons.svg" id="plus" width="16px" height="16px" /></button
     >
