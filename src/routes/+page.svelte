@@ -126,6 +126,8 @@
     'ADD_INFO:additionalInfo': null,
     'ADD_INFO:prescriptionID': null,
     'ADD_INFO:ATC': null,
+    'ADD_INFO:numberOfConcepts': null,
+    'ADD_INFO:customConcept': null,
     mappingStatus: null,
   }
 
@@ -238,6 +240,21 @@
       invalid_reason: event.detail.invalidReason,
     }
     customConceptsArrayOfObjects.push(customConcept)
+
+    const q = query()
+      .params({ sourceCode: selectedRow.sourceCode })
+      .filter((r: any, params: any) => r.sourceCode == params.sourceCode)
+      .toObject()
+    const res = await dataTableFile.executeQueryAndReturnResults(q)
+    if (res.indices.length > 1) {
+      let count = 0
+      for (const index of res.indices) {
+        if (count > 0) {
+          await dataTableFile.deleteRows([index])
+        }
+        count++
+      }
+    }
 
     // Map the selected row with the custom concept
     const { mappedIndex, mappedRow } = await customRowMapping(selectedRow, customConcept)
@@ -623,6 +640,10 @@
               mappedUsagiRow.mappingStatus = 'APPROVED'
               break
             }
+            break
+          case 'ADD_INFO:customConcept':
+            mappedUsagiRow['ADD_INFO:customConcept'] = null
+            break
         }
       }
     }
@@ -690,6 +711,10 @@
             mappedUsagiRow.mappingStatus = 'APPROVED'
             break
           }
+
+        case 'ADD_INFO:numberOfConcepts':
+          mappedUsagiRow['ADD_INFO:numberOfConcepts'] = null
+          break
       }
     }
 

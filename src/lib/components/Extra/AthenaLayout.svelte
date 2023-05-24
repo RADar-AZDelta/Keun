@@ -43,6 +43,7 @@
     domainId: '',
     conceptClassId: '',
   }
+  let conceptSelection: string = 'existing'
 
   let filterColors: Record<string, string> = {
     domain: '#ec3d31',
@@ -314,6 +315,10 @@
       validEndDate: '2099-12-31',
       invalidReason: '',
     })
+    alreadyMapped[selectedRow.sourceCode] = {
+      conceptId: [selectedRow.sourceCode],
+      conceptName: [selectedRow.sourceName],
+    }
   }
 
   function setVocabularyId() {
@@ -426,53 +431,67 @@
           </button>
         </div>
       </div>
-      <div data-name="table-container">
-        <DataTable
-          data={fetchData}
-          columns={athenaColumns}
-          options={{
-            id: 'athena',
-            actionColumn: true,
-            rowsPerPageOptions: [5, 10, 15, 20],
-            globalFilter: globalFilter,
-          }}
-          bind:this={dataTableAthena}
-        >
-          <AthenaRow
-            slot="default"
-            let:renderedRow
-            let:columns
-            {renderedRow}
-            {settings}
-            {columns}
-            bind:alreadyMapped
-            on:singleMapping={singleMapping}
-            on:multipleMapping={multipleMapping}
-            on:updateUniqueConceptIds={updateUniqueConceptIds}
-          />
-        </DataTable>
+      <div data-name="concept-choice">
+        <button>
+          <input type="radio" bind:group={conceptSelection} id="existing" name="concept-type" value="existing" />
+          <label for="existing">Existing concepts</label>
+        </button>
+
+        <button>
+          <input type="radio" bind:group={conceptSelection} id="custom" name="concept-type" value="custom" />
+          <label for="custom">Custom concept</label>
+        </button>
       </div>
-      <div data-name="custom-concept-container">
-        <h2>Custom concept</h2>
-        <table data-name="custom-concept-table">
-          <tr>
-            <th />
-            <th>domain_id</th>
-            <th>vocabulary_id</th>
-            <th>concept_class_id</th>
-          </tr>
-          <tr>
-            <td data-name="custom-concept-actions"
-              ><button on:click={customMapping}
-                ><SvgIcon href="icons.svg" id="plus" width="16px" height="16px" /></button
-              ></td
-            >
-            <td><AutocompleteInput id="domainId" list={customConceptInfo.domain} /></td>
-            <td><input type="text" bind:value={customConcept.vocabularyId} /></td>
-            <td><AutocompleteInput id="domainId" list={customConceptInfo.concept} /></td>
-          </tr>
-        </table>
-      </div>
+      {#if conceptSelection !== 'custom'}
+        <div data-name="table-container">
+          <DataTable
+            data={fetchData}
+            columns={athenaColumns}
+            options={{
+              id: 'athena',
+              actionColumn: true,
+              rowsPerPageOptions: [5, 10, 15, 20],
+              globalFilter: globalFilter,
+            }}
+            bind:this={dataTableAthena}
+          >
+            <AthenaRow
+              slot="default"
+              let:renderedRow
+              let:columns
+              {renderedRow}
+              {settings}
+              {columns}
+              bind:alreadyMapped
+              on:singleMapping={singleMapping}
+              on:multipleMapping={multipleMapping}
+              on:updateUniqueConceptIds={updateUniqueConceptIds}
+            />
+          </DataTable>
+        </div>
+      {:else}
+        <div data-name="custom-concept-container">
+          <h2>Create a custom concept</h2>
+          <table data-name="custom-concept-table">
+            <tr>
+              <th />
+              <th>domain_id</th>
+              <th>vocabulary_id</th>
+              <th>concept_class_id</th>
+            </tr>
+            <tr>
+              <td data-name="custom-concept-actions"
+                ><button on:click={customMapping}
+                  ><SvgIcon href="icons.svg" id="plus" width="16px" height="16px" /></button
+                ></td
+              >
+              <td><AutocompleteInput id="domainId" list={customConceptInfo.domain} /></td>
+              <td><input type="text" bind:value={customConcept.vocabularyId} /></td>
+              <td><AutocompleteInput id="domainId" list={customConceptInfo.concept} /></td>
+            </tr>
+          </table>
+        </div>
+      {/if}
     </section>
     <section data-name="additional-information">
       <h2>Extra</h2>
