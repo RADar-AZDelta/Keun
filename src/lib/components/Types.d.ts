@@ -13,6 +13,7 @@ export interface CustomOptionsEvents {
   fileUploaded: FileUploadedEventDetail
   settingsChanged: SettingsChangedEventDetail
   autoMapRow: AutoMapRowEventDetail
+  autoComplete: AutoCompleteEventDetail
 }
 
 export interface VisibilityChangedEventDetail {
@@ -85,6 +86,11 @@ export interface CustomMappingEventDetail {
 export interface AutoMapRowEventDetail {
   index: number
   sourceName: string
+}
+
+export interface AutoCompleteEventDetail {
+  id: string
+  value: any
 }
 
 export interface FileUploadedEventDetail {

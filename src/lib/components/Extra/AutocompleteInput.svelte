@@ -1,81 +1,64 @@
 <script lang="ts">
-  import { localStorageSetter } from '$lib/utils'
   import { createEventDispatcher } from 'svelte'
   import type { CustomOptionsEvents } from '../Types'
   import { clickOutside } from '$lib/actions/clickOutside'
 
-  export let settings: Record<string, any>
+  export let id: string, list: Record<string, any>
 
   let inputValue: string,
     value: string,
-    filteredValues: string[] = []
+    filteredValues: Map<string, any> = new Map(),
+    filters: number = 0
 
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
   // A method for when the input needs to be saved
-  function onSave() {
+  function save() {
     value = inputValue
-    if (!settings.savedAuthors) {
-      settings.savedAuthors = []
-    }
-    if (!settings.savedAuthors.includes(inputValue)) {
-      settings.savedAuthors.push(inputValue)
-      saveSettings()
-    }
-    dispatch('reviewerChanged', { reviewer: value })
+    dispatch('autoComplete', { id, value })
   }
 
   // A method to apply a suggestion to the input field
   function onClickAutoComplete(e: Event) {
     inputValue = (e.target as HTMLLIElement).id
-    value = inputValue
-    if (!settings.savedAuthors) {
-      settings.savedAuthors = []
-    }
-    if (!settings.savedAuthors.includes(inputValue)) {
-      settings.savedAuthors.push(inputValue)
-      saveSettings()
-    }
-    filterNames()
-    dispatch('reviewerChanged', { reviewer: value })
-  }
+    save()
 
-  // A method to save the settings to the localstorage
-  async function saveSettings() {
-    localStorageSetter('settings', settings)
+    filter()
   }
 
   // A method to search for suggestions to apply to the input field
-  function filterNames() {
-    let filteredNames = []
+  function filter() {
+    filteredValues = new Map<string, any>()
+    filters = 0
     if (inputValue) {
-      if (settings.savedAuthors) {
-        for (let name of settings.savedAuthors) {
-          if (name) {
-            if (name.toLowerCase().startsWith(inputValue.toLowerCase())) {
-              if (name.toLowerCase() != inputValue.toLowerCase()) filteredNames.push(name)
-            }
+      for (let key of Object.keys(list)) {
+        if (
+          key.toLowerCase().includes(inputValue.toLowerCase()) ||
+          list[key].toLowerCase().includes(inputValue.toLowerCase())
+        ) {
+          if (key !== inputValue || list[key] !== inputValue) {
+            filters += 1
+            filteredValues.set(key, list[key])
           }
         }
       }
     }
-    filteredValues = filteredNames
+  }
+
+  $: {
+    inputValue
+    filter()
   }
 </script>
 
 <div data-name="autocomplete-input">
-  <input
-    title="Assigned Reviewer"
-    type="text"
-    bind:value={inputValue}
-    on:input={filterNames}
-    use:clickOutside
-    on:outClick={onSave}
-  />
-  {#if filteredValues.length > 0}
+  <input title="Assigned Reviewer" type="text" bind:value={inputValue} use:clickOutside on:outClick={save} />
+  {#if filters > 0}
     <ul>
-      {#each filteredValues as name}
-        <li id={name} on:click={onClickAutoComplete} on:keydown={onClickAutoComplete}>{name}</li>
+      {#each [...filteredValues] as [key, value], i}
+        {#if i < 7}
+          <li id={key} on:click={onClickAutoComplete} on:keydown={onClickAutoComplete}>{value}</li>
+        {/if}
       {/each}
     </ul>
   {/if}

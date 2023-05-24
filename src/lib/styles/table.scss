@@ -94,16 +94,16 @@ section[data-name='header'] {
 
   div[data-name='progress'] {
     width: 40%;
-    display: flex;   
-      gap: 1rem;
-      align-items: center;
-      justify-content: space-between;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    justify-content: space-between;
 
-      div {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-      }
+    div {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
   }
 
   div[data-name='header-buttons-container'] {
@@ -679,7 +679,7 @@ dialog[data-name='athena-dialog'] {
                     }
                   }
                 }
-        
+
                 tr[data-name='filters'] {
                   th {
                     min-width: 70px;
@@ -709,12 +709,13 @@ dialog[data-name='athena-dialog'] {
         table {
           tr {
             td {
+              padding: 0 1rem;
+
               input {
-                padding: 0 0.5rem;
-                border-radius: 5px;
-                font-size: 0.75rem;
-                height: 25px;
                 border: 1px solid $neutral-x-light;
+                font-size: 1rem;
+                padding: 0.5rem 1rem;
+                width: 90%;
               }
 
               input:hover {
@@ -725,9 +726,39 @@ dialog[data-name='athena-dialog'] {
                 outline: none;
                 box-shadow: 0 0 0 2px $neutral-x-dark;
               }
+
+              ul {
+                list-style-type: none;
+                padding: 0.5rem 0 2rem 0;
+                margin: 0;
+                position: absolute;
+
+                li {
+                  border-top: 1px solid $neutral;
+                  border-left: 1px solid $neutral;
+                  border-right: 1px solid $neutral;
+                  padding: 0.5rem 1rem;
+                  background-color: white;
+                  cursor: pointer;
+                }
+
+                li:last-child {
+                  border: 1px solid $neutral;
+                }
+
+                li:hover {
+                  background-color: $neutral-xx-light;
+                }
+
+                li:focus {
+                  outline: none;
+                  box-shadow: 0 0 0 2px $neutral-x-dark;
+                }
+              }
             }
 
             td[data-name='custom-concept-actions'] {
+              padding: 0;
               button {
                 cursor: pointer;
                 border-radius: 5px;
@@ -735,7 +766,6 @@ dialog[data-name='athena-dialog'] {
                 justify-content: center;
                 text-align: center;
                 font-size: 0.75em;
-                height: 25px;
               }
 
               button:hover {
@@ -831,6 +861,7 @@ dialog[data-name='athena-dialog'] {
                 border-right: 1px solid $neutral;
                 padding: 0.5rem 1rem;
                 background-color: white;
+                cursor: pointer;
               }
 
               li:last-child {
