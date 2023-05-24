@@ -1,5 +1,4 @@
 <script lang="ts">
-  import DataTable from 'svelte-radar-datatable'
   import columnsUsagi from '$lib/data/columnsUsagi.json'
   import columnsAthena from '$lib/data/columnsAthena.json'
   import Header from '$lib/components/Extra/Header.svelte'
@@ -18,12 +17,12 @@
     SettingsChangedEventDetail,
     AutoMapRowEventDetail,
   } from '$lib/components/Types'
-  import type { IColumnMetaData, IPagination, SortDirection, TFilter } from 'svelte-radar-datatable'
+  import type { IColumnMetaData, IPagination, SortDirection, TFilter } from '@radar-azdelta/svelte-datatable'
   import { localStorageGetter, localStorageSetter } from '$lib/utils'
   import AthenaLayout from '$lib/components/Extra/AthenaLayout.svelte'
   import UsagiRow from '$lib/components/Mapping/UsagiRow.svelte'
   import { onMount, tick } from 'svelte'
-  import { desc, query } from 'arquero'
+  import { query } from 'arquero'
   import Download from '$lib/components/Extra/Download.svelte'
   import Settings from '$lib/components/Extra/Settings.svelte'
   import { LatencyOptimisedTranslator } from '@browsermt/bergamot-translator/translator.js'
@@ -32,6 +31,7 @@
   import { browser, dev } from '$app/environment'
   import DragAndDrop from '$lib/components/Extra/DragAndDrop.svelte'
   import Spinner from '$lib/components/Extra/Spinner.svelte'
+  import DataTable from '@radar-azdelta/svelte-datatable'
 
   let file: File | undefined
   let currentFileName: string | undefined = undefined
@@ -552,7 +552,7 @@
       globalAthenaFilter.filter = filter
       globalAthenaFilter = globalAthenaFilter
     }
-    
+
     const url = await assembleAthenaURL(filter, sortedColumns.entries().next().value, pagination)
     const response = await fetch(url)
     const apiData = await response.json()

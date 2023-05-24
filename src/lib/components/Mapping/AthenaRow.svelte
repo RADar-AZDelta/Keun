@@ -2,7 +2,7 @@
   import { createEventDispatcher } from 'svelte'
   import type { CustomOptionsEvents } from '../Types'
   import SvgIcon from '../Extra/SvgIcon.svelte'
-  import type { IColumnMetaData } from 'svelte-radar-datatable'
+  import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
 
   export let renderedRow: Record<string, any>,
     columns: IColumnMetaData[],

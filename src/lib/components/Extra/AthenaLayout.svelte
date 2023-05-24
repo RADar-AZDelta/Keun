@@ -13,7 +13,7 @@
     UpdateUniqueConceptIdsEventDetail,
   } from '../Types'
   import SvgIcon from './SvgIcon.svelte'
-  import DataTable, { type FetchDataFunc, type IColumnMetaData } from 'svelte-radar-datatable'
+  import DataTable, { type FetchDataFunc, type IColumnMetaData } from '@radar-azdelta/svelte-datatable'
   import { query } from 'arquero'
   import AthenaRow from '../Mapping/AthenaRow.svelte'
   import AutocompleteInput from './AutocompleteInput.svelte'

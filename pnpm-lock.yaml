@@ -4,12 +4,12 @@ importers:
 
   .:
     dependencies:
+      '@radar-azdelta/svelte-datatable':
+        specifier: ^0.0.28
+        version: 0.0.28
       arquero:
         specifier: ^5.2.0
         version: 5.2.0
-      svelte-radar-datatable:
-        specifier: ^0.0.27
-        version: 0.0.27
     devDependencies:
       '@browsermt/bergamot-translator':
         specifier: ^0.4.9
@@ -491,6 +491,16 @@ packages:
   /@polka/url@1.0.0-next.21:
     resolution: {integrity: sha512-a5Sab1C4/icpTZVzZc5Ghpz88yQtGOyNqYXcZgOssB2uuAr+wF/MvN6bgtW32q7HHrvBki+BsZ0OuNv6EV3K9g==}
     dev: true
+
+  /@radar-azdelta/svelte-datatable@0.0.28:
+    resolution: {integrity: sha512-EkSxsI0llIgqHP6VU7H3IvyH+LeMO57Bla4/7yY0l34XmFuKBV2RL4JQ8B8mnvMtCSRU0xSUw6RBe1r56EZdwQ==}
+    dependencies:
+      '@types/lodash': 4.14.194
+      arquero: 5.2.0
+      lodash.debounce: 4.0.8
+    transitivePeerDependencies:
+      - encoding
+    dev: false
 
   /@sveltejs/adapter-auto@2.0.1(@sveltejs/kit@1.16.3):
     resolution: {integrity: sha512-anxxYMcQy7HWSKxN4YNaVcgNzCHtNFwygq72EA1Xv7c+5gSECOJ1ez1PYoLciPiFa7A3XBvMDQXUFJ2eqLDtAA==}
@@ -2679,16 +2689,6 @@ packages:
       svelte: 3.59.1
       typescript: 5.0.4
     dev: true
-
-  /svelte-radar-datatable@0.0.27:
-    resolution: {integrity: sha512-L5Tm+Ib2LYXzb5WLlCokpIwxDWMaH2mFo4TBiy0XtJOvSHXloVzkdUCbhAefE42/LARC3S1o94qUkLq/CZyr0A==}
-    dependencies:
-      '@types/lodash': 4.14.194
-      arquero: 5.2.0
-      lodash.debounce: 4.0.8
-    transitivePeerDependencies:
-      - encoding
-    dev: false
 
   /svelte2tsx@0.6.14(svelte@3.59.1)(typescript@4.9.5):
     resolution: {integrity: sha512-Sxo9gtpc3dYWuFQ8fruZG+M+I6OZMIvOxxKjt48Lr8jD6Kr9cNf1Hf/yHUDEgDwQdRbAzn5y0FL9xk8Dx5v9lg==}

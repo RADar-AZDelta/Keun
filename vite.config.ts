@@ -38,6 +38,6 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    exclude: ['svelte-radar-datatable', '@browsermt/bergamot-translator'],
+    exclude: ['@radar-azdelta/svelte-datatable', '@browsermt/bergamot-translator'],
   },
 })
