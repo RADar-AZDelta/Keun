@@ -5,6 +5,7 @@
   import filtersJSON from '$lib/data/filters.json'
   import { localStorageGetter, localStorageSetter } from '$lib/utils'
   import type {
+    AutoCompleteEventDetail,
     CustomOptionsEvents,
     ICategories,
     MultipleMappingEventDetail,
@@ -44,6 +45,7 @@
     conceptClassId: '',
   }
   let conceptSelection: string = 'existing'
+  let errorMessage: string = ''
 
   let filterColors: Record<string, string> = {
     domain: '#ec3d31',
@@ -152,6 +154,14 @@
         conceptId: [event.detail.conceptId],
         conceptName: [event.detail.conceptName],
       }
+    }
+  }
+
+  function autoComplete(event: CustomEvent<AutoCompleteEventDetail>) {
+    if (event.detail.id === 'domainId') {
+      customConcept.domainId = event.detail.value
+    } else if (event.detail.id === 'conceptClassId') {
+      customConcept.conceptClassId = event.detail.value
     }
   }
 
@@ -303,21 +313,37 @@
   }
 
   function customMapping() {
-    dispatch('customMapping', {
-      conceptId: selectedRow.sourceCode,
-      conceptName: selectedRow.sourceName,
-      domainId: customConcept.domainId,
-      vocabularyId: customConcept.vocabularyId,
-      conceptClassId: customConcept.conceptClassId,
-      standardConcept: '',
-      conceptCode: selectedRow.sourceCode,
-      validStartDate: `${new Date().getFullYear()}-${new Date().getMonth()}-${new Date().getDate()}`,
-      validEndDate: '2099-12-31',
-      invalidReason: '',
-    })
-    alreadyMapped[selectedRow.sourceCode] = {
-      conceptId: [selectedRow.sourceCode],
-      conceptName: [selectedRow.sourceName],
+    errorMessage = ''
+    if (
+      Object.keys(customConceptInfo.domain).includes(customConcept.domainId) ||
+      Object.values(customConceptInfo.domain).includes(customConcept.domainId)
+    ) {
+      if (
+        Object.keys(customConceptInfo.concept).includes(customConcept.conceptClassId) ||
+        Object.values(customConceptInfo.concept).includes(customConcept.conceptClassId)
+      ) {
+        dispatch('customMapping', {
+          conceptId: selectedRow.sourceCode,
+          conceptName: selectedRow.sourceName,
+          domainId: customConcept.domainId,
+          vocabularyId: customConcept.vocabularyId,
+          conceptClassId: customConcept.conceptClassId,
+          standardConcept: '',
+          conceptCode: selectedRow.sourceCode,
+          validStartDate: `${new Date().getFullYear()}-${new Date().getMonth()}-${new Date().getDate()}`,
+          validEndDate: '2099-12-31',
+          invalidReason: '',
+        })
+
+        alreadyMapped[selectedRow.sourceCode] = {
+          conceptId: [selectedRow.sourceCode],
+          conceptName: [selectedRow.sourceName],
+        }
+      } else {
+        errorMessage = 'The concept class id is not valid'
+      }
+    } else {
+      errorMessage = 'The domain id is not valid'
     }
   }
 
@@ -485,11 +511,29 @@
                   ><SvgIcon href="icons.svg" id="plus" width="16px" height="16px" /></button
                 ></td
               >
-              <td><AutocompleteInput id="domainId" list={customConceptInfo.domain} /></td>
+              <td><AutocompleteInput id="domainId" list={customConceptInfo.domain} on:autoComplete={autoComplete} /></td
+              >
               <td><input type="text" bind:value={customConcept.vocabularyId} /></td>
-              <td><AutocompleteInput id="domainId" list={customConceptInfo.concept} /></td>
+              <td
+                ><AutocompleteInput
+                  id="conceptClassId"
+                  list={customConceptInfo.concept}
+                  on:autoComplete={autoComplete}
+                /></td
+              >
             </tr>
           </table>
+
+          {#if errorMessage}
+            <div data-name="errormessage">
+              <p>{errorMessage}</p>
+              <button
+                on:click={() => {
+                  errorMessage = ''
+                }}><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
+              >
+            </div>
+          {/if}
         </div>
       {/if}
     </section>

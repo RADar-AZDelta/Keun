@@ -8,7 +8,8 @@
 
   let inputValue: string,
     value: string,
-    filteredValues: string[] = []
+    filteredValues: string[] = [],
+    autoCompleted: boolean = false
 
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
@@ -38,6 +39,7 @@
     }
     filterNames()
     dispatch('reviewerChanged', { reviewer: value })
+    autoCompleted = true
   }
 
   // A method to save the settings to the localstorage
@@ -69,11 +71,20 @@
 </script>
 
 <div data-name="autocomplete-input">
-  <input title="Assigned Reviewer" type="text" bind:value={inputValue} use:clickOutside on:outClick={onSave} />
+  <input
+    title="Assigned Reviewer"
+    type="text"
+    bind:value={inputValue}
+    use:clickOutside
+    on:outClick={onSave}
+    on:input={() => {
+      autoCompleted = false
+    }}
+  />
   {#if filteredValues.length > 0}
     <ul>
       {#each filteredValues as name, i}
-        {#if i < 7}
+        {#if i < 7 && !autoCompleted}
           <li id={name} on:click={onClickAutoComplete} on:keydown={onClickAutoComplete}>{name}</li>
         {/if}
       {/each}
