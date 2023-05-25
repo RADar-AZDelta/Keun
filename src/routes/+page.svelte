@@ -179,6 +179,7 @@
     if (autoMappingPromise) autoMappingAbortController.abort()
 
     // Change the visiblity and update the selected row and index if there is a new row selected
+    globalAthenaFilter.filter = undefined
     mappingVisibility = event.detail.visibility
     if (event.detail.data) {
       selectedRow = event.detail.data.row
@@ -197,7 +198,7 @@
       // Transform the filters to a string that can be used in the query for Athena
       for (let [filter, options] of athenaFilters) {
         const substring = options.map(option => `&${filter}=${option}`).join()
-        apiFilters.push(substring)
+        if (!apiFilters.includes(substring)) apiFilters.push(substring)
       }
       apiFilters = apiFilters
       // Update the update fetch function so the table will be initialized again
@@ -439,6 +440,7 @@
 
   // When the arrow button in the Athena pop-up is clicked to navigate to a different row
   async function selectRow(event: CustomEvent<RowChangeEventDetail>) {
+    globalAthenaFilter.filter = undefined
     const tablePagination = await dataTableFile.getTablePagination()
     if (event.detail.up && selectedRowIndex + 1 < tablePagination.totalRows!) selectedRowIndex += 1
     if (!event.detail.up && selectedRowIndex - 1 >= 0) selectedRowIndex -= 1
@@ -493,6 +495,7 @@
       if (!settings.language) settings.language = 'en'
       if (settings.language) {
         if (settings.language != 'en') {
+          console.log('TRANSLATION AUTOMAP')
           let translation = await translator.translate({
             from: settings.language,
             to: 'en',
@@ -561,29 +564,27 @@
     sortedColumns: Map<string, SortDirection>,
     pagination: IPagination
   ) {
-    let filter = undefined
-    if (filteredColumns.values().next().value) {
-      filter = filteredColumns.values().next().value
-    } else if (selectedRow) {
-      if (settings) {
-        if (!settings.language) settings.language = 'en'
-        if (settings.language) {
-          if (settings.language != 'en') {
-            let translation = await translator.translate({
-              from: settings.language,
-              to: 'en',
-              text: selectedRow.sourceName,
-              html: true,
-            })
-            filter = translation.target.text
-          }
+    let filter = filteredColumns.values().next().value
+    if(filter === undefined && globalAthenaFilter.filter === undefined) {
+      if(settings && selectedRow) {
+        if(settings.language !== 'en') {
+          let translation = await translator.translate({
+            from: settings.language,
+            to: 'en',
+            text: selectedRow.sourceName,
+            html: true,
+          })
+          filter = translation.target.text
+          globalAthenaFilter.filter = filter
+          // TODO: refactor this
+          // Current solution because in DataTable the filter is overwritten with the localstorage filter
+          const object = JSON.parse(localStorage.getItem(`datatable_athena_options`)!)
+          object.globalFilter!.filter = filter
+          localStorage.setItem(`datatable_athena_options`, JSON.stringify(object))
         }
       }
-    }
-
-    if (filteredColumns.values().next().value == null && globalAthenaFilter.filter !== filter) {
-      globalAthenaFilter.filter = filter
-      globalAthenaFilter = globalAthenaFilter
+    } else if (globalAthenaFilter.filter && filter === undefined) {
+      filter = globalAthenaFilter.filter
     }
 
     const url = await assembleAthenaURL(filter, sortedColumns.entries().next().value, pagination)
@@ -896,7 +897,9 @@
   onMount(async () => {
     for (let param of params) {
       const urlParam = $page.url.searchParams.get(param)
-      if (urlParam) apiFilters.push(`&${param}=${urlParam}`)
+      if (urlParam) {
+        if (!apiFilters.includes(`&${param}=${urlParam}`)) apiFilters.push(`&${param}=${urlParam}`)
+      }
     }
 
     // Get the settings from the local storage
@@ -925,6 +928,7 @@
         workers: 1,
         batchSize: 1,
         registryUrl: 'bergamot/registry.json',
+        html: true,
       },
       undefined
     )
@@ -934,7 +938,7 @@
     if (browser) {
       window.onbeforeunload = function () {
         dataTableFile.saveToFile()
-        return 'Are you sure you want to leave?'
+        return 'Are you sure you want to leave the page?'
       }
     }
   }
