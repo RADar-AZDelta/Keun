@@ -586,12 +586,8 @@
       if (settings && selectedRow) {
         if (settings.language !== 'en') {
           filter = await translate(selectedRow.sourceName)
+          // TODO: refactor so that this globalAthenaFilter is set when chosing next row or when clicking on a row because this triggers the rendering again (twice)
           globalAthenaFilter.filter = filter
-          // TODO: refactor this
-          // Current solution because in DataTable the filter is overwritten with the localstorage filter
-          const object = JSON.parse(localStorage.getItem(`datatable_athena_options`)!)
-          object.globalFilter!.filter = filter
-          localStorage.setItem(`datatable_athena_options`, JSON.stringify(object))
         }
       }
     } else if (globalAthenaFilter.filter && filter === undefined) {
