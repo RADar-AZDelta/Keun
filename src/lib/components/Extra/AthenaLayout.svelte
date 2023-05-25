@@ -494,6 +494,7 @@
               actionColumn: true,
               rowsPerPageOptions: [5, 10, 15, 20],
               globalFilter: globalFilter,
+              saveOptions: false,
             }}
             bind:this={dataTableAthena}
           >

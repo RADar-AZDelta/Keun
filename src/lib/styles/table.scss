@@ -698,7 +698,7 @@ dialog[data-name='athena-dialog'] {
         max-height: 80%;
         overflow: auto;
 
-        div[data-component='svelte-radar-datatable'] {
+        div[data-component='svelte-datatable'] {
           max-height: 50%;
           overflow-y: auto;
           div[data-component='datatable-content'] {
@@ -986,7 +986,7 @@ div[data-name='custom-concepts'] {
 }
 
 // svelte-radar-datatable ???
-div[data-component='svelte-radar-datatable'] {
+div[data-component='svelte-datatable'] {
   div[data-component='datatable-content'] {
     max-width: none;
     max-height: none;
