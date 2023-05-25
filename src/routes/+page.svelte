@@ -937,10 +937,11 @@
 
   if (!dev) {
     if (browser) {
-      window.onbeforeunload = function () {
-        dataTableFile.saveToFile()
-        return 'Are you sure you want to leave the page?'
-      }
+      window.addEventListener('beforeunload', e => {
+        const confirmationMessage = 'Save the file you were mapping before leaving the application.'
+        ;(e || window.event).returnValue = confirmationMessage
+        return confirmationMessage
+      })
     }
   }
 
