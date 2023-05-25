@@ -48,12 +48,14 @@ export interface DeleteRowEventDetail {
   sourceCode: string | number
   conceptId: string | number
   erase: boolean
+  custom: boolean
 }
 
 export interface DeleteRowInnerMappingEventDetail {
   conceptId: string
   conceptName: string
   erase: boolean
+  custom: boolean
 }
 
 export interface RowChangeEventDetail {

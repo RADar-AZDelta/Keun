@@ -118,6 +118,14 @@
 
   // A method that catches the event for single mapping and throws an event to the parent
   function singleMapping(event: CustomEvent<SingleMappingEventDetail>) {
+    if (selectedRow['ADD_INFO:customConcept']) {
+      dispatch('deleteRowInnerMapping', {
+        conceptId: selectedRow['conceptId'],
+        conceptName: selectedRow['conceptName'],
+        erase: false,
+        custom: true,
+      })
+    }
     dispatch('singleMapping', {
       originalRow: selectedRow,
       row: event.detail.row,
@@ -127,6 +135,14 @@
 
   // A method that catches the event for multiple mapping and throws an event to the parent
   function multipleMapping(event: CustomEvent<MultipleMappingEventDetail>) {
+    if (selectedRow['ADD_INFO:customConcept']) {
+      dispatch('deleteRowInnerMapping', {
+        conceptId: selectedRow['sourceCode'],
+        conceptName: selectedRow['sourceName'],
+        erase: false,
+        custom: true,
+      })
+    }
     dispatch('multipleMapping', {
       originalRow: selectedRow,
       row: event.detail.row,
@@ -292,7 +308,7 @@
 
   function removeMapping(conceptId: string, conceptName: string) {
     let erase = alreadyMapped[selectedRow.sourceCode].conceptId.length > 1
-    dispatch('deleteRowInnerMapping', { conceptId, conceptName, erase })
+    dispatch('deleteRowInnerMapping', { conceptId, conceptName, erase, custom: true })
     removeUniqueConcept(conceptId, conceptName)
   }
 

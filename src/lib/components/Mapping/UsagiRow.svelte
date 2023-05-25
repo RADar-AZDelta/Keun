@@ -47,7 +47,8 @@
     const conceptId = renderedRow['conceptId']
     const sourceCode = renderedRow['sourceCode']
     const multiple = renderedRow['ADD_INFO:numberOfConcepts'] > 1
-    dispatch('deleteRow', { indexes: [index], sourceCode: sourceCode, conceptId: conceptId, erase: multiple })
+    const custom = renderedRow['ADD_INFO:customConcept'] ? true : false
+    dispatch('deleteRow', { indexes: [index], sourceCode: sourceCode, conceptId: conceptId, erase: multiple, custom })
   }
 
   function onClickAutoMap() {
