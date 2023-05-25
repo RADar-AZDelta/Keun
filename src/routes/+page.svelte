@@ -224,8 +224,10 @@
   async function customMapping(event: CustomEvent<CustomMappingEventDetail>) {
     if (dev) console.log('customMapping: Custom mapping for the row with sourceCode ', selectedRow.sourceCode)
     // Remove the first empty object from the array (this empty object is needed to determain the datatype)
-    if (Object.keys(customConceptsArrayOfObjects[0]).length == 0) {
-      customConceptsArrayOfObjects = []
+    if (customConceptsArrayOfObjects.length > 0) {
+      if (Object.keys(customConceptsArrayOfObjects[0]).length == 0) {
+        customConceptsArrayOfObjects = []
+      }
     }
     const customConcept = {
       concept_id: event.detail.conceptId,
@@ -240,6 +242,7 @@
       invalid_reason: event.detail.invalidReason,
     }
     customConceptsArrayOfObjects.push(customConcept)
+    customConceptsArrayOfObjects = customConceptsArrayOfObjects
 
     const q = query()
       .params({ sourceCode: selectedRow.sourceCode })
@@ -362,6 +365,10 @@
     // Check if the automapping proces is running and if this is happening, abort the promise because it could give unexpected results.
     if (autoMappingPromise) autoMappingAbortController.abort()
 
+    if (event.detail.custom) {
+      await dataTableCustomConcepts.deleteRows(event.detail.indexes)
+    }
+
     // If it not the only concept that is mapped for that row (multiple mapping), erase the row
     if (event.detail.erase == true) {
       // Create a query to get all the rows that has the same sourceCode (row mapped to multiple concepts)
@@ -394,6 +401,15 @@
 
   async function deleteRowInnerMapping(event: CustomEvent<DeleteRowInnerMappingEventDetail>) {
     if (dev) console.log('deleteRowInnerMapping: Delete mapping with conceptId ', event.detail.conceptId)
+    if (event.detail.custom) {
+      for (let row of customConceptsArrayOfObjects) {
+        if (row.concept_id === event.detail.conceptId && row.concept_name === event.detail.conceptName) {
+          const index = customConceptsArrayOfObjects.indexOf(row)
+          customConceptsArrayOfObjects.splice(index, 1)
+          customConceptsArrayOfObjects = customConceptsArrayOfObjects
+        }
+      }
+    }
     const q = query()
       .params({ conceptId: event.detail.conceptId, sourceCode: selectedRow.sourceCode })
       .filter((r: any, params: any) => r.conceptId == params.conceptId && r.sourceCode == params.sourceCode)
@@ -949,9 +965,11 @@
       <input id="file-upload" type="file" accept=".csv, .json" on:change={onFileInputChange} />
       <Download dataTable={dataTableFile} title="Download file" svgId="download" />
 
-      {#if Object.keys(customConceptsArrayOfObjects[0]).length != 0}
-        <p>Custom concepts download:</p>
-        <Download dataTable={dataTableCustomConcepts} title="Download custom concepts" svgId="download" />
+      {#if customConceptsArrayOfObjects.length > 0}
+        {#if Object.keys(customConceptsArrayOfObjects[0]).length != 0}
+          <p>Custom concepts download:</p>
+          <Download dataTable={dataTableCustomConcepts} title="Download custom concepts" svgId="download" />
+        {/if}
       {/if}
     {/if}
   </div>
