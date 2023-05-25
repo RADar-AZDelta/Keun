@@ -480,6 +480,29 @@
   // METHODS
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
+  async function translate(text: string) {
+    if (browser) {
+      // Recreate a translator if it's a browser because the previous instance is still pending and can't be used
+      translator = new LatencyOptimisedTranslator(
+        {
+          workers: 1,
+          batchSize: 1,
+          registryUrl: 'bergamot/registry.json',
+          html: true,
+        },
+        undefined
+      )
+    }
+    let translation = await translator.translate({
+      from: settings!.language,
+      to: 'en',
+      text: text,
+      html: true,
+    })
+    let result = translation.target.text
+    return result
+  }
+
   // A method to automatically map a given row
   async function autoMapRow(signal: AbortSignal, row: Record<string, any>, index: number) {
     let start: number, end: number
@@ -496,13 +519,7 @@
       if (settings.language) {
         if (settings.language != 'en') {
           console.log('TRANSLATION AUTOMAP')
-          let translation = await translator.translate({
-            from: settings.language,
-            to: 'en',
-            text: filter,
-            html: true,
-          })
-          filter = translation.target.text
+          filter = await translate(filter)
         }
       }
     }
@@ -565,16 +582,10 @@
     pagination: IPagination
   ) {
     let filter = filteredColumns.values().next().value
-    if(filter === undefined && globalAthenaFilter.filter === undefined) {
-      if(settings && selectedRow) {
-        if(settings.language !== 'en') {
-          let translation = await translator.translate({
-            from: settings.language,
-            to: 'en',
-            text: selectedRow.sourceName,
-            html: true,
-          })
-          filter = translation.target.text
+    if (filter === undefined && globalAthenaFilter.filter === undefined) {
+      if (settings && selectedRow) {
+        if (settings.language !== 'en') {
+          filter = await translate(selectedRow.sourceName)
           globalAthenaFilter.filter = filter
           // TODO: refactor this
           // Current solution because in DataTable the filter is overwritten with the localstorage filter
@@ -922,16 +933,6 @@
         savedAuthors: [],
         vocabularyIdCustomConcept: undefined,
       }
-    // Create a translator object to translate the concepts in the future
-    translator = new LatencyOptimisedTranslator(
-      {
-        workers: 1,
-        batchSize: 1,
-        registryUrl: 'bergamot/registry.json',
-        html: true,
-      },
-      undefined
-    )
   })
 
   if (!dev) {
