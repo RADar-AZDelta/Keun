@@ -280,7 +280,7 @@
       activatedAthenaFilters = savedFilters
       if (activatedAthenaFilters.get('standardConcept')) {
         const currentValues = activatedAthenaFilters.get('standardConcept')
-        currentValues!.push('Standard')
+        if (!currentValues!.includes('Standard')) currentValues!.push('Standard')
         activatedAthenaFilters.set('standardConcept', currentValues!)
       } else {
         activatedAthenaFilters.set('standardConcept', ['Standard'])
