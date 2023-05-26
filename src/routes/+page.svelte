@@ -320,11 +320,11 @@
       updatingObj.mappingStatus = null
       if (event.detail.row['ADD_INFO:approvedBy']) {
         updatingObj['ADD_INFO:approvedBy'] = null
-        updatingObj['ADD_INFO:approvedOn'] = null
+        updatingObj['ADD_INFO:approvedOn'] = 0
       }
       if (event.detail.row.statusSetBy) {
         updatingObj.statusSetBy = null
-        updatingObj.statusSetOn = null
+        updatingObj.statusSetOn = 0
       }
     } else {
       // Check if there is a conceptId or a sourceAutoAssignedConceptIds (this is the conceptId that is assigned by the automapping proces)

@@ -80,7 +80,7 @@
 </script>
 
 <td data-name="actions-grid" style={`background-color: ${color}`}>
-  <button on:click={onClickMapping} title="Map">MAP</button
+  <button on:click={onClickMapping} title="Map"><SvgIcon href="icons.svg" id="search" width="16px" height="16px"/></button
   >
   <button on:click={onClickDeletion} title="Delete"
     ><SvgIcon href="icons.svg" id="eraser" width="16px" height="16px" /></button
@@ -106,7 +106,7 @@
 {#each columns || [] as column, i}
   <td on:dblclick={onClickMapping} on:dblclick={onClickMapping} style={`background-color: ${color}`} title={renderedRow[column.id]}>
     {#if ['statusSetOn', 'createdOn', 'ADD_INFO:approvedOn'].includes(column.id)}
-      <p>{new Date(parseInt(renderedRow[column.id])).toLocaleString()}</p>
+      <p>{renderedRow[column.id] ? new Date(parseInt(renderedRow[column.id])).toLocaleString() : 0}</p>
     {:else}
       <p>{renderedRow[column.id] ?? ''}</p>
     {/if}

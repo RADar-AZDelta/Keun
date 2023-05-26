@@ -78,7 +78,7 @@
           </div>
         </div>
         <div data-name="option">
-          <p>Language of CSV</p>
+          <p>Language of source CSV</p>
           <select name="language" id="language" bind:value={settings.language} on:change={saveSettings}>
             {#each Object.keys(languages) as lang}
               <option value={lang} selected={lang == settings.language ? true : false}>{languages[lang]}</option>
@@ -86,9 +86,10 @@
           </select>
         </div>
         <div data-name="option">
-          <p>Vocabulary id of custom concepts</p>
+          <p>Default vocabulary ID for custom concepts</p>
           <input
             type="text"
+            placeholder="local ID e.g. AZDELTA"
             use:clickOutside
             bind:value={settings.vocabularyIdCustomConcept}
             on:outClick={saveSettings}
