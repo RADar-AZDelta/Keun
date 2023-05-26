@@ -36,6 +36,10 @@
   let openedFilter: string
   let savedFilters: Map<string, string[]>
   let lastRow: boolean = false
+  let sidesShowed: Record<string, boolean> = {
+    filters: true,
+    extra: true,
+  }
   let layoutDialog: HTMLDialogElement
   let reviewer: string = ''
   let comment: string = ''
@@ -370,6 +374,10 @@
     }
   }
 
+  function sideVisibilityChange(side: string, value: boolean) {
+    sidesShowed[side] = value
+  }
+
   $: {
     selectedRowIndex
     if (mainTable) {
@@ -401,45 +409,56 @@
     ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
   >
   <div data-name="athena-layout">
-    <section data-name="filters-container">
-      <h2>Filters</h2>
-      <div data-name="filters">
-        {#each [...JSONFilters] as [key, options]}
-          <AthenaFilter
-            filter={{ name: key, categories: options }}
-            bind:openedFilter
-            allowInput={true}
-            color={filterColors[key.toLowerCase()]}
+    {#if sidesShowed.filters}
+      <section data-name="filters-container">
+        <div data-name="filters-head">
+          <h2>Filters</h2>
+          <button on:click={() => sideVisibilityChange('filters', false)} id="filters"
+            ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
           >
-            <div slot="option" data-name="filter-option" let:option>
-              <input
-                id={option}
-                type="checkbox"
-                title="Activate/deactivate filter"
-                checked={checkIfFilterExists(key, options.altName, option)}
-                on:change={() =>
-                  event != undefined
-                    ? updateAPIFilters(event, options.altName != undefined ? options.altName : 'sourceName', option)
-                    : null}
-              />
-              <label for={option}>{option.replaceAll('/', ' / ')}</label>
-            </div>
-          </AthenaFilter>
-        {/each}
-        <div data-name="activated-filters">
-          {#each [...activatedAthenaFilters] as [filter, values]}
-            {#each values as value}
-              <div data-name="activated-filter" style={`background-color: ${filterColors[filterNames[filter]]}`}>
-                <button on:click={() => removeFilter(filter, value)}
-                  ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
-                >
-                <p>{value}</p>
-              </div>
-            {/each}
-          {/each}
         </div>
-      </div>
-    </section>
+        <div data-name="filters">
+          {#each [...JSONFilters] as [key, options]}
+            <AthenaFilter
+              filter={{ name: key, categories: options }}
+              bind:openedFilter
+              allowInput={true}
+              color={filterColors[key.toLowerCase()]}
+            >
+              <div slot="option" data-name="filter-option" let:option>
+                <input
+                  id={option}
+                  type="checkbox"
+                  title="Activate/deactivate filter"
+                  checked={checkIfFilterExists(key, options.altName, option)}
+                  on:change={() =>
+                    event != undefined
+                      ? updateAPIFilters(event, options.altName != undefined ? options.altName : 'sourceName', option)
+                      : null}
+                />
+                <label for={option}>{option.replaceAll('/', ' / ')}</label>
+              </div>
+            </AthenaFilter>
+          {/each}
+          <div data-name="activated-filters">
+            {#each [...activatedAthenaFilters] as [filter, values]}
+              {#each values as value}
+                <div data-name="activated-filter" style={`background-color: ${filterColors[filterNames[filter]]}`}>
+                  <button on:click={() => removeFilter(filter, value)}
+                    ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
+                  >
+                  <p>{value}</p>
+                </div>
+              {/each}
+            {/each}
+          </div>
+        </div>
+      </section>
+    {:else}
+      <button data-name="filters-open" on:click={() => sideVisibilityChange('filters', true)}
+        ><SvgIcon href="icons.svg" id="filter" width="16px" height="16px" /></button
+      >
+    {/if}
     <section data-name="table-pop-up">
       <div data-name="table-head">
         <h2>Athena data</h2>
@@ -554,51 +573,62 @@
         </div>
       {/if}
     </section>
-    <section data-name="additional-information">
-      <h2>Extra</h2>
-      <div data-name="info-container">
-        {#if selectedRow}
-          <div data-name="mappedRows">
-            <table>
-              {#if Object.keys(alreadyMapped).length == 0 && Object.keys(alreadyMapped).includes(selectedRow.conceptName)}
-                <div />
-              {:else}
-                <tr>
-                  <th />
-                  <th>conceptId</th>
-                  <th>conceptName</th>
-                </tr>
-                {#each Object.keys(alreadyMapped) as code}
-                  {#if selectedRow.sourceCode == code}
-                    {#each alreadyMapped[code].conceptId as id, i}
-                      <tr>
-                        <td
-                          ><button
-                            on:click={() =>
-                              removeMapping(alreadyMapped[code].conceptId[i], alreadyMapped[code].conceptName[i])}
-                            ><SvgIcon href="icons.svg" id="x" width="12px" height="12px" /></button
-                          ></td
-                        >
-                        <td>{alreadyMapped[code].conceptId[i]}</td>
-                        <td>{alreadyMapped[code].conceptName[i]}</td>
-                      </tr>
-                    {/each}
-                  {/if}
-                {/each}
-              {/if}
-            </table>
+    {#if sidesShowed.extra}
+      <section data-name="additional-information">
+        <div data-name="additional-information-head">
+          <button on:click={() => sideVisibilityChange('extra', false)}
+            ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
+          >
+          <h2>Extra</h2>
+        </div>
+        <div data-name="info-container">
+          {#if selectedRow}
+            <div data-name="mappedRows">
+              <table>
+                {#if Object.keys(alreadyMapped).length == 0 && Object.keys(alreadyMapped).includes(selectedRow.conceptName)}
+                  <div />
+                {:else}
+                  <tr>
+                    <th />
+                    <th>conceptId</th>
+                    <th>conceptName</th>
+                  </tr>
+                  {#each Object.keys(alreadyMapped) as code}
+                    {#if selectedRow.sourceCode == code}
+                      {#each alreadyMapped[code].conceptId as id, i}
+                        <tr>
+                          <td
+                            ><button
+                              on:click={() =>
+                                removeMapping(alreadyMapped[code].conceptId[i], alreadyMapped[code].conceptName[i])}
+                              ><SvgIcon href="icons.svg" id="x" width="12px" height="12px" /></button
+                            ></td
+                          >
+                          <td>{alreadyMapped[code].conceptId[i]}</td>
+                          <td>{alreadyMapped[code].conceptName[i]}</td>
+                        </tr>
+                      {/each}
+                    {/if}
+                  {/each}
+                {/if}
+              </table>
+            </div>
+          {/if}
+          <Equivalence bind:Eq={equivalenceMapping} />
+          <div data-name="reviewer">
+            <p>Assigned reviewer: {reviewer}</p>
+            <AutocompleteInputSettings {settings} on:reviewerChanged={reviewerChanged} />
           </div>
-        {/if}
-        <Equivalence bind:Eq={equivalenceMapping} />
-        <div data-name="reviewer">
-          <p>Assigned reviewer: {reviewer}</p>
-          <AutocompleteInputSettings {settings} on:reviewerChanged={reviewerChanged} />
+          <div data-name="comments">
+            <p>Comments</p>
+            <textarea title="Comments" name="Comments" id="Comments" cols="28" rows="6" bind:value={comment} />
+          </div>
         </div>
-        <div data-name="comments">
-          <p>Comments</p>
-          <textarea title="Comments" name="Comments" id="Comments" cols="28" rows="6" bind:value={comment} />
-        </div>
-      </div>
-    </section>
+      </section>
+    {:else}
+      <button data-name="extra-open" on:click={() => sideVisibilityChange('extra', true)}
+        ><SvgIcon href="icons.svg" id="info" width="16px" height="16px" /></button
+      >
+    {/if}
   </div>
 </dialog>
