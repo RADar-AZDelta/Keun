@@ -38,7 +38,7 @@
 <td data-name="actions">
   {#if mapped == true}
     <button title="Map to row" style="background-color: greenyellow;"
-      ><SvgIcon href="icons.svg" id="plus" width="16px" height="16px" /></button
+      ><SvgIcon href="icons.svg" id="check" width="16px" height="16px" /></button
     >
   {:else}
     <button on:click={onClickMapping}><SvgIcon href="icons.svg" id="plus" width="16px" height="16px" /></button>

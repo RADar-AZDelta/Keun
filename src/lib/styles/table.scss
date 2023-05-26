@@ -416,14 +416,26 @@ dialog[data-name='athena-dialog'] {
     section[data-name='filters-container'] {
       height: 100%;
       min-width: 15%;
-      max-width: 15%;
-      padding: 2.5rem 1.5rem 0 2.5rem;
+      padding: 0 0.5rem 0 1.5rem;
       border-right: 1px solid lightgray;
 
-      h2 {
-        font-size: 1.5rem;
-        font-weight: 600;
-        padding-bottom: 1rem;
+      div[data-name='filters-head'] {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 1rem 0;
+
+        h2 {
+          font-size: 1.5rem;
+          font-weight: 600;
+          margin: 0;
+        }
+
+        button {
+          background-color: inherit;
+          cursor: pointer;
+          border: none;
+        }
       }
 
       div[data-name='filters'] {
@@ -561,6 +573,7 @@ dialog[data-name='athena-dialog'] {
               border: none;
               color: white;
               cursor: pointer;
+              padding: 0;
             }
 
             button:hover {
@@ -576,15 +589,25 @@ dialog[data-name='athena-dialog'] {
       }
     }
 
+    button[data-name='filters-open'] {
+      cursor: pointer;
+      border: none;
+      background-color: inherit;
+      align-self: flex-start;
+      padding: 1.5rem;
+    }
+
     section[data-name='table-pop-up'] {
       min-width: 63%;
-      max-width: 63%;
+      flex: 1 1 auto;
       height: 100%;
+      display: flex;
+      flex-direction: column;
 
       div[data-name='table-head'] {
         max-height: 40%;
         display: flex;
-        gap: 4rem;
+        justify-content: space-between;
         align-items: center;
         padding: 1rem 3rem 3rem 3rem;
 
@@ -695,12 +718,11 @@ dialog[data-name='athena-dialog'] {
 
       div[data-name='table-container'] {
         padding: 0 1rem;
-        max-height: 80%;
+        flex: 1 1 auto;
         overflow: auto;
 
         div[data-component='svelte-datatable'] {
-          max-height: 50%;
-          overflow-y: auto;
+          // overflow-y: auto;
           div[data-component='datatable-content'] {
             table {
               overflow-y: auto;
@@ -846,10 +868,28 @@ dialog[data-name='athena-dialog'] {
 
     section[data-name='additional-information'] {
       border-left: 1px solid lightgray;
-      min-width: 15%;
-      max-width: 15%;
+      min-width: 18%;
       height: 100%;
       padding-left: 1rem;
+
+      div[data-name='additional-information-head'] {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem 0;
+
+        h2 {
+          font-size: 1.5rem;
+          font-weight: 600;
+          margin: 0;
+        }
+
+        button {
+          background-color: inherit;
+          border: none;
+          cursor: pointer;
+        }
+      }
 
       div[data-name='info-container'] {
         height: 80%;
@@ -965,6 +1005,14 @@ dialog[data-name='athena-dialog'] {
           }
         }
       }
+    }
+
+    button[data-name='extra-open'] {
+      background-color: inherit;
+      border: none;
+      cursor: pointer;
+      align-self: flex-start;
+      padding: 4rem 1.5rem;
     }
   }
 }
