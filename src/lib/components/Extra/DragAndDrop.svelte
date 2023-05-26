@@ -1,6 +1,8 @@
 <script lang="ts">
   import { createEventDispatcher, tick } from 'svelte'
   import type { CustomOptionsEvents } from '../Types'
+  import SvgIcon from './SvgIcon.svelte'
+  import { dev } from '$app/environment'
 
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
@@ -43,11 +45,35 @@
     if (file.name.toLowerCase().includes('csv') || file.name.toLowerCase().includes('json'))
       dispatch('fileUploaded', { file })
   }
+
+  // Implement button to upload file because filePicker API is not supported in all browsers
+  async function onFileInputChange(e: Event) {
+    if (dev) console.log('onFileInputChange: New file uploaded')
+    await tick()
+
+    const allowedExtensions = ['csv', 'json']
+    const inputFiles = (e.target as HTMLInputElement).files
+    if (!inputFiles) return
+
+    // Check the files if the extension is allowed
+    for (const f of inputFiles) {
+      const extension = f.name.split('.').pop()
+      if (extension && allowedExtensions.includes(extension)) {
+        dispatch('fileUploaded', { file: f })
+        break
+      }
+    }
+  }
 </script>
 
 <div data-name="drag-drop" on:click={openFilePicker} on:keypress={openFilePicker}>
   <div data-name="drag-drop-container" on:drop={dropHandler} on:dragover={dragOverHandler}>
-    <p>Drag a file here or click here</p>
+    <p>Drag a file here</p>
     <img src="drag.png" alt="Drag & drop file here" />
+    <p>Or click here</p>
+    <label title="Upload" for="file-upload" data-name="file-upload"
+      ><SvgIcon href="icons.svg" id="upload" width="16px" height="16px" /></label
+    >
+    <input id="file-upload" type="file" accept=".csv, .json" on:change={onFileInputChange} />
   </div>
 </div>
