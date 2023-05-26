@@ -6,6 +6,7 @@
   export let settings: Record<string, any>
 
   let showModal = false,
+    author: string | undefined = undefined,
     backupAuthor: string | undefined,
     userDialog: HTMLDialogElement
 
@@ -34,6 +35,7 @@
   async function saveAuthorUpdate() {
     if (dev) console.log('saveAuthorUpdate: Saving author update')
     closeDialog()
+    settings.author = author
     settings = settings
     backupAuthor = settings.author
     localStorageSetter('settings', settings)
@@ -44,6 +46,7 @@
   }
 
   function openDialog() {
+    if (settings.author) author = settings.author
     if (!backupAuthor) backupAuthor = settings?.author
     if (userDialog.attributes.getNamedItem('open') == null) userDialog.showModal()
   }
@@ -56,15 +59,17 @@
 
 <dialog bind:this={userDialog} data-name="user-dialog">
   {#if settings}
-    <button data-name="close-dialog" on:click={closeDialog}
+    <button data-name="close-dialog" on:click={closeDialog} disabled={author == undefined ? true : false}
       ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
     >
     <section data-name="author">
       <h2>Who is the author?</h2>
-      <input id="author" type="text" placeholder="John Wick" bind:value={settings.author} />
+      <input id="author" type="text" placeholder="John Wick" bind:value={author} />
       <div data-name="buttons-container">
-        <button data-name="cancel" on:click={cancelAuthorUpdate} disabled={!settings?.author}>Cancel</button>
-        <button data-name="save" on:click={saveAuthorUpdate} disabled={!settings?.author}>Save</button>
+        <button data-name="cancel" on:click={cancelAuthorUpdate} disabled={author == undefined ? true : false}
+          >Cancel</button
+        >
+        <button data-name="save" on:click={saveAuthorUpdate} disabled={author == undefined ? true : false}>Save</button>
       </div>
     </section>
   {/if}
