@@ -482,16 +482,18 @@
 
   async function translate(text: string) {
     if (browser) {
-      // Recreate a translator if it's a browser because the previous instance is still pending and can't be used
-      translator = new LatencyOptimisedTranslator(
-        {
-          workers: 1,
-          batchSize: 1,
-          registryUrl: 'bergamot/registry.json',
-          html: true,
-        },
-        undefined
-      )
+      if (!translator) {
+        // Recreate a translator if it's a browser because the previous instance is still pending and can't be used
+        translator = new LatencyOptimisedTranslator(
+          {
+            workers: 1,
+            batchSize: 1,
+            registryUrl: 'bergamot/registry.json',
+            html: true,
+          },
+          undefined
+        )
+      }
     }
     let translation = await translator.translate({
       from: settings!.language,
@@ -518,7 +520,6 @@
       if (!settings.language) settings.language = 'en'
       if (settings.language) {
         if (settings.language != 'en') {
-          console.log('TRANSLATION AUTOMAP')
           filter = await translate(filter)
         }
       }
