@@ -655,6 +655,9 @@ dialog[data-name='athena-dialog'] {
             td,
             th {
               padding: 0.5rem 0.75rem;
+              text-overflow: ellipsis;
+              overflow: hidden;
+              white-space: nowrap;
             }
 
             th[data-name='normal-cell'],
@@ -871,20 +874,23 @@ dialog[data-name='athena-dialog'] {
       min-width: 18%;
       height: 100%;
       padding-left: 1rem;
+      display: flex;
+      flex-direction: column;
 
       div[data-name='additional-information-head'] {
         display: flex;
         align-items: center;
         gap: 1rem;
-        padding: 1rem 0;
 
         h2 {
+          padding: 1rem 0;
           font-size: 1.5rem;
           font-weight: 600;
           margin: 0;
         }
 
         button {
+          padding: 1rem 0;
           background-color: inherit;
           border: none;
           cursor: pointer;
@@ -892,18 +898,29 @@ dialog[data-name='athena-dialog'] {
       }
 
       div[data-name='info-container'] {
-        height: 80%;
+        flex: 1 1 auto;
 
         div[data-name='mappedRows'] {
-          max-height: 40%;
+          max-height: 250px;
           overflow-y: auto;
-          margin: 0.5rem 0 2rem 0;
+          margin: 0.5rem 0 1rem 0;
+
+          button {
+            border: none;
+            cursor: pointer;
+            background-color: inherit;
+            padding: 1rem 0;
+          }
 
           table {
             td,
             th {
-              padding: 0.5rem;
+              padding: 0.5rem 0.1rem;
               border-top: 1px solid lightgray;
+              max-width: 8vw;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              white-space: nowrap;
             }
           }
         }

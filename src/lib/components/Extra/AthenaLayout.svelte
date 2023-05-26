@@ -481,9 +481,9 @@
             </tr>
             <tr>
               {#if selectedRow != undefined}
-                <td data-name="normal-cell">{selectedRow.sourceCode}</td>
-                <td data-name="sourceName">{selectedRow.sourceName}</td>
-                <td data-name="normal-cell">{selectedRow.sourceFrequency}</td>
+                <td data-name="normal-cell" title={selectedRow.sourceCode}>{selectedRow.sourceCode}</td>
+                <td data-name="sourceName" title={selectedRow.sourceName}>{selectedRow.sourceName}</td>
+                <td data-name="normal-cell" title={selectedRow.sourceFrequency}>{selectedRow.sourceFrequency}</td>
               {/if}
             </tr>
           </table>
@@ -604,8 +604,8 @@
                               ><SvgIcon href="icons.svg" id="x" width="12px" height="12px" /></button
                             ></td
                           >
-                          <td>{alreadyMapped[code].conceptId[i]}</td>
-                          <td>{alreadyMapped[code].conceptName[i]}</td>
+                          <td title={alreadyMapped[code].conceptId[i]}>{alreadyMapped[code].conceptId[i]}</td>
+                          <td title={alreadyMapped[code].conceptName[i]}>{alreadyMapped[code].conceptName[i]}</td>
                         </tr>
                       {/each}
                     {/if}
