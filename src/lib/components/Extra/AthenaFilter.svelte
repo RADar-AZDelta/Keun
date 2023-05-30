@@ -47,7 +47,11 @@
   <button title="Open filter {filter.name}" data-name="filter-button" on:click={showCategories}>
     <div data-name="filter-name">
       <span data-name="filter-color" style={`background-color: ${color};`} />
-      <p>{filter.name}</p>
+      {#if filter.name !== 'Vocab'}
+        <p>{filter.name}</p>
+      {:else}
+        <p>{filter.categories.altName}</p>
+      {/if}
     </div>
     <SvgIcon href="icons.svg" id="updown" width="16px" height="16px" />
   </button>
