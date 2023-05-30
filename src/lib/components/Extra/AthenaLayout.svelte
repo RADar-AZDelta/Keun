@@ -123,14 +123,6 @@
 
   // A method that catches the event for single mapping and throws an event to the parent
   function singleMapping(event: CustomEvent<SingleMappingEventDetail>) {
-    if (selectedRow['ADD_INFO:customConcept']) {
-      dispatch('deleteRowInnerMapping', {
-        conceptId: selectedRow['conceptId'],
-        conceptName: selectedRow['conceptName'],
-        erase: false,
-        custom: true,
-      })
-    }
     dispatch('singleMapping', {
       originalRow: selectedRow,
       row: event.detail.row,
@@ -140,14 +132,6 @@
 
   // A method that catches the event for multiple mapping and throws an event to the parent
   function multipleMapping(event: CustomEvent<MultipleMappingEventDetail>) {
-    if (selectedRow['ADD_INFO:customConcept']) {
-      dispatch('deleteRowInnerMapping', {
-        conceptId: selectedRow['sourceCode'],
-        conceptName: selectedRow['sourceName'],
-        erase: false,
-        custom: true,
-      })
-    }
     dispatch('multipleMapping', {
       originalRow: selectedRow,
       row: event.detail.row,
@@ -265,11 +249,15 @@
       for (let row of res.queriedData) {
         if (row.conceptId) {
           if (alreadyMapped[row.sourceCode]) {
-            if (!alreadyMapped[row.sourceCode].conceptId.includes(row.conceptId))
+            if (
+              !alreadyMapped[row.sourceCode].conceptId.includes(row.conceptId) ||
+              !alreadyMapped[row.sourceCode].conceptName.includes(row.conceptName)
+            )
               alreadyMapped[row.sourceCode].conceptId.push(row.conceptId)
-            if (!alreadyMapped[row.sourceCode].conceptName.includes(row.conceptName))
-              alreadyMapped[row.sourceCode].conceptName.push(row.conceptName)
-          } else alreadyMapped[row.sourceCode] = { conceptId: [row.conceptId], conceptName: [row.conceptName] }
+            alreadyMapped[row.sourceCode].conceptName.push(row.conceptName)
+          } else  {
+            alreadyMapped[row.sourceCode] = { conceptId: [row.conceptId], conceptName: [row.conceptName] }
+          }
         }
       }
     }
@@ -335,21 +323,28 @@
           validStartDate: `${new Date().getFullYear()}-${new Date().getMonth()}-${new Date().getDate()}`,
           validEndDate: '2099-12-31',
           invalidReason: '',
+          extra: {
+            comment: comment,
+            assignedReviewer: reviewer,
+          },
         })
 
         if (alreadyMapped[selectedRow.sourceCode]) {
-          if (alreadyMapped[selectedRow.sourceCode].conceptId.length > 0)
+          if (alreadyMapped[selectedRow.sourceCode].conceptId.length > 0) {
             alreadyMapped[selectedRow.sourceCode].conceptId.push(selectedRow.sourceCode)
-          else alreadyMapped[selectedRow.sourceCode].conceptId = [selectedRow.sourceCode]
+          } else {
+            alreadyMapped[selectedRow.sourceCode].conceptId = [selectedRow.sourceCode]
+          }
           if (alreadyMapped[selectedRow.sourceCode].conceptName.length > 0)
-            alreadyMapped[selectedRow.sourceCode].conceptName.push(selectedRow.sourceName)
-          else alreadyMapped[selectedRow.sourceCode].conceptName = [selectedRow.sourceName]
+            alreadyMapped[selectedRow.sourceCode].conceptName.push(customConcept.conceptName)
+          else alreadyMapped[selectedRow.sourceCode].conceptName = [customConcept.conceptName]
         } else {
           alreadyMapped[selectedRow.sourceCode] = {
             conceptId: [selectedRow.sourceCode],
             conceptName: [customConcept.conceptName],
           }
         }
+        alreadyMapped = alreadyMapped
       } else {
         errorMessage = 'The concept class id is not valid'
       }

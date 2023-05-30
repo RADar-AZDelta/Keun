@@ -95,6 +95,11 @@
             on:outClick={saveSettings}
           />
         </div>
+        <!-- TODO: add option for font-size (in DataTable)-->
+        <!-- <div data-name="option">
+          <p>Font size</p>
+          <input type="number" bind:value={settings.fontsize} use:clickOutside on:outClick={saveSettings}>
+        </div> -->
       </div>
     </section>
   {/if}
