@@ -14,6 +14,7 @@ export interface CustomOptionsEvents {
   settingsChanged: SettingsChangedEventDetail
   autoMapRow: AutoMapRowEventDetail
   autoComplete: AutoCompleteEventDetail
+  updateDetails: UpdateDetailsEventDetail
 }
 
 export interface VisibilityChangedEventDetail {
@@ -94,6 +95,12 @@ export interface AutoMapRowEventDetail {
 export interface AutoCompleteEventDetail {
   id: string
   value: any
+}
+
+export interface UpdateDetailsEventDetail {
+  index: number
+  comment: string
+  assignedReviewer: string
 }
 
 export interface FileUploadedEventDetail {

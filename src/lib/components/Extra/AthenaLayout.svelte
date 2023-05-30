@@ -20,6 +20,7 @@
   import AutocompleteInputSettings from './AutocompleteInputSettings.svelte'
   import AutocompleteInput from './AutocompleteInput.svelte'
   import customConceptInfo from '$lib/data/customConceptInfo.json'
+  import debounce from 'lodash.debounce'
 
   export let urlFilters: string[],
     url: string,
@@ -38,7 +39,7 @@
   let lastRow: boolean = false
   let sidesShowed: Record<string, boolean> = {
     filters: true,
-    detail: true,
+    details: true,
   }
   let layoutDialog: HTMLDialogElement
   let reviewer: string = ''
@@ -51,6 +52,7 @@
   }
   let conceptSelection: string = 'existing'
   let errorMessage: string = ''
+  let sidesSet: boolean = false
 
   let filterColors: Record<string, string> = {
     domain: '#ec3d31',
@@ -255,7 +257,7 @@
             )
               alreadyMapped[row.sourceCode].conceptId.push(row.conceptId)
             alreadyMapped[row.sourceCode].conceptName.push(row.conceptName)
-          } else  {
+          } else {
             alreadyMapped[row.sourceCode] = { conceptId: [row.conceptId], conceptName: [row.conceptName] }
           }
         }
@@ -265,8 +267,10 @@
 
   // A method for when the assigned reviewer has changed
   function reviewerChanged(e: CustomEvent<ReviewerChangedEventDetail>) {
-    if (e.detail.reviewer) reviewer = e.detail.reviewer
-    else reviewer = ''
+    if (e.detail.reviewer) {
+      reviewer = e.detail.reviewer
+      dispatch('updateDetails', { index: selectedRowIndex, assignedReviewer: reviewer, comment })
+    } else reviewer = ''
   }
 
   function closeDialog() {
@@ -362,6 +366,20 @@
 
   function sideVisibilityChange(side: string, value: boolean) {
     sidesShowed[side] = value
+    if (side == 'filters') settings.popupSidesShowed.filters = value
+    else if (side == 'detail') settings.popupSidesShowed.details = value
+  }
+
+  const onInputComment = debounce(async (e: any) => {
+    dispatch('updateDetails', { index: selectedRowIndex, comment, assignedReviewer: reviewer })
+  }, 500)
+
+  function setSidesShowed () {
+    if (settings) {
+      if (settings.popupSidesShowed) {
+        sidesShowed = settings.popupSidesShowed
+      }
+    }
   }
 
   $: {
@@ -392,6 +410,15 @@
   $: {
     selectedRow
     getUniqueConceptIds()
+  }
+
+  $: {
+    settings
+    if(settings && sidesSet == false){
+      setSidesShowed()
+      sidesSet = true
+    }
+
   }
 </script>
 
@@ -461,7 +488,6 @@
     {/if}
     <section data-name="table-pop-up">
       <div data-name="table-head">
-        <h2>Athena data</h2>
         <div data-name="currentRow">
           <button
             title="Previous row"
@@ -576,10 +602,10 @@
         </div>
       {/if}
     </section>
-    {#if sidesShowed.detail}
+    {#if sidesShowed.details}
       <section data-name="additional-information">
         <div data-name="additional-information-head">
-          <button on:click={() => sideVisibilityChange('detail', false)}
+          <button on:click={() => sideVisibilityChange('details', false)}
             ><SvgIcon href="icons.svg" id="chevrons-right" width="16px" height="16px" /></button
           >
           <h2>Detail</h2>
@@ -624,13 +650,21 @@
           </div>
           <div data-name="comments">
             <p>Comments</p>
-            <textarea title="Comments" name="Comments" id="Comments" cols="28" rows="6" bind:value={comment} />
+            <textarea
+              title="Comments"
+              name="Comments"
+              id="Comments"
+              cols="28"
+              rows="6"
+              on:input={onInputComment}
+              bind:value={comment}
+            />
           </div>
         </div>
       </section>
     {:else}
       <div data-name="sidebar-left">
-        <button data-name="closed-bar" on:click={() => sideVisibilityChange('detail', true)}>
+        <button data-name="closed-bar" on:click={() => sideVisibilityChange('details', true)}>
           <SvgIcon href="icons.svg" id="chevrons-left" width="16px" height="16px" />
           <p>D</p>
           <p>E</p>

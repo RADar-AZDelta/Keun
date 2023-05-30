@@ -16,6 +16,7 @@
     FileUploadedEventDetail,
     SettingsChangedEventDetail,
     AutoMapRowEventDetail,
+    UpdateDetailsEventDetail,
   } from '$lib/components/Types'
   import type { IColumnMetaData, IPagination, SortDirection, TFilter } from '@radar-azdelta/svelte-datatable'
   import { localStorageGetter, localStorageSetter } from '$lib/utils'
@@ -326,6 +327,14 @@
     calculateProgress()
   }
 
+  async function updateDetailsRow(event: CustomEvent<UpdateDetailsEventDetail>) {
+    await dataTableFile.updateRows(
+      new Map([
+        [event.detail.index, { comment: event.detail.comment, assignedReviewer: event.detail.assignedReviewer }],
+      ])
+    )
+  }
+
   // When a action (approve, flag, unapprove) button is clicked (left-side of the table in the action column)
   async function actionPerformed(event: CustomEvent<ActionPerformedEventDetail>) {
     if (dev)
@@ -431,8 +440,15 @@
       }
     }
     const q = query()
-      .params({ conceptId: event.detail.conceptId, sourceCode: selectedRow.sourceCode, conceptName: event.detail.conceptName })
-      .filter((r: any, params: any) => r.conceptId == params.conceptId && r.sourceCode == params.sourceCode && r.conceptName == params.conceptName)
+      .params({
+        conceptId: event.detail.conceptId,
+        sourceCode: selectedRow.sourceCode,
+        conceptName: event.detail.conceptName,
+      })
+      .filter(
+        (r: any, params: any) =>
+          r.conceptId == params.conceptId && r.sourceCode == params.sourceCode && r.conceptName == params.conceptName
+      )
       .toObject()
     const res = await dataTableFile.executeQueryAndReturnResults(q)
     if (event.detail.erase) {
@@ -928,7 +944,6 @@
     document.documentElement.style.setProperty('--font-size', `${settings.fontsize}px`)
   }
 
-
   let fetchDataFunc = fetchData
 
   onMount(async () => {
@@ -950,6 +965,7 @@
       if (!settings.hasOwnProperty('savedAuthors')) settings!.savedAuthors = []
       if (!settings.hasOwnProperty('vocabularyIdCustomConcept')) settings!.vocabularyIdCustomConcept = undefined
       if (!settings.hasOwnProperty('fontsize')) settings!.fontsize = 10
+      if (!settings.hasOwnProperty('popupSidesShowed')) settings!.popupSidesShowed = { settings: true, details: true }
       localStorageSetter('settings', settings)
     } else
       settings = {
@@ -959,6 +975,8 @@
         author: undefined,
         savedAuthors: [],
         vocabularyIdCustomConcept: undefined,
+        fontsize: 10,
+        popupSidesShowed: { settings: true, details: true },
       }
   })
 
@@ -1018,7 +1036,7 @@
         {/if}
       </div>
       <div>
-        <p>Semi approved rows:</p>
+        <p>Mapped rows:</p>
         {#if mappedRows == undefined}
           <Spinner />
         {:else}
@@ -1061,6 +1079,7 @@
   on:filterOptionsChanged={filterOptionsChanged}
   on:generalVisibilityChanged={mappingVisibilityChanged}
   on:customMapping={customMapping}
+  on:updateDetails={updateDetailsRow}
 />
 
 {#if uploaded == true}
