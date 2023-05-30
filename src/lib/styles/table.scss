@@ -21,6 +21,16 @@ $brightblue: #0094d3;
 $brightblue-x-dark: #0082ba;
 $brightblue-xx-dark: #0070a0;
 
+$font-size: 10px;
+
+:root {
+  --font-size: 10px;
+}
+
+html {
+  font-size: var(--font-size, $font-size);
+}
+
 body {
   font-family: BlinkMacSystemFont, -apple-system, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans',
     'Droid Sans', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
@@ -34,6 +44,8 @@ body {
     padding: 0;
     margin: 0;
   }
+
+  font-size: 1rem;
 }
 
 section[data-name='header'] {
@@ -158,14 +170,16 @@ section[data-name='header'] {
       height: 50%;
       border-radius: 10px;
       border: none;
+      font-size: 16px;
 
       button[data-name='close-dialog'] {
         position: absolute;
-        right: 1rem;
-        top: 1rem;
+        right: 16px;
+        top: 16px;
         border: none;
         background-color: inherit;
         color: $darkgray;
+        padding: 8px;
       }
 
       button[data-name='close-dialog']:hover {
@@ -186,15 +200,23 @@ section[data-name='header'] {
         }
 
         div[data-name='options'] {
-          padding: 1rem 2rem;
+          padding: 16px 32px;
 
           div[data-name='option'] {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 2rem;
-            margin-bottom: 1rem;
+            gap: 32px;
+            margin-bottom: 16px;
             font-size: 20px;
+
+            input,
+            select,
+            option,
+            p,
+            span {
+              font-size: 16px;
+            }
           }
 
           div[data-name='switch'] {
@@ -263,8 +285,8 @@ section[data-name='header'] {
           select {
             width: auto;
             height: 40px;
-            padding: 0.5rem;
-            font-size: 1rem;
+            padding: 8px;
+            font-size: 16px;
             border-radius: 10px;
             border: 1px solid $neutral;
           }
@@ -279,8 +301,7 @@ section[data-name='header'] {
           }
 
           input {
-            padding: 0 0.5rem;
-            font-size: 1rem;
+            padding: 0 8px;
             border: 1px solid $neutral;
             border-radius: 10px;
             height: 40px;
@@ -609,17 +630,39 @@ dialog[data-name='athena-dialog'] {
       }
     }
 
-    button[data-name="filters-closed-bar"] {
+    div[data-name='sidebar-right'] {
       height: 100%;
-      display: flex;
-      flex-direction: column;
-      padding: 1 0 0 0.5rem;
-      gap: 1rem;
-      cursor: pointer;
-      border: none;
-      background-color: inherit;
-      p {
-        font-weight: bold;
+      border-right: 1px solid $neutral;
+      padding: 0.5rem;
+      button[data-name='closed-bar'] {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        cursor: pointer;
+        border: none;
+        background-color: inherit;
+        p {
+          font-weight: bold;
+        }
+      }
+    }
+
+    div[data-name='sidebar-left'] {
+      height: 100%;
+      border-left: 1px solid $neutral;
+      padding: 0.5rem;
+      button[data-name='closed-bar'] {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        cursor: pointer;
+        border: none;
+        background-color: inherit;
+        p {
+          font-weight: bold;
+        }
       }
     }
 
@@ -754,6 +797,7 @@ dialog[data-name='athena-dialog'] {
           // overflow-y: auto;
           div[data-component='datatable-content'] {
             table {
+              font-size: 1rem;
               overflow-y: auto;
               colgroup {
                 col {
@@ -1064,6 +1108,10 @@ div[data-name='drag-drop'] {
   width: 100%;
   height: auto;
 
+  p {
+    font-size: 16px;
+  }
+
   div[data-name='drag-drop-container'] {
     width: min-content;
     margin: auto;
@@ -1108,17 +1156,18 @@ div[data-name='custom-concepts'] {
 div[data-component='svelte-datatable'] {
   div[data-component='datatable-content'] {
     max-width: none;
+    width: auto;
     max-height: none;
     overflow-y: hidden;
 
     table {
       colgroup {
         col {
-          min-width: 130px;
+          min-width: 9rem;
         }
 
         :first-child {
-          min-width: 140px;
+          min-width: calc(9rem + 10px);
         }
       }
 
@@ -1126,8 +1175,9 @@ div[data-component='svelte-datatable'] {
         tr[data-name='titles'] {
           background-color: $neutral-xx-light;
           th {
+            font-size: 1rem;
             div[data-name='column-resize'] {
-              min-width: 130px;
+              min-width: 9rem;
               div[data-name='column-reposition'] {
                 display: flex;
                 align-items: center;
@@ -1139,13 +1189,17 @@ div[data-component='svelte-datatable'] {
         tr[data-name='filters'] {
           background-color: $neutral-xx-light;
           th {
-            min-width: 130px;
+            min-width: 9rem;
             div[data-name='column-filter'] {
               input {
-                min-width: 100px;
+                min-width: 6.5rem;
+                padding: 0;
+              }
+              button {
+                padding: 0.25rem;
               }
             }
-            button[data-name="show-filter-header"] {
+            button[data-name='show-filter-header'] {
               border: none;
               background-color: inherit;
               cursor: pointer;
@@ -1157,7 +1211,7 @@ div[data-component='svelte-datatable'] {
       tbody {
         tr {
           td[data-name='actions-grid'] {
-            min-width: 140px;
+            min-width: calc(8rem + 10px);
             display: grid;
             grid-template-columns: repeat(4, 1fr);
             grid-template-rows: repeat(2, 1fr);
@@ -1166,10 +1220,12 @@ div[data-component='svelte-datatable'] {
           td {
             p {
               white-space: normal;
+              font-size: 1rem;
             }
 
             button {
               padding: 0 0.5rem;
+              font-size: 1rem;
             }
           }
         }
