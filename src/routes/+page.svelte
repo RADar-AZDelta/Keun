@@ -252,31 +252,35 @@
     customConceptsArrayOfObjects.push(customConcept)
     customConceptsArrayOfObjects = customConceptsArrayOfObjects
 
-    const q = query()
-      .params({ sourceCode: selectedRow.sourceCode })
-      .filter((r: any, params: any) => r.sourceCode == params.sourceCode && r.conceptId)
-      .toObject()
-    const res = await dataTableFile.executeQueryAndReturnResults(q)
-
     // Map the selected row with the custom concept
     const { mappedIndex, mappedRow } = await customRowMapping(selectedRow, customConcept)
-    if(settings) {
-      if(settings.mapToMultipleConcepts) {
-        const q = query().params({ sourceCode: selectedRow.sourceCode }).filter((r: any, params: any) => r.sourceCode == params.sourceCode && r.conceptId).toObject()
+    if (!mappedRow['ADD_INFO:numberOfConcepts']) mappedRow['ADD_INFO:numberOfConcepts'] = 1
+    if (settings) {
+      if (settings.mapToMultipleConcepts) {
+        // Get previous mapped concepts
+        const q = query()
+          .params({ sourceCode: mappedRow.sourceCode })
+          .filter((r: any, params: any) => r.sourceCode == params.sourceCode)
+          .toObject()
         const res = await dataTableFile.executeQueryAndReturnResults(q)
-        console.log("INFORMATION ", res)
-        if(res.indices >= 1) {
+        // Add extra information like the number of concepts mapped for this row, comments & the assigned reviewer to the row
+        if (event.detail.extra) {
+          mappedRow.comment = event.detail.extra.comment
+          mappedRow.assignedReviewer = event.detail.extra.assignedReviewer
+        }
+        if (res.queriedData.length === 1 && !res.queriedData[0].conceptId) {
+          mappedRow['ADD_INFO:numberOfConcepts'] = 1
+          await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
+        } else {
+          mappedRow['ADD_INFO:numberOfConcepts'] = res.queriedData.length + 1
           const rowsToUpdate = new Map()
-          for(let index of res.indices) {
+          // Update the number of concepts in the already mapped rows
+          for (let index of res.indices) {
             rowsToUpdate.set(index, { 'ADD_INFO:numberOfConcepts': res.queriedData.length + 1 })
           }
           await dataTableFile.updateRows(rowsToUpdate)
           await dataTableFile.insertRows([mappedRow])
-        } else {
-          await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
         }
-      } else {
-        await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
       }
     }
 
@@ -427,8 +431,8 @@
       }
     }
     const q = query()
-      .params({ conceptId: event.detail.conceptId, sourceCode: selectedRow.sourceCode })
-      .filter((r: any, params: any) => r.conceptId == params.conceptId && r.sourceCode == params.sourceCode)
+      .params({ conceptId: event.detail.conceptId, sourceCode: selectedRow.sourceCode, conceptName: event.detail.conceptName })
+      .filter((r: any, params: any) => r.conceptId == params.conceptId && r.sourceCode == params.sourceCode && r.conceptName == params.conceptName)
       .toObject()
     const res = await dataTableFile.executeQueryAndReturnResults(q)
     if (event.detail.erase) {
@@ -582,7 +586,7 @@
     if (filter) {
       lastFilter = filter
       url += `&query=${filter}`
-    } 
+    }
 
     // Add pagination to URL if there is pagination
     if (pagination) {
@@ -899,7 +903,6 @@
       }
       approveRows.set(index, row)
     }
-    console.log('APPROVED ROWS ', approveRows)
     await dataTableFile.updateRows(approveRows)
     calculateProgress()
   }
@@ -925,21 +928,6 @@
     document.documentElement.style.setProperty('--font-size', `${settings.fontsize}px`)
   }
 
-  function toggleFilterHeader() {
-    // TODO: fix this because columns will always be undefined & when getting columns from the slot the table will never appear
-    if (columns) {
-      if (filterVisibility == true) {
-        previousHeader = columns
-        columns.forEach(col => (col.filterable = false))
-        columns = columns
-        filterVisibility = false
-      } else {
-        columns = previousHeader
-        previousHeader = columns
-        filterVisibility = true
-      }
-    }
-  }
 
   let fetchDataFunc = fetchData
 
@@ -1088,24 +1076,19 @@
   >
     <UsagiRow
       slot="default"
+      let:renderedRow
+      let:columns
+      let:originalIndex
       on:generalVisibilityChanged={mappingVisibilityChanged}
       on:actionPerformed={actionPerformed}
       on:deleteRow={deleteRow}
       on:autoMapRow={autoMapSingleRow}
-      let:renderedRow
-      let:columns
-      let:originalIndex
       {renderedRow}
       {columns}
       {settings}
       index={originalIndex}
       bind:currentRows
     />
-    <th slot="actionHeader">
-      <button data-name="show-filter-header" on:click={toggleFilterHeader}
-        ><SvgIcon href="icons.svg" id="filter" width="16px" height="16px" /></button
-      >
-    </th>
   </DataTable>
 {:else}
   <DragAndDrop on:fileUploaded={fileUploaded} />

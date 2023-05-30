@@ -83,6 +83,7 @@ export interface CustomMappingEventDetail {
   validStartDate: string
   validEndDate: string
   invalidReason: string
+  extra: ExtraData
 }
 
 export interface AutoMapRowEventDetail {
