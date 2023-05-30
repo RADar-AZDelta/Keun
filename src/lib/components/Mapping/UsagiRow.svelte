@@ -8,9 +8,11 @@
   export let renderedRow: Record<string, any>,
     columns: IColumnMetaData[] | undefined,
     index: number,
+    settings: Record<string, any> | undefined,
     currentRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>([])
 
   let color: string = 'inherit'
+  let fontSize: string = '10px'
   currentRows.set(index, renderedRow)
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
@@ -76,14 +78,23 @@
   $: {
     renderedRow, index
     color = getColors()
+    if(!renderedRow.matchScore) renderedRow.matchScore = 0
+  }
+
+  $: {
+    settings
+    if(settings) 
+      if(settings.fontsize) {
+        fontSize = `${settings.fontsize}px`
+      }
   }
 </script>
 
 <td data-name="actions-grid" style={`background-color: ${color}`}>
-  <button on:click={onClickMapping} title="Map"><SvgIcon href="icons.svg" id="search" width="16px" height="16px"/></button
+  <button on:click={onClickMapping} title="Map"><SvgIcon href="icons.svg" id="search" width={fontSize} height={fontSize}/></button
   >
   <button on:click={onClickDeletion} title="Delete"
-    ><SvgIcon href="icons.svg" id="eraser" width="16px" height="16px" /></button
+    ><SvgIcon href="icons.svg" id="eraser" width={fontSize} height={fontSize} /></button
   >
   <button on:click={onClickAutoMap} title="Automap">AUTO</button>
   {#if renderedRow['ADD_INFO:numberOfConcepts'] && renderedRow['ADD_INFO:numberOfConcepts'] > 1}
@@ -94,13 +105,13 @@
     <div />
   {/if}
   <button on:click={onClickApproving} title="Approve"
-    ><SvgIcon href="icons.svg" id="check" width="16px" height="16px" /></button
+    ><SvgIcon href="icons.svg" id="check" width={fontSize} height={fontSize} /></button
   >
   <button on:click={onClickFlagging} title="Flag"
-    ><SvgIcon href="icons.svg" id="flag" width="16px" height="16px" /></button
+    ><SvgIcon href="icons.svg" id="flag" width={fontSize} height={fontSize} /></button
   >
   <button on:click={onClickUnapproving} title="Unapprove"
-    ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
+    ><SvgIcon href="icons.svg" id="x" width={fontSize} height={fontSize} /></button
   >
 </td>
 {#each columns || [] as column, i}

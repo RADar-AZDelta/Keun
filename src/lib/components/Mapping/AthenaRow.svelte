@@ -7,7 +7,8 @@
   export let renderedRow: Record<string, any>,
     columns: IColumnMetaData[],
     settings: Record<string, any>,
-    alreadyMapped: Record<string, any>
+    alreadyMapped: Record<string, any>,
+    url: string
 
   let mapped: boolean = false
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
@@ -27,6 +28,13 @@
     }
   }
 
+  function referToAthena() {
+    const subString = url.substring(url.indexOf('?'), url.length)
+    const baseUrl = import.meta.env.VITE_ATHENA
+    const newUrl = baseUrl + subString
+    window.open(encodeURI(newUrl), '_blank')?.focus()
+  }
+
   $: {
     if (Object.keys(alreadyMapped).length > 0) {
       if (alreadyMapped[Object.keys(alreadyMapped)[0]].conceptId.includes(renderedRow.id)) mapped = true
@@ -43,6 +51,7 @@
   {:else}
     <button on:click={onClickMapping}><SvgIcon href="icons.svg" id="plus" width="16px" height="16px" /></button>
   {/if}
+  <button on:click={referToAthena}><SvgIcon href="icons.svg" id="link" width="16px" height="16px" /></button>
 </td>
 {#each columns || [] as column (column.id)}
   <td>

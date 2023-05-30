@@ -103,5 +103,25 @@
     "id": "ADD_INFO:customConcept",
     "visible": false,
     "editable": false
+  },
+  {
+    "id": "ADD_INFO:additionalInfo",
+    "visible": false,
+    "editable": true
+  },
+  {
+    "id": "ADD_INFO:prescriptionID",
+    "visible": false,
+    "editable": true
+  },
+  {
+    "id": "ADD_INFO:ATC",
+    "visible": false,
+    "editable": true
+  },
+  {
+    "id": "ADD_INFO:lastAthenaFilter",
+    "visible": false,
+    "editable": true
   }
 ]

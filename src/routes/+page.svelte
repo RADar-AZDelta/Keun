@@ -50,9 +50,11 @@
   let selectedRowIndex: number
   let rowsMapping = new Map<number, Record<string, any>>()
 
-  let mappingUrl: string = 'https://athena.ohdsi.org/api/v1/concepts?'
+  let mappingUrl: string = import.meta.env.VITE_MAPPINGDATA_PATH
+  let url: string
   let athenaFiltering: string
   let athenaFilters: Map<string, string[]>
+  let lastFilter: string
 
   let tableInit: boolean = false
   let progressInit: boolean = false
@@ -115,13 +117,13 @@
     ['domain', 'domainId'],
   ])
   let additionalFields: Record<string, any> = {
-    matchScore: null,
+    matchScore: 0,
     statusSetBy: null,
-    statusSetOn: null,
+    statusSetOn: 0,
     mappingType: null,
     comment: null,
     createdBy: null,
-    createdOn: null,
+    createdOn: 0,
     assignedReviewer: null,
     equivalence: null,
     sourceAutoAssignedConceptIds: null,
@@ -222,6 +224,7 @@
       mappedRow.assignedReviewer = event.detail.extra.assignedReviewer
     }
     // Update the selected row to the updated row
+    mappedRow['ADD_INFO:lastAthenaFilter'] = lastFilter
     await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
     calculateProgress()
   }
@@ -251,23 +254,32 @@
 
     const q = query()
       .params({ sourceCode: selectedRow.sourceCode })
-      .filter((r: any, params: any) => r.sourceCode == params.sourceCode)
+      .filter((r: any, params: any) => r.sourceCode == params.sourceCode && r.conceptId)
       .toObject()
     const res = await dataTableFile.executeQueryAndReturnResults(q)
-    if (res.indices.length > 1) {
-      let count = 0
-      for (const index of res.indices) {
-        if (count > 0) {
-          await dataTableFile.deleteRows([index])
-        }
-        count++
-      }
-    }
 
     // Map the selected row with the custom concept
     const { mappedIndex, mappedRow } = await customRowMapping(selectedRow, customConcept)
+    if(settings) {
+      if(settings.mapToMultipleConcepts) {
+        const q = query().params({ sourceCode: selectedRow.sourceCode }).filter((r: any, params: any) => r.sourceCode == params.sourceCode && r.conceptId).toObject()
+        const res = await dataTableFile.executeQueryAndReturnResults(q)
+        console.log("INFORMATION ", res)
+        if(res.indices >= 1) {
+          const rowsToUpdate = new Map()
+          for(let index of res.indices) {
+            rowsToUpdate.set(index, { 'ADD_INFO:numberOfConcepts': res.queriedData.length + 1 })
+          }
+          await dataTableFile.updateRows(rowsToUpdate)
+          await dataTableFile.insertRows([mappedRow])
+        } else {
+          await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
+        }
+      } else {
+        await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
+      }
+    }
 
-    await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
     calculateProgress()
   }
 
@@ -289,6 +301,7 @@
     mappedRow.statusSetBy = settings!.author
     mappedRow.comment = event.detail.extra!.comment
     mappedRow.assignedReviewer = event.detail.extra!.assignedReviewer
+    mappedRow['ADD_INFO:lastAthenaFilter'] = lastFilter
 
     // Check if it's the first concept that will be mapped to this row
     if (res.queriedData.length === 1 && !res.queriedData[0].conceptId) {
@@ -332,26 +345,24 @@
       }
     } else {
       // Check if there is a conceptId or a sourceAutoAssignedConceptIds (this is the conceptId that is assigned by the automapping proces)
-      if (event.detail.row.conceptId || event.detail.row.sourceAutoAssignedConceptIds) {
-        if (event.detail.action == 'APPROVED') {
-          if (event.detail.row.statusSetBy == undefined || event.detail.row.statusSetBy == settings!.author) {
-            // If statusSetBy is empty, it means the author is the first reviewer of this row
-            updatingObj.statusSetBy = settings!.author
-            updatingObj.statusSetOn = Date.now()
-            updatingObj.mappingStatus = 'SEMI-APPROVED'
-            if (!event.detail.row.conceptId) updatingObj.conceptId = event.detail.row.sourceAutoAssignedConceptIds
-            else updatingObj.conceptId = event.detail.row.conceptId
-          } else if (event.detail.row.statusSetBy != settings!.author) {
-            // StatusSetBy is not empty and it's not the current author so it means it's the second reviewer
-            updatingObj['ADD_INFO:approvedBy'] = settings!.author
-            updatingObj['ADD_INFO:approvedOn'] = Date.now()
-            updatingObj.mappingStatus = 'APPROVED'
-          }
-        } else {
+      if (event.detail.action == 'APPROVED') {
+        if (event.detail.row.statusSetBy == undefined || event.detail.row.statusSetBy == settings!.author) {
+          // If statusSetBy is empty, it means the author is the first reviewer of this row
           updatingObj.statusSetBy = settings!.author
           updatingObj.statusSetOn = Date.now()
-          updatingObj.mappingStatus = event.detail.action
+          updatingObj.mappingStatus = 'SEMI-APPROVED'
+          if (!event.detail.row.conceptId) updatingObj.conceptId = event.detail.row.sourceAutoAssignedConceptIds
+          else updatingObj.conceptId = event.detail.row.conceptId
+        } else if (event.detail.row.statusSetBy && event.detail.row.statusSetBy != settings!.author) {
+          // StatusSetBy is not empty and it's not the current author so it means it's the second reviewer
+          updatingObj['ADD_INFO:approvedBy'] = settings!.author
+          updatingObj['ADD_INFO:approvedOn'] = Date.now()
+          updatingObj.mappingStatus = 'APPROVED'
         }
+      } else {
+        updatingObj.statusSetBy = settings!.author
+        updatingObj.statusSetOn = Date.now()
+        updatingObj.mappingStatus = event.detail.action
       }
     }
     await dataTableFile.updateRows(new Map([[event.detail.index, updatingObj]]))
@@ -553,7 +564,7 @@
   const assembleAthenaURL = async (filter?: string, sorting?: string[], pagination?: IPagination) => {
     if (dev) console.log('assembleAthenaURL: Assemble Athena URL')
 
-    let url = mappingUrl
+    url = mappingUrl
 
     if (apiFilters) {
       for (let filter of apiFilters) {
@@ -568,7 +579,10 @@
     }
 
     // Add filter to URL if there is a filter
-    if (filter) url += `&query=${filter}`
+    if (filter) {
+      lastFilter = filter
+      url += `&query=${filter}`
+    } 
 
     // Add pagination to URL if there is pagination
     if (pagination) {
@@ -587,7 +601,7 @@
     pagination: IPagination
   ) {
     let filter = filteredColumns.values().next().value
-    if (filter === undefined && globalAthenaFilter.filter === undefined) {
+    if (globalAthenaFilter.filter === undefined) {
       if (settings && selectedRow) {
         if (settings.language !== 'en') {
           filter = await translate(selectedRow.sourceName)
@@ -673,6 +687,9 @@
           case 'ADD_INFO:customConcept':
             mappedUsagiRow['ADD_INFO:customConcept'] = null
             break
+          default:
+            mappedUsagiRow[col] = additionalFields[col]
+            break
         }
       }
     }
@@ -743,6 +760,9 @@
 
         case 'ADD_INFO:numberOfConcepts':
           mappedUsagiRow['ADD_INFO:numberOfConcepts'] = null
+          break
+        default:
+          mappedUsagiRow[col] = additionalFields[col]
           break
       }
     }
@@ -902,6 +922,7 @@
 
   function settingsChanged(e: CustomEvent<SettingsChangedEventDetail>) {
     settings = e.detail.settings
+    document.documentElement.style.setProperty('--font-size', `${settings.fontsize}px`)
   }
 
   function toggleFilterHeader() {
@@ -940,6 +961,7 @@
       if (!settings.hasOwnProperty('author')) settings!.author = undefined
       if (!settings.hasOwnProperty('savedAuthors')) settings!.savedAuthors = []
       if (!settings.hasOwnProperty('vocabularyIdCustomConcept')) settings!.vocabularyIdCustomConcept = undefined
+      if (!settings.hasOwnProperty('fontsize')) settings!.fontsize = 10
       localStorageSetter('settings', settings)
     } else
       settings = {
@@ -1035,6 +1057,7 @@
 
 <AthenaLayout
   bind:urlFilters={apiFilters}
+  bind:url
   bind:equivalenceMapping
   {selectedRow}
   {selectedRowIndex}
@@ -1074,6 +1097,7 @@
       let:originalIndex
       {renderedRow}
       {columns}
+      {settings}
       index={originalIndex}
       bind:currentRows
     />

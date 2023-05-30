@@ -22,6 +22,7 @@
   import customConceptInfo from '$lib/data/customConceptInfo.json'
 
   export let urlFilters: string[],
+    url: string,
     equivalenceMapping: string,
     selectedRow: Record<string, any>,
     selectedRowIndex: number,
@@ -34,11 +35,10 @@
   let JSONFilters = new Map<string, ICategories>([])
   let activatedAthenaFilters = new Map<string, string[]>([['standardConcept', ['Standard']]])
   let openedFilter: string
-  let savedFilters: Map<string, string[]>
   let lastRow: boolean = false
   let sidesShowed: Record<string, boolean> = {
     filters: true,
-    extra: true,
+    detail: true,
   }
   let layoutDialog: HTMLDialogElement
   let reviewer: string = ''
@@ -47,6 +47,7 @@
     vocabularyId: '',
     domainId: '',
     conceptClassId: '',
+    conceptName: '',
   }
   let conceptSelection: string = 'existing'
   let errorMessage: string = ''
@@ -157,22 +158,15 @@
   // A method to update the already mapped concepts (used to see the already mapped concepts for a certain row)
   function updateUniqueConceptIds(event: CustomEvent<UpdateUniqueConceptIdsEventDetail>) {
     if (event.detail.multiple == true) {
-      if (!Object.values(alreadyMapped).find((row: any) => row.conceptId.includes(event.detail.conceptId))) {
-        if (!alreadyMapped[selectedRow.sourceCode]) {
-          alreadyMapped[selectedRow.sourceCode] = {
-            conceptId: [event.detail.conceptId],
-            conceptName: [event.detail.conceptName],
-          }
-        } else {
-          alreadyMapped[selectedRow.sourceCode].conceptId.push(event.detail.conceptId)
-          alreadyMapped[selectedRow.sourceCode].conceptName.push(event.detail.conceptName)
-          alreadyMapped = alreadyMapped
+      if (!alreadyMapped[selectedRow.sourceCode]) {
+        alreadyMapped[selectedRow.sourceCode] = {
+          conceptId: [event.detail.conceptId],
+          conceptName: [event.detail.conceptName],
         }
-      }
-    } else {
-      alreadyMapped[selectedRow.sourceCode] = {
-        conceptId: [event.detail.conceptId],
-        conceptName: [event.detail.conceptName],
+      } else {
+        alreadyMapped[selectedRow.sourceCode].conceptId.push(event.detail.conceptId)
+        alreadyMapped[selectedRow.sourceCode].conceptName.push(event.detail.conceptName)
+        alreadyMapped = alreadyMapped
       }
     }
   }
@@ -257,40 +251,28 @@
   // When a arrow button is clicked in the Athena pop-up to navigate between rows
   function onRowChange(up: boolean) {
     dispatch('rowChange', { up })
-    getUniqueConceptIds()
   }
 
   // A method to get all the mapped concept ids for a certain row
   async function getUniqueConceptIds() {
     alreadyMapped = {}
-    const q = query()
-      .params({ source: selectedRow.sourceCode })
-      .filter((d: any, params: any) => d.sourceCode == params.source)
-      .toObject()
-    const res = await mainTable.executeQueryAndReturnResults(q)
-    for (let row of res.queriedData) {
-      if (row.conceptId) {
-        if (alreadyMapped[row.sourceCode]) {
-          if (!alreadyMapped[row.sourceCode].conceptId.includes(row.conceptId))
-            alreadyMapped[row.sourceCode].conceptId.push(row.conceptId)
-          if (!alreadyMapped[row.sourceCode].conceptName.includes(row.conceptName))
-            alreadyMapped[row.sourceCode].conceptName.push(row.conceptName)
-        } else alreadyMapped[row.sourceCode] = { conceptId: [row.conceptId], conceptName: [row.conceptName] }
+    if (selectedRow) {
+      const q = query()
+        .params({ source: selectedRow.sourceCode })
+        .filter((d: any, params: any) => d.sourceCode == params.source)
+        .toObject()
+      const res = await mainTable.executeQueryAndReturnResults(q)
+      for (let row of res.queriedData) {
+        if (row.conceptId) {
+          if (alreadyMapped[row.sourceCode]) {
+            if (!alreadyMapped[row.sourceCode].conceptId.includes(row.conceptId))
+              alreadyMapped[row.sourceCode].conceptId.push(row.conceptId)
+            if (!alreadyMapped[row.sourceCode].conceptName.includes(row.conceptName))
+              alreadyMapped[row.sourceCode].conceptName.push(row.conceptName)
+          } else alreadyMapped[row.sourceCode] = { conceptId: [row.conceptId], conceptName: [row.conceptName] }
+        }
       }
     }
-
-    savedFilters = localStorageGetter('AthenaFilters')
-    if (savedFilters) {
-      activatedAthenaFilters = savedFilters
-      if (activatedAthenaFilters.get('standardConcept')) {
-        const currentValues = activatedAthenaFilters.get('standardConcept')
-        if (!currentValues!.includes('Standard')) currentValues!.push('Standard')
-        activatedAthenaFilters.set('standardConcept', currentValues!)
-      } else {
-        activatedAthenaFilters.set('standardConcept', ['Standard'])
-      }
-    } else activatedAthenaFilters = new Map<string, string[]>([['standardConcept', ['Standard']]])
-    dispatch('filterOptionsChanged', { filters: activatedAthenaFilters })
   }
 
   // A method for when the assigned reviewer has changed
@@ -344,7 +326,7 @@
       ) {
         dispatch('customMapping', {
           conceptId: selectedRow.sourceCode,
-          conceptName: selectedRow.sourceName,
+          conceptName: customConcept.conceptName,
           domainId: customConcept.domainId,
           vocabularyId: customConcept.vocabularyId,
           conceptClassId: customConcept.conceptClassId,
@@ -355,9 +337,18 @@
           invalidReason: '',
         })
 
-        alreadyMapped[selectedRow.sourceCode] = {
-          conceptId: [selectedRow.sourceCode],
-          conceptName: [selectedRow.sourceName],
+        if (alreadyMapped[selectedRow.sourceCode]) {
+          if (alreadyMapped[selectedRow.sourceCode].conceptId.length > 0)
+            alreadyMapped[selectedRow.sourceCode].conceptId.push(selectedRow.sourceCode)
+          else alreadyMapped[selectedRow.sourceCode].conceptId = [selectedRow.sourceCode]
+          if (alreadyMapped[selectedRow.sourceCode].conceptName.length > 0)
+            alreadyMapped[selectedRow.sourceCode].conceptName.push(selectedRow.sourceName)
+          else alreadyMapped[selectedRow.sourceCode].conceptName = [selectedRow.sourceName]
+        } else {
+          alreadyMapped[selectedRow.sourceCode] = {
+            conceptId: [selectedRow.sourceCode],
+            conceptName: [customConcept.conceptName],
+          }
         }
       } else {
         errorMessage = 'The concept class id is not valid'
@@ -401,6 +392,11 @@
     } else {
       if (layoutDialog) closeDialog()
     }
+  }
+
+  $: {
+    selectedRow
+    getUniqueConceptIds()
   }
 </script>
 
@@ -455,16 +451,18 @@
         </div>
       </section>
     {:else}
-      <button data-name="filters-closed-bar" on:click={() => sideVisibilityChange('filters', true)}>
-        <SvgIcon href="icons.svg" id="chevrons-right" width="16px" height="16px" />
-        <p>F</p>
-        <p>I</p>
-        <p>L</p>
-        <p>T</p>
-        <p>E</p>
-        <p>R</p>
-        <p>S</p>
-      </button>
+      <div data-name="sidebar-right">
+        <button data-name="closed-bar" on:click={() => sideVisibilityChange('filters', true)}>
+          <SvgIcon href="icons.svg" id="chevrons-right" width="16px" height="16px" />
+          <p>F</p>
+          <p>I</p>
+          <p>L</p>
+          <p>T</p>
+          <p>E</p>
+          <p>R</p>
+          <p>S</p>
+        </button>
+      </div>
     {/if}
     <section data-name="table-pop-up">
       <div data-name="table-head">
@@ -531,6 +529,7 @@
               {renderedRow}
               {settings}
               {columns}
+              {url}
               bind:alreadyMapped
               on:singleMapping={singleMapping}
               on:multipleMapping={multipleMapping}
@@ -547,6 +546,7 @@
               <th>domain_id</th>
               <th>vocabulary_id</th>
               <th>concept_class_id</th>
+              <th>concept_name</th>
             </tr>
             <tr>
               <td data-name="custom-concept-actions"
@@ -564,6 +564,7 @@
                   on:autoComplete={autoComplete}
                 /></td
               >
+              <td><input type="text" bind:value={customConcept.conceptName} /></td>
             </tr>
           </table>
 
@@ -580,13 +581,13 @@
         </div>
       {/if}
     </section>
-    {#if sidesShowed.extra}
+    {#if sidesShowed.detail}
       <section data-name="additional-information">
         <div data-name="additional-information-head">
-          <button on:click={() => sideVisibilityChange('extra', false)}
+          <button on:click={() => sideVisibilityChange('detail', false)}
             ><SvgIcon href="icons.svg" id="chevrons-right" width="16px" height="16px" /></button
           >
-          <h2>Extra</h2>
+          <h2>Detail</h2>
         </div>
         <div data-name="info-container">
           {#if selectedRow}
@@ -608,7 +609,7 @@
                             ><button
                               on:click={() =>
                                 removeMapping(alreadyMapped[code].conceptId[i], alreadyMapped[code].conceptName[i])}
-                              ><SvgIcon href="icons.svg" id="chevrons-left" width="12px" height="12px" /></button
+                              ><SvgIcon href="icons.svg" id="x" width="12px" height="12px" /></button
                             ></td
                           >
                           <td title={alreadyMapped[code].conceptId[i]}>{alreadyMapped[code].conceptId[i]}</td>
@@ -633,13 +634,17 @@
         </div>
       </section>
     {:else}
-      <button data-name="filters-closed-bar" on:click={() => sideVisibilityChange('extra', true)}>
-        <SvgIcon href="icons.svg" id="chevrons-left" width="16px" height="16px" />
-        <p>E</p>
-        <p>T</p>
-        <p>R</p>
-        <p>A</p>
-      </button>
+      <div data-name="sidebar-left">
+        <button data-name="closed-bar" on:click={() => sideVisibilityChange('detail', true)}>
+          <SvgIcon href="icons.svg" id="chevrons-left" width="16px" height="16px" />
+          <p>D</p>
+          <p>E</p>
+          <p>T</p>
+          <p>A</p>
+          <p>I</p>
+          <p>L</p>
+        </button>
+      </div>
     {/if}
   </div>
 </dialog>
