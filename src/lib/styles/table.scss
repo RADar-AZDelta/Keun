@@ -675,26 +675,24 @@ dialog[data-name='athena-dialog'] {
 
       div[data-name='table-head'] {
         max-height: 40%;
+        width: 100%;
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 1rem 3rem 3rem 3rem;
-
-        h2 {
-          font-size: 24px;
-          font-weight: 600;
-          margin: 0;
-        }
+        padding: 1rem 0 3rem 0;
 
         div[data-name='currentRow'] {
+          flex: 1 1 auto;
           display: flex;
           align-items: center;
+          justify-content: space-between;
           gap: 1rem;
 
           button {
             border: none;
             background-color: inherit;
             color: $darkgray;
+            padding: 0 1rem;
           }
 
           button:disabled {
@@ -712,35 +710,10 @@ dialog[data-name='athena-dialog'] {
 
           table {
             table-layout: fixed;
-            width: 400px;
-            max-width: 400px;
-            min-width: 400px;
 
             td {
               border-top: 1px solid lightgray;
               border-bottom: 1px solid lightgray;
-            }
-
-            td,
-            th {
-              padding: 0.5rem 0.75rem;
-              text-overflow: ellipsis;
-              overflow: hidden;
-              white-space: nowrap;
-            }
-
-            th[data-name='normal-cell'],
-            td[data-name='normal-cell'] {
-              width: 100px;
-            }
-
-            th[data-name='sourceName'],
-            td[data-name='sourceName'] {
-              width: 200px;
-              padding: 0;
-              white-space: nowrap;
-              overflow: hidden;
-              text-overflow: ellipsis;
             }
           }
         }
