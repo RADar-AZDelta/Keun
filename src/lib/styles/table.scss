@@ -58,6 +58,13 @@ section[data-name='header'] {
     display: flex;
     gap: 1rem;
 
+    p[data-name="filename"] {
+      max-width: 100px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
     input[type='file'] {
       display: none;
     }
