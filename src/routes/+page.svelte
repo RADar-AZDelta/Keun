@@ -32,6 +32,7 @@
   import DragAndDrop from '$lib/components/Extra/DragAndDrop.svelte'
   import Spinner from '$lib/components/Extra/Spinner.svelte'
   import DataTable from '@radar-azdelta/svelte-datatable'
+  import Manual from '$lib/components/Extra/Manual.svelte'
 
   let file: File | undefined
   let currentFileName: string | undefined = undefined
@@ -61,6 +62,9 @@
   let mappedRows: number | undefined = undefined
   let approvedRows: number | undefined = undefined
   let globalAthenaFilter = { column: 'all', filter: undefined }
+
+  let previousHeader: IColumnMetaData[] | undefined = undefined
+  let filterVisibility: boolean = true
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // DATA
@@ -1007,6 +1011,7 @@
   {/if}
 
   <div data-name="header-buttons-container" id="settings">
+    <Manual />
     <Settings {settings} on:settingsChanged={settingsChanged} />
     <User {settings} />
   </div>
@@ -1042,6 +1047,11 @@
     on:renderingComplete={autoMapPage}
     modifyColumnMetadata={modifyUsagiColumnMetadata}
   >
+    <th slot="actionHeader"
+      ><button data-name="show-filter-header" on:click={toggleFilterHeader}
+        ><SvgIcon href="icons.svg" id="filter" width="16px" height="16px" /></button
+      ></th
+    >
     <UsagiRow
       slot="default"
       let:renderedRow
