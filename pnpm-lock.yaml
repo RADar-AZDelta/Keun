@@ -5,8 +5,8 @@ importers:
   .:
     dependencies:
       '@radar-azdelta/svelte-datatable':
-        specifier: ^0.0.30
-        version: 0.0.30
+        specifier: ^0.0.31
+        version: 0.0.31
       arquero:
         specifier: ^5.2.0
         version: 5.2.0
@@ -498,10 +498,10 @@ packages:
     resolution: {integrity: sha512-a5Sab1C4/icpTZVzZc5Ghpz88yQtGOyNqYXcZgOssB2uuAr+wF/MvN6bgtW32q7HHrvBki+BsZ0OuNv6EV3K9g==}
     dev: true
 
-  /@radar-azdelta/svelte-datatable@0.0.30:
-    resolution: {integrity: sha512-DrPtKTLFGvs+GNvRGq73q88sgZptxX0LpEyF5tkmt1IHshGKXDYl61fu/7b4S3fOGpe6zri/pLj43VAPWTXmmg==}
+  /@radar-azdelta/svelte-datatable@0.0.31:
+    resolution: {integrity: sha512-AvTUwLTsV/YSctNiK7ewGYE3pX9gubreMC0ellfpnhp5uN6ZnmYqI1F5Pv+NbFIREvgERF5pBEuoaXG/tlGM+w==}
     dependencies:
-      '@types/lodash': 4.14.194
+      '@types/lodash': 4.14.195
       arquero: 5.2.0
       lodash.debounce: 4.0.8
     transitivePeerDependencies:
@@ -634,8 +634,8 @@ packages:
     resolution: {integrity: sha512-wOuvG1SN4Us4rez+tylwwwCV1psiNVOkJeM3AUWUNWg/jDQY2+HE/444y5gc+jBmRqASOm2Oeh5c1axHobwRKQ==}
     dev: true
 
-  /@types/lodash@4.14.194:
-    resolution: {integrity: sha512-r22s9tAS7imvBt2lyHC9B8AGwWnXaYb1tY09oyLkXDs4vArpYJzw09nj8MLx5VfciBPGIb+ZwG0ssYnEPJxn/g==}
+  /@types/lodash@4.14.195:
+    resolution: {integrity: sha512-Hwx9EUgdwf2GLarOjQp5ZH8ZmblzcbTBC2wtQWNKARBSxM9ezRIAUpeDTgoQRAFB0+8CNWXVA9+MaSOzOF3nPg==}
     dev: false
 
   /@types/marked@4.3.1:

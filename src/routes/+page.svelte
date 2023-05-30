@@ -1009,7 +1009,7 @@
 
   <div data-name="table-options">
     {#if uploaded == true}
-      <p>{currentFileName}</p>
+      <p data-name="filename" title={currentFileName}>{currentFileName}</p>
       <label title="Upload" for="file-upload" data-name="file-upload"
         ><SvgIcon href="icons.svg" id="upload" width="16px" height="16px" /></label
       >
