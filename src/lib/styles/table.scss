@@ -133,6 +133,26 @@ section[data-name='header'] {
       box-shadow: 0 0 0 2px $neutral-x-dark;
     }
 
+    dialog[data-name='manual-dialog'] {
+      width: 80%;
+      height: 80%;
+      border-radius: 10px;
+      border: none;
+
+      button[data-name='close-dialog'] {
+        position: absolute;
+        right: 1rem;
+        top: 1rem;
+        border: none;
+        background-color: inherit;
+        color: $darkgray;
+      }
+
+      img {
+        max-width: 80%;
+      }
+    }
+
     dialog[data-name='settings-dialog'] {
       width: 50%;
       height: 50%;
@@ -1098,20 +1118,31 @@ div[data-component='svelte-datatable'] {
 
       thead {
         tr[data-name='titles'] {
+          background-color: $neutral-xx-light;
           th {
             div[data-name='column-resize'] {
               min-width: 130px;
+              div[data-name='column-reposition'] {
+                display: flex;
+                align-items: center;
+              }
             }
           }
         }
 
         tr[data-name='filters'] {
+          background-color: $neutral-xx-light;
           th {
             min-width: 130px;
             div[data-name='column-filter'] {
               input {
                 min-width: 100px;
               }
+            }
+            button[data-name="show-filter-header"] {
+              border: none;
+              background-color: inherit;
+              cursor: pointer;
             }
           }
         }
