@@ -609,12 +609,18 @@ dialog[data-name='athena-dialog'] {
       }
     }
 
-    button[data-name='filters-open'] {
+    button[data-name="filters-closed-bar"] {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      padding: 1 0 0 0.5rem;
+      gap: 1rem;
       cursor: pointer;
       border: none;
       background-color: inherit;
-      align-self: flex-start;
-      padding: 1.5rem;
+      p {
+        font-weight: bold;
+      }
     }
 
     section[data-name='table-pop-up'] {

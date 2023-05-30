@@ -414,7 +414,7 @@
         <div data-name="filters-head">
           <h2>Filters</h2>
           <button on:click={() => sideVisibilityChange('filters', false)} id="filters"
-            ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
+            ><SvgIcon href="icons.svg" id="chevrons-left" width="16px" height="16px" /></button
           >
         </div>
         <div data-name="filters">
@@ -455,9 +455,16 @@
         </div>
       </section>
     {:else}
-      <button data-name="filters-open" on:click={() => sideVisibilityChange('filters', true)}
-        ><SvgIcon href="icons.svg" id="filter" width="16px" height="16px" /></button
-      >
+      <button data-name="filters-closed-bar" on:click={() => sideVisibilityChange('filters', true)}>
+        <SvgIcon href="icons.svg" id="chevrons-right" width="16px" height="16px" />
+        <p>F</p>
+        <p>I</p>
+        <p>L</p>
+        <p>T</p>
+        <p>E</p>
+        <p>R</p>
+        <p>S</p>
+      </button>
     {/if}
     <section data-name="table-pop-up">
       <div data-name="table-head">
@@ -577,7 +584,7 @@
       <section data-name="additional-information">
         <div data-name="additional-information-head">
           <button on:click={() => sideVisibilityChange('extra', false)}
-            ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
+            ><SvgIcon href="icons.svg" id="chevrons-right" width="16px" height="16px" /></button
           >
           <h2>Extra</h2>
         </div>
@@ -601,7 +608,7 @@
                             ><button
                               on:click={() =>
                                 removeMapping(alreadyMapped[code].conceptId[i], alreadyMapped[code].conceptName[i])}
-                              ><SvgIcon href="icons.svg" id="x" width="12px" height="12px" /></button
+                              ><SvgIcon href="icons.svg" id="chevrons-left" width="12px" height="12px" /></button
                             ></td
                           >
                           <td title={alreadyMapped[code].conceptId[i]}>{alreadyMapped[code].conceptId[i]}</td>
@@ -626,9 +633,13 @@
         </div>
       </section>
     {:else}
-      <button data-name="extra-open" on:click={() => sideVisibilityChange('extra', true)}
-        ><SvgIcon href="icons.svg" id="info" width="16px" height="16px" /></button
-      >
+      <button data-name="filters-closed-bar" on:click={() => sideVisibilityChange('extra', true)}>
+        <SvgIcon href="icons.svg" id="chevrons-left" width="16px" height="16px" />
+        <p>E</p>
+        <p>T</p>
+        <p>R</p>
+        <p>A</p>
+      </button>
     {/if}
   </div>
 </dialog>

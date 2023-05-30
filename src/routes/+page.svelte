@@ -904,6 +904,22 @@
     settings = e.detail.settings
   }
 
+  function toggleFilterHeader() {
+    // TODO: fix this because columns will always be undefined & when getting columns from the slot the table will never appear
+    if (columns) {
+      if (filterVisibility == true) {
+        previousHeader = columns
+        columns.forEach(col => (col.filterable = false))
+        columns = columns
+        filterVisibility = false
+      } else {
+        columns = previousHeader
+        previousHeader = columns
+        filterVisibility = true
+      }
+    }
+  }
+
   let fetchDataFunc = fetchData
 
   onMount(async () => {
@@ -1039,7 +1055,7 @@
 {#if uploaded == true}
   <DataTable
     data={file}
-    {columns}
+    bind:columns
     bind:this={dataTableFile}
     options={{ id: 'usagi', rowsPerPage: 15, rowsPerPageOptions: [5, 10, 15, 20, 50, 100], actionColumn: true }}
     on:rendering={abortAutoMap}
@@ -1047,25 +1063,25 @@
     on:renderingComplete={autoMapPage}
     modifyColumnMetadata={modifyUsagiColumnMetadata}
   >
-    <th slot="actionHeader"
-      ><button data-name="show-filter-header" on:click={toggleFilterHeader}
-        ><SvgIcon href="icons.svg" id="filter" width="16px" height="16px" /></button
-      ></th
-    >
     <UsagiRow
       slot="default"
-      let:renderedRow
-      let:columns
-      let:originalIndex
       on:generalVisibilityChanged={mappingVisibilityChanged}
       on:actionPerformed={actionPerformed}
       on:deleteRow={deleteRow}
       on:autoMapRow={autoMapSingleRow}
+      let:renderedRow
+      let:columns
+      let:originalIndex
       {renderedRow}
       {columns}
       index={originalIndex}
       bind:currentRows
     />
+    <th slot="actionHeader">
+      <button data-name="show-filter-header" on:click={toggleFilterHeader}
+        ><SvgIcon href="icons.svg" id="filter" width="16px" height="16px" /></button
+      >
+    </th>
   </DataTable>
 {:else}
   <DragAndDrop on:fileUploaded={fileUploaded} />
