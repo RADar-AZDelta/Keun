@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { clickOutside } from '$lib/actions/clickOutside'
   import SvgIcon from './SvgIcon.svelte'
   import SvelteMarkDown from 'svelte-markdown'
 
@@ -27,6 +28,10 @@
 </button>
 
 <dialog bind:this={manualDialog} data-name="manual-dialog">
-  <button on:click={closeDialog} data-name="close-dialog"><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button>
-  <SvelteMarkDown source={manualText} />
+  <div data-name="manual-container" use:clickOutside on:outClick={closeDialog}>
+    <button on:click={closeDialog} data-name="close-dialog"
+      ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
+    >
+    <SvelteMarkDown source={manualText} />
+  </div>
 </dialog>

@@ -2,6 +2,7 @@
   import SvgIcon from './SvgIcon.svelte'
   import { localStorageSetter } from '$lib/utils'
   import { dev } from '$app/environment'
+  import { clickOutside } from '$lib/actions/clickOutside'
 
   export let settings: Record<string, any>
 
@@ -58,19 +59,23 @@
 </button>
 
 <dialog bind:this={userDialog} data-name="user-dialog">
-  {#if settings}
-    <button data-name="close-dialog" on:click={closeDialog} disabled={author == undefined ? true : false}
-      ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
-    >
-    <section data-name="author">
-      <h2>Who is the author?</h2>
-      <input id="author" type="text" placeholder="John Wick" bind:value={author} />
-      <div data-name="buttons-container">
-        <button data-name="cancel" on:click={cancelAuthorUpdate} disabled={author == undefined ? true : false}
-          >Cancel</button
-        >
-        <button data-name="save" on:click={saveAuthorUpdate} disabled={author == undefined ? true : false}>Save</button>
-      </div>
-    </section>
-  {/if}
+  <div data-name="user-container" use:clickOutside on:outClick={closeDialog}>
+    {#if settings}
+      <button data-name="close-dialog" on:click={closeDialog} disabled={author == undefined ? true : false}
+        ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
+      >
+      <section data-name="author">
+        <h2>Who is the author?</h2>
+        <input id="author" type="text" placeholder="John Wick" bind:value={author} />
+        <div data-name="buttons-container">
+          <button data-name="cancel" on:click={cancelAuthorUpdate} disabled={author == undefined ? true : false}
+            >Cancel</button
+          >
+          <button data-name="save" on:click={saveAuthorUpdate} disabled={author == undefined ? true : false}
+            >Save</button
+          >
+        </div>
+      </section>
+    {/if}
+  </div>
 </dialog>

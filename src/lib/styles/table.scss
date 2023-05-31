@@ -153,6 +153,13 @@ section[data-name='header'] {
       border-radius: 10px;
       border: none;
 
+      div[data-name='manual-container'] {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
       button[data-name='close-dialog'] {
         position: absolute;
         right: 1rem;
@@ -326,6 +333,13 @@ section[data-name='header'] {
       border: none;
       width: 400px;
 
+      div[data-name='user-manual'] {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+
       button[data-name='close-dialog'] {
         position: absolute;
         right: 1rem;
@@ -430,6 +444,13 @@ dialog[data-name='athena-dialog'] {
   top: 0;
   left: 0;
   transform: none;
+
+  div[data-name='dialog-container'] {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
 
   button[data-name='close-dialog'] {
     position: absolute;
@@ -932,15 +953,16 @@ dialog[data-name='athena-dialog'] {
         flex: 1 1 auto;
         overflow: auto;
 
+        // TODO: here
         div[data-component='svelte-datatable'] {
           // overflow-y: auto;
           div[data-component='datatable-content'] {
             table {
-              font-size: 1rem;
+              font-size: var(--font-size);
               overflow-y: auto;
               colgroup {
                 col {
-                  min-width: 70px;
+                  min-width: 85px;
                 }
 
                 :first-child {
@@ -963,6 +985,23 @@ dialog[data-name='athena-dialog'] {
                     div[data-name='column-filter'] {
                       input {
                         min-width: 40px;
+                      }
+                    }
+                  }
+                }
+              }
+
+              tbody {
+                tr {
+                  td {
+                    font-size: var(--font-size);
+
+                    button {
+                      padding: calc(0.25 * var(--font-size));
+                      width: min-content;
+                      height: min-content;
+                      svg {
+                        transform: scale(calc(var(--font-number) / 16));
                       }
                     }
                   }
@@ -1266,11 +1305,16 @@ div[data-component='svelte-datatable'] {
 
       tbody {
         tr {
-          td[data-name='actions-grid'] {
-            min-width: calc(8rem + 10px);
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            grid-template-rows: repeat(2, 1fr);
+          td[data-name='actions-cell'] {
+            height: 100%;
+
+            div[data-name='actions-grid'] {
+              min-width: calc(8rem + 10px);
+              display: grid;
+              grid-template-columns: repeat(4, 1fr);
+              grid-template-rows: repeat(2, 1fr);
+              height: max-content;
+            }
           }
 
           td {
@@ -1304,6 +1348,13 @@ dialog[data-name='settings-dialog'] {
   transform: translate(-50%, -50%);
   width: 50%;
   height: 50%;
+
+  div[data-name='settings-container'] {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
 
   button[data-name='close-button'] {
     position: absolute;

@@ -903,17 +903,15 @@
     if (dev) console.log('approvePage: Approving page')
     let approveRows = new Map<number, Record<string, any>>()
     for (let [index, row] of currentRows) {
-      if (row.conceptId || row.sourceAutoAssignedConceptIds) {
-        if (!row.conceptId) row.conceptId = row.sourceAutoAssignedConceptIds
-        if (row.statusSetBy) {
-          if (row.statusSetBy != settings!.author) {
-            row['ADD_INFO:approvedBy'] = settings!.author
-            row.mappingStatus = 'APPROVED'
-          }
-        } else {
-          row.statusSetBy = settings!.author
-          row.mappingStatus = 'SEMI-APPROVED'
+      if (!row.conceptId) row.conceptId = row.sourceAutoAssignedConceptIds
+      if (row.statusSetBy) {
+        if (row.statusSetBy != settings!.author) {
+          row['ADD_INFO:approvedBy'] = settings!.author
+          row.mappingStatus = 'APPROVED'
         }
+      } else {
+        row.statusSetBy = settings!.author
+        row.mappingStatus = 'SEMI-APPROVED'
       }
       approveRows.set(index, row)
     }

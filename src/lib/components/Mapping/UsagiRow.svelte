@@ -78,47 +78,55 @@
   $: {
     renderedRow, index
     color = getColors()
-    if(!renderedRow.matchScore) renderedRow.matchScore = 0
-    if(!renderedRow.mappingStatus) renderedRow.mappingStatus = 'UNCHECKED'
-    if(!renderedRow.conceptName) renderedRow.conceptName = 'Unmapped'
-    if(!renderedRow.conceptId) renderedRow.conceptId = 0
+    if (!renderedRow.matchScore) renderedRow.matchScore = 0
+    if (!renderedRow.mappingStatus) renderedRow.mappingStatus = 'UNCHECKED'
+    if (!renderedRow.conceptName) renderedRow.conceptName = 'Unmapped'
+    if (!renderedRow.conceptId) renderedRow.conceptId = 0
   }
 
   $: {
     settings
-    if(settings) 
-      if(settings.fontsize) {
+    if (settings)
+      if (settings.fontsize) {
         fontSize = `${settings.fontsize}px`
       }
   }
 </script>
 
-<td data-name="actions-grid" style={`background-color: ${color}`}>
-  <button on:click={onClickMapping} title="Map"><SvgIcon href="icons.svg" id="search" width={fontSize} height={fontSize}/></button
-  >
-  <button on:click={onClickDeletion} title="Delete"
-    ><SvgIcon href="icons.svg" id="eraser" width={fontSize} height={fontSize} /></button
-  >
-  <button on:click={onClickAutoMap} title="Automap">AUTO</button>
-  {#if renderedRow['ADD_INFO:numberOfConcepts'] && renderedRow['ADD_INFO:numberOfConcepts'] > 1}
-    <div data-name="numberOfConceptIds">
-      <p>{renderedRow['ADD_INFO:numberOfConcepts']}</p>
-    </div>
-  {:else}
-    <div />
-  {/if}
-  <button on:click={onClickApproving} title="Approve"
-    ><SvgIcon href="icons.svg" id="check" width={fontSize} height={fontSize} /></button
-  >
-  <button on:click={onClickFlagging} title="Flag"
-    ><SvgIcon href="icons.svg" id="flag" width={fontSize} height={fontSize} /></button
-  >
-  <button on:click={onClickUnapproving} title="Unapprove"
-    ><SvgIcon href="icons.svg" id="x" width={fontSize} height={fontSize} /></button
-  >
+<td data-name="actions-cell" style={`background-color: ${color}`}>
+  <div data-name="actions-grid">
+    <button on:click={onClickMapping} title="Map"
+      ><SvgIcon href="icons.svg" id="search" width={fontSize} height={fontSize} /></button
+    >
+    <button on:click={onClickDeletion} title="Delete"
+      ><SvgIcon href="icons.svg" id="eraser" width={fontSize} height={fontSize} /></button
+    >
+    <button on:click={onClickAutoMap} title="Automap">AUTO</button>
+    {#if renderedRow['ADD_INFO:numberOfConcepts'] && renderedRow['ADD_INFO:numberOfConcepts'] > 1}
+      <div data-name="numberOfConceptIds">
+        <p>{renderedRow['ADD_INFO:numberOfConcepts']}</p>
+      </div>
+    {:else}
+      <div />
+    {/if}
+    <button on:click={onClickApproving} title="Approve"
+      ><SvgIcon href="icons.svg" id="check" width={fontSize} height={fontSize} /></button
+    >
+    <button on:click={onClickFlagging} title="Flag"
+      ><SvgIcon href="icons.svg" id="flag" width={fontSize} height={fontSize} /></button
+    >
+    <button on:click={onClickUnapproving} title="Unapprove"
+      ><SvgIcon href="icons.svg" id="x" width={fontSize} height={fontSize} /></button
+    >
+  </div>
 </td>
 {#each columns || [] as column, i}
-  <td on:dblclick={onClickMapping} on:dblclick={onClickMapping} style={`background-color: ${color}`} title={renderedRow[column.id]}>
+  <td
+    on:dblclick={onClickMapping}
+    on:dblclick={onClickMapping}
+    style={`background-color: ${color}`}
+    title={renderedRow[column.id]}
+  >
     {#if ['statusSetOn', 'createdOn', 'ADD_INFO:approvedOn'].includes(column.id)}
       <p>{renderedRow[column.id] ? new Date(parseInt(renderedRow[column.id])).toLocaleString() : 0}</p>
     {:else}
