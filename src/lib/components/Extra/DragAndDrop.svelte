@@ -66,7 +66,7 @@
   }
 </script>
 
-<div data-name="drag-drop" on:click={openFilePicker} on:keypress={openFilePicker}>
+<div data-name="drag-drop">
   <div data-name="drag-drop-container" on:drop={dropHandler} on:dragover={dragOverHandler}>
     <p>Drag a file here</p>
     <img src="drag.png" alt="Drag & drop file here" />
