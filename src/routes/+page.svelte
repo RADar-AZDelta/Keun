@@ -940,6 +940,7 @@
   function settingsChanged(e: CustomEvent<SettingsChangedEventDetail>) {
     settings = e.detail.settings
     document.documentElement.style.setProperty('--font-size', `${settings.fontsize}px`)
+    document.documentElement.style.setProperty('--font-number', `${settings.fontsize}`)
   }
 
   function saveFacets(facets: Record<string, any>) {
