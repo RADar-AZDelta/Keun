@@ -5,7 +5,7 @@
   import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
 
   export let renderedRow: Record<string, any>,
-    columns: IColumnMetaData[],
+    columns: IColumnMetaData[] | undefined,
     settings: Record<string, any>,
     alreadyMapped: Record<string, any>,
     url: string
@@ -53,10 +53,12 @@
   {/if}
   <button on:click={referToAthena}><SvgIcon href="icons.svg" id="link" width="16px" height="16px" /></button>
 </td>
-{#each columns || [] as column (column.id)}
-  <td>
-    <div data-name="cell-container">
-      <p>{renderedRow[column.id]}</p>
-    </div>
-  </td>
-{/each}
+{#if columns}
+  {#each columns || [] as column (column.id)}
+    <td>
+      <div data-name="cell-container">
+        <p>{renderedRow[column.id]}</p>
+      </div>
+    </td>
+  {/each}
+{/if}

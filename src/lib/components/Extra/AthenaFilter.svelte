@@ -39,7 +39,7 @@
   // A method to update the filters with a certain criteria
   const updateOptionsFromFilter = async (input: string): Promise<void> => {
     const options = filter.categories.options.filter(op => op.toLowerCase().includes(input.toLowerCase()))
-    filteredFilterOptions = { options: options }
+    filteredFilterOptions = { options: options, altName: filter.categories.altName, altNameFacet: filter.categories.altNameFacet }
   }
 </script>
 
