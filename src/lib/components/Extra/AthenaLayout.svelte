@@ -109,6 +109,26 @@
     },
   ]
 
+  const alreadyMappedColumns: IColumnMetaData[] = [
+    {
+      id: 'sourceCode',
+    },
+    {
+      id: 'sourceName',
+    },
+    {
+      id: 'conceptId',
+    },
+    {
+      id: 'conceptName',
+    },
+    {
+      id: 'customConcept',
+    },
+  ]
+
+  let alreadyMappedData: Record<string, any>[] = [{}]
+
   let dataTableAthena: DataTable
 
   let alreadyMapped: Record<string, Record<string, any>> = {}
@@ -148,13 +168,17 @@
         alreadyMapped[selectedRow.sourceCode] = {
           conceptId: [event.detail.conceptId],
           conceptName: [event.detail.conceptName],
+          custom: [false],
         }
       } else {
         alreadyMapped[selectedRow.sourceCode].conceptId.push(event.detail.conceptId)
         alreadyMapped[selectedRow.sourceCode].conceptName.push(event.detail.conceptName)
+        alreadyMapped[selectedRow.sourceCode].custom.push(false)
         alreadyMapped = alreadyMapped
       }
     }
+
+    fillMappedTable()
   }
 
   function autoComplete(event: CustomEvent<AutoCompleteEventDetail>) {
@@ -257,11 +281,19 @@
             )
               alreadyMapped[row.sourceCode].conceptId.push(row.conceptId)
             alreadyMapped[row.sourceCode].conceptName.push(row.conceptName)
+            if (row['ADD_INFO:customConcept'] == true) alreadyMapped[row.sourceCode].custom.push(true)
+            else alreadyMapped[row.sourceCode].custom.push(false)
           } else {
-            alreadyMapped[row.sourceCode] = { conceptId: [row.conceptId], conceptName: [row.conceptName] }
+            alreadyMapped[row.sourceCode] = {
+              conceptId: [row.conceptId],
+              conceptName: [row.conceptName],
+              custom: [row['ADD_INFO:customConcept'] == true ? true : false],
+            }
           }
         }
       }
+
+      fillMappedTable()
     }
   }
 
@@ -288,18 +320,15 @@
     let erase = alreadyMapped[selectedRow.sourceCode].conceptId.length > 1
     dispatch('deleteRowInnerMapping', { conceptId, conceptName, erase, custom: true })
     removeUniqueConcept(conceptId, conceptName)
+    fillMappedTable()
   }
 
   function removeUniqueConcept(conceptId: string, conceptName: string) {
+    const index = alreadyMapped[selectedRow.sourceCode].conceptId.indexOf(conceptId)
     if (alreadyMapped[selectedRow.sourceCode].conceptId.length > 1) {
-      alreadyMapped[selectedRow.sourceCode].conceptId.splice(
-        alreadyMapped[selectedRow.sourceCode].conceptId.indexOf(conceptId),
-        1
-      )
-      alreadyMapped[selectedRow.sourceCode].conceptName.splice(
-        alreadyMapped[selectedRow.sourceCode].conceptName.indexOf(conceptName),
-        1
-      )
+      alreadyMapped[selectedRow.sourceCode].conceptId.splice(index, 1)
+      alreadyMapped[selectedRow.sourceCode].conceptName.splice(index, 1)
+      alreadyMapped[selectedRow.sourceCode].custom.splice(index, 1)
     } else {
       delete alreadyMapped[selectedRow.sourceCode]
     }
@@ -334,21 +363,24 @@
         })
 
         if (alreadyMapped[selectedRow.sourceCode]) {
-          if (alreadyMapped[selectedRow.sourceCode].conceptId.length > 0) {
+          if (alreadyMapped[selectedRow.sourceCode].conceptId.length > 0)
             alreadyMapped[selectedRow.sourceCode].conceptId.push(selectedRow.sourceCode)
-          } else {
-            alreadyMapped[selectedRow.sourceCode].conceptId = [selectedRow.sourceCode]
-          }
+          else alreadyMapped[selectedRow.sourceCode].conceptId = [selectedRow.sourceCode]
           if (alreadyMapped[selectedRow.sourceCode].conceptName.length > 0)
             alreadyMapped[selectedRow.sourceCode].conceptName.push(customConcept.conceptName)
           else alreadyMapped[selectedRow.sourceCode].conceptName = [customConcept.conceptName]
+          if (alreadyMapped[selectedRow.sourceCode].custom.length > 0)
+            alreadyMapped[selectedRow.sourceCode].custom.push(true)
+          else alreadyMapped[selectedRow.sourceCode].custom = [true]
         } else {
           alreadyMapped[selectedRow.sourceCode] = {
             conceptId: [selectedRow.sourceCode],
             conceptName: [customConcept.conceptName],
+            custom: [true],
           }
         }
         alreadyMapped = alreadyMapped
+        fillMappedTable()
       } else {
         errorMessage = 'The concept class id is not valid'
       }
@@ -374,12 +406,31 @@
     dispatch('updateDetails', { index: selectedRowIndex, comment, assignedReviewer: reviewer })
   }, 500)
 
-  function setSidesShowed () {
+  function setSidesShowed() {
     if (settings) {
       if (settings.popupSidesShowed) {
         sidesShowed = settings.popupSidesShowed
       }
     }
+  }
+
+  function fillMappedTable() {
+    alreadyMappedData = []
+    for (let code of Object.keys(alreadyMapped)) {
+      if (selectedRow.sourceCode == code) {
+        for (let i = 0; i < alreadyMapped[code].conceptId.length; i++) {
+          alreadyMappedData.push({
+            sourceCode: selectedRow.sourceCode,
+            sourceName: selectedRow.sourceName,
+            conceptId: alreadyMapped[code].conceptId[i],
+            conceptName: alreadyMapped[code].conceptName[i],
+            customConcept: alreadyMapped[code].custom[i],
+          })
+        }
+      }
+    }
+    if (alreadyMappedData.length == 0) alreadyMappedData = [{}]
+    alreadyMappedData = alreadyMappedData
   }
 
   $: {
@@ -414,11 +465,10 @@
 
   $: {
     settings
-    if(settings && sidesSet == false){
+    if (settings && sidesSet == false) {
       setSidesShowed()
       sidesSet = true
     }
-
   }
 </script>
 
@@ -528,8 +578,13 @@
           <input type="radio" bind:group={conceptSelection} id="custom" name="concept-type" value="custom" />
           <label for="custom">Custom concept</label>
         </button>
+
+        <button>
+          <input type="radio" bind:group={conceptSelection} id="mapped" name="content-type" value="mapped" />
+          <label for="mapped">Mapped concepts</label>
+        </button>
       </div>
-      {#if conceptSelection !== 'custom'}
+      {#if conceptSelection === 'existing'}
         <div data-name="table-container">
           <DataTable
             data={fetchData}
@@ -540,6 +595,7 @@
               rowsPerPageOptions: [5, 10, 15, 20],
               globalFilter: globalFilter,
               saveOptions: false,
+              singleSort: true,
             }}
             bind:this={dataTableAthena}
           >
@@ -558,7 +614,7 @@
             />
           </DataTable>
         </div>
-      {:else}
+      {:else if conceptSelection === 'custom'}
         <div data-name="custom-concept-container">
           <h2>Create a custom concept</h2>
           <table data-name="custom-concept-table">
@@ -600,6 +656,28 @@
             </div>
           {/if}
         </div>
+      {:else if conceptSelection === 'mapped'}
+        <div data-name="alreadymapped-table">
+          <DataTable
+            data={alreadyMappedData}
+            columns={alreadyMappedColumns}
+            options={{ actionColumn: true }}
+            let:renderedRow
+            let:columns
+          >
+            <td>
+              <button
+                on:click={() => {
+                  removeMapping(renderedRow.conceptId, renderedRow.conceptName)
+                }}
+                ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" />
+              </button>
+            </td>
+            {#each Object.keys(renderedRow) as key}
+              <td>{renderedRow[key]}</td>
+            {/each}
+          </DataTable>
+        </div>
       {/if}
     </section>
     {#if sidesShowed.details}
@@ -611,38 +689,6 @@
           <h2>Detail</h2>
         </div>
         <div data-name="info-container">
-          {#if selectedRow}
-            <div data-name="mappedRows">
-              <table>
-                {#if Object.keys(alreadyMapped).length == 0 && Object.keys(alreadyMapped).includes(selectedRow.conceptName)}
-                  <div />
-                {:else}
-                  <tr>
-                    <th />
-                    <th>conceptId</th>
-                    <th>conceptName</th>
-                  </tr>
-                  {#each Object.keys(alreadyMapped) as code}
-                    {#if selectedRow.sourceCode == code}
-                      {#each alreadyMapped[code].conceptId as id, i}
-                        <tr>
-                          <td
-                            ><button
-                              on:click={() =>
-                                removeMapping(alreadyMapped[code].conceptId[i], alreadyMapped[code].conceptName[i])}
-                              ><SvgIcon href="icons.svg" id="x" width="12px" height="12px" /></button
-                            ></td
-                          >
-                          <td title={alreadyMapped[code].conceptId[i]}>{alreadyMapped[code].conceptId[i]}</td>
-                          <td title={alreadyMapped[code].conceptName[i]}>{alreadyMapped[code].conceptName[i]}</td>
-                        </tr>
-                      {/each}
-                    {/if}
-                  {/each}
-                {/if}
-              </table>
-            </div>
-          {/if}
           <Equivalence bind:Eq={equivalenceMapping} />
           <div data-name="reviewer">
             <p>Assigned reviewer: {reviewer}</p>
