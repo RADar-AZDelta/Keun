@@ -25,10 +25,7 @@ $font-size: 10px;
 
 :root {
   --font-size: 10px;
-}
-
-html {
-  font-size: var(--font-size, $font-size);
+  --font-number: 10;
 }
 
 body {
@@ -44,8 +41,6 @@ body {
     padding: 0;
     margin: 0;
   }
-
-  font-size: 1rem;
 }
 
 section[data-name='header'] {
@@ -781,7 +776,7 @@ dialog[data-name='athena-dialog'] {
               overflow-y: auto;
               colgroup {
                 col {
-                  min-width: 50px;
+                  min-width: 75px;
                 }
 
                 :first-child {
@@ -804,6 +799,21 @@ dialog[data-name='athena-dialog'] {
                     div[data-name='column-filter'] {
                       input {
                         min-width: 40px;
+                      }
+                    }
+                  }
+                }
+              }
+
+              tbody {
+                tr {
+                  td {
+                    button {
+                      padding: calc(0.25 * var(--font-size));
+                      width: min-content;
+                      height: min-content;
+                      svg {
+                        transform: scale(calc(var(--font-number) / 16));
                       }
                     }
                   }
@@ -930,7 +940,7 @@ dialog[data-name='athena-dialog'] {
               overflow-y: auto;
               colgroup {
                 col {
-                  min-width: 50px;
+                  min-width: 70px;
                 }
 
                 :first-child {
@@ -1177,7 +1187,6 @@ div[data-name='custom-concepts'] {
   display: none;
 }
 
-// svelte-radar-datatable ???
 div[data-component='svelte-datatable'] {
   div[data-component='datatable-content'] {
     max-width: none;
@@ -1188,11 +1197,11 @@ div[data-component='svelte-datatable'] {
     table {
       colgroup {
         col {
-          min-width: 9rem;
+          min-width: calc(var(--font-size) * 10);
         }
 
-        :first-child {
-          min-width: calc(9rem + 10px);
+        col[data-name='col-action'] {
+          min-width: 120px;
         }
       }
 
@@ -1200,12 +1209,28 @@ div[data-component='svelte-datatable'] {
         tr[data-name='titles'] {
           background-color: $neutral-xx-light;
           th {
-            font-size: 1rem;
+            font-size: var(--font-size);
             div[data-name='column-resize'] {
-              min-width: 9rem;
+              min-width: calc(9 * var(--font-size));
               div[data-name='column-reposition'] {
                 display: flex;
                 align-items: center;
+
+                button {
+                  div {
+                    svg {
+                      transform: scale(calc(var(--font-number) / 16));
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          th[data-name='action-Column'] {
+            button {
+              svg {
+                transform: scale(calc(var(--font-number) / 16));
               }
             }
           }
@@ -1214,14 +1239,20 @@ div[data-component='svelte-datatable'] {
         tr[data-name='filters'] {
           background-color: $neutral-xx-light;
           th {
-            min-width: 9rem;
+            min-width: calc(9 * var(--font-size));
             div[data-name='column-filter'] {
               input {
-                min-width: 6.5rem;
+                min-width: calc(6.5 * var(--font-size));
                 padding: 0;
+                font-size: var(--font-size);
               }
               button {
-                padding: 0.25rem;
+                padding: calc(0.25 * var(--font-size));
+                width: min-content;
+                height: min-content;
+                svg {
+                  transform: scale(calc(var(--font-number) / 16));
+                }
               }
             }
             button[data-name='show-filter-header'] {
@@ -1245,12 +1276,12 @@ div[data-component='svelte-datatable'] {
           td {
             p {
               white-space: normal;
-              font-size: 1rem;
+              font-size: var(--font-size);
             }
 
             button {
-              padding: 0 0.5rem;
-              font-size: 1rem;
+              padding: 0 calc(0.5 * var(--font-size));
+              font-size: var(--font-size);
             }
           }
         }
