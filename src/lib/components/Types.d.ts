@@ -117,7 +117,8 @@ export interface SingleFiltering {
 }
 
 export interface ICategories {
-  altName?: string
+  altName: string
+  altNameFacet: string
   options: string[]
 }
 

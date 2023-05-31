@@ -31,7 +31,8 @@
     fetchData: FetchDataFunc,
     settings: Record<string, any>,
     globalFilter: { column: string; filter: string | undefined },
-    showModal: boolean = false
+    showModal: boolean = false,
+    facets: Record<string, any> | undefined
 
   let JSONFilters = new Map<string, ICategories>([])
   let activatedAthenaFilters = new Map<string, string[]>([['standardConcept', ['Standard']]])
@@ -65,7 +66,7 @@
     domain: 'domain',
     standardConcept: 'concept',
     conceptClass: 'class',
-    vocabulary: 'vocab',
+    Vocabulary: 'vocab',
     invalidReason: 'validity',
   }
 
@@ -88,6 +89,7 @@
     {
       id: 'standardConcept',
       filterable: false,
+      visible: false,
     },
     {
       id: 'invalidReason',
@@ -136,7 +138,11 @@
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
   for (let filter of filtersJSON) {
-    JSONFilters.set(filter.name, { altName: filter.altName, options: filter.options })
+    JSONFilters.set(filter.name, {
+      altName: filter.altName,
+      altNameFacet: filter.altNameFacet,
+      options: filter.options,
+    })
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -487,26 +493,36 @@
         </div>
         <div data-name="filters">
           {#each [...JSONFilters] as [key, options]}
-            <AthenaFilter
-              filter={{ name: key, categories: options }}
-              bind:openedFilter
-              allowInput={true}
-              color={filterColors[key.toLowerCase()]}
-            >
-              <div slot="option" data-name="filter-option" let:option>
-                <input
-                  id={option}
-                  type="checkbox"
-                  title="Activate/deactivate filter"
-                  checked={checkIfFilterExists(key, options.altName, option)}
-                  on:change={() =>
-                    event != undefined
-                      ? updateAPIFilters(event, options.altName != undefined ? options.altName : 'sourceName', option)
-                      : null}
-                />
-                <label for={option}>{option.replaceAll('/', ' / ')}</label>
-              </div>
-            </AthenaFilter>
+            {#if facets}
+              {#if facets[options.altNameFacet]}
+                <AthenaFilter
+                  filter={{ name: key, categories: options }}
+                  bind:openedFilter
+                  allowInput={true}
+                  color={filterColors[key.toLowerCase()]}
+                >
+                  <div slot="option" data-name="filter-option" let:option>
+                    {#if facets[options.altNameFacet].hasOwnProperty(option) && facets[options.altNameFacet][option] > 0}
+                      <input
+                        id={option}
+                        type="checkbox"
+                        title="Activate/deactivate filter"
+                        checked={checkIfFilterExists(key, options.altName, option)}
+                        on:change={() =>
+                          event != undefined
+                            ? updateAPIFilters(
+                                event,
+                                options.altName != undefined ? options.altName : 'sourceName',
+                                option
+                              )
+                            : null}
+                      />
+                      <label for={option}>{option.replaceAll('/', ' / ')}</label>
+                    {/if}
+                  </div>
+                </AthenaFilter>
+              {/if}
+            {/if}
           {/each}
           <div data-name="activated-filters">
             {#each [...activatedAthenaFilters] as [filter, values]}
