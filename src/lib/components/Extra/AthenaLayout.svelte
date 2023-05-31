@@ -20,8 +20,8 @@
   import AutocompleteInputSettings from './AutocompleteInputSettings.svelte'
   import customConceptInfo from '$lib/data/customConceptInfo.json'
   import debounce from 'lodash.debounce'
-  import AutocompleteInput from '$lib/components/Extra/AutoCompleteInput.svelte'
-    import type Query from 'arquero/dist/types/query/query'
+  import AutocompleteInput from './AutoCompleteInput.svelte'
+  import type Query from 'arquero/dist/types/query/query'
 
   export let urlFilters: string[],
     url: string,
@@ -274,7 +274,9 @@
   async function getUniqueConceptIds() {
     alreadyMapped = {}
     if (selectedRow) {
-      const q = (<Query>query().params({ source: selectedRow.sourceCode })).filter((d: any, params: any) => d.sourceCode == params.source).toObject()
+      const q = (<Query>query().params({ source: selectedRow.sourceCode }))
+        .filter((d: any, params: any) => d.sourceCode == params.source)
+        .toObject()
       const res = await mainTable.executeQueryAndReturnResults(q)
       for (let row of res.queriedData) {
         if (row.conceptId) {
