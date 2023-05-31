@@ -22,7 +22,7 @@
   import type Query from 'arquero/dist/types/query/query'
   import AutocompleteInputSettings from './AutocompleteInputSettings.svelte'
   import { clickOutside } from '$lib/actions/clickOutside'
-  import AutoCompleteInput from './AutocompleteInput.svelte'
+  import AutocompleteInput from './AutocompleteInput.svelte'
 
   export let urlFilters: string[],
     url: string,
@@ -650,7 +650,7 @@
                   ></td
                 >
                 <td
-                  ><AutoCompleteInput
+                  ><AutocompleteInput
                     id="domainId"
                     list={customConceptInfo.domain}
                     on:autoComplete={autoComplete}
@@ -658,7 +658,7 @@
                 >
                 <td><input type="text" bind:value={customConcept.vocabularyId} /></td>
                 <td
-                  ><AutoCompleteInput
+                  ><AutocompleteInput
                     id="conceptClassId"
                     list={customConceptInfo.concept}
                     on:autoComplete={autoComplete}
