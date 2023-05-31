@@ -22,6 +22,7 @@
   import debounce from 'lodash.debounce'
   import type Query from 'arquero/dist/types/query/query'
   import AutoCompleteInput from './AutoCompleteInput.svelte'
+  import { clickOutside } from '$lib/actions/clickOutside'
 
   export let urlFilters: string[],
     url: string,
@@ -479,263 +480,270 @@
 </script>
 
 <dialog bind:this={layoutDialog} data-name="athena-dialog">
-  <button data-name="close-dialog" on:click={closeDialog}
-    ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
-  >
-  <div data-name="athena-layout">
-    {#if sidesShowed.filters}
-      <section data-name="filters-container">
-        <div data-name="filters-head">
-          <h2>Filters</h2>
-          <button on:click={() => sideVisibilityChange('filters', false)} id="filters"
-            ><SvgIcon href="icons.svg" id="chevrons-left" width="16px" height="16px" /></button
-          >
-        </div>
-        <div data-name="filters">
-          {#each [...JSONFilters] as [key, options]}
-            {#if facets}
-              {#if facets[options.altNameFacet]}
-                <AthenaFilter
-                  filter={{ name: key, categories: options }}
-                  bind:openedFilter
-                  allowInput={true}
-                  color={filterColors[key.toLowerCase()]}
-                >
-                  <div slot="option" data-name="filter-option" let:option>
-                    {#if facets[options.altNameFacet].hasOwnProperty(option) && facets[options.altNameFacet][option] > 0}
-                      <input
-                        id={option}
-                        type="checkbox"
-                        title="Activate/deactivate filter"
-                        checked={checkIfFilterExists(key, options.altName, option)}
-                        on:change={() =>
-                          event != undefined
-                            ? updateAPIFilters(
-                                event,
-                                options.altName != undefined ? options.altName : 'sourceName',
-                                option
-                              )
-                            : null}
-                      />
-                      <label for={option}>{option.replaceAll('/', ' / ')}</label>
-                    {/if}
-                  </div>
-                </AthenaFilter>
-              {/if}
-            {/if}
-          {/each}
-          <div data-name="activated-filters">
-            {#each [...activatedAthenaFilters] as [filter, values]}
-              {#each values as value}
-                <div data-name="activated-filter" style={`background-color: ${filterColors[filterNames[filter]]}`}>
-                  <button on:click={() => removeFilter(filter, value)}
-                    ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
-                  >
-                  <p>{value}</p>
-                </div>
-              {/each}
-            {/each}
+  <div data-name="dialog-container" use:clickOutside on:outClick={closeDialog}>
+    <button data-name="close-dialog" on:click={closeDialog}
+      ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
+    >
+    <div data-name="athena-layout">
+      {#if sidesShowed.filters}
+        <section data-name="filters-container">
+          <div data-name="filters-head">
+            <h2>Filters</h2>
+            <button on:click={() => sideVisibilityChange('filters', false)} id="filters"
+              ><SvgIcon href="icons.svg" id="chevrons-left" width="16px" height="16px" /></button
+            >
           </div>
-        </div>
-      </section>
-    {:else}
-      <div data-name="sidebar-right">
-        <button data-name="closed-bar" on:click={() => sideVisibilityChange('filters', true)}>
-          <SvgIcon href="icons.svg" id="chevrons-right" width="16px" height="16px" />
-          <p>F</p>
-          <p>I</p>
-          <p>L</p>
-          <p>T</p>
-          <p>E</p>
-          <p>R</p>
-          <p>S</p>
-        </button>
-      </div>
-    {/if}
-    <section data-name="table-pop-up">
-      <div data-name="table-head">
-        <div data-name="currentRow">
-          <button
-            title="Previous row"
-            id="left"
-            on:click={() => {
-              onRowChange(false)
-            }}
-            disabled={selectedRowIndex == 0 ? true : false}
-          >
-            <SvgIcon href="icons.svg" id="arrow-left" width="16px" height="16px" />
-          </button>
-          <table>
-            <tr>
-              <th data-name="normal-cell">sourceCode</th>
-              <th data-name="sourceName">sourceName</th>
-              <th data-name="normal-cell">sourceFrequency</th>
-            </tr>
-            <tr>
-              {#if selectedRow != undefined}
-                <td data-name="normal-cell" title={selectedRow.sourceCode}>{selectedRow.sourceCode}</td>
-                <td data-name="sourceName" title={selectedRow.sourceName}>{selectedRow.sourceName}</td>
-                <td data-name="normal-cell" title={selectedRow.sourceFrequency}>{selectedRow.sourceFrequency}</td>
+          <div data-name="filters">
+            {#each [...JSONFilters] as [key, options]}
+              {#if facets}
+                {#if facets[options.altNameFacet]}
+                  <AthenaFilter
+                    filter={{ name: key, categories: options }}
+                    bind:openedFilter
+                    allowInput={true}
+                    color={filterColors[key.toLowerCase()]}
+                  >
+                    <div slot="option" data-name="filter-option" let:option>
+                      {#if facets[options.altNameFacet].hasOwnProperty(option) && facets[options.altNameFacet][option] > 0}
+                        <input
+                          id={option}
+                          type="checkbox"
+                          title="Activate/deactivate filter"
+                          checked={checkIfFilterExists(key, options.altName, option)}
+                          on:change={() =>
+                            event != undefined
+                              ? updateAPIFilters(
+                                  event,
+                                  options.altName != undefined ? options.altName : 'sourceName',
+                                  option
+                                )
+                              : null}
+                        />
+                        <label for={option}>{option.replaceAll('/', ' / ')}</label>
+                      {/if}
+                    </div>
+                  </AthenaFilter>
+                {/if}
               {/if}
-            </tr>
-          </table>
-          <button title="Next row" id="right" on:click={() => onRowChange(true)} disabled={lastRow}>
-            <SvgIcon href="icons.svg" id="arrow-right" width="16px" height="16px" />
-          </button>
-        </div>
-      </div>
-      <div data-name="concept-choice">
-        <button>
-          <input type="radio" bind:group={conceptSelection} id="existing" name="concept-type" value="existing" />
-          <label for="existing">Existing concepts</label>
-        </button>
-
-        <button>
-          <input type="radio" bind:group={conceptSelection} id="custom" name="concept-type" value="custom" />
-          <label for="custom">Custom concept</label>
-        </button>
-
-        <button>
-          <input type="radio" bind:group={conceptSelection} id="mapped" name="content-type" value="mapped" />
-          <label for="mapped">Mapped concepts</label>
-        </button>
-      </div>
-      {#if conceptSelection === 'existing'}
-        <div data-name="table-container">
-          <DataTable
-            data={fetchData}
-            columns={athenaColumns}
-            options={{
-              id: 'athena',
-              actionColumn: true,
-              rowsPerPageOptions: [5, 10, 15, 20],
-              globalFilter: globalFilter,
-              saveOptions: false,
-              singleSort: true,
-            }}
-            bind:this={dataTableAthena}
-          >
-            <AthenaRow
-              slot="default"
-              let:renderedRow
-              let:columns
-              {renderedRow}
-              {settings}
-              {columns}
-              {url}
-              bind:alreadyMapped
-              on:singleMapping={singleMapping}
-              on:multipleMapping={multipleMapping}
-              on:updateUniqueConceptIds={updateUniqueConceptIds}
-            />
-          </DataTable>
-        </div>
-      {:else if conceptSelection === 'custom'}
-        <div data-name="custom-concept-container">
-          <h2>Create a custom concept</h2>
-          <table data-name="custom-concept-table">
-            <tr>
-              <th />
-              <th>domain_id</th>
-              <th>vocabulary_id</th>
-              <th>concept_class_id</th>
-              <th>concept_name</th>
-            </tr>
-            <tr>
-              <td data-name="custom-concept-actions"
-                ><button on:click={customMapping}
-                  ><SvgIcon href="icons.svg" id="plus" width="16px" height="16px" /></button
-                ></td
-              >
-              <td><AutoCompleteInput id="domainId" list={customConceptInfo.domain} on:autoComplete={autoComplete} /></td
-              >
-              <td><input type="text" bind:value={customConcept.vocabularyId} /></td>
-              <td
-                ><AutoCompleteInput
-                  id="conceptClassId"
-                  list={customConceptInfo.concept}
-                  on:autoComplete={autoComplete}
-                /></td
-              >
-              <td><input type="text" bind:value={customConcept.conceptName} /></td>
-            </tr>
-          </table>
-
-          {#if errorMessage}
-            <div data-name="errormessage">
-              <p>{errorMessage}</p>
-              <button
-                on:click={() => {
-                  errorMessage = ''
-                }}><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
-              >
-            </div>
-          {/if}
-        </div>
-      {:else if conceptSelection === 'mapped'}
-        <div data-name="alreadymapped-table">
-          <DataTable
-            data={alreadyMappedData}
-            columns={alreadyMappedColumns}
-            options={{ actionColumn: true }}
-            let:renderedRow
-            let:columns
-          >
-            <td>
-              <button
-                on:click={() => {
-                  removeMapping(renderedRow.conceptId, renderedRow.conceptName)
-                }}
-                ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" />
-              </button>
-            </td>
-            {#each Object.keys(renderedRow) as key}
-              <td>{renderedRow[key]}</td>
             {/each}
-          </DataTable>
+            <div data-name="activated-filters">
+              {#each [...activatedAthenaFilters] as [filter, values]}
+                {#each values as value}
+                  <div data-name="activated-filter" style={`background-color: ${filterColors[filterNames[filter]]}`}>
+                    <button on:click={() => removeFilter(filter, value)}
+                      ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
+                    >
+                    <p>{value}</p>
+                  </div>
+                {/each}
+              {/each}
+            </div>
+          </div>
+        </section>
+      {:else}
+        <div data-name="sidebar-right">
+          <button data-name="closed-bar" on:click={() => sideVisibilityChange('filters', true)}>
+            <SvgIcon href="icons.svg" id="chevrons-right" width="16px" height="16px" />
+            <p>F</p>
+            <p>I</p>
+            <p>L</p>
+            <p>T</p>
+            <p>E</p>
+            <p>R</p>
+            <p>S</p>
+          </button>
         </div>
       {/if}
-    </section>
-    {#if sidesShowed.details}
-      <section data-name="additional-information">
-        <div data-name="additional-information-head">
-          <button on:click={() => sideVisibilityChange('details', false)}
-            ><SvgIcon href="icons.svg" id="chevrons-right" width="16px" height="16px" /></button
-          >
-          <h2>Detail</h2>
-        </div>
-        <div data-name="info-container">
-          <Equivalence bind:Eq={equivalenceMapping} />
-          <div data-name="reviewer">
-            <p>Assigned reviewer: {reviewer}</p>
-            <AutocompleteInputSettings {settings} on:reviewerChanged={reviewerChanged} />
+      <section data-name="table-pop-up">
+        <div data-name="table-head">
+          <div data-name="currentRow">
+            <button
+              title="Previous row"
+              id="left"
+              on:click={() => {
+                onRowChange(false)
+              }}
+              disabled={selectedRowIndex == 0 ? true : false}
+            >
+              <SvgIcon href="icons.svg" id="arrow-left" width="16px" height="16px" />
+            </button>
+            <table>
+              <tr>
+                <th data-name="normal-cell">sourceCode</th>
+                <th data-name="sourceName">sourceName</th>
+                <th data-name="normal-cell">sourceFrequency</th>
+              </tr>
+              <tr>
+                {#if selectedRow != undefined}
+                  <td data-name="normal-cell" title={selectedRow.sourceCode}>{selectedRow.sourceCode}</td>
+                  <td data-name="sourceName" title={selectedRow.sourceName}>{selectedRow.sourceName}</td>
+                  <td data-name="normal-cell" title={selectedRow.sourceFrequency}>{selectedRow.sourceFrequency}</td>
+                {/if}
+              </tr>
+            </table>
+            <button title="Next row" id="right" on:click={() => onRowChange(true)} disabled={lastRow}>
+              <SvgIcon href="icons.svg" id="arrow-right" width="16px" height="16px" />
+            </button>
           </div>
-          <div data-name="comments">
-            <p>Comments</p>
-            <textarea
-              title="Comments"
-              name="Comments"
-              id="Comments"
-              cols="28"
-              rows="6"
-              on:input={onInputComment}
-              bind:value={comment}
-            />
-          </div>
         </div>
+        <div data-name="concept-choice">
+          <button>
+            <input type="radio" bind:group={conceptSelection} id="existing" name="concept-type" value="existing" />
+            <label for="existing">Existing concepts</label>
+          </button>
+
+          <button>
+            <input type="radio" bind:group={conceptSelection} id="custom" name="concept-type" value="custom" />
+            <label for="custom">Custom concept</label>
+          </button>
+
+          <button>
+            <input type="radio" bind:group={conceptSelection} id="mapped" name="content-type" value="mapped" />
+            <label for="mapped">Mapped concepts</label>
+          </button>
+        </div>
+        {#if conceptSelection === 'existing'}
+          <div data-name="table-container">
+            <DataTable
+              data={fetchData}
+              columns={athenaColumns}
+              options={{
+                id: 'athena',
+                actionColumn: true,
+                rowsPerPageOptions: [5, 10, 15, 20],
+                globalFilter: globalFilter,
+                saveOptions: false,
+                singleSort: true,
+              }}
+              bind:this={dataTableAthena}
+            >
+              <AthenaRow
+                slot="default"
+                let:renderedRow
+                let:columns
+                {renderedRow}
+                {settings}
+                {columns}
+                {url}
+                bind:alreadyMapped
+                on:singleMapping={singleMapping}
+                on:multipleMapping={multipleMapping}
+                on:updateUniqueConceptIds={updateUniqueConceptIds}
+              />
+            </DataTable>
+          </div>
+        {:else if conceptSelection === 'custom'}
+          <div data-name="custom-concept-container">
+            <h2>Create a custom concept</h2>
+            <table data-name="custom-concept-table">
+              <tr>
+                <th />
+                <th>domain_id</th>
+                <th>vocabulary_id</th>
+                <th>concept_class_id</th>
+                <th>concept_name</th>
+              </tr>
+              <tr>
+                <td data-name="custom-concept-actions"
+                  ><button on:click={customMapping}
+                    ><SvgIcon href="icons.svg" id="plus" width="16px" height="16px" /></button
+                  ></td
+                >
+                <td
+                  ><AutoCompleteInput
+                    id="domainId"
+                    list={customConceptInfo.domain}
+                    on:autoComplete={autoComplete}
+                  /></td
+                >
+                <td><input type="text" bind:value={customConcept.vocabularyId} /></td>
+                <td
+                  ><AutoCompleteInput
+                    id="conceptClassId"
+                    list={customConceptInfo.concept}
+                    on:autoComplete={autoComplete}
+                  /></td
+                >
+                <td><input type="text" bind:value={customConcept.conceptName} /></td>
+              </tr>
+            </table>
+
+            {#if errorMessage}
+              <div data-name="errormessage">
+                <p>{errorMessage}</p>
+                <button
+                  on:click={() => {
+                    errorMessage = ''
+                  }}><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
+                >
+              </div>
+            {/if}
+          </div>
+        {:else if conceptSelection === 'mapped'}
+          <div data-name="alreadymapped-table">
+            <DataTable
+              data={alreadyMappedData}
+              columns={alreadyMappedColumns}
+              options={{ actionColumn: true }}
+              let:renderedRow
+              let:columns
+            >
+              <td>
+                <button
+                  on:click={() => {
+                    removeMapping(renderedRow.conceptId, renderedRow.conceptName)
+                  }}
+                  ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" />
+                </button>
+              </td>
+              {#each Object.keys(renderedRow) as key}
+                <td>{renderedRow[key]}</td>
+              {/each}
+            </DataTable>
+          </div>
+        {/if}
       </section>
-    {:else}
-      <div data-name="sidebar-left">
-        <button data-name="closed-bar" on:click={() => sideVisibilityChange('details', true)}>
-          <SvgIcon href="icons.svg" id="chevrons-left" width="16px" height="16px" />
-          <p>D</p>
-          <p>E</p>
-          <p>T</p>
-          <p>A</p>
-          <p>I</p>
-          <p>L</p>
-        </button>
-      </div>
-    {/if}
+      {#if sidesShowed.details}
+        <section data-name="additional-information">
+          <div data-name="additional-information-head">
+            <button on:click={() => sideVisibilityChange('details', false)}
+              ><SvgIcon href="icons.svg" id="chevrons-right" width="16px" height="16px" /></button
+            >
+            <h2>Detail</h2>
+          </div>
+          <div data-name="info-container">
+            <Equivalence bind:Eq={equivalenceMapping} />
+            <div data-name="reviewer">
+              <p>Assigned reviewer: {reviewer}</p>
+              <AutocompleteInputSettings {settings} on:reviewerChanged={reviewerChanged} />
+            </div>
+            <div data-name="comments">
+              <p>Comments</p>
+              <textarea
+                title="Comments"
+                name="Comments"
+                id="Comments"
+                cols="28"
+                rows="6"
+                on:input={onInputComment}
+                bind:value={comment}
+              />
+            </div>
+          </div>
+        </section>
+      {:else}
+        <div data-name="sidebar-left">
+          <button data-name="closed-bar" on:click={() => sideVisibilityChange('details', true)}>
+            <SvgIcon href="icons.svg" id="chevrons-left" width="16px" height="16px" />
+            <p>D</p>
+            <p>E</p>
+            <p>T</p>
+            <p>A</p>
+            <p>I</p>
+            <p>L</p>
+          </button>
+        </div>
+      {/if}
+    </div>
   </div>
 </dialog>

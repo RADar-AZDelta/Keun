@@ -51,56 +51,58 @@
 >
 
 <dialog bind:this={settingsDialog} data-name="settings-dialog">
-  {#if settings}
-    <button data-name="close-dialog" on:click={closeDialog}
-      ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
-    >
-    <section data-name="settings">
-      <h2>Settings</h2>
-      <div data-name="options">
-        <div data-name="option">
-          <p>Map to multiple concepts?</p>
-          <div data-name="switch">
+  <div data-name="settings-container" use:clickOutside on:outClick={closeDialog}>
+    {#if settings}
+      <button data-name="close-dialog" on:click={closeDialog}
+        ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
+      >
+      <section data-name="settings">
+        <h2>Settings</h2>
+        <div data-name="options">
+          <div data-name="option">
+            <p>Map to multiple concepts?</p>
+            <div data-name="switch">
+              <input
+                id="MultipleConcepts"
+                type="checkbox"
+                bind:checked={settings.mapToMultipleConcepts}
+                on:change={saveSettings}
+              />
+              <label for="MultipleConcepts" />
+            </div>
+          </div>
+          <div data-name="option">
+            <p>Automatic mapping?</p>
+            <div data-name="switch">
+              <input id="Automap" type="checkbox" bind:checked={settings.autoMap} on:change={saveSettings} />
+              <label for="Automap" />
+            </div>
+          </div>
+          <div data-name="option">
+            <p>Language of source CSV</p>
+            <select name="language" id="language" bind:value={settings.language} on:change={saveSettings}>
+              {#each Object.keys(languages) as lang}
+                <option value={lang} selected={lang == settings.language ? true : false}>{languages[lang]}</option>
+              {/each}
+            </select>
+          </div>
+          <div data-name="option">
+            <p>Default vocabulary ID for custom concepts</p>
             <input
-              id="MultipleConcepts"
-              type="checkbox"
-              bind:checked={settings.mapToMultipleConcepts}
-              on:change={saveSettings}
+              type="text"
+              placeholder="local ID e.g. AZDELTA"
+              use:clickOutside
+              bind:value={settings.vocabularyIdCustomConcept}
+              on:outClick={saveSettings}
             />
-            <label for="MultipleConcepts" />
+          </div>
+          <!-- TODO: add option for font-size (in DataTable)-->
+          <div data-name="option">
+            <p>Font size</p>
+            <input type="number" bind:value={settings.fontsize} use:clickOutside on:outClick={saveSettings} />
           </div>
         </div>
-        <div data-name="option">
-          <p>Automatic mapping?</p>
-          <div data-name="switch">
-            <input id="Automap" type="checkbox" bind:checked={settings.autoMap} on:change={saveSettings} />
-            <label for="Automap" />
-          </div>
-        </div>
-        <div data-name="option">
-          <p>Language of source CSV</p>
-          <select name="language" id="language" bind:value={settings.language} on:change={saveSettings}>
-            {#each Object.keys(languages) as lang}
-              <option value={lang} selected={lang == settings.language ? true : false}>{languages[lang]}</option>
-            {/each}
-          </select>
-        </div>
-        <div data-name="option">
-          <p>Default vocabulary ID for custom concepts</p>
-          <input
-            type="text"
-            placeholder="local ID e.g. AZDELTA"
-            use:clickOutside
-            bind:value={settings.vocabularyIdCustomConcept}
-            on:outClick={saveSettings}
-          />
-        </div>
-        <!-- TODO: add option for font-size (in DataTable)-->
-        <div data-name="option">
-          <p>Font size</p>
-          <input type="number" bind:value={settings.fontsize} use:clickOutside on:outClick={saveSettings}>
-        </div>
-      </div>
-    </section>
-  {/if}
+      </section>
+    {/if}
+  </div>
 </dialog>
