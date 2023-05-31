@@ -20,8 +20,8 @@
   import AutocompleteInputSettings from './AutocompleteInputSettings.svelte'
   import customConceptInfo from '$lib/data/customConceptInfo.json'
   import debounce from 'lodash.debounce'
-  import AutocompleteInput from './AutoCompleteInput.svelte'
   import type Query from 'arquero/dist/types/query/query'
+  import AutoCompleteInput from './AutoCompleteInput.svelte'
 
   export let urlFilters: string[],
     url: string,
@@ -647,11 +647,11 @@
                   ><SvgIcon href="icons.svg" id="plus" width="16px" height="16px" /></button
                 ></td
               >
-              <td><AutocompleteInput id="domainId" list={customConceptInfo.domain} on:autoComplete={autoComplete} /></td
+              <td><AutoCompleteInput id="domainId" list={customConceptInfo.domain} on:autoComplete={autoComplete} /></td
               >
               <td><input type="text" bind:value={customConcept.vocabularyId} /></td>
               <td
-                ><AutocompleteInput
+                ><AutoCompleteInput
                   id="conceptClassId"
                   list={customConceptInfo.concept}
                   on:autoComplete={autoComplete}
