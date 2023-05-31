@@ -17,11 +17,11 @@
   import DataTable, { type FetchDataFunc, type IColumnMetaData } from '@radar-azdelta/svelte-datatable'
   import { query } from 'arquero'
   import AthenaRow from '../Mapping/AthenaRow.svelte'
-  import AutocompleteInputSettings from './AutocompleteInputSettings.svelte'
+  import AutocompleteInputSettings from '$lib/components/Extra/AutocompleteInputSettings.svelte'
   import customConceptInfo from '$lib/data/customConceptInfo.json'
   import debounce from 'lodash.debounce'
   import type Query from 'arquero/dist/types/query/query'
-  import AutoCompleteInput from './AutoCompleteInput.svelte'
+  import AutoCompleteInput from '$lib/components/Extra/AutoCompleteInput.svelte'
   import { clickOutside } from '$lib/actions/clickOutside'
 
   export let urlFilters: string[],
