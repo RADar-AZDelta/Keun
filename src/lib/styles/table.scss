@@ -58,7 +58,7 @@ section[data-name='header'] {
     display: flex;
     gap: 1rem;
 
-    p[data-name="filename"] {
+    p[data-name='filename'] {
       max-width: 100px;
       white-space: nowrap;
       overflow: hidden;
@@ -914,6 +914,51 @@ dialog[data-name='athena-dialog'] {
             cursor: pointer;
             padding: 0;
             height: auto;
+          }
+        }
+      }
+      div[data-name='alreadymapped-table'] {
+        padding: 0 1rem;
+        flex: 1 1 auto;
+        overflow: auto;
+
+        div[data-component='svelte-datatable'] {
+          // overflow-y: auto;
+          div[data-component='datatable-content'] {
+            table {
+              font-size: 1rem;
+              overflow-y: auto;
+              colgroup {
+                col {
+                  min-width: 50px;
+                }
+
+                :first-child {
+                  min-width: 70px;
+                }
+              }
+
+              thead {
+                tr[data-name='titles'] {
+                  th {
+                    div[data-name='column-resize'] {
+                      min-width: 70px;
+                    }
+                  }
+                }
+
+                tr[data-name='filters'] {
+                  th {
+                    min-width: 70px;
+                    div[data-name='column-filter'] {
+                      input {
+                        min-width: 40px;
+                      }
+                    }
+                  }
+                }
+              }
+            }
           }
         }
       }
