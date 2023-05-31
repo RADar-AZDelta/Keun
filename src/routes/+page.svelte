@@ -66,8 +66,7 @@
   let approvedRows: number | undefined = undefined
   let globalAthenaFilter = { column: 'all', filter: undefined }
 
-  let previousHeader: IColumnMetaData[] | undefined = undefined
-  let filterVisibility: boolean = true
+  let athenaFacets: Record<string, any> | undefined = undefined
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // DATA
@@ -636,6 +635,7 @@
     const url = await assembleAthenaURL(filter, sortedColumns.entries().next().value, pagination)
     const response = await fetch(url)
     const apiData = await response.json()
+    saveFacets(apiData.facets)
     return {
       data: apiData.content,
       totalRows: apiData.totalElements,
@@ -944,6 +944,10 @@
     document.documentElement.style.setProperty('--font-size', `${settings.fontsize}px`)
   }
 
+  function saveFacets(facets: Record<string, any>) {
+    athenaFacets = facets
+  }
+
   let fetchDataFunc = fetchData
 
   onMount(async () => {
@@ -1072,6 +1076,7 @@
   {settings}
   bind:globalFilter={globalAthenaFilter}
   showModal={mappingVisibility}
+  bind:facets={athenaFacets}
   on:rowChange={selectRow}
   on:singleMapping={singleMapping}
   on:multipleMapping={multipleMapping}

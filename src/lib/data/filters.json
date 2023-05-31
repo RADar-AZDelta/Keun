@@ -2,6 +2,7 @@
   {
     "name": "Domain",
     "altName": "domain",
+    "altNameFacet": "domain_id",
     "options": [
       "Condition",
       "Condition Status",
@@ -50,11 +51,13 @@
   {
     "name": "Concept",
     "altName": "standardConcept",
+    "altNameFacet": "standard_concept",
     "options": ["Classification", "Non-standard", "Standard"]
   },
   {
     "name": "Class",
     "altName": "conceptClass",
+    "altNameFacet": "concept_class_id",
     "options": [
       "10th level",
       "11-digit NDC",
@@ -408,6 +411,7 @@
   {
     "name": "Vocab",
     "altName": "Vocabulary",
+    "altNameFacet": "vocabulary_id",
     "options": [
       "ABMS",
       "AMT",
@@ -534,6 +538,7 @@
   {
     "name": "Validity",
     "altName": "invalidReason",
+    "altNameFacet": "invalid_reason",
     "options": ["Valid", "Invalid"]
   }
 ]
