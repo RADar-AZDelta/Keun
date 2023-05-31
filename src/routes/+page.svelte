@@ -26,6 +26,7 @@
   import { query } from 'arquero'
   import Download from '$lib/components/Extra/Download.svelte'
   import Settings from '$lib/components/Extra/Settings.svelte'
+  // @ts-ignore
   import { LatencyOptimisedTranslator } from '@browsermt/bergamot-translator/translator.js'
   import SvgIcon from '$lib/components/Extra/SvgIcon.svelte'
   import { page } from '$app/stores'
@@ -34,6 +35,7 @@
   import Spinner from '$lib/components/Extra/Spinner.svelte'
   import DataTable from '@radar-azdelta/svelte-datatable'
   import Manual from '$lib/components/Extra/Manual.svelte'
+  import type Query from 'arquero/dist/types/query/query'
 
   let file: File | undefined
   let currentFileName: string | undefined = undefined
@@ -258,10 +260,10 @@
     if (settings) {
       if (settings.mapToMultipleConcepts) {
         // Get previous mapped concepts
-        const q = query()
-          .params({ sourceCode: mappedRow.sourceCode })
+        const q = (<Query>query().params({ sourceCode: mappedRow.sourceCode }))
           .filter((r: any, params: any) => r.sourceCode == params.sourceCode)
           .toObject()
+
         const res = await dataTableFile.executeQueryAndReturnResults(q)
         // Add extra information like the number of concepts mapped for this row, comments & the assigned reviewer to the row
         if (event.detail.extra) {
@@ -294,8 +296,7 @@
     const { mappedIndex, mappedRow } = await rowMapping(event.detail.originalRow!, event.detail.row)
 
     // Create a query and execute it to get all the rows that are already mapped and got the same sourceCode
-    const q = query()
-      .params({ value: mappedRow.sourceCode })
+    const q = (<Query>query().params({ value: mappedRow.sourceCode }))
       .filter((r: any, params: any) => r.sourceCode == params.value)
       .toObject()
     const res = await dataTableFile.executeQueryAndReturnResults(q)
@@ -400,8 +401,7 @@
     // If it not the only concept that is mapped for that row (multiple mapping), erase the row
     if (event.detail.erase == true) {
       // Create a query to get all the rows that has the same sourceCode (row mapped to multiple concepts)
-      const q = query()
-        .params({ source: event.detail.sourceCode })
+      const q = (<Query>query().params({ source: event.detail.sourceCode }))
         .filter((r: any, params: any) => r.sourceCode == params.source)
         .toObject()
       const res = await dataTableFile.executeQueryAndReturnResults(q)
@@ -438,12 +438,11 @@
         }
       }
     }
-    const q = query()
-      .params({
-        conceptId: event.detail.conceptId,
-        sourceCode: selectedRow.sourceCode,
-        conceptName: event.detail.conceptName,
-      })
+    const q = (<Query>query().params({
+      conceptId: event.detail.conceptId,
+      sourceCode: selectedRow.sourceCode,
+      conceptName: event.detail.conceptName,
+    }))
       .filter(
         (r: any, params: any) =>
           r.conceptId == params.conceptId && r.sourceCode == params.sourceCode && r.conceptName == params.conceptName
@@ -451,8 +450,7 @@
       .toObject()
     const res = await dataTableFile.executeQueryAndReturnResults(q)
     if (event.detail.erase) {
-      const q = query()
-        .params({ sourceCode: selectedRow.sourceCode })
+      const q = (<Query>query().params({ sourceCode: selectedRow.sourceCode }))
         .filter((r: any, params: any) => r.sourceCode == params.sourceCode)
         .toObject()
       const res2 = await dataTableFile.executeQueryAndReturnResults(q)
@@ -927,7 +925,7 @@
     if (dev) console.log('calculateProgress: Calculating progress')
     const expressions = {
       total: 'd => op.count()',
-      valid: 'd => op.valid(d.conceptId)',
+      valid: 'd => op.valid(d.mappingStatus)',
     }
     const expressionResults = await dataTableFile.executeExpressionsAndReturnResults(expressions)
     const qAppr = query()
@@ -1060,32 +1058,36 @@
 
   <div data-name="header-buttons-container" id="settings">
     <Manual />
-    <Settings {settings} on:settingsChanged={settingsChanged} />
-    <User {settings} />
+    {#if settings}
+      <Settings {settings} on:settingsChanged={settingsChanged} />
+      <User {settings} />
+    {/if}
   </div>
 </section>
 
-<AthenaLayout
-  bind:urlFilters={apiFilters}
-  bind:url
-  bind:equivalenceMapping
-  {selectedRow}
-  {selectedRowIndex}
-  mainTable={dataTableFile}
-  fetchData={fetchDataFunc}
-  {settings}
-  bind:globalFilter={globalAthenaFilter}
-  showModal={mappingVisibility}
-  bind:facets={athenaFacets}
-  on:rowChange={selectRow}
-  on:singleMapping={singleMapping}
-  on:multipleMapping={multipleMapping}
-  on:deleteRowInnerMapping={deleteRowInnerMapping}
-  on:filterOptionsChanged={filterOptionsChanged}
-  on:generalVisibilityChanged={mappingVisibilityChanged}
-  on:customMapping={customMapping}
-  on:updateDetails={updateDetailsRow}
-/>
+{#if settings}
+  <AthenaLayout
+    bind:urlFilters={apiFilters}
+    bind:url
+    bind:equivalenceMapping
+    {selectedRow}
+    {selectedRowIndex}
+    mainTable={dataTableFile}
+    fetchData={fetchDataFunc}
+    {settings}
+    bind:globalFilter={globalAthenaFilter}
+    showModal={mappingVisibility}
+    bind:facets={athenaFacets}
+    on:rowChange={selectRow}
+    on:singleMapping={singleMapping}
+    on:multipleMapping={multipleMapping}
+    on:deleteRowInnerMapping={deleteRowInnerMapping}
+    on:filterOptionsChanged={filterOptionsChanged}
+    on:generalVisibilityChanged={mappingVisibilityChanged}
+    on:customMapping={customMapping}
+    on:updateDetails={updateDetailsRow}
+  />
+{/if}
 
 {#if uploaded == true}
   <DataTable

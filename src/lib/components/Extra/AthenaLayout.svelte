@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount } from 'svelte'
+  import { createEventDispatcher } from 'svelte'
   import Equivalence from '../Mapping/Equivalence.svelte'
   import AthenaFilter from './AthenaFilter.svelte'
   import filtersJSON from '$lib/data/filters.json'
-  import { localStorageGetter, localStorageSetter } from '$lib/utils'
+  import { localStorageSetter } from '$lib/utils'
   import type {
     AutoCompleteEventDetail,
     CustomOptionsEvents,
@@ -18,9 +18,10 @@
   import { query } from 'arquero'
   import AthenaRow from '../Mapping/AthenaRow.svelte'
   import AutocompleteInputSettings from './AutocompleteInputSettings.svelte'
-  import AutocompleteInput from './AutocompleteInput.svelte'
   import customConceptInfo from '$lib/data/customConceptInfo.json'
   import debounce from 'lodash.debounce'
+  import AutocompleteInput from '$lib/components/Extra/AutoCompleteInput.svelte'
+    import type Query from 'arquero/dist/types/query/query'
 
   export let urlFilters: string[],
     url: string,
@@ -273,10 +274,7 @@
   async function getUniqueConceptIds() {
     alreadyMapped = {}
     if (selectedRow) {
-      const q = query()
-        .params({ source: selectedRow.sourceCode })
-        .filter((d: any, params: any) => d.sourceCode == params.source)
-        .toObject()
+      const q = (<Query>query().params({ source: selectedRow.sourceCode })).filter((d: any, params: any) => d.sourceCode == params.source).toObject()
       const res = await mainTable.executeQueryAndReturnResults(q)
       for (let row of res.queriedData) {
         if (row.conceptId) {
