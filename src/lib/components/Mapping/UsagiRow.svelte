@@ -18,15 +18,8 @@
 
   // A method to open the Athena pop-up to map a row
   function onClickMapping() {
-    const object = {
-      visibility: true,
-      data: {
-        row: renderedRow,
-        index,
-      },
-    }
     if (dev) console.log(`onClickMapping: ${index}`)
-    dispatch('generalVisibilityChanged', object)
+    dispatch('generalVisibilityChanged', { visibility: true, data: { row: renderedRow, index } })
   }
 
   // A method to throw an event to the parent to approve a row
@@ -49,8 +42,7 @@
     const conceptId = renderedRow['conceptId']
     const sourceCode = renderedRow['sourceCode']
     const multiple = renderedRow['ADD_INFO:numberOfConcepts'] > 1
-    const custom = renderedRow['ADD_INFO:customConcept'] ? true : false
-    dispatch('deleteRow', { indexes: [index], sourceCode: sourceCode, conceptId: conceptId, erase: multiple, custom })
+    dispatch('deleteRow', { indexes: [index], sourceCode: sourceCode, conceptId: conceptId, erase: multiple })
   }
 
   function onClickAutoMap() {

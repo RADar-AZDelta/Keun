@@ -29,13 +29,11 @@ export interface FilterOptionsChangedEventDetail {
 export interface SingleMappingEventDetail {
   originalRow?: Record<string, any>
   row: Record<string, any>
-  extra?: ExtraData
 }
 
 export interface MultipleMappingEventDetail {
   originalRow?: Record<string, any>
   row: Record<string, any>
-  extra?: ExtraData
 }
 
 export interface ActionPerformedEventDetail {
@@ -49,7 +47,6 @@ export interface DeleteRowEventDetail {
   sourceCode: string | number
   conceptId: string | number
   erase: boolean
-  custom: boolean
 }
 
 export interface DeleteRowInnerMappingEventDetail {
@@ -84,7 +81,6 @@ export interface CustomMappingEventDetail {
   validStartDate: string
   validEndDate: string
   invalidReason: string
-  extra: ExtraData
 }
 
 export interface AutoMapRowEventDetail {
@@ -133,9 +129,4 @@ interface IDependency {
   column: string
   status: string | null
   equal: boolean
-}
-
-export interface ExtraData {
-  comment: string
-  assignedReviewer: string
 }

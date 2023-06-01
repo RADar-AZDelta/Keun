@@ -1,6 +1,7 @@
 <script lang="ts">
   import columnsUsagi from '$lib/data/columnsUsagi.json'
   import columnsAthena from '$lib/data/columnsAthena.json'
+  import additionalColumns from '$lib/data/additionalColumns.json'
   import Header from '$lib/components/Extra/Header.svelte'
   import User from '$lib/components/Extra/User.svelte'
   import type {
@@ -38,8 +39,7 @@
   import type Query from 'arquero/dist/types/query/query'
 
   // General variables
-  let file: File | undefined
-  let uploaded: boolean = false
+  let file: File | undefined = undefined
   let settings: Record<string, any> | undefined = undefined
   let translator: LatencyOptimisedTranslator
 
@@ -70,7 +70,6 @@
   let dataTableFile: DataTable
   let dataTableCustomConcepts: DataTable
 
-  let columns: IColumnMetaData[] | undefined = undefined
   let customConceptsColumns: IColumnMetaData[] = [
     {
       id: 'concept_id',
@@ -111,25 +110,7 @@
     ['name', 'conceptName'],
     ['domain', 'domainId'],
   ])
-  let additionalFields: Record<string, any> = {
-    matchScore: 0,
-    statusSetBy: null,
-    statusSetOn: 0,
-    mappingType: null,
-    comment: null,
-    createdBy: null,
-    createdOn: 0,
-    assignedReviewer: null,
-    equivalence: null,
-    'ADD_INFO:approvedBy': null,
-    'ADD_INFO:approvedOn': null,
-    'ADD_INFO:additionalInfo': null,
-    'ADD_INFO:prescriptionID': null,
-    'ADD_INFO:ATC': null,
-    'ADD_INFO:numberOfConcepts': null,
-    'ADD_INFO:customConcept': null,
-    mappingStatus: null,
-  }
+  let additionalFields: Record<string, any> = additionalColumns
 
   let autoMappingAbortController: AbortController
   let autoMappingPromise: Promise<void> | undefined
@@ -141,21 +122,18 @@
   // When there is a new file uploaded
   async function onFileInputChange(e: Event) {
     if (dev) console.log('onFileInputChange: New file uploaded')
-    uploaded = true
     // Check if the automapping proces is running and if this is happening, abort the promise because it could give unexpected results.
     if (autoMappingPromise) autoMappingAbortController.abort()
-    columns = undefined
     file = undefined
     await tick()
 
-    const allowedExtensions = ['csv', 'json']
     const inputFiles = (e.target as HTMLInputElement).files
     if (!inputFiles) return
 
     // Check the files if the extension is allowed
     for (const f of inputFiles) {
       const extension = f.name.split('.').pop()
-      if (extension && allowedExtensions.includes(extension)) {
+      if (extension == 'csv') {
         file = f
         break
       }
@@ -165,7 +143,6 @@
   // When there is a new file uploaded for the first time (drag & drop)
   async function fileUploaded(e: CustomEvent<FileUploadedEventDetail>) {
     if (dev) console.log('fileUploaded: New file uploaded')
-    uploaded = true
     file = e.detail.file
   }
 
@@ -175,14 +152,12 @@
       console.log('mappingVisibilityChanged: Visibility of the mapping pop-up changed to ', event.detail.visibility)
     // Check if the automapping proces is running and if this is happening, abort the promise because it could give unexpected results.
     if (autoMappingPromise) autoMappingAbortController.abort()
-
-    if (event.detail.data) {
+    // Change the visiblity and update the selected row and index if there is a new row selected
+    if (event.detail.visibility == true && event.detail.data) {
       selectedRow = event.detail.data.row
       selectedRowIndex = event.detail.data.index
       globalAthenaFilter.filter = await translate(event.detail.data.row.sourceName)
-    } else globalAthenaFilter.filter = undefined
-
-    // Change the visiblity and update the selected row and index if there is a new row selected
+    }
     mappingVisibility = event.detail.visibility
   }
 
@@ -196,7 +171,6 @@
         const substring = options.map(option => `&${filter}=${option}`).join()
         if (!apiFilters.includes(substring)) apiFilters.push(substring)
       }
-      apiFilters = apiFilters
       // Update the update fetch function so the table will be initialized again
       fetchDataFunc = fetchData
     }
@@ -207,18 +181,16 @@
     if (dev) console.log('singleMapping: Single mapping for the row with sourceCode ', selectedRow.sourceCode)
     // Map the selected row with the selected concept
     const { mappedIndex, mappedRow } = await rowMapping(event.detail.originalRow!, event.detail.row)
-    // Add extra information like the number of concepts mapped for this row, comments & the assigned reviewer to the row
+    // Add extra information like the number of concepts mapped for this row, and the last typed filter to the row
     if (!mappedRow['ADD_INFO:numberOfConcepts']) mappedRow['ADD_INFO:numberOfConcepts'] = 1
-    if (event.detail.extra) {
-      mappedRow.comment = event.detail.extra.comment
-      mappedRow.assignedReviewer = event.detail.extra.assignedReviewer
-    }
-    // Update the selected row to the updated row
     mappedRow['ADD_INFO:lastAthenaFilter'] = lastTypedFilter
+    // Update the selected row to the updated row
+    console.log("MAPPEDROW ", mappedRow)
     await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
     calculateProgress()
   }
 
+  // When the user custom maps a concept to a row
   async function customMapping(event: CustomEvent<CustomMappingEventDetail>) {
     if (dev) console.log('customMapping: Custom mapping for the row with sourceCode ', selectedRow.sourceCode)
     // Remove the first empty object from the array (this empty object is needed to determain the datatype)
@@ -239,13 +211,14 @@
       valid_end_date: event.detail.validEndDate,
       invalid_reason: event.detail.invalidReason,
     }
+    // Push the custom concept to the hidden table that can be downloaded
     customConceptsArrayOfObjects.push(customConcept)
-    customConceptsArrayOfObjects = customConceptsArrayOfObjects
 
     // Map the selected row with the custom concept
     const { mappedIndex, mappedRow } = await customRowMapping(selectedRow, customConcept)
     if (!mappedRow['ADD_INFO:numberOfConcepts']) mappedRow['ADD_INFO:numberOfConcepts'] = 1
     if (settings) {
+      // If multiplemapping is enabled, update the previous rows and add the new one
       if (settings.mapToMultipleConcepts) {
         // Get previous mapped concepts
         const q = (<Query>query().params({ sourceCode: mappedRow.sourceCode }))
@@ -253,10 +226,6 @@
           .toObject()
         const res = await dataTableFile.executeQueryAndReturnResults(q)
         // Add extra information like the number of concepts mapped for this row, comments & the assigned reviewer to the row
-        if (event.detail.extra) {
-          mappedRow.comment = event.detail.extra.comment
-          mappedRow.assignedReviewer = event.detail.extra.assignedReviewer
-        }
         if (res.queriedData.length === 1 && !res.queriedData[0].conceptId) {
           mappedRow['ADD_INFO:numberOfConcepts'] = 1
           await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
@@ -270,8 +239,8 @@
           await dataTableFile.updateRows(rowsToUpdate)
           await dataTableFile.insertRows([mappedRow])
         }
-      }
-    }
+      } else await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
+    } else await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
 
     calculateProgress()
   }
@@ -286,13 +255,12 @@
     const q = (<Query>query().params({ value: mappedRow.sourceCode }))
       .filter((r: any, params: any) => r.sourceCode == params.value)
       .toObject()
-      const res = await dataTableFile.executeQueryAndReturnResults(q)
+    const res = await dataTableFile.executeQueryAndReturnResults(q)
 
     // Add extra information like the number of concepts mapped for this row, comments & the assigned reviewer to the row
     mappedRow.mappingStatus = 'SEMI-APPROVED'
     mappedRow.statusSetBy = settings!.author
-    mappedRow.comment = event.detail.extra!.comment
-    mappedRow.assignedReviewer = event.detail.extra!.assignedReviewer
+
     mappedRow['ADD_INFO:lastAthenaFilter'] = lastTypedFilter
 
     // Check if it's the first concept that will be mapped to this row
@@ -314,7 +282,9 @@
     calculateProgress()
   }
 
+  // When the comments or assingedReviewer are filled in, update these fields in a row
   async function updateDetailsRow(event: CustomEvent<UpdateDetailsEventDetail>) {
+    if (dev) console.log(`updateDetailsRow: Update details for the row on index ${event.detail.index}`)
     await dataTableFile.updateRows(
       new Map([
         [event.detail.index, { comment: event.detail.comment, assignedReviewer: event.detail.assignedReviewer }],
@@ -372,19 +342,9 @@
 
   // When the delete button is clicked (left-side of the table in the action column)
   async function deleteRow(event: CustomEvent<DeleteRowEventDetail>) {
-    if (dev)
-      console.log(
-        'deleteRow: Delete row with sourceCode ',
-        event.detail.sourceCode,
-        ' on indexes ',
-        event.detail.indexes
-      )
+    if (dev) console.log(`deleteRow: Delete row with sourceCode ${event.detail.sourceCode}`)
     // Check if the automapping proces is running and if this is happening, abort the promise because it could give unexpected results.
     if (autoMappingPromise) autoMappingAbortController.abort()
-
-    if (event.detail.custom) {
-      await dataTableCustomConcepts.deleteRows(event.detail.indexes)
-    }
 
     // If it not the only concept that is mapped for that row (multiple mapping), erase the row
     if (event.detail.erase == true) {
@@ -408,24 +368,24 @@
       updatedFields.conceptId = null
       updatedFields.domainId = null
       updatedFields.conceptName = null
-      updatedFields['ADD_INFO:customConcept'] = null
       delete updatedFields.sourceAutoAssignedConceptIds
       await dataTableFile.updateRows(new Map([[event.detail.indexes[0], updatedFields]]))
     }
     calculateProgress()
   }
 
+  // When the delete button in the table of mapped concepts is clicked, delete the row
   async function deleteRowInnerMapping(event: CustomEvent<DeleteRowInnerMappingEventDetail>) {
     if (dev) console.log('deleteRowInnerMapping: Delete mapping with conceptId ', event.detail.conceptId)
+    // If the row is a custom concept, delete it from the custom concepts table
     if (event.detail.custom) {
-      for (let row of customConceptsArrayOfObjects) {
-        if (row.concept_id === event.detail.conceptId && row.concept_name === event.detail.conceptName) {
-          const index = customConceptsArrayOfObjects.indexOf(row)
-          customConceptsArrayOfObjects.splice(index, 1)
-          customConceptsArrayOfObjects = customConceptsArrayOfObjects
-        }
-      }
+      const deletionIndex = customConceptsArrayOfObjects.findIndex(
+        row => row.conceptId === event.detail.conceptId && row.concept_name === event.detail.conceptName
+      )
+      customConceptsArrayOfObjects.splice(deletionIndex, 1)
     }
+
+    // Create a query to find the index of the row that needs to be removed, can be an index that is not visualised and therefor we use the query
     const q = (<Query>query().params({
       conceptId: event.detail.conceptId,
       sourceCode: selectedRow.sourceCode,
@@ -437,18 +397,23 @@
       )
       .toObject()
     const res = await dataTableFile.executeQueryAndReturnResults(q)
+
+    // If the row needs to be erased, in the case of multiple mapping
     if (event.detail.erase) {
+      // A query to find all the rows that are multiple mapped with the same sourceCode
       const q = (<Query>query().params({ sourceCode: selectedRow.sourceCode }))
         .filter((r: any, params: any) => r.sourceCode == params.sourceCode)
         .toObject()
       const res2 = await dataTableFile.executeQueryAndReturnResults(q)
       const updatedRows = new Map<number, Record<string, any>>()
+      // Update the number of concepts of all the found rows
       res2.indices.forEach((index: number) => {
         updatedRows.set(index, { 'ADD_INFO:numberOfConcepts': res2.indices.length - 1 })
       })
       await dataTableFile.updateRows(updatedRows)
       await dataTableFile.deleteRows(res.indices)
     } else {
+      // Reset the row with the original values
       const updatedFields = additionalFields
       updatedFields.conceptId = null
       updatedFields.domainId = null
@@ -914,7 +879,7 @@
     settings = e.detail.settings
     document.documentElement.style.setProperty('--font-size', `${settings.fontsize}px`)
     document.documentElement.style.setProperty('--font-number', `${settings.fontsize}`)
-    if(e.detail.autoMap == true && tableInit == true) {
+    if (e.detail.autoMap == true && tableInit == true) {
       autoMapPage()
     }
   }
@@ -982,12 +947,12 @@
   <Header />
 
   <div data-name="table-options">
-    {#if uploaded == true && file}
+    {#if file}
       <p data-name="filename" title={file.name}>{file.name}</p>
       <label title="Upload" for="file-upload" data-name="file-upload"
         ><SvgIcon href="icons.svg" id="upload" width="16px" height="16px" /></label
       >
-      <input id="file-upload" type="file" accept=".csv, .json" on:change={onFileInputChange} />
+      <input id="file-upload" type="file" accept=".csv" on:change={onFileInputChange} />
       <Download dataTable={dataTableFile} title="Download file" svgId="download" />
 
       {#if customConceptsArrayOfObjects.length > 0}
@@ -1039,7 +1004,6 @@
 
 {#if settings}
   <AthenaLayout
-    bind:urlFilters={apiFilters}
     bind:equivalenceMapping
     {selectedRow}
     {selectedRowIndex}
@@ -1060,10 +1024,9 @@
   />
 {/if}
 
-{#if uploaded == true}
+{#if file}
   <DataTable
     data={file}
-    bind:columns
     bind:this={dataTableFile}
     options={{ id: 'usagi', rowsPerPage: 15, rowsPerPageOptions: [5, 10, 15, 20, 50, 100], actionColumn: true }}
     on:rendering={abortAutoMap}
