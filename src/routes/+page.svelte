@@ -54,7 +54,6 @@
 
   // Table related variables
   let tableInit: boolean = false
-  let mappingStatusChanged: boolean = false
   let currentVisibleRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>()
   let tableInformation: Record<string, number | undefined> = {
     totalRows: undefined,
@@ -814,23 +813,6 @@
   // A method to start the auto mapping
   async function autoMapPage() {
     let start: number, end: number
-    if (mappingStatusChanged == false) {
-      // Check for APPROVED values in mappingStatus and check how many authors there were already.
-      // If there is only one author, the value will be changed to SEMI-APPROVED
-      const q = query()
-        .filter(
-          (r: any) =>
-            r.mappingStatus == 'APPROVED' && (r['ADD_INFO:approvedBy'] == null || r['ADD_INFO:approvedBy'] == undefined)
-        )
-        .toObject()
-      const res = await dataTableFile.executeQueryAndReturnResults(q)
-      const updatedRows = new Map<number, Record<string, any>>()
-      for (let i = 0; i < res.queriedData.length; i++) {
-        updatedRows.set(res.indices[i], { mappingStatus: 'SEMI-APPROVED' })
-      }
-      await dataTableFile.updateRows(updatedRows)
-      mappingStatusChanged = true
-    }
     if (settings!.autoMap) {
       dataTableFile.setDisabled(true)
       if (dev) {

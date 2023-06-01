@@ -77,11 +77,13 @@
 
   $: {
     renderedRow, index
-    color = getColors()
     if (!renderedRow.matchScore) renderedRow.matchScore = 0
     if (!renderedRow.mappingStatus) renderedRow.mappingStatus = 'UNCHECKED'
     if (!renderedRow.conceptName) renderedRow.conceptName = 'Unmapped'
     if (!renderedRow.conceptId) renderedRow.conceptId = 0
+    if (renderedRow.mappingStatus == 'APPROVED' && !renderedRow['ADD_INFO:approvedBy'])
+      renderedRow.mappingStatus = 'SEMI-APPROVED'
+    color = getColors()
   }
 
   $: {
