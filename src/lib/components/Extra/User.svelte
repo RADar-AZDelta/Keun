@@ -49,7 +49,7 @@
   function openDialog() {
     if (settings.author) author = settings.author
     if (!backupAuthor) backupAuthor = settings?.author
-    if (userDialog.attributes.getNamedItem('open') == null) userDialog.showModal()
+    if(userDialog) if (userDialog.attributes.getNamedItem('open') == null) userDialog.showModal()
   }
 </script>
 
