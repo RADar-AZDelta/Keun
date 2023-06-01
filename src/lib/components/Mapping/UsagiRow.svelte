@@ -9,11 +9,11 @@
     columns: IColumnMetaData[] | undefined,
     index: number,
     settings: Record<string, any> | undefined,
-    currentRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>([])
+    currentVisibleRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>([])
 
   let color: string = 'inherit'
   let fontSize: string = '10px'
-  currentRows.set(index, renderedRow)
+  currentVisibleRows.set(index, renderedRow)
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
   // A method to open the Athena pop-up to map a row

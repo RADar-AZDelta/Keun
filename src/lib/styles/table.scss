@@ -1321,6 +1321,9 @@ div[data-component='svelte-datatable'] {
             p {
               white-space: normal;
               font-size: var(--font-size);
+              overflow: hidden;
+              white-space: nowrap;
+              text-overflow: ellipsis;
             }
 
             button {
