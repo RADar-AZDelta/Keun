@@ -118,9 +118,9 @@ export interface ISettings {
   mapToMultipleConcepts: boolean
   autoMap: boolean
   language: string
-  author: string | undefined
+  author: string
   savedAuthors: string[]
-  vocabularyIdCustomConcept: string | undefined
+  vocabularyIdCustomConcept: string
   fontsize: number
   popupSidesShowed: { settings: boolean; details: boolean }
 }

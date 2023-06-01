@@ -3,53 +3,44 @@
   import { localStorageSetter } from '$lib/utils'
   import { dev } from '$app/environment'
   import { clickOutside } from '$lib/actions/clickOutside'
+  import type { ISettings } from '$lib/components/Types'
 
-  export let settings: Record<string, any>
+  export let settings: ISettings
 
-  let showModal = false,
-    author: string | undefined = undefined,
+  let author: string | undefined = undefined,
     backupAuthor: string | undefined,
     userDialog: HTMLDialogElement
-
-  $: {
-    if (showModal == true) openDialog()
-  }
-
-  $: {
-    settings
-    settingsChanged()
-  }
-
-  function settingsChanged() {
-    if (settings && !settings.author) {
-      openDialog()
-    }
-  }
 
   // A method to cancel the update of the author
   async function cancelAuthorUpdate() {
     closeDialog()
-    settings.author = backupAuthor
+    settings.author = backupAuthor == undefined ? '' : backupAuthor
   }
 
   // A method to save the author and close the dialog
   async function saveAuthorUpdate() {
     if (dev) console.log('saveAuthorUpdate: Saving author update')
-    closeDialog()
-    settings.author = author
+    settings.author = author == undefined ? '' : author
     settings = settings
     backupAuthor = settings.author
     localStorageSetter('settings', settings)
+    closeDialog()
   }
 
   function closeDialog() {
-    if (userDialog.attributes.getNamedItem('open') != null) userDialog.close()
+    if (settings.author) if (userDialog.attributes.getNamedItem('open') != null) userDialog.close()
   }
 
   function openDialog() {
     if (settings.author) author = settings.author
     if (!backupAuthor) backupAuthor = settings?.author
-    if(userDialog) if (userDialog.attributes.getNamedItem('open') == null) userDialog.showModal()
+    if (userDialog) if (userDialog.attributes.getNamedItem('open') == null) userDialog.showModal()
+  }
+
+  $: {
+    userDialog
+    if (userDialog)
+      if (userDialog.attributes.getNamedItem('open') == null) if (settings && !settings.author) userDialog.showModal()
   }
 </script>
 
