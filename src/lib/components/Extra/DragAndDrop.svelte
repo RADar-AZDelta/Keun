@@ -74,6 +74,6 @@
     <label title="Upload" for="file-upload" data-name="file-upload"
       ><SvgIcon href="icons.svg" id="upload" width="16px" height="16px" /></label
     >
-    <input id="file-upload" type="file" accept=".csv, .json" on:change={onFileInputChange} />
+    <input id="file-upload" type="file" accept=".csv" on:change={onFileInputChange} />
   </div>
 </div>

@@ -24,8 +24,7 @@
   import { clickOutside } from '$lib/actions/clickOutside'
   import AutocompleteInput from './AutocompleteInput.svelte'
 
-  export let urlFilters: string[],
-    equivalenceMapping: string,
+  export let equivalenceMapping: string,
     selectedRow: Record<string, any>,
     selectedRowIndex: number,
     mainTable: DataTable,
@@ -152,20 +151,12 @@
 
   // A method that catches the event for single mapping and throws an event to the parent
   function singleMapping(event: CustomEvent<SingleMappingEventDetail>) {
-    dispatch('singleMapping', {
-      originalRow: selectedRow,
-      row: event.detail.row,
-      extra: { comment: comment, assignedReviewer: reviewer },
-    })
+    dispatch('singleMapping', { originalRow: selectedRow, row: event.detail.row })
   }
 
   // A method that catches the event for multiple mapping and throws an event to the parent
   function multipleMapping(event: CustomEvent<MultipleMappingEventDetail>) {
-    dispatch('multipleMapping', {
-      originalRow: selectedRow,
-      row: event.detail.row,
-      extra: { comment: comment, assignedReviewer: reviewer },
-    })
+    dispatch('multipleMapping', { originalRow: selectedRow, row: event.detail.row })
   }
 
   // A method to update the already mapped concepts (used to see the already mapped concepts for a certain row)
@@ -182,6 +173,12 @@
         alreadyMapped[selectedRow.sourceCode].conceptName.push(event.detail.conceptName)
         alreadyMapped[selectedRow.sourceCode].custom.push(false)
         alreadyMapped = alreadyMapped
+      }
+    } else {
+      alreadyMapped[selectedRow.sourceCode] = {
+        conceptId: [event.detail.conceptId],
+        conceptName: [event.detail.conceptName],
+        custom: [false],
       }
     }
 
@@ -220,18 +217,6 @@
 
     localStorageSetter('AthenaFilters', activatedAthenaFilters)
 
-    let URLFilters: string[] = []
-
-    // Create a list of string to add to the API call with the filters in it
-    for (let [filter, options] of activatedAthenaFilters) {
-      let substring: string = ''
-      for (let option of options) {
-        substring += `&${filter}=${option}`
-      }
-      URLFilters.push(substring)
-    }
-
-    urlFilters = URLFilters
     dispatch('filterOptionsChanged', { filters: activatedAthenaFilters })
     activatedAthenaFilters = activatedAthenaFilters
   }
@@ -364,10 +349,6 @@
           validStartDate: `${new Date().getFullYear()}-${new Date().getMonth()}-${new Date().getDate()}`,
           validEndDate: '2099-12-31',
           invalidReason: '',
-          extra: {
-            comment: comment,
-            assignedReviewer: reviewer,
-          },
         })
 
         if (alreadyMapped[selectedRow.sourceCode]) {
