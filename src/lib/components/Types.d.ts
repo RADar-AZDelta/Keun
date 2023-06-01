@@ -104,13 +104,8 @@ export interface FileUploadedEventDetail {
 }
 
 export interface SettingsChangedEventDetail {
-  settings: Record<string, any>
+  settings: ISettings
   autoMap?: boolean
-}
-
-export interface SingleFiltering {
-  column: string
-  filter: TFilter
 }
 
 export interface ICategories {
@@ -119,14 +114,13 @@ export interface ICategories {
   options: string[]
 }
 
-export interface IStatus {
-  color: string
-  priority: number
-  dependencies: IDependency[]
-}
-
-interface IDependency {
-  column: string
-  status: string | null
-  equal: boolean
+export interface ISettings {
+  mapToMultipleConcepts: boolean
+  autoMap: boolean
+  language: string
+  author: string | undefined
+  savedAuthors: string[]
+  vocabularyIdCustomConcept: string | undefined
+  fontsize: number
+  popupSidesShowed: { settings: boolean; details: boolean }
 }

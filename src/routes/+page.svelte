@@ -18,6 +18,7 @@
     SettingsChangedEventDetail,
     AutoMapRowEventDetail,
     UpdateDetailsEventDetail,
+    ISettings,
   } from '$lib/components/Types'
   import type { IColumnMetaData, IPagination, SortDirection, TFilter } from '@radar-azdelta/svelte-datatable'
   import { localStorageGetter, localStorageSetter } from '$lib/utils'
@@ -33,14 +34,23 @@
   import { page } from '$app/stores'
   import { browser, dev } from '$app/environment'
   import DragAndDrop from '$lib/components/Extra/DragAndDrop.svelte'
-  import Spinner from '$lib/components/Extra/Spinner.svelte'
   import DataTable from '@radar-azdelta/svelte-datatable'
   import Manual from '$lib/components/Extra/Manual.svelte'
   import type Query from 'arquero/dist/types/query/query'
+  import Progress from '$lib/components/Extra/Progress.svelte'
 
   // General variables
   let file: File | undefined = undefined
-  let settings: Record<string, any> | undefined = undefined
+  let settings: ISettings = {
+    mapToMultipleConcepts: false,
+    autoMap: false,
+    language: 'en',
+    author: undefined,
+    savedAuthors: [],
+    vocabularyIdCustomConcept: undefined,
+    fontsize: 10,
+    popupSidesShowed: { settings: true, details: true },
+  }
   let translator: LatencyOptimisedTranslator
 
   // Athena related variables
@@ -55,7 +65,11 @@
   // Table related variables
   let tableInit: boolean = false
   let currentVisibleRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>()
-  let tableInformation: Record<string, number | undefined> = {
+  let tableInformation: {
+    totalRows: number | undefined
+    mappedRows: number | undefined
+    approvedRows: number | undefined
+  } = {
     totalRows: undefined,
     mappedRows: undefined,
     approvedRows: undefined,
@@ -156,7 +170,8 @@
     if (event.detail.visibility == true && event.detail.data) {
       selectedRow = event.detail.data.row
       selectedRowIndex = event.detail.data.index
-      globalAthenaFilter.filter = await translate(event.detail.data.row.sourceName)
+      const translation = await translate(event.detail.data.row.sourceName)
+      globalAthenaFilter.filter = typeof translation == 'string' ? translation : event.detail.data.row.sourceName
     }
     mappingVisibility = event.detail.visibility
   }
@@ -185,7 +200,7 @@
     if (!mappedRow['ADD_INFO:numberOfConcepts']) mappedRow['ADD_INFO:numberOfConcepts'] = 1
     mappedRow['ADD_INFO:lastAthenaFilter'] = lastTypedFilter
     // Update the selected row to the updated row
-    console.log("MAPPEDROW ", mappedRow)
+    console.log('MAPPEDROW ', mappedRow)
     await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
     calculateProgress()
   }
@@ -428,32 +443,24 @@
     let tablePagination: Record<string, any>
     new Promise(async (resolve, reject) => {
       tablePagination = await dataTableFile.getTablePagination()
+      // Check to wich direction the user is moving
       if (event.detail.up && selectedRowIndex + 1 < tablePagination.totalRows!) selectedRowIndex += 1
       if (!event.detail.up && selectedRowIndex - 1 >= 0) selectedRowIndex -= 1
 
       if (dev) console.log('selectRow: Select row with index ', selectedRowIndex)
 
+      // Set the new filter with the translated source name
       selectedRow = await dataTableFile.getFullRow(selectedRowIndex)
-      globalAthenaFilter.filter = await translate(selectedRow.sourceName)
+      const translation = await translate(selectedRow.sourceName)
+      globalAthenaFilter.filter = typeof translation == 'string' ? translation : selectedRow.sourceName
       resolve(null)
     }).then(() => {
+      // Check if the pagination needs to change, and do so if needed
       changePagination(event.detail.up, selectedRowIndex, tablePagination)
     })
   }
 
-  async function changePagination(up: boolean, selectedRowIndex: number, pagination: Record<string, any>) {
-    // When the index exceeds the number of rows per page, go to the next page
-    if (up && selectedRowIndex !== 0) {
-      if (selectedRowIndex % pagination.rowsPerPage! === 0) {
-        dataTableFile.changePagination({ currentPage: pagination.currentPage! + 1 })
-      }
-    } else if (!up && selectedRowIndex !== 0) {
-      if ((selectedRowIndex + 1) % pagination.rowsPerPage! === 0) {
-        dataTableFile.changePagination({ currentPage: pagination.currentPage! - 1 })
-      }
-    }
-  }
-
+  // When the button to automap a single row is clicked, automap the row
   async function autoMapSingleRow(event: CustomEvent<AutoMapRowEventDetail>) {
     if (dev) console.log('autoMapSingleRow: automap the row with index ', event.detail.index)
     // Automap a row manually
@@ -471,7 +478,8 @@
   // METHODS
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
-  async function translate(text: string) {
+  // A method to translate text
+  async function translate(text: string): Promise<string | undefined> {
     if (!browser) return undefined
     if (!translator) {
       // Recreate a translator if it's a browser because the previous instance is still pending and can't be used
@@ -485,6 +493,7 @@
         undefined
       )
     }
+    // Check the settings and if the language set is not english, translate the text
     if (settings) {
       if (settings.language && settings.language !== 'en') {
         let translation = await translator.translate({
@@ -503,8 +512,28 @@
     }
   }
 
+  // A method to change the pagination of the table based on the index and the rows per page
+  async function changePagination(
+    up: boolean,
+    selectedRowIndex: number,
+    pagination: Record<string, any>
+  ): Promise<void> {
+    // When the index exceeds the number of rows per page, go to the next page or go to the previous page
+    if (up && selectedRowIndex !== 0) {
+      if (selectedRowIndex % pagination.rowsPerPage! === 0) {
+        if (dev) console.log('changePagination: change pagination to ', pagination.currentPage! + 1)
+        dataTableFile.changePagination({ currentPage: pagination.currentPage! + 1 })
+      }
+    } else if (!up && selectedRowIndex !== 0) {
+      if ((selectedRowIndex + 1) % pagination.rowsPerPage! === 0) {
+        if (dev) console.log('changePagination: change pagination to ', pagination.currentPage! - 1)
+        dataTableFile.changePagination({ currentPage: pagination.currentPage! - 1 })
+      }
+    }
+  }
+
   // A method to automatically map a given row
-  async function autoMapRow(signal: AbortSignal, row: Record<string, any>, index: number) {
+  async function autoMapRow(signal: AbortSignal, row: Record<string, any>, index: number): Promise<void> {
     let start: number, end: number
     if (dev) {
       start = performance.now()
@@ -526,9 +555,10 @@
     const res = await fetch(url)
     const resData = await res.json()
     if (resData.content && resData.content.length !== 0) {
+      const numberOfConcepts = row['ADD_INFO:numberOfConcepts']
       // Map the row with the first result
       const { mappedIndex, mappedRow } = await rowMapping(row, resData.content[0], true, index)
-      mappedRow['ADD_INFO:numberOfConcepts'] = 1
+      mappedRow['ADD_INFO:numberOfConcepts'] = numberOfConcepts
       mappedRow['ADD_INFO:lastAthenaFilter'] = filter
       if (signal.aborted) return
       await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
@@ -540,11 +570,12 @@
   }
 
   // A method to create the Athena URL
-  const assembleAthenaURL = async (filter?: string, sorting?: string[], pagination?: IPagination) => {
+  const assembleAthenaURL = async (filter?: string, sorting?: string[], pagination?: IPagination): Promise<string> => {
     if (dev) console.log('assembleAthenaURL: Assemble Athena URL')
 
     let assembledAthenaUrl = mappingUrl
 
+    // Apply the api filters
     if (apiFilters) {
       for (let filter of apiFilters) {
         assembledAthenaUrl += filter
@@ -578,8 +609,10 @@
     filteredColumns: Map<String, TFilter>,
     sortedColumns: Map<string, SortDirection>,
     pagination: IPagination
-  ) {
+  ): Promise<{ data: Record<string, any>[]; totalRows: number }> {
+    // Get the filter
     let filter = filteredColumns.values().next().value
+    // Check if there is a filter filled in
     if (globalAthenaFilter.filter === undefined) {
       if (selectedRow) {
         filter = await translate(selectedRow.sourceName)
@@ -591,6 +624,7 @@
     const url = await assembleAthenaURL(filter, sortedColumns.entries().next().value, pagination)
     const response = await fetch(url)
     const apiData = await response.json()
+    // Save the facets to exclude filters later
     saveFacets(apiData.facets)
     return {
       data: apiData.content,
@@ -604,7 +638,7 @@
     athenaRow: Record<string, any>,
     autoMap = false,
     i?: number
-  ) {
+  ): Promise<{ mappedIndex: number; mappedRow: Record<string, any> }> {
     let start: number, end: number
     let rowIndex: number = i !== undefined ? i : selectedRowIndex
     if (dev) {
@@ -681,13 +715,17 @@
   }
 
   // A method to map a certain row to a custom concept
-  async function customRowMapping(usagiRow: Record<string, any>, customRow: Record<string, any>) {
+  async function customRowMapping(
+    usagiRow: Record<string, any>,
+    customRow: Record<string, any>
+  ): Promise<{ mappedIndex: number; mappedRow: Record<string, any> }> {
     let start: number, end: number
     if (dev) {
       start = performance.now()
       console.log('customrowMapping: Start mapping row with index ', selectedRowIndex)
     }
 
+    // Map the import columns that are given
     const mappedUsagiRow: Record<string, any> = usagiRow
     for (let col of Object.keys(customRow)) {
       switch (col) {
@@ -699,6 +737,7 @@
           break
       }
     }
+    // Map the additional columns
     for (let col of Object.keys(additionalFields)) {
       switch (col) {
         case 'equivalence':
@@ -762,24 +801,22 @@
     }
   }
 
-  function dataTableInitialized() {
+  // A method to set a variable when the table is initialized
+  function dataTableInitialized(): void {
     tableInit = true
-    // calculateProgress("DATATABLE INIT")
   }
 
   // A method to abort the auto mapping
-  async function abortAutoMap() {
+  async function abortAutoMap(): Promise<void> {
     if (dev) console.log('abortAutoMap: Aborting auto mapping')
     if (autoMappingPromise) autoMappingAbortController.abort()
-    dataTableFile.setDisabled(false)
     currentVisibleRows = new Map<number, Record<string, any>>()
   }
 
   // A method to start the auto mapping
-  async function autoMapPage() {
+  async function autoMapPage(): Promise<void> {
     let start: number, end: number
     if (settings!.autoMap) {
-      dataTableFile.setDisabled(true)
       if (dev) {
         start = performance.now()
         console.log('autoMapPage: Starting auto mapping')
@@ -799,8 +836,7 @@
         for (let i = 0; i < res.queriedData.length; i++) {
           if (signal.aborted) return Promise.resolve()
           const row = res.queriedData[i]
-          const index = res.indices[i]
-          if (!row.conceptId && !row.sourceAutoAssignedConceptIds) await autoMapRow(signal, row, index)
+          if (!row.conceptId && !row.sourceAutoAssignedConceptIds) await autoMapRow(signal, row, res.indices[i])
         }
         if (dev) {
           end = performance.now()
@@ -808,7 +844,6 @@
         }
         resolve(null)
       }).then(() => {
-        dataTableFile.setDisabled(false)
         calculateProgress()
       })
     } else {
@@ -837,6 +872,7 @@
     return modifiedColumns.concat(addedColumns)
   }
 
+  // A method to approve a whole page
   async function approvePage() {
     if (dev) console.log('approvePage: Approving page')
     let approveRows = new Map<number, Record<string, any>>()
@@ -845,10 +881,12 @@
       if (row.statusSetBy) {
         if (row.statusSetBy != settings!.author) {
           row['ADD_INFO:approvedBy'] = settings!.author
+          row['ADD_INFO:approvedOn'] = Date.now()
           row.mappingStatus = 'APPROVED'
         }
       } else {
         row.statusSetBy = settings!.author
+        row.statusSetOn = Date.now()
         row.mappingStatus = 'SEMI-APPROVED'
       }
       approveRows.set(index, row)
@@ -857,6 +895,7 @@
     calculateProgress()
   }
 
+  // A method to calculate the progress of the mapping
   async function calculateProgress() {
     if (dev) console.log('calculateProgress: Calculating progress')
     const expressions = {
@@ -875,6 +914,7 @@
     }
   }
 
+  // A method for when the settings are changed
   function settingsChanged(e: CustomEvent<SettingsChangedEventDetail>) {
     settings = e.detail.settings
     document.documentElement.style.setProperty('--font-size', `${settings.fontsize}px`)
@@ -884,6 +924,7 @@
     }
   }
 
+  // A method to save the facets
   function saveFacets(facets: Record<string, any>) {
     athenaFacets = facets
   }
@@ -891,6 +932,7 @@
   let fetchDataFunc = fetchData
 
   onMount(async () => {
+    // Get the URL parameters and put them in apiFilters
     for (let param of Array.from($page.url.searchParams.keys())) {
       const urlParam = $page.url.searchParams.get(param)
       if (urlParam) {
@@ -899,29 +941,11 @@
     }
 
     // Get the settings from the local storage
-    const storedSettings: Record<string, any> = localStorageGetter('settings')
+    const storedSettings: ISettings = localStorageGetter('settings')
     if (storedSettings) {
-      settings = storedSettings
-      if (!settings.hasOwnProperty('mapToMultipleConcepts')) settings!.mapToMultipleConcepts = false
-      if (!settings.hasOwnProperty('autoMap')) settings!.autoMap = false
-      if (!settings.hasOwnProperty('language')) settings!.language = 'nl'
-      if (!settings.hasOwnProperty('author')) settings!.author = undefined
-      if (!settings.hasOwnProperty('savedAuthors')) settings!.savedAuthors = []
-      if (!settings.hasOwnProperty('vocabularyIdCustomConcept')) settings!.vocabularyIdCustomConcept = undefined
-      if (!settings.hasOwnProperty('fontsize')) settings!.fontsize = 10
-      if (!settings.hasOwnProperty('popupSidesShowed')) settings!.popupSidesShowed = { settings: true, details: true }
-      localStorageSetter('settings', settings)
-    } else
-      settings = {
-        mapToMultipleConcepts: false,
-        autoMap: false,
-        language: 'nl',
-        author: undefined,
-        savedAuthors: [],
-        vocabularyIdCustomConcept: undefined,
-        fontsize: 10,
-        popupSidesShowed: { settings: true, details: true },
-      }
+      Object.assign(settings, storedSettings)
+      settings = settings
+    }
   })
 
   if (!dev) {
@@ -965,32 +989,7 @@
   </div>
 
   {#if tableInit == true}
-    <div data-name="progress">
-      <div>
-        <p>Total rows:</p>
-        {#if tableInformation.totalRows === undefined}
-          <Spinner />
-        {:else}
-          <p>{tableInformation.totalRows}</p>
-        {/if}
-      </div>
-      <div>
-        <p>Mapped rows:</p>
-        {#if tableInformation.mappedRows === undefined}
-          <Spinner />
-        {:else}
-          <p>{tableInformation.mappedRows}</p>
-        {/if}
-      </div>
-      <div>
-        <p>Approved rows:</p>
-        {#if tableInformation.approvedRows === undefined}
-          <Spinner />
-        {:else}
-          <p>{tableInformation.approvedRows}</p>
-        {/if}
-      </div>
-    </div>
+    <Progress {tableInformation} />
   {/if}
 
   <div data-name="header-buttons-container" id="settings">
