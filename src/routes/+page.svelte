@@ -171,20 +171,20 @@
   }
 
   // When the visibility of the mapping pop-up changes
-  function mappingVisibilityChanged(event: CustomEvent<VisibilityChangedEventDetail>) {
+  async function mappingVisibilityChanged(event: CustomEvent<VisibilityChangedEventDetail>) {
     if (dev)
       console.log('mappingVisibilityChanged: Visibility of the mapping pop-up changed to ', event.detail.visibility)
     // Check if the automapping proces is running and if this is happening, abort the promise because it could give unexpected results.
     if (autoMappingPromise) autoMappingAbortController.abort()
 
-    // Change the visiblity and update the selected row and index if there is a new row selected
-    globalAthenaFilter.filter = undefined
-    mappingVisibility = event.detail.visibility
     if (event.detail.data) {
       selectedRow = event.detail.data.row
       selectedRowIndex = event.detail.data.index
-      globalAthenaFilter.filter = event.detail.data.row.sourceName
-    }
+      globalAthenaFilter.filter = await translate(event.detail.data.row.sourceName)
+    } else globalAthenaFilter.filter = undefined
+
+    // Change the visiblity and update the selected row and index if there is a new row selected
+    mappingVisibility = event.detail.visibility
   }
 
   // When the filters in the Athena pop-up change (filters on the left-side for the query)
@@ -217,7 +217,7 @@
     // Update the selected row to the updated row
     mappedRow['ADD_INFO:lastAthenaFilter'] = lastTypedFilter
     await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
-    calculateProgress('SINGLEMAPPING')
+    calculateProgress()
   }
 
   async function customMapping(event: CustomEvent<CustomMappingEventDetail>) {
@@ -252,8 +252,6 @@
         const q = (<Query>query().params({ sourceCode: mappedRow.sourceCode }))
           .filter((r: any, params: any) => r.sourceCode == params.sourceCode)
           .toObject()
-
-        console.log('QUERY CUSTOMMAPPING')
         const res = await dataTableFile.executeQueryAndReturnResults(q)
         // Add extra information like the number of concepts mapped for this row, comments & the assigned reviewer to the row
         if (event.detail.extra) {
@@ -276,7 +274,7 @@
       }
     }
 
-    calculateProgress('CUSTOMMAPPING')
+    calculateProgress()
   }
 
   // When the mapping button in the Athena pop-up is clicked and the settins "Map to multiple concepts" is enabled
@@ -289,8 +287,7 @@
     const q = (<Query>query().params({ value: mappedRow.sourceCode }))
       .filter((r: any, params: any) => r.sourceCode == params.value)
       .toObject()
-    console.log('QUERY MULTIPLEMAPPING')
-    const res = await dataTableFile.executeQueryAndReturnResults(q)
+      const res = await dataTableFile.executeQueryAndReturnResults(q)
 
     // Add extra information like the number of concepts mapped for this row, comments & the assigned reviewer to the row
     mappedRow.mappingStatus = 'SEMI-APPROVED'
@@ -315,7 +312,7 @@
       await dataTableFile.updateRows(rowsToUpdate)
       await dataTableFile.insertRows([mappedRow])
     }
-    calculateProgress('MULTIPLEMAPPING')
+    calculateProgress()
   }
 
   async function updateDetailsRow(event: CustomEvent<UpdateDetailsEventDetail>) {
@@ -350,16 +347,12 @@
     } else {
       // Check if there is a conceptId or a sourceAutoAssignedConceptIds (this is the conceptId that is assigned by the automapping proces)
       if (event.detail.action == 'APPROVED') {
-        console.log('ITS APPROVED')
         if (event.detail.row.statusSetBy == undefined || event.detail.row.statusSetBy == settings!.author) {
-          console.log('PASSED THIS CHECK')
           // If statusSetBy is empty, it means the author is the first reviewer of this row
           updatingObj.statusSetBy = settings!.author
           updatingObj.statusSetOn = Date.now()
           updatingObj.mappingStatus = 'SEMI-APPROVED'
-          console.log('CHECKING FOR THIS ', event.detail.row.conceptId)
           if (event.detail.row.conceptId == 0 || !event.detail.row.conceptId) {
-            console.log('PASSED THE FINAL CHECK')
             updatingObj.conceptId = event.detail.row.sourceAutoAssignedConceptIds
           } else updatingObj.conceptId = event.detail.row.conceptId
         } else if (event.detail.row.statusSetBy && event.detail.row.statusSetBy != settings!.author) {
@@ -374,9 +367,8 @@
         updatingObj.mappingStatus = event.detail.action
       }
     }
-    console.log('INFORMATION ', updatingObj)
     await dataTableFile.updateRows(new Map([[event.detail.index, updatingObj]]))
-    calculateProgress('ACTIONPERFORMED')
+    calculateProgress()
   }
 
   // When the delete button is clicked (left-side of the table in the action column)
@@ -401,7 +393,6 @@
       const q = (<Query>query().params({ source: event.detail.sourceCode }))
         .filter((r: any, params: any) => r.sourceCode == params.source)
         .toObject()
-      console.log('QUERY DELETE ROW')
       const res = await dataTableFile.executeQueryAndReturnResults(q)
       if (res.queriedData.length >= 1) {
         const rowsToUpdate = new Map()
@@ -422,7 +413,7 @@
       delete updatedFields.sourceAutoAssignedConceptIds
       await dataTableFile.updateRows(new Map([[event.detail.indexes[0], updatedFields]]))
     }
-    calculateProgress('DELETEROW')
+    calculateProgress()
   }
 
   async function deleteRowInnerMapping(event: CustomEvent<DeleteRowInnerMappingEventDetail>) {
@@ -446,13 +437,11 @@
           r.conceptId == params.conceptId && r.sourceCode == params.sourceCode && r.conceptName == params.conceptName
       )
       .toObject()
-    console.log('QUERY DELETE ROW INNER MAPPING')
     const res = await dataTableFile.executeQueryAndReturnResults(q)
     if (event.detail.erase) {
       const q = (<Query>query().params({ sourceCode: selectedRow.sourceCode }))
         .filter((r: any, params: any) => r.sourceCode == params.sourceCode)
         .toObject()
-      console.log('QUERY ROW INNER MAPPING 2')
       const res2 = await dataTableFile.executeQueryAndReturnResults(q)
       const updatedRows = new Map<number, Record<string, any>>()
       res2.indices.forEach((index: number) => {
@@ -481,7 +470,7 @@
       if (dev) console.log('selectRow: Select row with index ', selectedRowIndex)
 
       selectedRow = await dataTableFile.getFullRow(selectedRowIndex)
-      globalAthenaFilter.filter = selectedRow.sourceName
+      globalAthenaFilter.filter = await translate(selectedRow.sourceName)
       resolve(null)
     }).then(() => {
       changePagination(event.detail.up, selectedRowIndex, tablePagination)
@@ -532,14 +521,22 @@
         undefined
       )
     }
-    let translation = await translator.translate({
-      from: settings!.language,
-      to: 'en',
-      text: text,
-      html: true,
-    })
-    let result = translation.target.text
-    return result
+    if (settings) {
+      if (settings.language && settings.language !== 'en') {
+        let translation = await translator.translate({
+          from: settings!.language,
+          to: 'en',
+          text: text,
+          html: true,
+        })
+        return translation.target.text
+      }
+      {
+        return text
+      }
+    } else {
+      return text
+    }
   }
 
   // A method to automatically map a given row
@@ -555,15 +552,10 @@
     // Check the language set in the settings and translate the filter to English if it's not English
     if (settings) {
       if (!settings.language) settings.language = 'en'
-      if (settings.language) {
-        if (settings.language != 'en') {
-          filter = await translate(filter)
-        }
-      }
+      filter = await translate(filter)
     }
     if (signal.aborted) return
     // Assembe the Athena URL
-    console.log('ASSEMBLE ATHENA URL AUTOMAPROW')
     const url = await assembleAthenaURL(filter)
     if (signal.aborted) return
     // Get the first result of the Athena API call
@@ -574,7 +566,6 @@
       const { mappedIndex, mappedRow } = await rowMapping(row, resData.content[0], true, index)
       mappedRow['ADD_INFO:numberOfConcepts'] = 1
       mappedRow['ADD_INFO:lastAthenaFilter'] = filter
-      console.log('CHECKING FOR AUTO ASSIGNED ', mappedRow)
       if (signal.aborted) return
       await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
     }
@@ -626,16 +617,13 @@
   ) {
     let filter = filteredColumns.values().next().value
     if (globalAthenaFilter.filter === undefined) {
-      if (settings && selectedRow) {
-        if (settings.language !== 'en') {
-          filter = await translate(selectedRow.sourceName)
-        }
+      if (selectedRow) {
+        filter = await translate(selectedRow.sourceName)
       }
     } else if (globalAthenaFilter.filter && filter === undefined) {
       filter = globalAthenaFilter.filter
     }
 
-    console.log('ASSEMBLE ATHENA URL FETCHDATA')
     const url = await assembleAthenaURL(filter, sortedColumns.entries().next().value, pagination)
     const response = await fetch(url)
     const apiData = await response.json()
@@ -662,12 +650,9 @@
     const mappedUsagiRow: Record<string, any> = usagiRow
 
     if (mappedUsagiRow != undefined) {
-      console.log('FIRST CHECK')
       // Map the import columns that are given from Athena
       for (let [name, alt] of importantAthenaColumns) {
-        console.log('SECOND CHECK ', name)
         if (name === 'id' && autoMap) {
-          console.log('FINAL CHECK ', athenaRow[name])
           mappedUsagiRow['sourceAutoAssignedConceptIds'] = athenaRow[name]
         } else mappedUsagiRow[alt] = athenaRow[name]
       }
@@ -725,7 +710,6 @@
       end = performance.now()
       console.log('rowMapping: Finished mapping row with index ', rowIndex, ' in ', Math.round(end - start!), ' ms')
     }
-    console.log('INFORMATION ', mappedUsagiRow)
     return {
       mappedIndex: rowIndex,
       mappedRow: mappedUsagiRow,
@@ -821,18 +805,14 @@
 
   // A method to abort the auto mapping
   async function abortAutoMap() {
-    // if (dev) console.log('abortAutoMap: Aborting auto mapping')
-    // if (autoMappingPromise) autoMappingAbortController.abort()
-    // dataTableFile.setDisabled(false)
-    // calculateProgress('ABORT AUTO MAP')
+    if (dev) console.log('abortAutoMap: Aborting auto mapping')
+    if (autoMappingPromise) autoMappingAbortController.abort()
+    dataTableFile.setDisabled(false)
     currentVisibleRows = new Map<number, Record<string, any>>()
   }
 
   // A method to start the auto mapping
   async function autoMapPage() {
-    console.log('AUTOMAPPPPPPPPPPPPPPPPPPPP')
-    // TODO: when clicking on pop-up the full page auto maps again, fix this!
-    // var autoMapped and when going to other page --> set to false
     let start: number, end: number
     if (mappingStatusChanged == false) {
       // Check for APPROVED values in mappingStatus and check how many authors there were already.
@@ -843,7 +823,6 @@
             r.mappingStatus == 'APPROVED' && (r['ADD_INFO:approvedBy'] == null || r['ADD_INFO:approvedBy'] == undefined)
         )
         .toObject()
-      console.log('QUERY AUTOMAPPING')
       const res = await dataTableFile.executeQueryAndReturnResults(q)
       const updatedRows = new Map<number, Record<string, any>>()
       for (let i = 0; i < res.queriedData.length; i++) {
@@ -869,7 +848,6 @@
         const q = query()
           .slice(pag.rowsPerPage! * (pag.currentPage! - 1), pag.rowsPerPage! * pag.currentPage!)
           .toObject()
-        console.log('QUERY AUTOMAP PAGE 2')
         const res = await dataTableFile.executeQueryAndReturnResults(q)
         for (let i = 0; i < res.queriedData.length; i++) {
           if (signal.aborted) return Promise.resolve()
@@ -884,11 +862,10 @@
         resolve(null)
       }).then(() => {
         dataTableFile.setDisabled(false)
-        calculateProgress('AUTOMAPPING IF')
+        calculateProgress()
       })
     } else {
-      console.log('THIS')
-      calculateProgress('ELSE AUTOMAPPAGE')
+      calculateProgress()
     }
   }
 
@@ -930,11 +907,11 @@
       approveRows.set(index, row)
     }
     await dataTableFile.updateRows(approveRows)
-    calculateProgress('APPROVE PAGE')
+    calculateProgress()
   }
 
-  async function calculateProgress(origin: string) {
-    if (dev) console.log('calculateProgress: Calculating progress FROM ', origin)
+  async function calculateProgress() {
+    if (dev) console.log('calculateProgress: Calculating progress')
     const expressions = {
       total: 'd => op.count()',
       valid: 'd => op.valid(d.mappingStatus)',
@@ -943,7 +920,6 @@
     const qAppr = query()
       .filter((r: any) => r.mappingStatus == 'APPROVED')
       .toObject()
-    console.log('QUERY CALCULATE PROGRESS')
     const resAppr = await dataTableFile.executeQueryAndReturnResults(qAppr)
     tableInformation = {
       totalRows: expressionResults.expressionData[0].total,
@@ -956,6 +932,9 @@
     settings = e.detail.settings
     document.documentElement.style.setProperty('--font-size', `${settings.fontsize}px`)
     document.documentElement.style.setProperty('--font-number', `${settings.fontsize}`)
+    if(e.detail.autoMap == true && tableInit == true) {
+      autoMapPage()
+    }
   }
 
   function saveFacets(facets: Record<string, any>) {
@@ -1007,12 +986,6 @@
       })
     }
   }
-
-  // $: {
-  //   settings
-  //   console.log("HERE----------------------------------------")
-  //   if (settings && tableInit == true) if (settings.autoMap == true && dataTableFile) autoMapPage()
-  // }
 </script>
 
 <svelte:head>

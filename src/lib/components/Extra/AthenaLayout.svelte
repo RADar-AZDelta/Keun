@@ -277,7 +277,6 @@
       const q = (<Query>query().params({ source: selectedRow.sourceCode }))
         .filter((d: any, params: any) => d.sourceCode == params.source)
         .toObject()
-      console.log("QUERY IN LAYOUT ")
       const res = await mainTable.executeQueryAndReturnResults(q)
       for (let row of res.queriedData) {
         if (row.conceptId) {
@@ -321,7 +320,6 @@
 
   function openDialog() {
     if (layoutDialog) if (layoutDialog.attributes.getNamedItem('open') == null) layoutDialog.showModal()
-    console.log("FETCHDATA FROM OPENING DIALOG")
     fetchData = fetchData
     setVocabularyId()
   }
@@ -460,13 +458,8 @@
   }
 
   $: {
-    if (showModal == true) {
-      getUniqueConceptIds()
-      openDialog()
-    } else {
-      console.log("CLOSE DIALOG IN REACTIVE STATEMENT")
-      if (layoutDialog) closeDialog()
-    }
+    if (showModal == true) openDialog()
+    else if (layoutDialog) closeDialog()
   }
 
   $: {
