@@ -7,8 +7,7 @@
   export let renderedRow: Record<string, any>,
     columns: IColumnMetaData[] | undefined,
     settings: Record<string, any>,
-    alreadyMapped: Record<string, any>,
-    url: string
+    alreadyMapped: Record<string, any>
 
   let mapped: boolean = false
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
@@ -29,10 +28,8 @@
   }
 
   function referToAthena() {
-    const subString = url.substring(url.indexOf('?'), url.length)
-    const baseUrl = import.meta.env.VITE_ATHENA
-    const newUrl = baseUrl + subString
-    window.open(encodeURI(newUrl), '_blank')?.focus()
+    const referUrl = import.meta.env.VITE_ATHENA_DETAIL + renderedRow.id
+    window.open(encodeURI(referUrl), '_blank')?.focus()
   }
 
   $: {

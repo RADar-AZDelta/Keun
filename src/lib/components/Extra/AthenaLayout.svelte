@@ -25,7 +25,6 @@
   import AutocompleteInput from './AutocompleteInput.svelte'
 
   export let urlFilters: string[],
-    url: string,
     equivalenceMapping: string,
     selectedRow: Record<string, any>,
     selectedRowIndex: number,
@@ -53,7 +52,7 @@
     conceptClassId: '',
     conceptName: '',
   }
-  let conceptSelection: string = 'existing'
+  let conceptSelection: string = 'athena'
   let errorMessage: string = ''
   let sidesSet: boolean = false
 
@@ -278,6 +277,7 @@
       const q = (<Query>query().params({ source: selectedRow.sourceCode }))
         .filter((d: any, params: any) => d.sourceCode == params.source)
         .toObject()
+      console.log("QUERY IN LAYOUT ")
       const res = await mainTable.executeQueryAndReturnResults(q)
       for (let row of res.queriedData) {
         if (row.conceptId) {
@@ -313,12 +313,15 @@
   }
 
   function closeDialog() {
-    if (layoutDialog.attributes.getNamedItem('open') != null) layoutDialog.close()
-    dispatch('generalVisibilityChanged', { visibility: false })
+    if (layoutDialog.attributes.getNamedItem('open') != null) {
+      layoutDialog.close()
+      dispatch('generalVisibilityChanged', { visibility: false })
+    }
   }
 
   function openDialog() {
     if (layoutDialog) if (layoutDialog.attributes.getNamedItem('open') == null) layoutDialog.showModal()
+    console.log("FETCHDATA FROM OPENING DIALOG")
     fetchData = fetchData
     setVocabularyId()
   }
@@ -461,6 +464,7 @@
       getUniqueConceptIds()
       openDialog()
     } else {
+      console.log("CLOSE DIALOG IN REACTIVE STATEMENT")
       if (layoutDialog) closeDialog()
     }
   }
@@ -565,7 +569,7 @@
               }}
               disabled={selectedRowIndex == 0 ? true : false}
             >
-              <SvgIcon href="icons.svg" id="arrow-left" width="16px" height="16px" />
+              <SvgIcon href="icons.svg" id="arrow-left" width="24px" height="24px" />
             </button>
             <table>
               <tr>
@@ -582,14 +586,14 @@
               </tr>
             </table>
             <button title="Next row" id="right" on:click={() => onRowChange(true)} disabled={lastRow}>
-              <SvgIcon href="icons.svg" id="arrow-right" width="16px" height="16px" />
+              <SvgIcon href="icons.svg" id="arrow-right" width="24px" height="24px" />
             </button>
           </div>
         </div>
         <div data-name="concept-choice">
           <button>
-            <input type="radio" bind:group={conceptSelection} id="existing" name="concept-type" value="existing" />
-            <label for="existing">Existing concepts</label>
+            <input type="radio" bind:group={conceptSelection} id="athena" name="concept-type" value="athena" />
+            <label for="athena">Athena concepts</label>
           </button>
 
           <button>
@@ -602,7 +606,7 @@
             <label for="mapped">Mapped concepts</label>
           </button>
         </div>
-        {#if conceptSelection === 'existing'}
+        {#if conceptSelection === 'athena'}
           <div data-name="table-container">
             <DataTable
               data={fetchData}
@@ -624,7 +628,6 @@
                 {renderedRow}
                 {settings}
                 {columns}
-                {url}
                 bind:alreadyMapped
                 on:singleMapping={singleMapping}
                 on:multipleMapping={multipleMapping}
@@ -684,7 +687,7 @@
             <DataTable
               data={alreadyMappedData}
               columns={alreadyMappedColumns}
-              options={{ actionColumn: true }}
+              options={{ actionColumn: true, id: 'mappedConcepts' }}
               let:renderedRow
               let:columns
             >
@@ -697,7 +700,9 @@
                 </button>
               </td>
               {#each Object.keys(renderedRow) as key}
-                <td>{renderedRow[key]}</td>
+                <td>
+                  <p>{renderedRow[key]}</p>
+                </td>
               {/each}
             </DataTable>
           </div>

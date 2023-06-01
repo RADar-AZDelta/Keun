@@ -42,7 +42,7 @@
   },
   "type": "module",
   "dependencies": {
-    "@radar-azdelta/svelte-datatable": "^0.0.31",
+    "@radar-azdelta/svelte-datatable": "^0.0.32",
     "arquero": "^5.2.0",
     "lodash.debounce": "^4.0.8"
   }
