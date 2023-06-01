@@ -45,9 +45,9 @@
     mapToMultipleConcepts: false,
     autoMap: false,
     language: 'en',
-    author: undefined,
+    author: "",
     savedAuthors: [],
-    vocabularyIdCustomConcept: undefined,
+    vocabularyIdCustomConcept: "",
     fontsize: 10,
     popupSidesShowed: { settings: true, details: true },
   }
