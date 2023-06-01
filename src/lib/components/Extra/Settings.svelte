@@ -1,6 +1,6 @@
 <script lang="ts">
   import SvgIcon from './SvgIcon.svelte'
-  import { localStorageSetter } from '$lib/utils'
+  import { localStorageGetter, localStorageSetter } from '$lib/utils'
   import { clickOutside } from '$lib/actions/clickOutside'
   import { createEventDispatcher } from 'svelte'
   import type { CustomOptionsEvents } from '../Types'
@@ -40,9 +40,14 @@
   }
 
   // A method to set the settings in the localstorage
-  async function saveSettings(e: Event) {
-    localStorageSetter('settings', settings)
-    dispatch('settingsChanged', { settings })
+  async function saveSettings() {
+    if (settingsDialog.attributes.getNamedItem('open') != null) {
+      const previous = localStorageGetter('settings')
+      localStorageSetter('settings', settings)
+      if (settings.autoMap == true && previous.autoMap !== settings.autoMap)
+        dispatch('settingsChanged', { settings, autoMap: true })
+      else dispatch('settingsChanged', { settings })
+    }
   }
 </script>
 
@@ -51,10 +56,21 @@
 >
 
 <dialog bind:this={settingsDialog} data-name="settings-dialog">
-  <div data-name="settings-container" use:clickOutside on:outClick={closeDialog}>
+  <div
+    data-name="settings-container"
+    use:clickOutside
+    on:outClick={() => {
+      saveSettings()
+      closeDialog()
+    }}
+  >
     {#if settings}
-      <button data-name="close-dialog" on:click={closeDialog}
-        ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
+      <button
+        data-name="close-dialog"
+        on:click={() => {
+          saveSettings()
+          closeDialog()
+        }}><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
       >
       <section data-name="settings">
         <h2>Settings</h2>
@@ -88,18 +104,11 @@
           </div>
           <div data-name="option">
             <p>Default vocabulary ID for custom concepts</p>
-            <input
-              type="text"
-              placeholder="local ID e.g. AZDELTA"
-              use:clickOutside
-              bind:value={settings.vocabularyIdCustomConcept}
-              on:outClick={saveSettings}
-            />
+            <input type="text" placeholder="local ID e.g. AZDELTA" bind:value={settings.vocabularyIdCustomConcept} />
           </div>
-          <!-- TODO: add option for font-size (in DataTable)-->
           <div data-name="option">
             <p>Font size</p>
-            <input type="number" bind:value={settings.fontsize} use:clickOutside on:outClick={saveSettings} />
+            <input type="number" bind:value={settings.fontsize} on:change={saveSettings} />
           </div>
         </div>
       </section>

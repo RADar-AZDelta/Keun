@@ -109,6 +109,7 @@ export interface FileUploadedEventDetail {
 
 export interface SettingsChangedEventDetail {
   settings: Record<string, any>
+  autoMap?: boolean
 }
 
 export interface SingleFiltering {
