@@ -1,10 +1,40 @@
-{
-  "id": "concept_id",
-  "name": "concept_name",
-  "code": "concept_code",
-  "className": "concept_class_id",
-  "concept": "standard_concept",
-  "invalidReason": "invalid_reason",
-  "domain": "domain_id",
-  "vocabulary": "vocabulary_id"
-}
+[
+  {
+    "id": "id",
+    "filterable": false
+  },
+  {
+    "id": "code",
+    "filterable": false
+  },
+  {
+    "id": "name"
+  },
+  {
+    "id": "className",
+    "filterable": false
+  },
+  {
+    "id": "standardConcept",
+    "filterable": false,
+    "visible": false
+  },
+  {
+    "id": "invalidReason",
+    "filterable": false,
+    "visible": false
+  },
+  {
+    "id": "domain",
+    "filterable": false
+  },
+  {
+    "id": "vocabulary",
+    "filterable": false
+  },
+  {
+    "id": "score",
+    "filterable": false,
+    "visible": false
+  }
+]

@@ -136,3 +136,10 @@ export interface IFilter {
   name: string
   categories: ICategories
 }
+
+export interface ICustomConcept {
+  vocabularyId: string
+  domainId: string
+  conceptClassId: string
+  conceptName: string
+}

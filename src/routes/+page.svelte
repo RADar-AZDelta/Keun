@@ -1,6 +1,6 @@
 <script lang="ts">
   import columnsUsagi from '$lib/data/columnsUsagi.json'
-  import columnsAthena from '$lib/data/columnsAthena.json'
+  import columnNamesAthena from '$lib/data/columnNamesAthena.json'
   import additionalColumns from '$lib/data/additionalColumns.json'
   import Header from '$lib/components/Extra/Header.svelte'
   import User from '$lib/components/Extra/User.svelte'
@@ -52,6 +52,7 @@
     fontsize: 10,
     popupSidesShowed: { settings: true, details: true },
   }
+  let disableInteraction: boolean = false
   let translator: LatencyOptimisedTranslator
 
   // Athena related variables
@@ -181,7 +182,7 @@
       // Transform the filters to a string that can be used in the query for Athena
       for (let [filter, options] of event.detail.filters) {
         const substring = options.map(option => `&${filter}=${option}`).join()
-        if (!apiFilters.includes(substring)) apiFilters.push(substring)
+        if (!apiFilters.includes(substring)) apiFilters.push(substring.replaceAll(',', '&'))
       }
       // Update the update fetch function so the table will be initialized again
       fetchDataFunc = fetchData
@@ -223,8 +224,19 @@
       valid_end_date: event.detail.validEndDate,
       invalid_reason: event.detail.invalidReason,
     }
-    // Push the custom concept to the hidden table that can be downloaded
-    customConceptsArrayOfObjects.push(customConcept)
+    const existingConcept = customConceptsArrayOfObjects.find(
+      concept =>
+        concept.concept_id === customConcept.concept_id &&
+        concept.concept_name === customConcept.concept_name &&
+        concept.domain_id === customConcept.domain_id &&
+        concept.vocabulary_id === customConcept.vocabulary_id &&
+        concept.concept_class_id === customConcept.concept_class_id
+    )
+    // Push the custom concept to the hidden table that can be downloaded, if it does not exist yet
+    if (!existingConcept) {
+      customConceptsArrayOfObjects.push(customConcept)
+      customConceptsArrayOfObjects = customConceptsArrayOfObjects
+    }
 
     // Map the selected row with the custom concept
     const { mappedIndex, mappedRow } = await customRowMapping(selectedRow, customConcept)
@@ -242,14 +254,17 @@
           mappedRow['ADD_INFO:numberOfConcepts'] = 1
           await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
         } else {
-          mappedRow['ADD_INFO:numberOfConcepts'] = res.queriedData.length + 1
-          const rowsToUpdate = new Map()
-          // Update the number of concepts in the already mapped rows
-          for (let index of res.indices) {
-            rowsToUpdate.set(index, { 'ADD_INFO:numberOfConcepts': res.queriedData.length + 1 })
+          // If the custom concept didn't exist yet
+          if (!existingConcept) {
+            mappedRow['ADD_INFO:numberOfConcepts'] = res.queriedData.length + 1
+            const rowsToUpdate = new Map()
+            // Update the number of concepts in the already mapped rows
+            for (let index of res.indices) {
+              rowsToUpdate.set(index, { 'ADD_INFO:numberOfConcepts': res.queriedData.length + 1 })
+            }
+            await dataTableFile.updateRows(rowsToUpdate)
+            await dataTableFile.insertRows([mappedRow])
           }
-          await dataTableFile.updateRows(rowsToUpdate)
-          await dataTableFile.insertRows([mappedRow])
         }
       } else await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
     } else await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
@@ -581,7 +596,7 @@
 
     // Add sorting to URL if there is sorting
     if (sorting) {
-      const sortingName = columnsAthena[sorting[0] as keyof Object]
+      const sortingName = columnNamesAthena[sorting[0] as keyof Object]
       assembledAthenaUrl += `&sort=${sortingName}&order=${sorting[1]}`
     }
 
@@ -806,7 +821,12 @@
   // A method to abort the auto mapping
   async function abortAutoMap(): Promise<void> {
     if (dev) console.log('abortAutoMap: Aborting auto mapping')
-    if (autoMappingPromise) autoMappingAbortController.abort()
+    disableInteraction = false
+    dataTableFile.setDisabled(false)
+    if (autoMappingPromise) {
+      autoMappingAbortController.abort()
+      calculateProgress()
+    }
     currentVisibleRows = new Map<number, Record<string, any>>()
   }
 
@@ -831,6 +851,8 @@
           .toObject()
         const res = await dataTableFile.executeQueryAndReturnResults(q)
         for (let i = 0; i < res.queriedData.length; i++) {
+          disableInteraction = true
+          dataTableFile.setDisabled(true)
           if (signal.aborted) return Promise.resolve()
           const row = res.queriedData[i]
           if (!row.conceptId && !row.sourceAutoAssignedConceptIds) await autoMapRow(signal, row, res.indices[i])
@@ -841,6 +863,8 @@
         }
         resolve(null)
       }).then(() => {
+        disableInteraction = false
+        dataTableFile.setDisabled(false)
         calculateProgress()
       })
     } else {
@@ -1042,6 +1066,7 @@
       {renderedRow}
       {columns}
       {settings}
+      disable={disableInteraction}
       index={originalIndex}
       bind:currentVisibleRows
     />

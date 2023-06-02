@@ -1,13 +1,16 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte'
+  import { createEventDispatcher, onMount } from 'svelte'
   import Equivalence from '../Mapping/Equivalence.svelte'
   import AthenaFilter from './AthenaFilter.svelte'
   import filtersJSON from '$lib/data/filters.json'
-  import { localStorageSetter } from '$lib/utils'
+  import columnsAthena from '$lib/data/columnsAthena.json'
+  import columnsAlreadyMapped from '$lib/data/columnsAlreadyMapped.json'
+  import { localStorageGetter, localStorageSetter } from '$lib/utils'
   import type {
     AutoCompleteEventDetail,
     CustomOptionsEvents,
     ICategories,
+    ICustomConcept,
     MultipleMappingEventDetail,
     ReviewerChangedEventDetail,
     SingleMappingEventDetail,
@@ -23,6 +26,7 @@
   import AutocompleteInputSettings from './AutocompleteInputSettings.svelte'
   import { clickOutside } from '$lib/actions/clickOutside'
   import AutocompleteInput from './AutocompleteInput.svelte'
+  import { dev } from '$app/environment'
 
   export let equivalenceMapping: string,
     selectedRow: Record<string, any>,
@@ -34,27 +38,32 @@
     showModal: boolean = false,
     facets: Record<string, any> | undefined
 
-  let JSONFilters = new Map<string, ICategories>([])
-  let activatedAthenaFilters = new Map<string, string[]>([['standardConcept', ['Standard']]])
+  // General variables
+  const dispatch = createEventDispatcher<CustomOptionsEvents>()
+  let layoutDialog: HTMLDialogElement
   let openedFilter: string
   let lastRow: boolean = false
   let sidesShowed: Record<string, boolean> = {
     filters: true,
     details: true,
   }
-  let layoutDialog: HTMLDialogElement
+  let conceptSelection: string = 'athena'
+  let errorMessage: string = ''
+  let sidesSet: boolean = false
+
+  // Table variables
   let reviewer: string = ''
   let comment: string = ''
-  let customConcept: Record<string, string> = {
+
+  // Data variables
+  let JSONFilters = new Map<string, ICategories>([])
+  let activatedAthenaFilters = new Map<string, string[]>([['standardConcept', ['Standard']]])
+  let customConcept: ICustomConcept = {
     vocabularyId: '',
     domainId: '',
     conceptClassId: '',
     conceptName: '',
   }
-  let conceptSelection: string = 'athena'
-  let errorMessage: string = ''
-  let sidesSet: boolean = false
-
   let filterColors: Record<string, string> = {
     domain: '#ec3d31',
     concept: '#50a5ba',
@@ -70,72 +79,19 @@
     invalidReason: 'validity',
   }
 
-  const athenaColumns: IColumnMetaData[] = [
-    {
-      id: 'id',
-      filterable: false,
-    },
-    {
-      id: 'code',
-      filterable: false,
-    },
-    {
-      id: 'name',
-    },
-    {
-      id: 'className',
-      filterable: false,
-    },
-    {
-      id: 'standardConcept',
-      filterable: false,
-      visible: false,
-    },
-    {
-      id: 'invalidReason',
-      filterable: false,
-      visible: false,
-    },
-    {
-      id: 'domain',
-      filterable: false,
-    },
-    {
-      id: 'vocabulary',
-      filterable: false,
-    },
-    {
-      id: 'score',
-      filterable: false,
-      visible: false,
-    },
-  ]
+  ///////////////////////////////////////////////////////////////////////////////////////////////
+  // DATA
+  ///////////////////////////////////////////////////////////////////////////////////////////////
 
-  const alreadyMappedColumns: IColumnMetaData[] = [
-    {
-      id: 'sourceCode',
-    },
-    {
-      id: 'sourceName',
-    },
-    {
-      id: 'conceptId',
-    },
-    {
-      id: 'conceptName',
-    },
-    {
-      id: 'customConcept',
-    },
-  ]
+  const athenaColumns: IColumnMetaData[] = columnsAthena
+
+  const alreadyMappedColumns: IColumnMetaData[] = columnsAlreadyMapped
 
   let alreadyMappedData: Record<string, any>[] = [{}]
 
   let dataTableAthena: DataTable
 
   let alreadyMapped: Record<string, Record<string, any>> = {}
-
-  const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
   for (let filter of filtersJSON) {
     JSONFilters.set(filter.name, {
@@ -150,42 +106,45 @@
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
   // A method that catches the event for single mapping and throws an event to the parent
-  function singleMapping(event: CustomEvent<SingleMappingEventDetail>) {
+  function singleMapping(event: CustomEvent<SingleMappingEventDetail>): void {
     dispatch('singleMapping', { originalRow: selectedRow, row: event.detail.row })
   }
 
   // A method that catches the event for multiple mapping and throws an event to the parent
-  function multipleMapping(event: CustomEvent<MultipleMappingEventDetail>) {
+  function multipleMapping(event: CustomEvent<MultipleMappingEventDetail>): void {
     dispatch('multipleMapping', { originalRow: selectedRow, row: event.detail.row })
   }
 
   // A method to update the already mapped concepts (used to see the already mapped concepts for a certain row)
-  function updateUniqueConceptIds(event: CustomEvent<UpdateUniqueConceptIdsEventDetail>) {
+  function updateUniqueConceptIds(event: CustomEvent<UpdateUniqueConceptIdsEventDetail>): void {
+    let alreadyMappedRow = alreadyMapped[selectedRow.sourceCode]
+    // Check if there is multiple mapping
     if (event.detail.multiple == true) {
-      if (!alreadyMapped[selectedRow.sourceCode]) {
-        alreadyMapped[selectedRow.sourceCode] = {
+      // If it is the first concept mapped to the row
+      if (!alreadyMappedRow) {
+        alreadyMappedRow = {
           conceptId: [event.detail.conceptId],
           conceptName: [event.detail.conceptName],
           custom: [false],
         }
       } else {
-        alreadyMapped[selectedRow.sourceCode].conceptId.push(event.detail.conceptId)
-        alreadyMapped[selectedRow.sourceCode].conceptName.push(event.detail.conceptName)
-        alreadyMapped[selectedRow.sourceCode].custom.push(false)
-        alreadyMapped = alreadyMapped
+        alreadyMappedRow.conceptId.push(event.detail.conceptId)
+        alreadyMappedRow.conceptName.push(event.detail.conceptName)
+        alreadyMappedRow.custom.push(false)
       }
     } else {
-      alreadyMapped[selectedRow.sourceCode] = {
+      alreadyMappedRow = {
         conceptId: [event.detail.conceptId],
         conceptName: [event.detail.conceptName],
         custom: [false],
       }
     }
-
+    alreadyMapped[selectedRow.sourceCode] = alreadyMappedRow
     fillMappedTable()
   }
 
-  function autoComplete(event: CustomEvent<AutoCompleteEventDetail>) {
+  // A method to update the values of a row with the autocompleted values of the input fields
+  function autoComplete(event: CustomEvent<AutoCompleteEventDetail>): void {
     if (event.detail.id === 'domainId') {
       customConcept.domainId = event.detail.value
     } else if (event.detail.id === 'conceptClassId') {
@@ -200,12 +159,11 @@
   // A method to update the API filters applied on the API call for Athena
   const updateAPIFilters = async (event: Event, filter: string, option: string): Promise<void> => {
     let chosenFilter = activatedAthenaFilters.get(filter)
-    const inputElement = event.target as HTMLInputElement
-    const inputValue = inputElement.checked
+    const inputValue = (event.target as HTMLInputElement).checked
     // If the filter is checked, add it
-    if (chosenFilter != undefined && inputValue == true) chosenFilter.push(option)
+    if (chosenFilter && inputValue == true) chosenFilter.push(option)
     // If the filter is unchecked and was already in the list, remove it
-    else if (chosenFilter != undefined && inputValue == false) {
+    else if (chosenFilter && inputValue == false) {
       if (chosenFilter.includes(option) == true) {
         chosenFilter.splice(chosenFilter.indexOf(option), 1)
         if (chosenFilter.length == 0) activatedAthenaFilters.delete(filter)
@@ -214,11 +172,9 @@
     } else {
       activatedAthenaFilters.set(filter, [option])
     }
-
     localStorageSetter('AthenaFilters', activatedAthenaFilters)
 
     dispatch('filterOptionsChanged', { filters: activatedAthenaFilters })
-    activatedAthenaFilters = activatedAthenaFilters
   }
 
   // A method to check if the filter is already applied to the API call
@@ -231,19 +187,13 @@
           : undefined
         : allFilters.get(filter)
 
-    if (chosenFilter == undefined || chosenFilter.length == 0) {
-      return false
-    } else {
-      if (chosenFilter.includes(option)) {
-        return true
-      } else {
-        return false
-      }
-    }
+    if (chosenFilter == undefined || chosenFilter.length == 0) return false
+    else if (chosenFilter.includes(option)) return true
+    else return false
   }
 
   // A method to delete a filter when a filter for the Athena API call is removed in the section "Activated filters"
-  function removeFilter(filter: string, option: string) {
+  function removeFilter(filter: string, option: string): void {
     activatedAthenaFilters.get(filter)!.splice(activatedAthenaFilters.get(filter)!.indexOf(option), 1)
     activatedAthenaFilters = activatedAthenaFilters
     localStorageSetter('AthenaFilters', activatedAthenaFilters)
@@ -251,36 +201,40 @@
   }
 
   // When a arrow button is clicked in the Athena pop-up to navigate between rows
-  function onRowChange(up: boolean) {
+  function onRowChange(up: boolean): void {
     dispatch('rowChange', { up })
   }
 
   // A method to get all the mapped concept ids for a certain row
-  async function getUniqueConceptIds() {
+  async function getUniqueConceptIds(): Promise<void> {
     alreadyMapped = {}
     if (selectedRow) {
+      // Create a query that finds all rows with the same sourceCode as the selected row
       const q = (<Query>query().params({ source: selectedRow.sourceCode }))
         .filter((d: any, params: any) => d.sourceCode == params.source)
         .toObject()
       const res = await mainTable.executeQueryAndReturnResults(q)
       for (let row of res.queriedData) {
         if (row.conceptId) {
-          if (alreadyMapped[row.sourceCode]) {
+          let alreadyMappedRow = alreadyMapped[row.sourceCode]
+          if (alreadyMappedRow) {
             if (
-              !alreadyMapped[row.sourceCode].conceptId.includes(row.conceptId) ||
-              !alreadyMapped[row.sourceCode].conceptName.includes(row.conceptName)
-            )
-              alreadyMapped[row.sourceCode].conceptId.push(row.conceptId)
-            alreadyMapped[row.sourceCode].conceptName.push(row.conceptName)
-            if (row['ADD_INFO:customConcept'] == true) alreadyMapped[row.sourceCode].custom.push(true)
-            else alreadyMapped[row.sourceCode].custom.push(false)
+              !alreadyMappedRow.conceptId.includes(row.conceptId) ||
+              !alreadyMappedRow.conceptName.includes(row.conceptName)
+            ) {
+              alreadyMappedRow.conceptId.push(row.conceptId)
+              alreadyMappedRow.conceptName.push(row.conceptName)
+            }
+            if (row['ADD_INFO:customConcept'] == true) alreadyMappedRow.custom.push(true)
+            else alreadyMappedRow.custom.push(false)
           } else {
-            alreadyMapped[row.sourceCode] = {
+            alreadyMappedRow = {
               conceptId: [row.conceptId],
               conceptName: [row.conceptName],
               custom: [row['ADD_INFO:customConcept'] == true ? true : false],
             }
           }
+          alreadyMapped[row.sourceCode] = alreadyMappedRow
         }
       }
 
@@ -289,35 +243,51 @@
   }
 
   // A method for when the assigned reviewer has changed
-  function reviewerChanged(e: CustomEvent<ReviewerChangedEventDetail>) {
+  function reviewerChanged(e: CustomEvent<ReviewerChangedEventDetail>): void {
     if (e.detail.reviewer) {
       reviewer = e.detail.reviewer
       dispatch('updateDetails', { index: selectedRowIndex, assignedReviewer: reviewer, comment })
     } else reviewer = ''
   }
 
-  function closeDialog() {
+  // A method to close the dialog if it was opened
+  function closeDialog(): void {
     if (layoutDialog.attributes.getNamedItem('open') != null) {
       layoutDialog.close()
       dispatch('generalVisibilityChanged', { visibility: false })
     }
   }
 
-  function openDialog() {
+  // A method to open the dialog if it was closed
+  function openDialog(): void {
     if (layoutDialog) if (layoutDialog.attributes.getNamedItem('open') == null) layoutDialog.showModal()
     fetchData = fetchData
     setVocabularyId()
   }
 
-  function removeMapping(conceptId: string, conceptName: string) {
+  // A method to delete the mapping in the pop-up
+  function removeMapping(conceptId: string, conceptName: string): void {
+    // Check if the value needs to be erased, if there are multiple mappings for the same sourceCode it needs to be erased
     let erase = alreadyMapped[selectedRow.sourceCode].conceptId.length > 1
     dispatch('deleteRowInnerMapping', { conceptId, conceptName, erase, custom: true })
     removeUniqueConcept(conceptId, conceptName)
     fillMappedTable()
   }
 
-  function removeUniqueConcept(conceptId: string, conceptName: string) {
-    const index = alreadyMapped[selectedRow.sourceCode].conceptId.indexOf(conceptId)
+  // A method to remove the concept from the alreadyMapped object
+  function removeUniqueConcept(conceptId: string, conceptName: string): void {
+    // Find the index of the conceptId and conceptName in the alreadyMapped object
+    // There could be more instances with the same conceptId but other conceptName and vice versa so we need to check both
+    const alreadyMappedRow = alreadyMapped[selectedRow.sourceCode]
+    const conceptIdIndexes: number[] = alreadyMappedRow.conceptId.reduce(function (a: any, e: any, i: number) {
+      if (e === conceptId) a.push(i)
+      return a
+    }, [])
+    const conceptNameIndexes: number[] = alreadyMappedRow.conceptName.reduce(function (a: any, e: any, i: number) {
+      if (e === conceptName) a.push(i)
+      return a
+    }, [])
+    const index = conceptIdIndexes.filter(i => conceptNameIndexes.includes(i))[0]
     if (alreadyMapped[selectedRow.sourceCode].conceptId.length > 1) {
       alreadyMapped[selectedRow.sourceCode].conceptId.splice(index, 1)
       alreadyMapped[selectedRow.sourceCode].conceptName.splice(index, 1)
@@ -328,8 +298,10 @@
     alreadyMapped = alreadyMapped
   }
 
-  function customMapping() {
+  // A method for custom mapping
+  function customMapping(): void {
     errorMessage = ''
+    // Check if the domain id and the concept class id are predefined values
     if (
       Object.keys(customConceptInfo.domain).includes(customConcept.domainId) ||
       Object.values(customConceptInfo.domain).includes(customConcept.domainId)
@@ -351,51 +323,56 @@
           invalidReason: '',
         })
 
-        if (alreadyMapped[selectedRow.sourceCode]) {
-          if (alreadyMapped[selectedRow.sourceCode].conceptId.length > 0)
-            alreadyMapped[selectedRow.sourceCode].conceptId.push(selectedRow.sourceCode)
-          else alreadyMapped[selectedRow.sourceCode].conceptId = [selectedRow.sourceCode]
-          if (alreadyMapped[selectedRow.sourceCode].conceptName.length > 0)
-            alreadyMapped[selectedRow.sourceCode].conceptName.push(customConcept.conceptName)
-          else alreadyMapped[selectedRow.sourceCode].conceptName = [customConcept.conceptName]
-          if (alreadyMapped[selectedRow.sourceCode].custom.length > 0)
-            alreadyMapped[selectedRow.sourceCode].custom.push(true)
-          else alreadyMapped[selectedRow.sourceCode].custom = [true]
+        let alreadyMappedSelected = alreadyMapped[selectedRow.sourceCode]
+        if (alreadyMappedSelected) {
+          if (alreadyMappedSelected.conceptId.length > 0) alreadyMappedSelected.conceptId.push(selectedRow.sourceCode)
+          else alreadyMappedSelected.conceptId = [selectedRow.sourceCode]
+          if (alreadyMappedSelected.conceptName.length > 0)
+            alreadyMappedSelected.conceptName.push(customConcept.conceptName)
+          else alreadyMappedSelected.conceptName = [customConcept.conceptName]
+          if (alreadyMappedSelected.custom.length > 0) alreadyMappedSelected.custom.push(true)
+          else alreadyMappedSelected.custom = [true]
         } else {
-          alreadyMapped[selectedRow.sourceCode] = {
+          alreadyMappedSelected = {
             conceptId: [selectedRow.sourceCode],
             conceptName: [customConcept.conceptName],
             custom: [true],
           }
         }
-        alreadyMapped = alreadyMapped
+        alreadyMapped[selectedRow.sourceCode] = alreadyMappedSelected
         fillMappedTable()
       } else {
         errorMessage = 'The concept class id is not valid'
+        if (dev) console.log(`customMapping: The concept class id: ${customConcept.conceptClassId}, is not valid`)
       }
     } else {
       errorMessage = 'The domain id is not valid'
+      if (dev) console.log(`customMapping: the domain id: ${customConcept.domainId}, is not valid`)
     }
   }
 
-  function setVocabularyId() {
+  // A method to set the custom concept vocabulary id from the settings
+  function setVocabularyId(): void {
     if (settings) {
       if (settings.hasOwnProperty('vocabularyIdCustomConcept'))
         customConcept.vocabularyId = settings.vocabularyIdCustomConcept
     }
   }
 
-  function sideVisibilityChange(side: string, value: boolean) {
+  // A method to set the visibility of the sides in the pop-up
+  function sideVisibilityChange(side: string, value: boolean): void {
     sidesShowed[side] = value
     if (side == 'filters') settings.popupSidesShowed.filters = value
     else if (side == 'detail') settings.popupSidesShowed.details = value
   }
 
-  const onInputComment = debounce(async (e: any) => {
+  // A method for when the user fills in the comment
+  const onInputComment = debounce(async (e: any): Promise<void> => {
     dispatch('updateDetails', { index: selectedRowIndex, comment, assignedReviewer: reviewer })
   }, 500)
 
-  function setSidesShowed() {
+  // A method to sync the sidesShowed object with the settings
+  function setSidesShowed(): void {
     if (settings) {
       if (settings.popupSidesShowed) {
         sidesShowed = settings.popupSidesShowed
@@ -403,7 +380,8 @@
     }
   }
 
-  function fillMappedTable() {
+  // A method to fill the table with the already mapped concepts
+  function fillMappedTable(): void {
     alreadyMappedData = []
     for (let code of Object.keys(alreadyMapped)) {
       if (selectedRow.sourceCode == code) {
@@ -418,9 +396,16 @@
         }
       }
     }
+    // If there are no concepts mapped yet, fill the array with an empty object
+    // This empty object is needed because the DataTable component uses it to determine the data type
     if (alreadyMappedData.length == 0) alreadyMappedData = [{}]
     alreadyMappedData = alreadyMappedData
   }
+
+  onMount(() => {
+    activatedAthenaFilters = localStorageGetter('AthenaFilters')
+    dispatch('filterOptionsChanged', { filters: activatedAthenaFilters })
+  })
 
   $: {
     selectedRowIndex
@@ -459,17 +444,17 @@
 
 <dialog bind:this={layoutDialog} data-name="athena-dialog">
   <div data-name="dialog-container" use:clickOutside on:outClick={closeDialog}>
-    <button data-name="close-dialog" on:click={closeDialog}
-      ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
-    >
+    <button data-name="close-dialog" on:click={closeDialog}>
+      <SvgIcon href="icons.svg" id="x" width="16px" height="16px" />
+    </button>
     <div data-name="athena-layout">
       {#if sidesShowed.filters}
         <section data-name="filters-container">
           <div data-name="filters-head">
             <h2>Filters</h2>
-            <button on:click={() => sideVisibilityChange('filters', false)} id="filters"
-              ><SvgIcon href="icons.svg" id="chevrons-left" width="16px" height="16px" /></button
-            >
+            <button on:click={() => sideVisibilityChange('filters', false)} id="filters">
+              <SvgIcon href="icons.svg" id="chevrons-left" width="16px" height="16px" />
+            </button>
           </div>
           <div data-name="filters">
             {#each [...JSONFilters] as [key, options]}
@@ -508,9 +493,9 @@
               {#each [...activatedAthenaFilters] as [filter, values]}
                 {#each values as value}
                   <div data-name="activated-filter" style={`background-color: ${filterColors[filterNames[filter]]}`}>
-                    <button on:click={() => removeFilter(filter, value)}
-                      ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
-                    >
+                    <button on:click={() => removeFilter(filter, value)}>
+                      <SvgIcon href="icons.svg" id="x" width="16px" height="16px" />
+                    </button>
                     <p>{value}</p>
                   </div>
                 {/each}
@@ -627,20 +612,16 @@
                   ></td
                 >
                 <td
-                  ><AutocompleteInput
-                    id="domainId"
-                    list={customConceptInfo.domain}
-                    on:autoComplete={autoComplete}
-                  /></td
-                >
+                  ><AutocompleteInput id="domainId" list={customConceptInfo.domain} on:autoComplete={autoComplete} />
+                </td>
                 <td><input type="text" bind:value={customConcept.vocabularyId} /></td>
                 <td
                   ><AutocompleteInput
                     id="conceptClassId"
                     list={customConceptInfo.concept}
                     on:autoComplete={autoComplete}
-                  /></td
-                >
+                  />
+                </td>
                 <td><input type="text" bind:value={customConcept.conceptName} /></td>
               </tr>
             </table>
@@ -663,7 +644,6 @@
               columns={alreadyMappedColumns}
               options={{ actionColumn: true, id: 'mappedConcepts' }}
               let:renderedRow
-              let:columns
             >
               <td>
                 <button
@@ -685,9 +665,9 @@
       {#if sidesShowed.details}
         <section data-name="additional-information">
           <div data-name="additional-information-head">
-            <button on:click={() => sideVisibilityChange('details', false)}
-              ><SvgIcon href="icons.svg" id="chevrons-right" width="16px" height="16px" /></button
-            >
+            <button on:click={() => sideVisibilityChange('details', false)}>
+              <SvgIcon href="icons.svg" id="chevrons-right" width="16px" height="16px" />
+            </button>
             <h2>Detail</h2>
           </div>
           <div data-name="info-container">
