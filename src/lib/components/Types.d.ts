@@ -91,6 +91,7 @@ export interface AutoMapRowEventDetail {
 export interface AutoCompleteEventDetail {
   id: string
   value: any
+  key: string
 }
 
 export interface UpdateDetailsEventDetail {
@@ -123,4 +124,15 @@ export interface ISettings {
   vocabularyIdCustomConcept: string
   fontsize: number
   popupSidesShowed: { settings: boolean; details: boolean }
+}
+
+export interface ITableInformation {
+  totalRows: number | undefined
+  mappedRows: number | undefined
+  approvedRows: number | undefined
+}
+
+export interface IFilter {
+  name: string
+  categories: ICategories
 }

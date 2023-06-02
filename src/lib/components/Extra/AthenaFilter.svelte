@@ -1,33 +1,23 @@
 <script lang="ts">
-  import type { ICategories } from '../Types'
+  import type { ICategories, IFilter } from '../Types'
   import SvgIcon from './SvgIcon.svelte'
 
-  export let filter: {
-      name: string
-      categories: ICategories
-    },
+  export let filter: IFilter,
     openedFilter: string,
-    allowInput: boolean = true,
-    color: string
+    color: string,
+    allowInput: boolean = true
 
-  let filterInput: string
-  let filteredFilterOptions: ICategories = filter.categories
+  let filterInput: string,
+    filteredFilterOptions: ICategories = filter.categories
 
   // A method for when the input (search for a filter) has changed
-  function onChange(
-    event: Event & {
-      currentTarget: EventTarget & HTMLInputElement
-    }
-  ) {
-    const inputElement = event.target as HTMLInputElement
-    const inputValue = inputElement.value
-    updateOptionsFromFilter(inputValue)
+  function onChange(event: Event & { currentTarget: EventTarget & HTMLInputElement }) {
+    updateOptionsFromFilter((event.target as HTMLInputElement).value)
   }
 
   // A method to change the section that needs to be opened
   const showCategories = async (): Promise<void> => {
-    if (openedFilter == filter.name) openedFilter = ''
-    else openedFilter = filter.name
+    openedFilter = openedFilter == filter.name ? '' : filter.name
   }
 
   // A method to remove the criteria from the input field to search for a filter
@@ -39,7 +29,11 @@
   // A method to update the filters with a certain criteria
   const updateOptionsFromFilter = async (input: string): Promise<void> => {
     const options = filter.categories.options.filter(op => op.toLowerCase().includes(input.toLowerCase()))
-    filteredFilterOptions = { options: options, altName: filter.categories.altName, altNameFacet: filter.categories.altNameFacet }
+    filteredFilterOptions = {
+      options: options,
+      altName: filter.categories.altName,
+      altNameFacet: filter.categories.altNameFacet,
+    }
   }
 </script>
 

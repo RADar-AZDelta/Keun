@@ -3,22 +3,20 @@
   import SvgIcon from './SvgIcon.svelte'
   import SvelteMarkDown from 'svelte-markdown'
 
-  let showModal: boolean = false,
-    manualDialog: HTMLDialogElement
+  let manualDialog: HTMLDialogElement,
+    manualText: string = ''
 
-  let manualText: string = ''
-
-  async function openDialog() {
+  // A method to open the dialog if it was closed and where the README from the Github repo is fetched
+  async function openDialog(): Promise<void> {
     if (manualDialog.attributes.getNamedItem('open') == null) manualDialog.showModal()
     if (manualText === '') {
-      const onlineManual = await fetch('https://raw.githubusercontent.com/RADar-AZDelta/Keun/master/README.md', {
-        method: 'GET',
-      })
+      const onlineManual = await fetch('https://raw.githubusercontent.com/RADar-AZDelta/Keun/master/README.md')
       manualText = await onlineManual.text()
     }
   }
 
-  function closeDialog() {
+  // A method to close the dialog if it was opened
+  function closeDialog(): void {
     if (manualDialog.attributes.getNamedItem('open') != null) manualDialog.close()
   }
 </script>
@@ -30,8 +28,8 @@
 <dialog bind:this={manualDialog} data-name="manual-dialog">
   <div data-name="manual-container" use:clickOutside on:outClick={closeDialog}>
     <button on:click={closeDialog} data-name="close-dialog"
-      ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
-    >
+      ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" />
+    </button>
     <SvelteMarkDown source={manualText} />
   </div>
 </dialog>
