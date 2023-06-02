@@ -173,7 +173,7 @@
       activatedAthenaFilters.set(filter, [option])
     }
     localStorageSetter('AthenaFilters', activatedAthenaFilters)
-
+    activatedAthenaFilters = activatedAthenaFilters
     dispatch('filterOptionsChanged', { filters: activatedAthenaFilters })
   }
 
@@ -403,7 +403,10 @@
   }
 
   onMount(() => {
-    activatedAthenaFilters = localStorageGetter('AthenaFilters')
+    const savedFilters = localStorageGetter('AthenaFilters')
+    activatedAthenaFilters = savedFilters
+      ? savedFilters
+      : new Map<string, string[]>([['standardConcept', ['Standard']]])
     dispatch('filterOptionsChanged', { filters: activatedAthenaFilters })
   })
 

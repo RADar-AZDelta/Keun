@@ -59,7 +59,7 @@
   }
 </script>
 
-<button title="Settings" aria-label="Settings button" on:click={openDialog} data-name="header-button"
+<button title="Settings-Keun" aria-label="Settings button" on:click={openDialog} data-name="header-button"
   ><SvgIcon href="icons.svg" id="settings" width="16px" height="16px" />
 </button>
 
