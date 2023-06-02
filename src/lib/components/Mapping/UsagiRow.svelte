@@ -9,7 +9,8 @@
     columns: IColumnMetaData[] | undefined,
     index: number,
     settings: Record<string, any> | undefined,
-    currentVisibleRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>([])
+    currentVisibleRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>([]),
+    disable: boolean
 
   let color: string = 'inherit'
   let fontSize: string = '10px'
@@ -89,13 +90,13 @@
 
 <td data-name="actions-cell" style={`background-color: ${color}`}>
   <div data-name="actions-grid">
-    <button on:click={onClickMapping} title="Map"
-      ><SvgIcon href="icons.svg" id="search" width={fontSize} height={fontSize} /></button
-    >
-    <button on:click={onClickDeletion} title="Delete"
-      ><SvgIcon href="icons.svg" id="eraser" width={fontSize} height={fontSize} /></button
-    >
-    <button on:click={onClickAutoMap} title="Automap">AUTO</button>
+    <button on:click={onClickMapping} title="Map" disabled={disable}>
+      <SvgIcon href="icons.svg" id="search" width={fontSize} height={fontSize} />
+    </button>
+    <button on:click={onClickDeletion} title="Delete" disabled={disable}>
+      <SvgIcon href="icons.svg" id="eraser" width={fontSize} height={fontSize} />
+    </button>
+    <button on:click={onClickAutoMap} title="Automap" disabled={disable}>AUTO</button>
     {#if renderedRow['ADD_INFO:numberOfConcepts'] && renderedRow['ADD_INFO:numberOfConcepts'] > 1}
       <div data-name="numberOfConceptIds">
         <p>{renderedRow['ADD_INFO:numberOfConcepts']}</p>
@@ -103,15 +104,15 @@
     {:else}
       <div />
     {/if}
-    <button on:click={onClickApproving} title="Approve"
-      ><SvgIcon href="icons.svg" id="check" width={fontSize} height={fontSize} /></button
-    >
-    <button on:click={onClickFlagging} title="Flag"
-      ><SvgIcon href="icons.svg" id="flag" width={fontSize} height={fontSize} /></button
-    >
-    <button on:click={onClickUnapproving} title="Unapprove"
-      ><SvgIcon href="icons.svg" id="x" width={fontSize} height={fontSize} /></button
-    >
+    <button on:click={onClickApproving} title="Approve" disabled={disable}>
+      <SvgIcon href="icons.svg" id="check" width={fontSize} height={fontSize} />
+    </button>
+    <button on:click={onClickFlagging} title="Flag" disabled={disable}>
+      <SvgIcon href="icons.svg" id="flag" width={fontSize} height={fontSize} />
+    </button>
+    <button on:click={onClickUnapproving} title="Unapprove" disabled={disable}>
+      <SvgIcon href="icons.svg" id="x" width={fontSize} height={fontSize} />
+    </button>
   </div>
 </td>
 {#each columns || [] as column, i}
