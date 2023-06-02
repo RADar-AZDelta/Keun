@@ -2,7 +2,7 @@
   import { localStorageSetter } from '$lib/utils'
   import { createEventDispatcher } from 'svelte'
   import type { CustomOptionsEvents } from '../Types'
-  import { clickOutside } from '$lib/actions/clickOutside'
+  import debounce from 'lodash.debounce'
 
   export let settings: Record<string, any>
 
@@ -14,41 +14,28 @@
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
   // A method for when the input needs to be saved
-  function onSave() {
+  function save(): void {
     value = inputValue
     if (!settings.savedAuthors) {
       settings.savedAuthors = []
     }
     if (!settings.savedAuthors.includes(inputValue)) {
       settings.savedAuthors.push(inputValue)
-      saveSettings()
+      localStorageSetter('settings', settings)
     }
     dispatch('reviewerChanged', { reviewer: value })
   }
 
   // A method to apply a suggestion to the input field
-  function onClickAutoComplete(e: Event) {
+  function onClickAutoComplete(e: Event): void {
     inputValue = (e.target as HTMLLIElement).id
-    value = inputValue
-    if (!settings.savedAuthors) {
-      settings.savedAuthors = []
-    }
-    if (!settings.savedAuthors.includes(inputValue)) {
-      settings.savedAuthors.push(inputValue)
-      saveSettings()
-    }
+    save()
     filterNames()
-    dispatch('reviewerChanged', { reviewer: value })
     autoCompleted = true
   }
 
-  // A method to save the settings to the localstorage
-  async function saveSettings() {
-    localStorageSetter('settings', settings)
-  }
-
   // A method to search for suggestions to apply to the input field
-  function filterNames() {
+  function filterNames(): void {
     let filteredNames = []
     if (inputValue) {
       if (settings.savedAuthors) {
@@ -64,6 +51,12 @@
     filteredValues = filteredNames
   }
 
+  // A method to save the input value to the settings and apply as assigned reviewer
+  const onInput = debounce(async (e: any): Promise<void> => {
+    autoCompleted = false
+    save()
+  }, 500)
+
   $: {
     inputValue
     filterNames()
@@ -71,16 +64,7 @@
 </script>
 
 <div data-name="autocomplete-input">
-  <input
-    title="Assigned Reviewer"
-    type="text"
-    bind:value={inputValue}
-    use:clickOutside
-    on:outClick={onSave}
-    on:input={() => {
-      autoCompleted = false
-    }}
-  />
+  <input title="Assigned Reviewer" type="text" bind:value={inputValue} on:input={onInput} />
   {#if filteredValues.length > 0}
     <ul>
       {#each filteredValues as name, i}

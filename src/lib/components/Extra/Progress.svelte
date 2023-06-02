@@ -1,11 +1,8 @@
 <script lang="ts">
+  import type { ITableInformation } from '../Types'
   import Spinner from './Spinner.svelte'
 
-  export let tableInformation: {
-    totalRows: number | undefined
-    mappedRows: number | undefined
-    approvedRows: number | undefined
-  }
+  export let tableInformation: ITableInformation
 </script>
 
 <div data-name="progress">

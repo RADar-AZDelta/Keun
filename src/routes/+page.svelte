@@ -19,9 +19,10 @@
     AutoMapRowEventDetail,
     UpdateDetailsEventDetail,
     ISettings,
+    ITableInformation,
   } from '$lib/components/Types'
   import type { IColumnMetaData, IPagination, SortDirection, TFilter } from '@radar-azdelta/svelte-datatable'
-  import { localStorageGetter, localStorageSetter } from '$lib/utils'
+  import { localStorageGetter } from '$lib/utils'
   import AthenaLayout from '$lib/components/Extra/AthenaLayout.svelte'
   import UsagiRow from '$lib/components/Mapping/UsagiRow.svelte'
   import { onMount, tick } from 'svelte'
@@ -45,9 +46,9 @@
     mapToMultipleConcepts: false,
     autoMap: false,
     language: 'en',
-    author: "",
+    author: '',
     savedAuthors: [],
-    vocabularyIdCustomConcept: "",
+    vocabularyIdCustomConcept: '',
     fontsize: 10,
     popupSidesShowed: { settings: true, details: true },
   }
@@ -65,11 +66,7 @@
   // Table related variables
   let tableInit: boolean = false
   let currentVisibleRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>()
-  let tableInformation: {
-    totalRows: number | undefined
-    mappedRows: number | undefined
-    approvedRows: number | undefined
-  } = {
+  let tableInformation: ITableInformation = {
     totalRows: undefined,
     mappedRows: undefined,
     approvedRows: undefined,
@@ -977,12 +974,12 @@
         ><SvgIcon href="icons.svg" id="upload" width="16px" height="16px" /></label
       >
       <input id="file-upload" type="file" accept=".csv" on:change={onFileInputChange} />
-      <Download dataTable={dataTableFile} title="Download file" svgId="download" />
+      <Download dataTable={dataTableFile} title="Download file" />
 
       {#if customConceptsArrayOfObjects.length > 0}
         {#if Object.keys(customConceptsArrayOfObjects[0]).length != 0}
           <p>Custom concepts download:</p>
-          <Download dataTable={dataTableCustomConcepts} title="Download custom concepts" svgId="download" />
+          <Download dataTable={dataTableCustomConcepts} title="Download custom concepts" />
         {/if}
       {/if}
     {/if}

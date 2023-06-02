@@ -12,13 +12,13 @@
     userDialog: HTMLDialogElement
 
   // A method to cancel the update of the author
-  async function cancelAuthorUpdate() {
+  async function cancelAuthorUpdate(): Promise<void> {
     closeDialog()
     settings.author = backupAuthor == undefined ? '' : backupAuthor
   }
 
   // A method to save the author and close the dialog
-  async function saveAuthorUpdate() {
+  async function saveAuthorUpdate(): Promise<void> {
     if (dev) console.log('saveAuthorUpdate: Saving author update')
     settings.author = author == undefined ? '' : author
     settings = settings
@@ -27,17 +27,22 @@
     closeDialog()
   }
 
-  function closeDialog() {
+  // A method to close the dialog
+  function closeDialog(): void {
+    // Check if the author is filled in and if the dialog was open in first instance
     if (settings.author) if (userDialog.attributes.getNamedItem('open') != null) userDialog.close()
   }
 
-  function openDialog() {
+  // A method to open the dialog
+  function openDialog(): void {
     if (settings.author) author = settings.author
     if (!backupAuthor) backupAuthor = settings?.author
+    // Check if the dialog is not already open
     if (userDialog) if (userDialog.attributes.getNamedItem('open') == null) userDialog.showModal()
   }
 
   $: {
+    // If the userdialog is closed and there has not been an author set yet, open the dialog
     userDialog
     if (userDialog)
       if (userDialog.attributes.getNamedItem('open') == null) if (settings && !settings.author) userDialog.showModal()
@@ -52,19 +57,19 @@
 <dialog bind:this={userDialog} data-name="user-dialog">
   <div data-name="user-container" use:clickOutside on:outClick={closeDialog}>
     {#if settings}
-      <button data-name="close-dialog" on:click={closeDialog} disabled={author == undefined ? true : false}
-        ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
-      >
+      <button data-name="close-dialog" on:click={closeDialog} disabled={author == undefined ? true : false}>
+        <SvgIcon href="icons.svg" id="x" width="16px" height="16px" />
+      </button>
       <section data-name="author">
         <h2>Who is the author?</h2>
         <input id="author" type="text" placeholder="John Wick" bind:value={author} />
         <div data-name="buttons-container">
-          <button data-name="cancel" on:click={cancelAuthorUpdate} disabled={author == undefined ? true : false}
-            >Cancel</button
-          >
-          <button data-name="save" on:click={saveAuthorUpdate} disabled={author == undefined ? true : false}
-            >Save</button
-          >
+          <button data-name="cancel" on:click={cancelAuthorUpdate} disabled={author == undefined ? true : false}>
+            Cancel
+          </button>
+          <button data-name="save" on:click={saveAuthorUpdate} disabled={author == undefined ? true : false}>
+            Save
+          </button>
         </div>
       </section>
     {/if}

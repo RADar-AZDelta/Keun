@@ -3,12 +3,13 @@
   import { localStorageGetter, localStorageSetter } from '$lib/utils'
   import { clickOutside } from '$lib/actions/clickOutside'
   import { createEventDispatcher } from 'svelte'
-  import type { CustomOptionsEvents } from '../Types'
+  import type { CustomOptionsEvents, ISettings } from '../Types'
+  import { dev } from '$app/environment'
 
-  export let settings: Record<string, any>
+  export let settings: ISettings
 
   let settingsDialog: HTMLDialogElement
-  let dispatch = createEventDispatcher<CustomOptionsEvents>()
+  const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
   let languages: Record<string, string> = {
     // bg: 'Bulgarian',
@@ -31,29 +32,36 @@
     // uk: 'Ukrainian',
   }
 
-  function closeDialog() {
+  // A method to close the dialog if it was opened
+  function closeDialog(): void {
     if (settingsDialog.attributes.getNamedItem('open') != null) settingsDialog.close()
   }
 
-  function openDialog() {
+  // A method to open the dialog if it was closed
+  function openDialog(): void {
     if (settingsDialog.attributes.getNamedItem('open') == null) settingsDialog.showModal()
   }
 
   // A method to set the settings in the localstorage
-  async function saveSettings() {
+  async function saveSettings(): Promise<void> {
     if (settingsDialog.attributes.getNamedItem('open') != null) {
       const previous = localStorageGetter('settings')
       localStorageSetter('settings', settings)
-      if (settings.autoMap == true && previous.autoMap !== settings.autoMap)
+      // Check if the automap setting has changed and if so, dispatch an event with the new settings and explicitly set the automap to true to trigger the automapping again
+      if (settings.autoMap == true && previous.autoMap !== settings.autoMap) {
+        if (dev) console.log('saveSettings: The settings have been saved and the automapping has been triggered')
         dispatch('settingsChanged', { settings, autoMap: true })
-      else dispatch('settingsChanged', { settings })
+      } else {
+        if (dev) console.log('saveSettings: The settings have been saved')
+        dispatch('settingsChanged', { settings })
+      }
     }
   }
 </script>
 
 <button title="Settings" aria-label="Settings button" on:click={openDialog} data-name="header-button"
-  ><SvgIcon href="icons.svg" id="settings" width="16px" height="16px" /></button
->
+  ><SvgIcon href="icons.svg" id="settings" width="16px" height="16px" />
+</button>
 
 <dialog bind:this={settingsDialog} data-name="settings-dialog">
   <div
@@ -70,7 +78,9 @@
         on:click={() => {
           saveSettings()
           closeDialog()
-        }}><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
+        }}
+      >
+        <SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
       >
       <section data-name="settings">
         <h2>Settings</h2>
