@@ -253,6 +253,8 @@
   // A method to close the dialog if it was opened
   function closeDialog(): void {
     if (layoutDialog.attributes.getNamedItem('open') != null) {
+      comment = ''
+      reviewer = ''
       layoutDialog.close()
       dispatch('generalVisibilityChanged', { visibility: false })
     }
