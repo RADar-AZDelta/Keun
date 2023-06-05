@@ -2,6 +2,8 @@ import { expect, test, type Page } from '@playwright/test'
 
 const init = async (page: Page) => {
   await page.goto('/')
+  await login(page)
+  await importFile(page, 'static/file.csv')
 }
 
 const login = async (page: Page, name: string = 'John Doe', onboarding: boolean = true) => {
@@ -32,7 +34,7 @@ const enableSettings = async (
       break
     case 'mapToMultiple':
       // Click the mapToMultiple slider
-      await page.locator('#settings label').nth(2).click()
+      await page.locator('#settings label').nth(0).click()
       break
     case 'lang':
       // Click the language dropdown
@@ -78,24 +80,92 @@ const clickAction = async (
     .click()
 }
 
+const openAndMapRow = async (page: Page, mainTableIndex: number, athenaIndex: number) => {
+  await clickAction(page, mainTableIndex, 'Map')
+  await page
+    .getByRole('dialog')
+    .locator('[data-component="datatable-content"]')
+    .getByRole('table')
+    .getByRole('row')
+    .nth(athenaIndex)
+    .getByRole('cell')
+    .nth(0)
+    .getByRole('button')
+    .nth(0)
+    .click()
+  await page.locator('[data-name="athena-dialog"]').locator('[data-name="close-dialog"]').click()
+}
+
+const openAndCustomMapFirstRow = async (
+  page: Page,
+  options: { domainId: string; vocabId: string | undefined; conceptClassId: string; conceptName: string },
+  mainTableIndex: number
+) => {
+  await clickAction(page, mainTableIndex, 'Map')
+  await page.getByRole('button', { name: 'Custom concept' }).click()
+  await page.getByTitle('domainId').fill(options.domainId)
+  if (options.vocabId !== undefined) await page.getByTitle('vocabularyId').fill(options.vocabId)
+  await page.getByTitle('conceptClassId').fill(options.conceptClassId)
+  await page.getByTitle('conceptName').fill(options.conceptName)
+  await page.waitForTimeout(1000)
+  await page.locator('[data-name="custom-concept-actions"]').getByRole('button').click()
+  await page.locator('[data-name="athena-dialog"]').locator('[data-name="close-dialog"]').click()
+}
+
+const openMappedConceptsForFirstRow = async (page: Page, mainTableIndex: number) => {
+  await clickAction(page, mainTableIndex, 'Map')
+  await page.getByRole('button', { name: 'Mapped concepts' }).click()
+}
+
+const removeConceptInMappedConceptsTable = async (page: Page, mainTableIndex: number, mappedConceptIndex: number) => {
+  await clickAction(page, mainTableIndex, 'Map')
+  await page.getByRole('button', { name: 'Mapped concepts' }).click()
+  const pre = await page
+    .locator('[data-name="alreadymapped-table"]')
+    .getByRole('row')
+    .nth(mappedConceptIndex)
+    .getByRole('cell')
+    .nth(4)
+    .textContent()
+  await page
+    .locator('[data-name="alreadymapped-table"]')
+    .getByRole('row')
+    .nth(mappedConceptIndex)
+    .getByRole('cell')
+    .nth(0)
+    .getByRole('button')
+    .click()
+  const after = await page
+    .locator('[data-name="alreadymapped-table"]')
+    .getByRole('row')
+    .nth(mappedConceptIndex)
+    .getByRole('cell')
+    .nth(4)
+    .textContent()
+  return {
+    pre,
+    after,
+  }
+}
+
 test.describe('Testing the author functionalities of the mappingtool', () => {
   test('Log in with an author', async ({ page }) => {
-    await init(page)
-    await login(page, "John Doe")
+    await page.goto('/')
+    await login(page, 'John Doe')
     // Check the author name in the author button
     await expect(page.getByRole('button', { name: 'User button' }).locator('p')).toHaveText('John Doe')
   })
 
   test('Cancel the user in the onboarding', async ({ page }) => {
-    await init(page)
+    await page.goto('/')
     await login(page)
     // Check if you have left the dialog because normally it is not possible, so you should still see the save button
     expect(await page.locator('button:text("Save")'))
   })
 
   test('Cancel change of user after it was filled in, in the onboarding', async ({ page }) => {
-    await init(page)
-    await login(page, "John Doe")
+    await page.goto('/')
+    await login(page, 'John Doe')
     // Click the author button again
     await page.getByRole('button', { name: 'User button' }).click()
     // Fill in the author "Polleke Pollen"
@@ -110,8 +180,6 @@ test.describe('Testing the author functionalities of the mappingtool', () => {
 test.describe('Testing the import of files', () => {
   test('Import a file and check if the title "sourceCode" is visible', async ({ page }) => {
     await init(page)
-    await login(page)
-    await importFile(page, 'static/file.csv')
     // Check if the table is visible
     await expect(page.getByRole('table')).toBeVisible()
     // Check if the title "sourceCode" is visible in the columns
@@ -120,8 +188,6 @@ test.describe('Testing the import of files', () => {
 
   test('Import a file and then upload another file and check if the import is correct', async ({ page }) => {
     await init(page)
-    await login(page)
-    await importFile(page, 'static/file.csv')
     const cellValue1 = await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(2).innerText()
     await importFile(page, 'static/file2.csv')
     await expect(page.getByRole('table')).toBeVisible()
@@ -134,62 +200,48 @@ test.describe('Testing the import of files', () => {
 test.describe('Testing the automapping functionalities', () => {
   test('Import the file and then enable automapping', async ({ page }) => {
     await init(page)
-    await login(page)
-    await importFile(page, 'static/file.csv')
     await enableSettings(page, 'autoMapping')
     // Wait a bit because the fetch request needs time
     await page.waitForTimeout(3000)
     // Check for the first row if the conceptName is not Unmapped
-    await expect(page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4)).not.toBe('')
+    await expect(page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4)).not.toBe('Unmapped')
   })
-
   test('Enable automapping and then import the file', async ({ page }) => {
-    await init(page)
+    await page.goto('/')
     await login(page)
     await enableSettings(page, 'autoMapping')
     await importFile(page, 'static/file.csv')
     // Wait a bit because the fetch request needs time
     await page.waitForTimeout(3000)
     // Check for the first row if the conceptName is not Unmapped
-    await expect(page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4)).not.toBe('')
+    await expect(page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4)).not.toBe('Unmapped')
   })
 })
 
 test.describe('Testing the actions functionalities', () => {
   test('Does the approve button work for the first author', async ({ page }) => {
     await init(page)
-    await login(page)
-    await importFile(page, 'static/file.csv')
     await clickAction(page, 3, 'Approve')
     await expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(5).innerText()).toBe(
       'SEMI-APPROVED'
     )
   })
-
   test('Does the flag buton work', async ({ page }) => {
     await init(page)
-    await login(page)
-    await importFile(page, 'static/file.csv')
     await clickAction(page, 3, 'Flag')
     await expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(5).innerText()).toBe(
       'FLAGGED'
     )
   })
-
   test('Does the unapprove button work', async ({ page }) => {
     await init(page)
-    await login(page)
-    await importFile(page, 'static/file.csv')
     await clickAction(page, 3, 'Unapprove')
     await expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(5).innerText()).toBe(
       'UNAPPROVED'
     )
   })
-
   test('Does the approve button work for the second author', async ({ page }) => {
     await init(page)
-    await login(page)
-    await importFile(page, 'static/file.csv')
     await clickAction(page, 3, 'Approve')
     await login(page, 'Polleke Pollen', false)
     await clickAction(page, 3, 'Approve')
@@ -197,24 +249,26 @@ test.describe('Testing the actions functionalities', () => {
       'APPROVED'
     )
   })
-
-  // test('Does the approve button work for the second author when the second author edits mapping', ({ page }) => {})
-
+  test('Does the approve button work for the second author when the second author edits mapping', async ({ page }) => {
+    await init(page)
+    await clickAction(page, 3, 'Approve')
+    await login(page, 'Polleke Pollen', false)
+    await openAndMapRow(page, 3, 3)
+    await clickAction(page, 3, 'Approve')
+    expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(5).innerText()).toBe(
+      'SEMI-APPROVED'
+    )
+  })
   test('Does the automap button work', async ({ page }) => {
     await init(page)
-    await login(page)
-    await importFile(page, 'static/file.csv')
     await clickAction(page, 3, 'AUTO')
     await page.waitForTimeout(3000)
     expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()).not.toBe(
       'Unmapped'
     )
   })
-
   test('Does the erase button work', async ({ page }) => {
     await init(page)
-    await login(page)
-    await importFile(page, 'static/file.csv')
     await clickAction(page, 3, 'AUTO')
     await page.waitForTimeout(3000)
     const value = await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()
@@ -227,36 +281,151 @@ test.describe('Testing the actions functionalities', () => {
     )
     expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()).toBe('Unmapped')
   })
-
   test('Does the automap button give the same result as the automap settings (English)', async ({ page }) => {
     await init(page)
-    await login(page)
-    await importFile(page, 'static/file.csv')
     await enableSettings(page, 'autoMapping')
-    await page.waitForTimeout(3000)
-    const settingAutomappedValue = await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()
+    await page.waitForTimeout(7000)
+    const settingAutomappedValue = await page
+      .getByRole('table')
+      .getByRole('row')
+      .nth(3)
+      .getByRole('cell')
+      .nth(4)
+      .innerText()
     expect(settingAutomappedValue).not.toBe('Unmapped')
     await clickAction(page, 3, 'Delete')
     expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()).toBe('Unmapped')
     await page.waitForTimeout(1000)
     await clickAction(page, 3, 'AUTO')
     await page.waitForTimeout(3000)
-    expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()).toBe(settingAutomappedValue)
+    expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()).toBe(
+      settingAutomappedValue
+    )
   })
-
   test('Does the automap button give the same result as the automap settings (Dutch)', async ({ page }) => {
     await init(page)
-    await login(page)
-    await importFile(page, 'static/file.csv')
-    await enableSettings(page, 'autoMapping')
     await enableSettings(page, 'lang', 'nl')
+    await enableSettings(page, 'autoMapping')
     await page.waitForTimeout(7000)
-    const settingAutomappedValue = await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()
+    const settingAutomappedValue = await page
+      .getByRole('table')
+      .getByRole('row')
+      .nth(3)
+      .getByRole('cell')
+      .nth(4)
+      .innerText()
     expect(settingAutomappedValue).not.toBe('Unmapped')
     await clickAction(page, 3, 'Delete')
     expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()).toBe('Unmapped')
     await clickAction(page, 3, 'AUTO')
     await page.waitForTimeout(3000)
-    expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()).toBe(settingAutomappedValue)
+    expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()).toBe(
+      settingAutomappedValue
+    )
   })
+  test('Is the conceptId filled in when approving the automapping (manual automap)', async ({ page }) => {
+    await init(page)
+    await clickAction(page, 3, 'AUTO')
+    await page.waitForTimeout(1000)
+    await clickAction(page, 3, 'Approve')
+    expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()).not.toBe(
+      'Unmapped'
+    )
+  })
+  test('Is the conceptId filled in when approving the automapping (automatic automap)', async ({ page }) => {
+    await init(page)
+    await enableSettings(page, 'autoMapping')
+    await page.waitForTimeout(3000)
+    await clickAction(page, 3, 'Approve')
+    expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()).not.toBe(
+      'Unmapped'
+    )
+  })
+  test('Does the approve page work', async ({ page }) => {
+    await init(page)
+    await page.getByRole('button', { name: 'Approve page' }).click();
+    expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(5).innerText()).toBe('SEMI-APPROVED')
+    await login(page, 'Polleke Pollen', false)
+    await page.getByRole('button', { name: 'Approve page' }).click();
+    expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(5).innerText()).toBe('APPROVED')
+  })
+})
+
+test.describe('Testing the manual mapping', () => {
+  test('Manual map a concept', async ({ page }) => {
+    await init(page)
+    await openAndMapRow(page, 3, 3)
+    await expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()).not.toBe(
+      'Unmapped'
+    )
+  })
+
+  test('Custom concept mapping', async ({ page }) => {
+    await init(page)
+    await openAndCustomMapFirstRow(page, { domainId: 'Note', vocabId: 'test', conceptClassId: 'CDT', conceptName: 'test' }, 3)
+    expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()).not.toBe('Unmapped')
+  })
+
+  test('Multiple mapping with Athena concepts', async ({ page }) => {
+    await init(page)
+    await enableSettings(page, 'mapToMultiple')
+    await openAndMapRow(page, 3, 3)
+    await openAndMapRow(page, 3, 4)
+    await openMappedConceptsForFirstRow(page, 3)
+    expect(await page.getByRole('dialog').getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(1)).not.toBe(null)
+    expect(await page.getByRole('dialog').getByRole('table').getByRole('row').nth(4).getByRole('cell').nth(1)).not.toBe(null)
+  })
+
+  test('Multiple mapping with custom concepts', async ({ page }) => {
+    await init(page)
+    await enableSettings(page, 'mapToMultiple')
+    await openAndCustomMapFirstRow(page, { domainId: 'Note', vocabId: 'test', conceptClassId: 'CDT', conceptName: 'test' }, 3)
+    await openAndCustomMapFirstRow(page, { domainId: 'Condition', vocabId: 'test', conceptClassId: 'CDT', conceptName: 'test' }, 3)
+    await openMappedConceptsForFirstRow(page, 3)
+    expect(await page.getByRole('dialog').getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(1)).not.toBe(null)
+    expect(await page.getByRole('dialog').getByRole('table').getByRole('row').nth(4).getByRole('cell').nth(1)).not.toBe(null)
+  })
+
+  test('Multiple mapping with Athena and custom concepts', async ({ page }) => {
+    await init(page)
+    await enableSettings(page, 'mapToMultiple')
+    await openAndMapRow(page, 3, 3)
+    await openAndCustomMapFirstRow(page, { domainId: 'Note', vocabId: 'test', conceptClassId: 'CDT', conceptName: 'test' }, 3)
+    await openMappedConceptsForFirstRow(page, 3)
+    expect(await page.getByRole('dialog').getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(1)).not.toBe(null)
+    expect(await page.getByRole('dialog').getByRole('table').getByRole('row').nth(4).getByRole('cell').nth(1)).not.toBe(null)
+  })
+
+  test('A custom concept can not be added twice with the same values', async ({ page }) => {
+    await init(page)
+    await enableSettings(page, 'mapToMultiple')
+    await openAndCustomMapFirstRow(page, { domainId: 'Note', vocabId: 'test', conceptClassId: 'CDT', conceptName: 'test' }, 3)
+    await openAndCustomMapFirstRow(page, { domainId: 'Note', vocabId: 'test', conceptClassId: 'CDT', conceptName: 'test' }, 3)
+    await openMappedConceptsForFirstRow(page, 3)
+    expect(await page.getByRole('dialog').getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(1)).not.toBe(null)
+  })
+
+  test('A concept can be removed in the mapped concepts table', async ({ page }) => {
+    await init(page)
+    await enableSettings(page, 'mapToMultiple')
+    await openAndMapRow(page, 3, 3)
+    await openAndMapRow(page, 3, 4)
+    const { pre, after } = await removeConceptInMappedConceptsTable(page, 3, 3)
+    if (after !== undefined) expect(pre).not.toBe(after)
+    else expect(pre).not.toBe(null)
+  })
+
+  // test('Does the filter on Athena work', async ({ page }) => {})
+
+  // test('Can a filter be removed from the filter list', async ({ page }) => {})
+
+  // test('Can the equality be changed', async ({ page }) => {})
+
+  // test('Can a reviewer be added with mapping', async ({ page }) => {})
+
+  // test('Can a reviewer be added without mapping', async ({ page }) => {})
+
+  // test('Can a comment be added with mapping', async ({ page }) => {})
+
+  // test('Can a comment be added without mapping', async ({ page }) => {})
 })

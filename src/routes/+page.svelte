@@ -675,18 +675,13 @@
 
           case 'statusSetBy':
           case 'statusSetOn':
-            if (
-              (String(usagiRow.statusSetBy).replaceAll(' ', '') == '' || usagiRow.statusSetBy == undefined) &&
-              !autoMap
-            ) {
-              mappedUsagiRow.statusSetBy = settings!.author
-              mappedUsagiRow.statusSetOn = Date.now()
-            }
+            mappedUsagiRow.statusSetBy = settings!.author
+            mappedUsagiRow.statusSetOn = Date.now()
             break
 
           case 'createdBy':
           case 'createdOn':
-            if (!usagiRow.createdBy && usagiRow.createdBy != settings!.author && !autoMap) {
+            if (!usagiRow.createdBy && usagiRow.createdBy != settings!.author) {
               mappedUsagiRow.createdBy = settings!.author
               mappedUsagiRow.createdOn = Date.now()
             }
