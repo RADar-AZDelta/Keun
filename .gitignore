@@ -11,4 +11,5 @@ vite.config.ts.timestamp-*
 /static/bergamot
 /static/file*
 /static/log.txt
-/static/testing-images
+/static/testing-images/upload.png
+/static/testing-images/download.png
