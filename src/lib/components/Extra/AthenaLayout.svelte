@@ -619,7 +619,7 @@
                 <td
                   ><AutocompleteInput id="domainId" list={customConceptInfo.domain} on:autoComplete={autoComplete} />
                 </td>
-                <td><input type="text" bind:value={customConcept.vocabularyId} /></td>
+                <td><input title="vocabularyId" type="text" bind:value={customConcept.vocabularyId} /></td>
                 <td
                   ><AutocompleteInput
                     id="conceptClassId"
@@ -627,7 +627,7 @@
                     on:autoComplete={autoComplete}
                   />
                 </td>
-                <td><input type="text" bind:value={customConcept.conceptName} /></td>
+                <td><input title="conceptName" type="text" bind:value={customConcept.conceptName} /></td>
               </tr>
             </table>
 

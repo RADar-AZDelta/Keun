@@ -56,7 +56,7 @@
 </script>
 
 <div data-name="autocomplete-input">
-  <input title="Assigned Reviewer" type="text" bind:value={inputValue} on:input={onInput} />
+  <input title={id} type="text" bind:value={inputValue} on:input={onInput} />
   {#if filteredValues.size > 0}
     <ul>
       {#each [...filteredValues] as [key, value], i}
