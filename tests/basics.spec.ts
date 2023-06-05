@@ -4,10 +4,10 @@ const init = async (page: Page) => {
   await page.goto('/')
 }
 
-const login = async (page: Page, name: string, onboarding: boolean = true) => {
+const login = async (page: Page, name: string = 'John Doe', onboarding: boolean = true) => {
   // If the onboarding has already been done, push the button to open the author dialog
   if (onboarding == false) await page.getByRole('button', { name: 'User button' }).click()
-  // Find the input field and fill in the author "John Doe"
+  // Find the input field and fill in the author
   await page.locator('#author').fill(name)
   // Click the save button
   await page.locator('button:text("Save")').click()
@@ -38,7 +38,7 @@ const enableSettings = async (
       // Click the language dropdown
       await page.locator('#settings select').click()
       // Click the language option
-      if (settingValue !== undefined) await page.locator(`#settings select option text=${settingValue}`).click()
+      if (settingValue !== undefined) await page.locator('#language').selectOption(settingValue)
       break
     case 'defaultVocab':
       // Fill the defaultVocab input
@@ -81,21 +81,21 @@ const clickAction = async (
 test.describe('Testing the author functionalities of the mappingtool', () => {
   test('Log in with an author', async ({ page }) => {
     await init(page)
-    await login(page, 'John Doe')
+    await login(page, "John Doe")
     // Check the author name in the author button
     await expect(page.getByRole('button', { name: 'User button' }).locator('p')).toHaveText('John Doe')
   })
 
   test('Cancel the user in the onboarding', async ({ page }) => {
     await init(page)
-    await login(page, 'John Doe')
+    await login(page)
     // Check if you have left the dialog because normally it is not possible, so you should still see the save button
     expect(await page.locator('button:text("Save")'))
   })
 
   test('Cancel change of user after it was filled in, in the onboarding', async ({ page }) => {
     await init(page)
-    await login(page, 'John Doe')
+    await login(page, "John Doe")
     // Click the author button again
     await page.getByRole('button', { name: 'User button' }).click()
     // Fill in the author "Polleke Pollen"
@@ -110,7 +110,7 @@ test.describe('Testing the author functionalities of the mappingtool', () => {
 test.describe('Testing the import of files', () => {
   test('Import a file and check if the title "sourceCode" is visible', async ({ page }) => {
     await init(page)
-    await login(page, 'John Doe')
+    await login(page)
     await importFile(page, 'static/file.csv')
     // Check if the table is visible
     await expect(page.getByRole('table')).toBeVisible()
@@ -120,7 +120,7 @@ test.describe('Testing the import of files', () => {
 
   test('Import a file and then upload another file and check if the import is correct', async ({ page }) => {
     await init(page)
-    await login(page, 'John Doe')
+    await login(page)
     await importFile(page, 'static/file.csv')
     const cellValue1 = await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(2).innerText()
     await importFile(page, 'static/file2.csv')
@@ -134,7 +134,7 @@ test.describe('Testing the import of files', () => {
 test.describe('Testing the automapping functionalities', () => {
   test('Import the file and then enable automapping', async ({ page }) => {
     await init(page)
-    await login(page, 'John Doe')
+    await login(page)
     await importFile(page, 'static/file.csv')
     await enableSettings(page, 'autoMapping')
     // Wait a bit because the fetch request needs time
@@ -145,7 +145,7 @@ test.describe('Testing the automapping functionalities', () => {
 
   test('Enable automapping and then import the file', async ({ page }) => {
     await init(page)
-    await login(page, 'John Doe')
+    await login(page)
     await enableSettings(page, 'autoMapping')
     await importFile(page, 'static/file.csv')
     // Wait a bit because the fetch request needs time
@@ -158,7 +158,7 @@ test.describe('Testing the automapping functionalities', () => {
 test.describe('Testing the actions functionalities', () => {
   test('Does the approve button work for the first author', async ({ page }) => {
     await init(page)
-    await login(page, 'John Doe')
+    await login(page)
     await importFile(page, 'static/file.csv')
     await clickAction(page, 3, 'Approve')
     await expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(5).innerText()).toBe(
@@ -168,7 +168,7 @@ test.describe('Testing the actions functionalities', () => {
 
   test('Does the flag buton work', async ({ page }) => {
     await init(page)
-    await login(page, 'John Doe')
+    await login(page)
     await importFile(page, 'static/file.csv')
     await clickAction(page, 3, 'Flag')
     await expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(5).innerText()).toBe(
@@ -178,7 +178,7 @@ test.describe('Testing the actions functionalities', () => {
 
   test('Does the unapprove button work', async ({ page }) => {
     await init(page)
-    await login(page, 'John Doe')
+    await login(page)
     await importFile(page, 'static/file.csv')
     await clickAction(page, 3, 'Unapprove')
     await expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(5).innerText()).toBe(
@@ -188,7 +188,7 @@ test.describe('Testing the actions functionalities', () => {
 
   test('Does the approve button work for the second author', async ({ page }) => {
     await init(page)
-    await login(page, 'John Doe')
+    await login(page)
     await importFile(page, 'static/file.csv')
     await clickAction(page, 3, 'Approve')
     await login(page, 'Polleke Pollen', false)
@@ -200,9 +200,63 @@ test.describe('Testing the actions functionalities', () => {
 
   // test('Does the approve button work for the second author when the second author edits mapping', ({ page }) => {})
 
-  // test('Does the erase button work', async ({ page }) => {})
+  test('Does the automap button work', async ({ page }) => {
+    await init(page)
+    await login(page)
+    await importFile(page, 'static/file.csv')
+    await clickAction(page, 3, 'AUTO')
+    await page.waitForTimeout(3000)
+    expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()).not.toBe(
+      'Unmapped'
+    )
+  })
 
-  // test('Does the automap button work', async ({ page }) => {})
+  test('Does the erase button work', async ({ page }) => {
+    await init(page)
+    await login(page)
+    await importFile(page, 'static/file.csv')
+    await clickAction(page, 3, 'AUTO')
+    await page.waitForTimeout(3000)
+    const value = await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()
+    expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()).not.toBe(
+      'Unmapped'
+    )
+    await clickAction(page, 3, 'Delete')
+    await expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()).not.toBe(
+      value
+    )
+    expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()).toBe('Unmapped')
+  })
 
-  // test('Does the automap button give the same result as the automap settings', async ({ page }) => {})
+  test('Does the automap button give the same result as the automap settings (English)', async ({ page }) => {
+    await init(page)
+    await login(page)
+    await importFile(page, 'static/file.csv')
+    await enableSettings(page, 'autoMapping')
+    await page.waitForTimeout(3000)
+    const settingAutomappedValue = await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()
+    expect(settingAutomappedValue).not.toBe('Unmapped')
+    await clickAction(page, 3, 'Delete')
+    expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()).toBe('Unmapped')
+    await page.waitForTimeout(1000)
+    await clickAction(page, 3, 'AUTO')
+    await page.waitForTimeout(3000)
+    expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()).toBe(settingAutomappedValue)
+  })
+
+  test('Does the automap button give the same result as the automap settings (Dutch)', async ({ page }) => {
+    await init(page)
+    await login(page)
+    await importFile(page, 'static/file.csv')
+    await enableSettings(page, 'autoMapping')
+    await enableSettings(page, 'lang', 'nl')
+    await page.waitForTimeout(7000)
+    const settingAutomappedValue = await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()
+    expect(settingAutomappedValue).not.toBe('Unmapped')
+    await clickAction(page, 3, 'Delete')
+    expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()).toBe('Unmapped')
+    await clickAction(page, 3, 'AUTO')
+    await page.waitForTimeout(3000)
+    expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()).toBe(settingAutomappedValue)
+  })
 })
