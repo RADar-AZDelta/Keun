@@ -710,7 +710,7 @@
             mappedUsagiRow['ADD_INFO:customConcept'] = null
             break
           default:
-            mappedUsagiRow[col] = additionalFields[col]
+            if (col !== 'conceptName' && col !== 'conceptId') mappedUsagiRow[col] = additionalFields[col]
             break
         }
       }
