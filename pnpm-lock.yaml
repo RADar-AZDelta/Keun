@@ -5,8 +5,8 @@ importers:
   .:
     dependencies:
       '@radar-azdelta/svelte-datatable':
-        specifier: ^0.0.33
-        version: 0.0.33
+        specifier: ^0.0.34
+        version: 0.0.34
       arquero:
         specifier: ^5.2.0
         version: 5.2.0
@@ -501,8 +501,8 @@ packages:
     resolution: {integrity: sha512-a5Sab1C4/icpTZVzZc5Ghpz88yQtGOyNqYXcZgOssB2uuAr+wF/MvN6bgtW32q7HHrvBki+BsZ0OuNv6EV3K9g==}
     dev: true
 
-  /@radar-azdelta/svelte-datatable@0.0.33:
-    resolution: {integrity: sha512-ZsM2oLfWCyqc/dnse2of7HRUBaUaJy4knc7n16I5omtAzDx0UGnvKuVGnRXoHE1u+KO5vXlylyokz1G1btFDNg==}
+  /@radar-azdelta/svelte-datatable@0.0.34:
+    resolution: {integrity: sha512-dWKk/6SiuRHxJRH/e1oW26w+6PhVZLfUsa8KHaCSraWCQgfyJi0DJrz5eKds6iHEyUWNgVYfpupYa6rK9qU+2w==}
     dependencies:
       '@types/lodash': 4.14.195
       arquero: 5.2.0

@@ -9,5 +9,6 @@ node_modules
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 /static/bergamot
-/static/file.csv
+/static/file*
 /static/log.txt
+/static/testing-images
