@@ -29,11 +29,13 @@ export interface FilterOptionsChangedEventDetail {
 export interface SingleMappingEventDetail {
   originalRow?: Record<string, any>
   row: Record<string, any>
+  extra: IExtra
 }
 
 export interface MultipleMappingEventDetail {
   originalRow?: Record<string, any>
   row: Record<string, any>
+  extra: IExtra
 }
 
 export interface ActionPerformedEventDetail {
@@ -81,6 +83,7 @@ export interface CustomMappingEventDetail {
   validStartDate: string
   validEndDate: string
   invalidReason: string
+  extra: IExtra
 }
 
 export interface AutoMapRowEventDetail {
@@ -142,4 +145,9 @@ export interface ICustomConcept {
   domainId: string
   conceptClassId: string
   conceptName: string
+}
+
+interface IExtra {
+  comment: string
+  reviewer: string
 }

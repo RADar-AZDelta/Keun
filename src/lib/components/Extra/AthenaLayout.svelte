@@ -107,12 +107,14 @@
 
   // A method that catches the event for single mapping and throws an event to the parent
   function singleMapping(event: CustomEvent<SingleMappingEventDetail>): void {
-    dispatch('singleMapping', { originalRow: selectedRow, row: event.detail.row })
+    dispatch('singleMapping', { originalRow: selectedRow, row: event.detail.row, extra: { comment, reviewer } })
   }
 
   // A method that catches the event for multiple mapping and throws an event to the parent
   function multipleMapping(event: CustomEvent<MultipleMappingEventDetail>): void {
-    dispatch('multipleMapping', { originalRow: selectedRow, row: event.detail.row })
+    event.detail.row.comment = comment
+    event.detail.row.assignedReviewer = reviewer
+    dispatch('multipleMapping', { originalRow: selectedRow, row: event.detail.row, extra: { comment, reviewer } })
   }
 
   // A method to update the already mapped concepts (used to see the already mapped concepts for a certain row)
@@ -253,8 +255,6 @@
   // A method to close the dialog if it was opened
   function closeDialog(): void {
     if (layoutDialog.attributes.getNamedItem('open') != null) {
-      comment = ''
-      reviewer = ''
       layoutDialog.close()
       dispatch('generalVisibilityChanged', { visibility: false })
     }
@@ -262,7 +262,12 @@
 
   // A method to open the dialog if it was closed
   function openDialog(): void {
-    if (layoutDialog) if (layoutDialog.attributes.getNamedItem('open') == null) layoutDialog.showModal()
+    if (layoutDialog)
+      if (layoutDialog.attributes.getNamedItem('open') == null) {
+        comment = ''
+        reviewer = ''
+        layoutDialog.showModal()
+      }
     fetchData = fetchData
     setVocabularyId()
   }
@@ -323,6 +328,10 @@
           validStartDate: `${new Date().getFullYear()}-${new Date().getMonth()}-${new Date().getDate()}`,
           validEndDate: '2099-12-31',
           invalidReason: '',
+          extra: {
+            comment,
+            reviewer,
+          },
         })
 
         let alreadyMappedSelected = alreadyMapped[selectedRow.sourceCode]
@@ -497,7 +506,11 @@
             <div data-name="activated-filters">
               {#each [...activatedAthenaFilters] as [filter, values]}
                 {#each values as value}
-                  <div data-name="activated-filter" style={`background-color: ${filterColors[filterNames[filter]]}`}>
+                  <div
+                    data-name="activated-filter"
+                    id={value}
+                    style={`background-color: ${filterColors[filterNames[filter]]}`}
+                  >
                     <button on:click={() => removeFilter(filter, value)}>
                       <SvgIcon href="icons.svg" id="x" width="16px" height="16px" />
                     </button>

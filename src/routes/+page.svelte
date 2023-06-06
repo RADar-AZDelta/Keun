@@ -197,6 +197,8 @@
     // Add extra information like the number of concepts mapped for this row, and the last typed filter to the row
     if (!mappedRow['ADD_INFO:numberOfConcepts']) mappedRow['ADD_INFO:numberOfConcepts'] = 1
     mappedRow['ADD_INFO:lastAthenaFilter'] = lastTypedFilter
+    mappedRow['comment'] = event.detail.extra.comment
+    mappedRow['assignedReviewer'] = event.detail.extra.reviewer
     // Update the selected row to the updated row
     console.log('MAPPEDROW ', mappedRow)
     await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
@@ -241,6 +243,8 @@
     // Map the selected row with the custom concept
     const { mappedIndex, mappedRow } = await customRowMapping(selectedRow, customConcept)
     if (!mappedRow['ADD_INFO:numberOfConcepts']) mappedRow['ADD_INFO:numberOfConcepts'] = 1
+    mappedRow['comment'] = event.detail.extra.comment
+    mappedRow['assignedReviewer'] = event.detail.extra.reviewer
     if (settings) {
       // If multiplemapping is enabled, update the previous rows and add the new one
       if (settings.mapToMultipleConcepts) {
@@ -252,11 +256,15 @@
         // Add extra information like the number of concepts mapped for this row, comments & the assigned reviewer to the row
         if (res.queriedData.length === 1 && !res.queriedData[0].conceptId) {
           mappedRow['ADD_INFO:numberOfConcepts'] = 1
+          mappedRow['comment'] = event.detail.extra.comment
+          mappedRow['assignedReviewer'] = event.detail.extra.reviewer
           await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
         } else {
           // If the custom concept didn't exist yet
           if (!existingConcept) {
             mappedRow['ADD_INFO:numberOfConcepts'] = res.queriedData.length + 1
+            mappedRow['comment'] = event.detail.extra.comment
+            mappedRow['assignedReviewer'] = event.detail.extra.reviewer
             const rowsToUpdate = new Map()
             // Update the number of concepts in the already mapped rows
             for (let index of res.indices) {
@@ -294,10 +302,14 @@
     if (res.queriedData.length === 1 && !res.queriedData[0].conceptId) {
       // This is the first concepts mapped to the row and the current row wil be updated
       mappedRow['ADD_INFO:numberOfConcepts'] = 1
+      mappedRow['comment'] = event.detail.extra.comment
+      mappedRow['assignedReviewer'] = event.detail.extra.reviewer
       await dataTableFile.updateRows(new Map([[res.indices[0], mappedRow]]))
     } else {
       // This is not the first concept mapped to the row and the current row will be added to the table and the others will be updated
       mappedRow['ADD_INFO:numberOfConcepts'] = res.queriedData.length + 1
+      mappedRow['comment'] = event.detail.extra.comment
+      mappedRow['assignedReviewer'] = event.detail.extra.reviewer
       const rowsToUpdate = new Map()
       // Update the number of concepts in the already mapped rows
       for (let index of res.indices) {
