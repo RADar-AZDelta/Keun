@@ -57,10 +57,10 @@ const enableSettings = async (
 
 const showColumns = async (page: Page, columns: string[]) => {
   // Click the showColumns button
-  await page.getByRole('cell', { name: 'Settings button' }).getByRole('button', { name: 'Settings button' }).click()
-  columns.forEach(async column => {
-    await page.getByLabel(column).click()
-  })
+  await page.getByRole('table').getByRole('button', { name: 'Settings button' }).click()
+  for (let col of columns) {
+    await page.locator(`input[name="${col}"]`).check()
+  }
   // Close the dialog
   await page.getByRole('dialog').getByRole('button').click()
 }
@@ -73,15 +73,37 @@ const clickAction = async (
   await page
     .getByRole('table')
     .getByRole('row')
-    .nth(3)
+    .nth(rowIndex)
     .getByRole('cell')
     .nth(0)
     .getByRole('button', { name: action, exact: true })
     .click()
 }
 
-const openAndMapRow = async (page: Page, mainTableIndex: number, athenaIndex: number) => {
+const openAndMapRow = async (
+  page: Page,
+  mainTableIndex: number,
+  athenaIndex: number,
+  extra?: {
+    equivalence?: 'EQUAL' | 'EQUIVALENT' | 'WIDER' | 'NARROWER' | 'INEXACT' | 'UNMATCHED' | 'UNREVIEWED'
+    reviewer?: string
+    comment?: string
+  }
+) => {
   await clickAction(page, mainTableIndex, 'Map')
+
+  if (extra) {
+    for (let detail of Object.keys(extra)) {
+      if (extra[detail as keyof object]) {
+        if (detail == 'equivalence') await page.getByTitle('Equivalence').selectOption(extra[detail as keyof object])
+        else if (detail == 'reviewer')
+          await page.getByRole('textbox', { name: 'Assigned Reviewer' }).fill(extra[detail as keyof object])
+        else if (detail == 'comment')
+          await page.getByRole('textbox', { name: 'Comments' }).fill(extra[detail as keyof object])
+      }
+    }
+  }
+
   await page
     .getByRole('dialog')
     .locator('[data-component="datatable-content"]')
@@ -94,6 +116,54 @@ const openAndMapRow = async (page: Page, mainTableIndex: number, athenaIndex: nu
     .nth(0)
     .click()
   await page.locator('[data-name="athena-dialog"]').locator('[data-name="close-dialog"]').click()
+}
+
+const openAndAddDetails = async (
+  page: Page,
+  mainTableIndex: number,
+  extra: {
+    reviewer?: string
+    comment?: string
+  }
+) => {
+  await clickAction(page, mainTableIndex, 'Map')
+
+  for (let detail of Object.keys(extra)) {
+    if (extra[detail as keyof object]) {
+      if (detail == 'reviewer')
+        await page.getByRole('textbox', { name: 'Assigned Reviewer' }).fill(extra[detail as keyof object])
+      else if (detail == 'comment')
+        await page.getByRole('textbox', { name: 'Comments' }).fill(extra[detail as keyof object])
+    }
+  }
+
+  await page.locator('[data-name="athena-dialog"]').locator('[data-name="close-dialog"]').click()
+}
+
+const applyAthenaFilter = async (
+  page: Page,
+  mainTableIndex: number,
+  filters: Record<string, string>,
+  check: boolean = true,
+  openPopup: boolean = true
+) => {
+  if (openPopup) await clickAction(page, mainTableIndex, 'Map')
+  await page.getByRole('button', { name: 'F I L T E R S' }).click()
+  for (let filter of Object.keys(filters)) {
+    await page.getByRole('button', { name: filter }).click()
+    await page.getByRole('textbox', { name: 'Search for filter' }).fill(filters[filter])
+    await page.getByRole('textbox', { name: 'Search for filter' }).press('Enter')
+    if (check) await page.getByLabel(filters[filter]).check()
+    else await page.getByLabel(filters[filter]).uncheck()
+    await page.getByRole('button', { name: 'Remove input filter' }).click()
+  }
+}
+
+const removeAthenaFilter = async (page: Page, mainTableIndex: number, filters: string[], openPopup: boolean = true) => {
+  if (openPopup) await clickAction(page, mainTableIndex, 'Map')
+  for (let filter of filters) {
+    await page.locator(`#${filter}`).getByRole('button').click()
+  }
 }
 
 const openAndCustomMapFirstRow = async (
@@ -337,16 +407,19 @@ test.describe('Testing the actions functionalities', () => {
     await enableSettings(page, 'autoMapping')
     await page.waitForTimeout(3000)
     await clickAction(page, 3, 'Approve')
+    await page.waitForTimeout(1000)
     expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()).not.toBe(
       'Unmapped'
     )
   })
   test('Does the approve page work', async ({ page }) => {
     await init(page)
-    await page.getByRole('button', { name: 'Approve page' }).click();
-    expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(5).innerText()).toBe('SEMI-APPROVED')
+    await page.getByRole('button', { name: 'Approve page' }).click()
+    expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(5).innerText()).toBe(
+      'SEMI-APPROVED'
+    )
     await login(page, 'Polleke Pollen', false)
-    await page.getByRole('button', { name: 'Approve page' }).click();
+    await page.getByRole('button', { name: 'Approve page' }).click()
     expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(5).innerText()).toBe('APPROVED')
   })
 })
@@ -362,8 +435,14 @@ test.describe('Testing the manual mapping', () => {
 
   test('Custom concept mapping', async ({ page }) => {
     await init(page)
-    await openAndCustomMapFirstRow(page, { domainId: 'Note', vocabId: 'test', conceptClassId: 'CDT', conceptName: 'test' }, 3)
-    expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()).not.toBe('Unmapped')
+    await openAndCustomMapFirstRow(
+      page,
+      { domainId: 'Note', vocabId: 'test', conceptClassId: 'CDT', conceptName: 'test' },
+      3
+    )
+    expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()).not.toBe(
+      'Unmapped'
+    )
   })
 
   test('Multiple mapping with Athena concepts', async ({ page }) => {
@@ -372,37 +451,71 @@ test.describe('Testing the manual mapping', () => {
     await openAndMapRow(page, 3, 3)
     await openAndMapRow(page, 3, 4)
     await openMappedConceptsForFirstRow(page, 3)
-    expect(await page.getByRole('dialog').getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(1)).not.toBe(null)
-    expect(await page.getByRole('dialog').getByRole('table').getByRole('row').nth(4).getByRole('cell').nth(1)).not.toBe(null)
+    expect(await page.getByRole('dialog').getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(1)).not.toBe(
+      null
+    )
+    expect(await page.getByRole('dialog').getByRole('table').getByRole('row').nth(4).getByRole('cell').nth(1)).not.toBe(
+      null
+    )
   })
 
   test('Multiple mapping with custom concepts', async ({ page }) => {
     await init(page)
     await enableSettings(page, 'mapToMultiple')
-    await openAndCustomMapFirstRow(page, { domainId: 'Note', vocabId: 'test', conceptClassId: 'CDT', conceptName: 'test' }, 3)
-    await openAndCustomMapFirstRow(page, { domainId: 'Condition', vocabId: 'test', conceptClassId: 'CDT', conceptName: 'test' }, 3)
+    await openAndCustomMapFirstRow(
+      page,
+      { domainId: 'Note', vocabId: 'test', conceptClassId: 'CDT', conceptName: 'test' },
+      3
+    )
+    await openAndCustomMapFirstRow(
+      page,
+      { domainId: 'Condition', vocabId: 'test', conceptClassId: 'CDT', conceptName: 'test' },
+      3
+    )
     await openMappedConceptsForFirstRow(page, 3)
-    expect(await page.getByRole('dialog').getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(1)).not.toBe(null)
-    expect(await page.getByRole('dialog').getByRole('table').getByRole('row').nth(4).getByRole('cell').nth(1)).not.toBe(null)
+    expect(await page.getByRole('dialog').getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(1)).not.toBe(
+      null
+    )
+    expect(await page.getByRole('dialog').getByRole('table').getByRole('row').nth(4).getByRole('cell').nth(1)).not.toBe(
+      null
+    )
   })
 
   test('Multiple mapping with Athena and custom concepts', async ({ page }) => {
     await init(page)
     await enableSettings(page, 'mapToMultiple')
     await openAndMapRow(page, 3, 3)
-    await openAndCustomMapFirstRow(page, { domainId: 'Note', vocabId: 'test', conceptClassId: 'CDT', conceptName: 'test' }, 3)
+    await openAndCustomMapFirstRow(
+      page,
+      { domainId: 'Note', vocabId: 'test', conceptClassId: 'CDT', conceptName: 'test' },
+      3
+    )
     await openMappedConceptsForFirstRow(page, 3)
-    expect(await page.getByRole('dialog').getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(1)).not.toBe(null)
-    expect(await page.getByRole('dialog').getByRole('table').getByRole('row').nth(4).getByRole('cell').nth(1)).not.toBe(null)
+    expect(await page.getByRole('dialog').getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(1)).not.toBe(
+      null
+    )
+    expect(await page.getByRole('dialog').getByRole('table').getByRole('row').nth(4).getByRole('cell').nth(1)).not.toBe(
+      null
+    )
   })
 
   test('A custom concept can not be added twice with the same values', async ({ page }) => {
     await init(page)
     await enableSettings(page, 'mapToMultiple')
-    await openAndCustomMapFirstRow(page, { domainId: 'Note', vocabId: 'test', conceptClassId: 'CDT', conceptName: 'test' }, 3)
-    await openAndCustomMapFirstRow(page, { domainId: 'Note', vocabId: 'test', conceptClassId: 'CDT', conceptName: 'test' }, 3)
+    await openAndCustomMapFirstRow(
+      page,
+      { domainId: 'Note', vocabId: 'test', conceptClassId: 'CDT', conceptName: 'test' },
+      3
+    )
+    await openAndCustomMapFirstRow(
+      page,
+      { domainId: 'Note', vocabId: 'test', conceptClassId: 'CDT', conceptName: 'test' },
+      3
+    )
     await openMappedConceptsForFirstRow(page, 3)
-    expect(await page.getByRole('dialog').getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(1)).not.toBe(null)
+    expect(await page.getByRole('dialog').getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(1)).not.toBe(
+      null
+    )
   })
 
   test('A concept can be removed in the mapped concepts table', async ({ page }) => {
@@ -415,17 +528,85 @@ test.describe('Testing the manual mapping', () => {
     else expect(pre).not.toBe(null)
   })
 
-  // test('Does the filter on Athena work', async ({ page }) => {})
+  test('Does the filter on Athena work', async ({ page }) => {
+    await init(page)
+    await applyAthenaFilter(page, 8, { Domain: 'Observation' }, true, true)
+    expect(
+      await page
+        .locator('dialog')
+        .locator('[data-name="table-container"]')
+        .getByRole('row')
+        .nth(3)
+        .getByRole('cell')
+        .nth(5)
+    ).not.toBe('Observation')
+  })
 
-  // test('Can a filter be removed from the filter list', async ({ page }) => {})
+  test('Can a filter be removed from the filter list', async ({ page }) => {
+    await init(page)
+    await applyAthenaFilter(page, 8, { Domain: 'Procedure' }, true, true)
+    expect(
+      await page
+        .locator('dialog')
+        .locator('[data-name="table-container"]')
+        .getByRole('row')
+        .nth(3)
+        .getByRole('cell')
+        .nth(5)
+    ).not.toBe('Procedure')
+    await removeAthenaFilter(page, 8, ['Procedure'], false)
+    expect(
+      await page
+        .locator('dialog')
+        .locator('[data-name="table-container"]')
+        .getByRole('row')
+        .nth(3)
+        .getByRole('cell')
+        .nth(5)
+    ).not.toBe('Observation')
+  })
 
-  // test('Can the equality be changed', async ({ page }) => {})
+  test('Can the equality be changed', async ({ page }) => {
+    await init(page)
+    await openAndMapRow(page, 8, 3, { equivalence: 'NARROWER' })
+    await showColumns(page, ['equivalence'])
+    await page.waitForTimeout(5000)
+    expect(await page.getByRole('table').getByRole('row').nth(8).getByRole('cell').nth(6).innerText()).toBe('NARROWER')
+  })
 
-  // test('Can a reviewer be added with mapping', async ({ page }) => {})
+  test('Can a reviewer be added with mapping', async ({ page }) => {
+    await init(page)
+    await openAndMapRow(page, 8, 3, { reviewer: 'Jean-Paul' })
+    await showColumns(page, ['assignedReviewer'])
+    await page.waitForTimeout(1000)
+    expect(await page.getByRole('table').getByRole('row').nth(8).getByRole('cell').nth(6).innerText()).toBe('Jean-Paul')
+  })
 
-  // test('Can a reviewer be added without mapping', async ({ page }) => {})
+  test('Can a reviewer be added without mapping', async ({ page }) => {
+    await init(page)
+    await openAndAddDetails(page, 8, { reviewer: 'Jean-Paul' })
+    await showColumns(page, ['assignedReviewer'])
+    await page.waitForTimeout(1000)
+    expect(await page.getByRole('table').getByRole('row').nth(8).getByRole('cell').nth(6).innerText()).toBe('Jean-Paul')
+  })
 
-  // test('Can a comment be added with mapping', async ({ page }) => {})
+  test('Can a comment be added with mapping', async ({ page }) => {
+    await init(page)
+    await openAndMapRow(page, 8, 3, { comment: 'Jean-Paul is testing' })
+    await showColumns(page, ['comment'])
+    await page.waitForTimeout(1000)
+    expect(await page.getByRole('table').getByRole('row').nth(8).getByRole('cell').nth(6).innerText()).toBe(
+      'Jean-Paul is testing'
+    )
+  })
 
-  // test('Can a comment be added without mapping', async ({ page }) => {})
+  test('Can a comment be added without mapping', async ({ page }) => {
+    await init(page)
+    await openAndAddDetails(page, 8, { comment: 'Jean-Paul is testing' })
+    await showColumns(page, ['comment'])
+    await page.waitForTimeout(1000)
+    expect(await page.getByRole('table').getByRole('row').nth(8).getByRole('cell').nth(6).innerText()).toBe(
+      'Jean-Paul is testing'
+    )
+  })
 })
