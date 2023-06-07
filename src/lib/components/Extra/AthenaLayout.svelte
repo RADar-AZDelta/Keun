@@ -664,12 +664,15 @@
               let:renderedRow
             >
               <td>
-                <button
-                  on:click={() => {
-                    removeMapping(renderedRow.conceptId, renderedRow.conceptName)
-                  }}
-                  ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" />
-                </button>
+                {#if renderedRow.conceptId && renderedRow.conceptName}
+                  <button
+                    on:click={() => {
+                      if (renderedRow.conceptId && renderedRow.conceptName)
+                        removeMapping(renderedRow.conceptId, renderedRow.conceptName)
+                    }}
+                    ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" />
+                  </button>
+                {/if}
               </td>
               {#each Object.keys(renderedRow) as key}
                 <td>
