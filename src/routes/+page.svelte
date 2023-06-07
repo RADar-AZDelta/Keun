@@ -455,6 +455,7 @@
       // Reset the row with the original values
       const updatedFields = additionalFields
       updatedFields.conceptId = null
+      updatedFields.conceptName = null
       updatedFields.domainId = null
       updatedFields['ADD_INFO:numberOfConcepts'] = 1
       delete updatedFields.sourceAutoAssignedConceptIds
