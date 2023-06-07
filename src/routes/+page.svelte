@@ -502,24 +502,32 @@
   // METHODS
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
+  function createTranslator(): Promise<any> {
+    return new Promise((resolve, reject) => {
+      // Recreate a translator if it's a browser because the previous instance is still pending and can't be used
+      if (!translator) {
+        translator = new LatencyOptimisedTranslator(
+          {
+            workers: 1,
+            batchSize: 1,
+            registryUrl: 'bergamot/registry.json',
+            html: true,
+          },
+          undefined
+        )
+      }
+      if (translator) resolve(translator)
+      else resolve(false)
+    })
+  }
+
   // A method to translate text
   async function translate(text: string): Promise<string | undefined> {
     if (!browser) return undefined
-    if (!translator) {
-      // Recreate a translator if it's a browser because the previous instance is still pending and can't be used
-      translator = new LatencyOptimisedTranslator(
-        {
-          workers: 1,
-          batchSize: 1,
-          registryUrl: 'bergamot/registry.json',
-          html: true,
-        },
-        undefined
-      )
-    }
     // Check the settings and if the language set is not english, translate the text
     if (settings) {
       if (settings.language && settings.language !== 'en') {
+        const translator = await createTranslator()
         let translation = await translator.translate({
           from: settings!.language,
           to: 'en',
