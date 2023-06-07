@@ -581,7 +581,7 @@
     }
     if (signal.aborted) return
     // Assembe the Athena URL
-    const url = await assembleAthenaURL(filter)
+    const url = await assembleAthenaURL(filter, undefined, undefined, true)
     if (signal.aborted) return
     // Get the first result of the Athena API call
     const res = await fetch(url)
@@ -602,7 +602,12 @@
   }
 
   // A method to create the Athena URL
-  const assembleAthenaURL = async (filter?: string, sorting?: string[], pagination?: IPagination): Promise<string> => {
+  const assembleAthenaURL = async (
+    filter?: string,
+    sorting?: string[],
+    pagination?: IPagination,
+    autoMap?: boolean
+  ): Promise<string> => {
     if (dev) console.log('assembleAthenaURL: Assemble Athena URL')
 
     let assembledAthenaUrl = mappingUrl
@@ -627,7 +632,10 @@
     }
 
     // Add pagination to URL if there is pagination
-    if (pagination) {
+    if (autoMap) {
+      assembledAthenaUrl += `&page=1`
+      assembledAthenaUrl += `&pageSize=1`
+    } else if (pagination && !autoMap) {
       assembledAthenaUrl += `&page=${pagination.currentPage}`
       assembledAthenaUrl += `&pageSize=${pagination.rowsPerPage}`
     }
@@ -653,7 +661,7 @@
       filter = globalAthenaFilter.filter
     }
 
-    const url = await assembleAthenaURL(filter, sortedColumns.entries().next().value, pagination)
+    const url = await assembleAthenaURL(filter, sortedColumns.entries().next().value, pagination, false)
     const response = await fetch(url)
     const apiData = await response.json()
     // Save the facets to exclude filters later
