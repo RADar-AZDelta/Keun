@@ -5,11 +5,28 @@
   import { dev } from '$app/environment'
 
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
+  let inputFile: HTMLInputElement
 
   // A method for when a file is dropped in the drag and drop area
   function dropHandler(event: DragEvent): void {
     if (dev) console.log('dropHandler: A file has been dropped in the drag and drop area')
     event.preventDefault()
+    let file: File
+    var reader = new FileReader()
+
+    reader.onload = () => {
+      let content = reader.result?.toString()
+      if (content) {
+        if (
+          !content.includes('sourceName') ||
+          !content.includes('sourceCode') ||
+          !content.includes('sourceFrequency')
+        ) {
+          alert('Provide a file that contains the following columns: sourceCode, sourceName & sourceFrequency')
+        } else dispatch('fileUploaded', { file })
+      }
+      return
+    }
 
     if (event.dataTransfer?.items) {
       if (event.dataTransfer.items.length > 1) {
@@ -20,7 +37,8 @@
           const f = item.getAsFile()
           // Check if the file is a csv file
           if (f?.name.toLowerCase().includes('csv')) {
-            dispatch('fileUploaded', { file: f })
+            file = f
+            reader.readAsText(f)
           }
         }
       }
@@ -35,7 +53,25 @@
   // A method for when the button to upload a file is pressed
   async function onFileInputChange(e: Event): Promise<void> {
     if (dev) console.log('onFileInputChange: New file uploaded')
+    let file: File
     await tick()
+
+    var reader = new FileReader()
+
+    reader.onload = () => {
+      let content = reader.result?.toString()
+      if (content) {
+        if (
+          !content.includes('sourceName') ||
+          !content.includes('sourceCode') ||
+          !content.includes('sourceFrequency')
+        ) {
+          alert('Provide a file that contains the following columns: sourceCode, sourceName & sourceFrequency')
+        } else dispatch('fileUploaded', { file })
+      }
+      inputFile.value = ''
+      return
+    }
 
     const inputFiles = (e.target as HTMLInputElement).files
     if (!inputFiles) return
@@ -44,7 +80,8 @@
     for (const f of inputFiles) {
       const extension = f.name.split('.').pop()
       if (extension && extension == 'csv') {
-        dispatch('fileUploaded', { file: f })
+        file = f
+        reader.readAsText(f)
         break
       }
     }
@@ -59,6 +96,6 @@
     <label title="Upload" for="file-upload" data-name="file-upload">
       <SvgIcon href="icons.svg" id="upload" width="16px" height="16px" />
     </label>
-    <input id="file-upload" type="file" accept=".csv" on:change={onFileInputChange} />
+    <input id="file-upload" type="file" accept=".csv" on:change={onFileInputChange} bind:this={inputFile} />
   </div>
 </div>
