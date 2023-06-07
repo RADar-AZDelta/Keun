@@ -136,8 +136,23 @@
     if (dev) console.log('onFileInputChange: New file uploaded')
     // Check if the automapping proces is running and if this is happening, abort the promise because it could give unexpected results.
     if (autoMappingPromise) autoMappingAbortController.abort()
+    var reader = new FileReader()
     file = undefined
     await tick()
+
+    reader.onload = () => {
+      let content = reader.result?.toString()
+      if (content)
+        if (
+          !content.includes('sourceName') ||
+          !content.includes('sourceCode') ||
+          !content.includes('sourceFrequency')
+        ) {
+          alert('Provide a file that contains the following columns: sourceCode, sourceName & sourceFrequency')
+          file = undefined
+          tableInit = false
+        }
+    }
 
     const inputFiles = (e.target as HTMLInputElement).files
     if (!inputFiles) return
@@ -147,6 +162,7 @@
       const extension = f.name.split('.').pop()
       if (extension == 'csv') {
         file = f
+        reader.readAsText(f)
         break
       }
     }
