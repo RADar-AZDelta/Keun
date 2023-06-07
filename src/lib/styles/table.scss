@@ -738,6 +738,10 @@ dialog[data-name='athena-dialog'] {
               border-top: 1px solid lightgray;
               border-bottom: 1px solid lightgray;
             }
+
+            th, td {
+              padding: 0.5rem 1rem;
+            }
           }
         }
       }
