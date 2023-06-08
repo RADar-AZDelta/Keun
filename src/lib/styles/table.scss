@@ -478,6 +478,8 @@ dialog[data-name='athena-dialog'] {
     overflow: hidden;
 
     section[data-name='filters-container'] {
+      display: flex;
+      flex-direction: column;
       height: 100%;
       min-width: 15%;
       padding: 0 0.5rem 0 1.5rem;
@@ -503,7 +505,7 @@ dialog[data-name='athena-dialog'] {
       }
 
       div[data-name='filters'] {
-        height: 80%;
+        flex: 1 1 auto;
         div[data-name='filter'] {
           margin-top: 1rem;
           border: 1px solid lightgray;

@@ -40,7 +40,7 @@
   import Manual from '$lib/components/Extra/Manual.svelte'
   import type Query from 'arquero/dist/types/query/query'
   import Progress from '$lib/components/Extra/Progress.svelte'
-    import Upload from '$lib/components/Extra/Upload.svelte'
+  import Upload from '$lib/components/Extra/Upload.svelte'
 
   // General variables
   let file: File | undefined = undefined
@@ -52,7 +52,7 @@
     savedAuthors: [],
     vocabularyIdCustomConcept: '',
     fontsize: 10,
-    popupSidesShowed: { settings: true, details: true },
+    popupSidesShowed: { filters: true, details: true },
   }
   let disableInteraction: boolean = false
   let translator: LatencyOptimisedTranslator
@@ -179,7 +179,7 @@
   }
 
   async function fileUploadWithColumnChanges(e: CustomEvent<FileUploadWithColumnChanges>) {
-    if(dev) console.log('fileUploadWithColumnChanges: New file uploaded and columns have changed')
+    if (dev) console.log('fileUploadWithColumnChanges: New file uploaded and columns have changed')
     file = e.detail.file
     columnsNeedToChange = true
     columnChanges = Object.fromEntries(Object.entries(e.detail.columnChange).map(a => a.reverse()))
@@ -867,7 +867,7 @@
   // A method to set a variable when the table is initialized
   function dataTableInitialized(): void {
     tableInit = true
-    if(columnsNeedToChange) changeColumnNames()
+    if (columnsNeedToChange) changeColumnNames()
   }
 
   // A method to abort the auto mapping
@@ -1050,7 +1050,7 @@
 
   <div data-name="table-options">
     {#if file}
-      <Upload on:fileUploaded={fileUploaded} on:fileUploadWithColumnChanges={fileUploadWithColumnChanges}/>
+      <Upload on:fileUploaded={fileUploaded} on:fileUploadWithColumnChanges={fileUploadWithColumnChanges} />
       <Download dataTable={dataTableFile} title="Download file" />
 
       {#if customConceptsArrayOfObjects.length > 0}
