@@ -3,7 +3,9 @@
   import type { CustomOptionsEvents } from '../Types'
   import debounce from 'lodash.debounce'
 
-  export let id: string, list: Record<string, any>
+  export let id: string,
+    list: Record<string, any>,
+    initial: string | undefined = undefined
 
   let inputValue: string | null,
     value: any,
@@ -11,6 +13,7 @@
     filteredValues: Map<string, any> = new Map(),
     autoCompleted: boolean = false
 
+  if (initial) inputValue = initial
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
   // A method for when the input needs to be saved, don't show an error because the user can be typing and can get frustrated with the error
