@@ -359,11 +359,22 @@
           if (event.detail.row.conceptId == 0 || !event.detail.row.conceptId) {
             updatingObj.conceptId = event.detail.row.sourceAutoAssignedConceptIds
           } else updatingObj.conceptId = event.detail.row.conceptId
-        } else if (event.detail.row.statusSetBy && event.detail.row.statusSetBy != settings!.author) {
+        } else if (
+          event.detail.row.statusSetBy &&
+          event.detail.row.statusSetBy != settings!.author &&
+          event.detail.row.mappingStatus == 'SEMI-APPROVED'
+        ) {
           // StatusSetBy is not empty and it's not the current author so it means it's the second reviewer
           updatingObj['ADD_INFO:approvedBy'] = settings!.author
           updatingObj['ADD_INFO:approvedOn'] = Date.now()
           updatingObj.mappingStatus = 'APPROVED'
+        } else if (event.detail.row.statusSetBy && event.detail.row.statusSetBy != settings!.author) {
+          updatingObj.statusSetBy = settings!.author
+          updatingObj.statusSetOn = Date.now()
+          updatingObj.mappingStatus = 'SEMI-APPROVED'
+          if (event.detail.row.conceptId == 0 || !event.detail.row.conceptId) {
+            updatingObj.conceptId = event.detail.row.sourceAutoAssignedConceptIds
+          } else updatingObj.conceptId = event.detail.row.conceptId
         }
       } else {
         updatingObj.statusSetBy = settings!.author
@@ -1019,7 +1030,7 @@
 
   <div data-name="table-options">
     {#if file}
-      <Upload on:fileUploaded={fileUploaded} on:fileUploadWithColumnChanges={fileUploadWithColumnChanges} />
+      <Upload on:fileUploaded={fileUploaded} on:fileUploadWithColumnChanges={fileUploadWithColumnChanges} {file} />
       <Download dataTable={dataTableFile} title="Download file" />
 
       {#if customConceptsArrayOfObjects.length > 0}
@@ -1054,7 +1065,7 @@
     {settings}
     bind:globalFilter={globalAthenaFilter}
     showModal={mappingVisibility}
-    customConceptColumns={customConceptColumns}
+    {customConceptColumns}
     bind:facets={athenaFacets}
     on:rowChange={selectRow}
     on:singleMapping={singleMapping}
