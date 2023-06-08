@@ -4,10 +4,11 @@
   import type { CustomOptionsEvents } from '../Types'
   import { dev } from '$app/environment'
 
+  export let file: File | undefined
+
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
   let columnDialog: HTMLDialogElement
   let inputFile: HTMLInputElement
-  let file: File
   let currentColumns: string[]
   let missingColumns: Record<string, string> = {}
 
@@ -35,7 +36,7 @@
           openDialog()
         } else {
           file = file
-          dispatch('fileUploaded', { file })
+          if (file) dispatch('fileUploaded', { file })
         }
       }
       inputFile.value = ''
@@ -66,7 +67,7 @@
 
   function saveColumnChange() {
     if (!Object.values(missingColumns).includes('')) {
-      dispatch('fileUploadWithColumnChanges', { file, columnChange: missingColumns })
+      if (file) dispatch('fileUploadWithColumnChanges', { file, columnChange: missingColumns })
       closeDialog()
     }
   }
