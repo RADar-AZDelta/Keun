@@ -11,6 +11,7 @@ export interface CustomOptionsEvents {
   updateUniqueConceptIds: UpdateUniqueConceptIdsEventDetail
   customMapping: CustomMappingEventDetail
   fileUploaded: FileUploadedEventDetail
+  fileUploadWithColumnChanges: FileUploadWithColumnChanges
   settingsChanged: SettingsChangedEventDetail
   autoMapRow: AutoMapRowEventDetail
   autoComplete: AutoCompleteEventDetail
@@ -105,6 +106,11 @@ export interface UpdateDetailsEventDetail {
 
 export interface FileUploadedEventDetail {
   file: File
+}
+
+export interface FileUploadWithColumnChanges {
+  file: File
+  columnChange: Record<string, string>
 }
 
 export interface SettingsChangedEventDetail {

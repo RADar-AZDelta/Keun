@@ -70,7 +70,6 @@
 
   $: {
     renderedRow, index
-    if (renderedRow.sourceTerm) renderedRow.sourceName = renderedRow.sourceTerm
     if (!renderedRow.matchScore) renderedRow.matchScore = 0
     if (!renderedRow.mappingStatus) renderedRow.mappingStatus = 'UNCHECKED'
     if (!renderedRow.conceptName) renderedRow.conceptName = 'Unmapped'
