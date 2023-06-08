@@ -132,7 +132,7 @@ export interface ISettings {
   savedAuthors: string[]
   vocabularyIdCustomConcept: string
   fontsize: number
-  popupSidesShowed: { settings: boolean; details: boolean }
+  popupSidesShowed: { filters: boolean; details: boolean }
 }
 
 export interface ITableInformation {
