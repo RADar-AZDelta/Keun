@@ -1068,7 +1068,6 @@
 
   <div data-name="header-buttons-container" id="settings">
     <Manual />
-    <button on:click={changeColumnNames}>Execute</button>
     {#if settings}
       <Settings {settings} on:settingsChanged={settingsChanged} />
       <User {settings} />
