@@ -11,9 +11,8 @@
     CustomOptionsEvents,
     ICategories,
     ICustomConcept,
-    MultipleMappingEventDetail,
+    MappingEventDetail,
     ReviewerChangedEventDetail,
-    SingleMappingEventDetail,
     UpdateUniqueConceptIdsEventDetail,
   } from '../Types'
   import SvgIcon from './SvgIcon.svelte'
@@ -106,12 +105,12 @@
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
   // A method that catches the event for single mapping and throws an event to the parent
-  function singleMapping(event: CustomEvent<SingleMappingEventDetail>): void {
+  function singleMapping(event: CustomEvent<MappingEventDetail>): void {
     dispatch('singleMapping', { originalRow: selectedRow, row: event.detail.row, extra: { comment, reviewer } })
   }
 
   // A method that catches the event for multiple mapping and throws an event to the parent
-  function multipleMapping(event: CustomEvent<MultipleMappingEventDetail>): void {
+  function multipleMapping(event: CustomEvent<MappingEventDetail>): void {
     event.detail.row.comment = comment
     event.detail.row.assignedReviewer = reviewer
     dispatch('multipleMapping', { originalRow: selectedRow, row: event.detail.row, extra: { comment, reviewer } })

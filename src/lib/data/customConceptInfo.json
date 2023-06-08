@@ -1,5 +1,5 @@
 {
-  "domain": {
+  "domain_id": {
     "Condition": "Condition",
     "Condition Status": "OMOP Condition Status",
     "Condition/Device": "Condition/Device",
@@ -51,7 +51,7 @@
     "Unit": "Unit",
     "Visit": "Visit"
   },
-  "concept": {
+  "concept_class_id": {
     "CDT": "CDT",
     "SPL": "SPL",
     "SUS": "SUS",
