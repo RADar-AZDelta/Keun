@@ -1,59 +1,15 @@
 <script lang="ts">
   import { createEventDispatcher, tick } from 'svelte'
-  import type { CustomOptionsEvents } from '../Types'
   import SvgIcon from './SvgIcon.svelte'
+  import type { CustomOptionsEvents } from '../Types'
   import { dev } from '$app/environment'
 
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
-  let inputFile: HTMLInputElement
   let columnDialog: HTMLDialogElement
+  let inputFile: HTMLInputElement
   let file: File
   let currentColumns: string[]
   let missingColumns: Record<string, string> = {}
-
-  // A method for when a file is dropped in the drag and drop area
-  function dropHandler(event: DragEvent): void {
-    if (dev) console.log('dropHandler: A file has been dropped in the drag and drop area')
-    event.preventDefault()
-    var reader = new FileReader()
-
-    reader.onload = () => {
-      let content = reader.result?.toString()
-      if (content) {
-        if (
-          !content.includes('sourceName') ||
-          !content.includes('sourceCode') ||
-          !content.includes('sourceFrequency')
-        ) {
-          // alert('Provide a file that contains the following columns: sourceCode, sourceName & sourceFrequency')
-          currentColumns = content.split(/\n/)[0].split(',')
-          openDialog()
-        } else dispatch('fileUploaded', { file })
-      }
-      return
-    }
-
-    if (event.dataTransfer?.items) {
-      if (event.dataTransfer.items.length > 1) {
-        alert('Only drop one file')
-      }
-      for (let item of event.dataTransfer.items) {
-        if (item.kind === 'file') {
-          const f = item.getAsFile()
-          // Check if the file is a csv file
-          if (f?.name.toLowerCase().includes('csv')) {
-            file = f
-            reader.readAsText(f)
-          }
-        }
-      }
-    }
-  }
-
-  // A method for when a file is dragged over the drag and drop area
-  function dragOverHandler(event: DragEvent): void {
-    event.preventDefault()
-  }
 
   // A method for when the button to upload a file is pressed
   async function onFileInputChange(e: Event): Promise<void> {
@@ -77,7 +33,10 @@
           })
           // alert('Provide a file that contains the following columns: sourceCode, sourceName & sourceFrequency')
           openDialog()
-        } else dispatch('fileUploaded', { file })
+        } else {
+          file = file
+          dispatch('fileUploaded', { file })
+        }
       }
       inputFile.value = ''
       return
@@ -139,14 +98,10 @@
   </div>
 </dialog>
 
-<div data-name="drag-drop">
-  <div data-name="drag-drop-container" on:drop={dropHandler} on:dragover={dragOverHandler}>
-    <p>Drag a file here</p>
-    <img src="drag.png" alt="Drag & drop file here" />
-    <p>Or click here</p>
-    <label title="Upload" for="file-upload" data-name="file-upload">
-      <SvgIcon href="icons.svg" id="upload" width="16px" height="16px" />
-    </label>
-    <input id="file-upload" type="file" accept=".csv" on:change={onFileInputChange} bind:this={inputFile} />
-  </div>
-</div>
+{#if file}
+  <p data-name="filename" title={file.name}>{file.name}</p>
+{/if}
+<label title="Upload" for="file-upload" data-name="file-upload"
+  ><SvgIcon href="icons.svg" id="upload" width="16px" height="16px" /></label
+>
+<input id="file-upload" type="file" accept=".csv" on:change={onFileInputChange} bind:this={inputFile} />

@@ -20,6 +20,7 @@
     UpdateDetailsEventDetail,
     ISettings,
     ITableInformation,
+    FileUploadWithColumnChanges,
   } from '$lib/components/Types'
   import type { IColumnMetaData, IPagination, SortDirection, TFilter } from '@radar-azdelta/svelte-datatable'
   import { localStorageGetter } from '$lib/utils'
@@ -39,6 +40,7 @@
   import Manual from '$lib/components/Extra/Manual.svelte'
   import type Query from 'arquero/dist/types/query/query'
   import Progress from '$lib/components/Extra/Progress.svelte'
+    import Upload from '$lib/components/Extra/Upload.svelte'
 
   // General variables
   let file: File | undefined = undefined
@@ -74,6 +76,8 @@
   }
   let selectedRow: Record<string, any>
   let selectedRowIndex: number
+  let columnChanges: Record<string, string>
+  let columnsNeedToChange: boolean = false
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // DATA
@@ -172,6 +176,13 @@
   async function fileUploaded(e: CustomEvent<FileUploadedEventDetail>) {
     if (dev) console.log('fileUploaded: New file uploaded')
     file = e.detail.file
+  }
+
+  async function fileUploadWithColumnChanges(e: CustomEvent<FileUploadWithColumnChanges>) {
+    if(dev) console.log('fileUploadWithColumnChanges: New file uploaded and columns have changed')
+    file = e.detail.file
+    columnsNeedToChange = true
+    columnChanges = Object.fromEntries(Object.entries(e.detail.columnChange).map(a => a.reverse()))
   }
 
   // When the visibility of the mapping pop-up changes
@@ -856,6 +867,7 @@
   // A method to set a variable when the table is initialized
   function dataTableInitialized(): void {
     tableInit = true
+    if(columnsNeedToChange) changeColumnNames()
   }
 
   // A method to abort the auto mapping
@@ -990,6 +1002,11 @@
     athenaFacets = facets
   }
 
+  async function changeColumnNames() {
+    await dataTableFile.renameColumns(columnChanges)
+    columnsNeedToChange = false
+  }
+
   let fetchDataFunc = fetchData
 
   onMount(async () => {
@@ -1033,11 +1050,7 @@
 
   <div data-name="table-options">
     {#if file}
-      <p data-name="filename" title={file.name}>{file.name}</p>
-      <label title="Upload" for="file-upload" data-name="file-upload"
-        ><SvgIcon href="icons.svg" id="upload" width="16px" height="16px" /></label
-      >
-      <input id="file-upload" type="file" accept=".csv" on:change={onFileInputChange} />
+      <Upload on:fileUploaded={fileUploaded} on:fileUploadWithColumnChanges={fileUploadWithColumnChanges}/>
       <Download dataTable={dataTableFile} title="Download file" />
 
       {#if customConceptsArrayOfObjects.length > 0}
@@ -1055,6 +1068,7 @@
 
   <div data-name="header-buttons-container" id="settings">
     <Manual />
+    <button on:click={changeColumnNames}>Execute</button>
     {#if settings}
       <Settings {settings} on:settingsChanged={settingsChanged} />
       <User {settings} />
@@ -1112,7 +1126,7 @@
     />
   </DataTable>
 {:else}
-  <DragAndDrop on:fileUploaded={fileUploaded} />
+  <DragAndDrop on:fileUploaded={fileUploaded} on:fileUploadWithColumnChanges={fileUploadWithColumnChanges} />
 {/if}
 
 <div data-name="custom-concepts">
