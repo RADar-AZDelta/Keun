@@ -118,7 +118,6 @@
 {#each columns || [] as column, i}
   <td
     on:dblclick={onClickMapping}
-    on:dblclick={onClickMapping}
     style={`background-color: ${color}`}
     title={renderedRow[column.id]}
   >
