@@ -309,12 +309,12 @@
     errorMessage = ''
     // Check if the domain id and the concept class id are predefined values
     if (
-      Object.keys(customConceptInfo.domain).includes(customConcept.domainId) ||
-      Object.values(customConceptInfo.domain).includes(customConcept.domainId)
+      Object.keys(customConceptInfo.domain_id).includes(customConcept.domainId) ||
+      Object.values(customConceptInfo.domain_id).includes(customConcept.domainId)
     ) {
       if (
-        Object.keys(customConceptInfo.concept).includes(customConcept.conceptClassId) ||
-        Object.values(customConceptInfo.concept).includes(customConcept.conceptClassId)
+        Object.keys(customConceptInfo.concept_class_id).includes(customConcept.conceptClassId) ||
+        Object.values(customConceptInfo.concept_class_id).includes(customConcept.conceptClassId)
       ) {
         dispatch('customMapping', {
           conceptId: selectedRow.sourceCode,
@@ -632,7 +632,7 @@
                   ><AutocompleteInput
                     id="domainId"
                     initial={customConcept.domainId}
-                    list={customConceptInfo.domain}
+                    list={customConceptInfo.domain_id}
                     on:autoComplete={autoComplete}
                   />
                 </td>
@@ -641,7 +641,7 @@
                   ><AutocompleteInput
                     id="conceptClassId"
                     initial={customConcept.conceptClassId}
-                    list={customConceptInfo.concept}
+                    list={customConceptInfo.concept_class_id}
                     on:autoComplete={autoComplete}
                   />
                 </td>
