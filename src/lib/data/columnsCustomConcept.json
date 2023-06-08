@@ -1,0 +1,38 @@
+[
+  {
+    "id": "concept_id",
+    "label": "id"
+  },
+  {
+    "id": "concept_code",
+    "label": "code"
+  },
+  {
+    "id": "concept_name",
+    "label": "name"
+  },
+  {
+    "id": "concept_class_id",
+    "label": "className"
+  },
+  {
+    "id": "domain_id",
+    "label": "domain"
+  },
+  {
+    "id": "vocabulary_id",
+    "label": "vocabulary"
+  },
+  {
+    "id": "standard_concept"
+  },
+  {
+    "id": "valid_start_date"
+  },
+  {
+    "id": "valid_end_date"
+  },
+  {
+    "id": "invalid_reason"
+  }
+]

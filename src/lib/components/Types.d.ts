@@ -1,8 +1,8 @@
 export interface CustomOptionsEvents {
   generalVisibilityChanged: VisibilityChangedEventDetail
   filterOptionsChanged: FilterOptionsChangedEventDetail
-  singleMapping: SingleMappingEventDetail
-  multipleMapping: MultipleMappingEventDetail
+  singleMapping: MappingEventDetail
+  multipleMapping: MappingEventDetail
   actionPerformed: ActionPerformedEventDetail
   deleteRow: DeleteRowEventDetail
   deleteRowInnerMapping: DeleteRowInnerMappingEventDetail
@@ -27,13 +27,7 @@ export interface FilterOptionsChangedEventDetail {
   filters: Map<string, string[]>
 }
 
-export interface SingleMappingEventDetail {
-  originalRow?: Record<string, any>
-  row: Record<string, any>
-  extra: IExtra
-}
-
-export interface MultipleMappingEventDetail {
+export interface MappingEventDetail {
   originalRow?: Record<string, any>
   row: Record<string, any>
   extra: IExtra

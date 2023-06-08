@@ -2,14 +2,14 @@
   import columnsUsagi from '$lib/data/columnsUsagi.json'
   import columnNamesAthena from '$lib/data/columnNamesAthena.json'
   import additionalColumns from '$lib/data/additionalColumns.json'
+  import columnsCustomConcept from '$lib/data/columnsCustomConcept.json'
   import Header from '$lib/components/Extra/Header.svelte'
   import User from '$lib/components/Extra/User.svelte'
   import type {
     ActionPerformedEventDetail,
     DeleteRowEventDetail,
     FilterOptionsChangedEventDetail,
-    MultipleMappingEventDetail,
-    SingleMappingEventDetail,
+    MappingEventDetail,
     VisibilityChangedEventDetail,
     RowChangeEventDetail,
     DeleteRowInnerMappingEventDetail,
@@ -86,38 +86,7 @@
   let dataTableFile: DataTable
   let dataTableCustomConcepts: DataTable
 
-  let customConceptsColumns: IColumnMetaData[] = [
-    {
-      id: 'concept_id',
-    },
-    {
-      id: 'concept_name',
-    },
-    {
-      id: 'domain_id',
-    },
-    {
-      id: 'vocabulary_id',
-    },
-    {
-      id: 'concept_class_id',
-    },
-    {
-      id: 'standard_concept',
-    },
-    {
-      id: 'concept_code',
-    },
-    {
-      id: 'valid_start_date',
-    },
-    {
-      id: 'valid_end_date',
-    },
-    {
-      id: 'invalid_reason',
-    },
-  ]
+  let customConceptsColumns: IColumnMetaData[] = columnsCustomConcept
 
   let customConceptsArrayOfObjects: Record<string, any>[] = [{}]
 
@@ -217,7 +186,7 @@
   }
 
   // When the mapping button in the Athena pop-up is clicked and the settins "Map to multiple concepts" is disabled
-  async function singleMapping(event: CustomEvent<SingleMappingEventDetail>) {
+  async function singleMapping(event: CustomEvent<MappingEventDetail>) {
     if (dev) console.log('singleMapping: Single mapping for the row with sourceCode ', selectedRow.sourceCode)
     // Map the selected row with the selected concept
     const { mappedIndex, mappedRow } = await rowMapping(event.detail.originalRow!, event.detail.row)
@@ -308,7 +277,7 @@
   }
 
   // When the mapping button in the Athena pop-up is clicked and the settins "Map to multiple concepts" is enabled
-  async function multipleMapping(event: CustomEvent<MultipleMappingEventDetail>) {
+  async function multipleMapping(event: CustomEvent<MappingEventDetail>) {
     if (dev) console.log('multipleMapping: Multiple mapping for the row with sourceCode ', selectedRow.sourceCode)
     // Map the selected row with the selected concept
     const { mappedIndex, mappedRow } = await rowMapping(event.detail.originalRow!, event.detail.row)
