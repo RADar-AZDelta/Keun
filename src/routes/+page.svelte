@@ -86,7 +86,7 @@
   let dataTableFile: DataTable
   let dataTableCustomConcepts: DataTable
 
-  let customConceptsColumns: IColumnMetaData[] = columnsCustomConcept
+  let customConceptColumns: IColumnMetaData[] = columnsCustomConcept
 
   let customConceptsArrayOfObjects: Record<string, any>[] = [{}]
 
@@ -211,16 +211,16 @@
       }
     }
     const customConcept = {
-      concept_id: event.detail.conceptId,
-      concept_name: event.detail.conceptName,
-      domain_id: event.detail.domainId,
-      vocabulary_id: event.detail.vocabularyId,
-      concept_class_id: event.detail.conceptClassId,
-      standard_concept: event.detail.standardConcept,
-      concept_code: event.detail.conceptCode,
-      valid_start_date: event.detail.validStartDate,
-      valid_end_date: event.detail.validEndDate,
-      invalid_reason: event.detail.invalidReason,
+      concept_id: event.detail.customConcept.conceptId,
+      concept_name: event.detail.customConcept.conceptName,
+      domain_id: event.detail.customConcept.domainId,
+      vocabulary_id: event.detail.customConcept.vocabularyId,
+      concept_class_id: event.detail.customConcept.conceptClassId,
+      standard_concept: event.detail.customConcept.standardConcept,
+      concept_code: event.detail.customConcept.conceptCode,
+      valid_start_date: event.detail.customConcept.validStartDate,
+      valid_end_date: event.detail.customConcept.validEndDate,
+      invalid_reason: event.detail.customConcept.invalidReason,
     }
     const existingConcept = customConceptsArrayOfObjects.find(
       concept =>
@@ -1054,6 +1054,7 @@
     {settings}
     bind:globalFilter={globalAthenaFilter}
     showModal={mappingVisibility}
+    customConceptColumns={customConceptColumns}
     bind:facets={athenaFacets}
     on:rowChange={selectRow}
     on:singleMapping={singleMapping}
@@ -1098,7 +1099,7 @@
 {/if}
 
 <div data-name="custom-concepts">
-  <DataTable data={customConceptsArrayOfObjects} columns={customConceptsColumns} bind:this={dataTableCustomConcepts} />
+  <DataTable data={customConceptsArrayOfObjects} columns={customConceptColumns} bind:this={dataTableCustomConcepts} />
 </div>
 
 {#if tableInit == true}

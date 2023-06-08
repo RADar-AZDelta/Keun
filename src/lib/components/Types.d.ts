@@ -10,6 +10,7 @@ export interface CustomOptionsEvents {
   reviewerChanged: ReviewerChangedEventDetail
   updateUniqueConceptIds: UpdateUniqueConceptIdsEventDetail
   customMapping: CustomMappingEventDetail
+  customMappingInput: CustomMappingInputEventDetail
   fileUploaded: FileUploadedEventDetail
   fileUploadWithColumnChanges: FileUploadWithColumnChanges
   settingsChanged: SettingsChangedEventDetail
@@ -68,17 +69,21 @@ export interface UpdateUniqueConceptIdsEventDetail {
 }
 
 export interface CustomMappingEventDetail {
-  conceptId: string
-  conceptName: string
+  customConcept: CustomMappingInputEventDetail
+  extra: IExtra
+}
+
+export interface CustomMappingInputEventDetail {
   domainId: string
   vocabularyId: string
   conceptClassId: string
+  conceptName: string
+  conceptId: string
   standardConcept: string
   conceptCode: string
   validStartDate: string
   validEndDate: string
   invalidReason: string
-  extra: IExtra
 }
 
 export interface AutoMapRowEventDetail {
@@ -138,13 +143,6 @@ export interface ITableInformation {
 export interface IFilter {
   name: string
   categories: ICategories
-}
-
-export interface ICustomConcept {
-  vocabularyId: string
-  domainId: string
-  conceptClassId: string
-  conceptName: string
 }
 
 interface IExtra {

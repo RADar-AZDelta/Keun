@@ -862,75 +862,90 @@ dialog[data-name='athena-dialog'] {
           margin-bottom: 2rem;
         }
 
-        table {
-          border-spacing: 10px 10px;
-          tr {
-            padding-bottom: 1rem;
-            td {
-              input {
-                border: 1px solid $neutral-x-light;
-                font-size: 1rem;
-                padding: 0.5rem 1rem;
-                width: 90%;
-              }
-
-              input:hover {
-                border: 1px solid $neutral-xx-dark;
-              }
-
-              input:focus {
-                outline: none;
-                box-shadow: 0 0 0 2px $neutral-x-dark;
-              }
-
-              ul {
-                list-style-type: none;
-                padding: 0.5rem 0 2rem 0;
-                margin: 0;
-                position: absolute;
-
-                li {
-                  border-top: 1px solid $neutral;
-                  border-left: 1px solid $neutral;
-                  border-right: 1px solid $neutral;
-                  padding: 0.5rem 1rem;
-                  background-color: white;
-                  cursor: pointer;
+        div[data-component='svelte-datatable'] {
+          div[data-component='datatable-content'] {
+            table {
+              colgroup {
+                col {
+                  width: 150px;
                 }
-
-                li:last-child {
-                  border: 1px solid $neutral;
+                col:nth-child(2),
+                col:nth-child(3) {
+                  width: 100px;
                 }
-
-                li:hover {
-                  background-color: $neutral-xx-light;
-                }
-
-                li:focus {
-                  outline: none;
-                  box-shadow: 0 0 0 2px $neutral-x-dark;
+                col:nth-child(1) {
+                  min-width: 30px;
+                  width: 30px;
                 }
               }
-            }
+              tbody {
+                tr {
+                  td {
+                    overflow: hidden;
+                    div[data-name='cell-container'] {
+                      width: 140px;
+                      input {
+                        min-width: 140px;
+                        width: 140px;
+                        padding: 0;
+                        border: 1px solid $neutral-x-light;
+                      }
 
-            td[data-name='custom-concept-actions'] {
-              padding: 0;
-              button {
-                cursor: pointer;
-                border-radius: 5px;
-                border: 1px solid $neutral-x-light;
-                justify-content: center;
-                text-align: center;
-                font-size: 0.75em;
-              }
+                      input:hover {
+                        border: 1px solid $neutral-xx-dark;
+                      }
 
-              button:hover {
-                background-color: $neutral-x-light;
-              }
+                      input:focus {
+                        outline: none;
+                        box-shadow: 0 0 0 2px $neutral-x-dark;
+                      }
 
-              button:focus {
-                outline: none;
-                box-shadow: 0 0 0 2px $neutral-x-dark;
+                      div[data-name='autocomplete-input'] {
+                        input {
+                          border: 1px solid $neutral-x-light;
+                        }
+
+                        input:hover {
+                          border: 1px solid $neutral-xx-dark;
+                        }
+
+                        input:focus {
+                          outline: none;
+                          box-shadow: 0 0 0 2px $neutral-x-dark;
+                        }
+
+                        ul {
+                          list-style-type: none;
+                          padding: 0.5rem 0 2rem 0;
+                          margin: 0;
+                          position: absolute;
+
+                          li {
+                            border-top: 1px solid $neutral;
+                            border-left: 1px solid $neutral;
+                            border-right: 1px solid $neutral;
+                            padding: 0.5rem 1rem;
+                            background-color: white;
+                            cursor: pointer;
+                          }
+
+                          li:last-child {
+                            border: 1px solid $neutral;
+                          }
+
+                          li:hover {
+                            background-color: $neutral-xx-light;
+                          }
+
+                          li:focus {
+                            outline: none;
+                            box-shadow: 0 0 0 2px $neutral-x-dark;
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
               }
             }
           }

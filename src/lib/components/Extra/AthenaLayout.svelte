@@ -7,10 +7,9 @@
   import columnsAlreadyMapped from '$lib/data/columnsAlreadyMapped.json'
   import { localStorageGetter, localStorageSetter } from '$lib/utils'
   import type {
-    AutoCompleteEventDetail,
+    CustomMappingInputEventDetail,
     CustomOptionsEvents,
     ICategories,
-    ICustomConcept,
     MappingEventDetail,
     ReviewerChangedEventDetail,
     UpdateUniqueConceptIdsEventDetail,
@@ -24,8 +23,9 @@
   import type Query from 'arquero/dist/types/query/query'
   import AutocompleteInputSettings from './AutocompleteInputSettings.svelte'
   import { clickOutside } from '$lib/actions/clickOutside'
-  import AutocompleteInput from './AutocompleteInput.svelte'
   import { dev } from '$app/environment'
+  import CustomConceptInputRow from '../Mapping/CustomConceptInputRow.svelte'
+  import { customConcept } from '$lib/store'
 
   export let equivalenceMapping: string,
     selectedRow: Record<string, any>,
@@ -34,6 +34,7 @@
     fetchData: FetchDataFunc,
     settings: Record<string, any>,
     globalFilter: { column: string; filter: string | undefined },
+    customConceptColumns: IColumnMetaData[],
     showModal: boolean = false,
     facets: Record<string, any> | undefined
 
@@ -57,12 +58,6 @@
   // Data variables
   let JSONFilters = new Map<string, ICategories>([])
   let activatedAthenaFilters = new Map<string, string[]>([['standardConcept', ['Standard']]])
-  let customConcept: ICustomConcept = {
-    vocabularyId: '',
-    domainId: '',
-    conceptClassId: '',
-    conceptName: '',
-  }
   let filterColors: Record<string, string> = {
     domain: '#ec3d31',
     concept: '#50a5ba',
@@ -91,6 +86,8 @@
   let dataTableAthena: DataTable
 
   let alreadyMapped: Record<string, Record<string, any>> = {}
+
+  let customConceptData: Record<string, any>[] = [{}]
 
   for (let filter of filtersJSON) {
     JSONFilters.set(filter.name, {
@@ -142,15 +139,6 @@
     }
     alreadyMapped[selectedRow.sourceCode] = alreadyMappedRow
     fillMappedTable()
-  }
-
-  // A method to update the values of a row with the autocompleted values of the input fields
-  function autoComplete(event: CustomEvent<AutoCompleteEventDetail>): void {
-    if (event.detail.id === 'domainId') {
-      customConcept.domainId = event.detail.value
-    } else if (event.detail.id === 'conceptClassId') {
-      customConcept.conceptClassId = event.detail.value
-    }
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -275,6 +263,9 @@
   function removeMapping(conceptId: string, conceptName: string): void {
     // Check if the value needs to be erased, if there are multiple mappings for the same sourceCode it needs to be erased
     let erase = alreadyMapped[selectedRow.sourceCode].conceptId.length > 1
+    const index = customConceptData.findIndex((r: any) => r.concept_id == conceptId && r.concept_name == conceptName)
+    if(customConceptData.length > 1) customConceptData.splice(index, 1)
+    
     dispatch('deleteRowInnerMapping', { conceptId, conceptName, erase, custom: true })
     removeUniqueConcept(conceptId, conceptName)
     fillMappedTable()
@@ -305,47 +296,54 @@
   }
 
   // A method for custom mapping
-  function customMapping(): void {
+  function customMapping(e: CustomEvent<CustomMappingInputEventDetail>): void {
     errorMessage = ''
     // Check if the domain id and the concept class id are predefined values
     if (
-      Object.keys(customConceptInfo.domain_id).includes(customConcept.domainId) ||
-      Object.values(customConceptInfo.domain_id).includes(customConcept.domainId)
+      Object.keys(customConceptInfo.domain_id).includes(e.detail.domainId) ||
+      Object.values(customConceptInfo.domain_id).includes(e.detail.domainId)
     ) {
       if (
-        Object.keys(customConceptInfo.concept_class_id).includes(customConcept.conceptClassId) ||
-        Object.values(customConceptInfo.concept_class_id).includes(customConcept.conceptClassId)
+        Object.keys(customConceptInfo.concept_class_id).includes(e.detail.conceptClassId) ||
+        Object.values(customConceptInfo.concept_class_id).includes(e.detail.conceptClassId)
       ) {
         dispatch('customMapping', {
-          conceptId: selectedRow.sourceCode,
-          conceptName: customConcept.conceptName,
-          domainId: customConcept.domainId,
-          vocabularyId: customConcept.vocabularyId,
-          conceptClassId: customConcept.conceptClassId,
-          standardConcept: '',
-          conceptCode: selectedRow.sourceCode,
-          validStartDate: `${new Date().getFullYear()}-${new Date().getMonth()}-${new Date().getDate()}`,
-          validEndDate: '2099-12-31',
-          invalidReason: '',
+          customConcept: e.detail,
           extra: {
             comment,
             reviewer,
           },
         })
 
+        if (settings.mapToMultipleConcepts == true) {
+          customConceptData.push({
+            concept_id: e.detail.conceptId,
+            concept_code: e.detail.conceptCode,
+            concept_name: e.detail.conceptName,
+            concept_class_id: e.detail.conceptClassId,
+            domain_id: e.detail.domainId,
+            vocabulary_id: e.detail.vocabularyId,
+            standard_concept: e.detail.standardConcept,
+            valid_start_date: e.detail.validStartDate,
+            valid_end_date: e.detail.validEndDate,
+            invalid_reason: e.detail.invalidReason,
+          })
+          customConceptData = customConceptData
+        }
+
         let alreadyMappedSelected = alreadyMapped[selectedRow.sourceCode]
         if (alreadyMappedSelected) {
           if (alreadyMappedSelected.conceptId.length > 0) alreadyMappedSelected.conceptId.push(selectedRow.sourceCode)
           else alreadyMappedSelected.conceptId = [selectedRow.sourceCode]
           if (alreadyMappedSelected.conceptName.length > 0)
-            alreadyMappedSelected.conceptName.push(customConcept.conceptName)
-          else alreadyMappedSelected.conceptName = [customConcept.conceptName]
+            alreadyMappedSelected.conceptName.push($customConcept.concept_name)
+          else alreadyMappedSelected.conceptName = [$customConcept.concept_name]
           if (alreadyMappedSelected.custom.length > 0) alreadyMappedSelected.custom.push(true)
           else alreadyMappedSelected.custom = [true]
         } else {
           alreadyMappedSelected = {
             conceptId: [selectedRow.sourceCode],
-            conceptName: [customConcept.conceptName],
+            conceptName: [$customConcept.concept_name],
             custom: [true],
           }
         }
@@ -353,11 +351,11 @@
         fillMappedTable()
       } else {
         errorMessage = 'The concept class id is not valid'
-        if (dev) console.log(`customMapping: The concept class id: ${customConcept.conceptClassId}, is not valid`)
+        if (dev) console.log(`customMapping: The concept class id: ${$customConcept.conceptClassId}, is not valid`)
       }
     } else {
       errorMessage = 'The domain id is not valid'
-      if (dev) console.log(`customMapping: the domain id: ${customConcept.domainId}, is not valid`)
+      if (dev) console.log(`customMapping: the domain id: ${$customConcept.domainId}, is not valid`)
     }
   }
 
@@ -365,7 +363,7 @@
   function setVocabularyId(): void {
     if (settings) {
       if (settings.hasOwnProperty('vocabularyIdCustomConcept'))
-        customConcept.vocabularyId = settings.vocabularyIdCustomConcept
+        $customConcept.vocabularyId = settings.vocabularyIdCustomConcept
     }
   }
 
@@ -614,40 +612,24 @@
         {:else if conceptSelection === 'custom'}
           <div data-name="custom-concept-container">
             <h2>Create a custom concept</h2>
-            <table data-name="custom-concept-table">
-              <tr>
-                <th />
-                <th>domain_id</th>
-                <th>vocabulary_id</th>
-                <th>concept_class_id</th>
-                <th>concept_name</th>
-              </tr>
-              <tr>
-                <td data-name="custom-concept-actions"
-                  ><button on:click={customMapping}
-                    ><SvgIcon href="icons.svg" id="plus" width="16px" height="16px" /></button
-                  ></td
-                >
-                <td
-                  ><AutocompleteInput
-                    id="domainId"
-                    initial={customConcept.domainId}
-                    list={customConceptInfo.domain_id}
-                    on:autoComplete={autoComplete}
-                  />
-                </td>
-                <td><input title="vocabularyId" type="text" bind:value={customConcept.vocabularyId} /></td>
-                <td
-                  ><AutocompleteInput
-                    id="conceptClassId"
-                    initial={customConcept.conceptClassId}
-                    list={customConceptInfo.concept_class_id}
-                    on:autoComplete={autoComplete}
-                  />
-                </td>
-                <td><input title="conceptName" type="text" bind:value={customConcept.conceptName} /></td>
-              </tr>
-            </table>
+            <DataTable
+              data={customConceptData}
+              columns={customConceptColumns}
+              options={{ actionColumn: true, id: 'createCustomConcepts', saveOptions: false }}
+            >
+              <CustomConceptInputRow
+                slot="default"
+                let:columns
+                let:originalIndex
+                let:renderedRow
+                {columns}
+                {selectedRow}
+                suggestiveList={customConceptInfo}
+                index={originalIndex}
+                {renderedRow}
+                on:customMappingInput={customMapping}
+              />
+            </DataTable>
 
             {#if errorMessage}
               <div data-name="errormessage">
