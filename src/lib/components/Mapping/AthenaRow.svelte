@@ -19,10 +19,10 @@
   // A method to map a certain concept to a certain row (can be single mapping or multiple mapping depending on the settings)
   async function onClickMapping() {
     if (multipleConcepts == true) {
-      dispatch('multipleMapping', { row: renderedRow })
+      dispatch('multipleMapping', { row: renderedRow, extra: { comment: '', reviewer: ''} })
       dispatch('updateUniqueConceptIds', { conceptId: renderedRow.id, conceptName: renderedRow.name, multiple: true })
     } else {
-      dispatch('singleMapping', { row: renderedRow })
+      dispatch('singleMapping', { row: renderedRow, extra: { comment: '', reviewer: ''} })
       dispatch('updateUniqueConceptIds', { conceptId: renderedRow.id, conceptName: renderedRow.name, multiple: false })
     }
   }
@@ -52,9 +52,9 @@
 </td>
 {#if columns}
   {#each columns || [] as column (column.id)}
-    <td>
+    <td on:dblclick={onClickMapping}>
       <div data-name="cell-container">
-        <p>{renderedRow[column.id]}</p>
+        <p title={renderedRow[column.id]}>{renderedRow[column.id]}</p>
       </div>
     </td>
   {/each}
