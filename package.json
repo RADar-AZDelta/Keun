@@ -42,8 +42,10 @@
   },
   "type": "module",
   "dependencies": {
+    "@firebase/database": "^0.14.4",
     "@radar-azdelta/svelte-datatable": "^0.0.37",
     "arquero": "^5.2.0",
+    "firebase": "^9.22.2",
     "lodash.debounce": "^4.0.8"
   }
 }

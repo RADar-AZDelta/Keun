@@ -21,6 +21,7 @@
     ISettings,
     ITableInformation,
     FileUploadWithColumnChanges,
+    AuthorChangedEventDetail,
   } from '$lib/components/Types'
   import type { IColumnMetaData, IPagination, SortDirection, TFilter } from '@radar-azdelta/svelte-datatable'
   import { localStorageGetter } from '$lib/utils'
@@ -41,6 +42,7 @@
   import type Query from 'arquero/dist/types/query/query'
   import Progress from '$lib/components/Extra/Progress.svelte'
   import Upload from '$lib/components/Extra/Upload.svelte'
+  import { user } from '$lib/store'
 
   // General variables
   let file: File | undefined = undefined
@@ -48,7 +50,7 @@
     mapToMultipleConcepts: false,
     autoMap: false,
     language: 'en',
-    author: '',
+    author: undefined,
     savedAuthors: [],
     vocabularyIdCustomConcept: '',
     fontsize: 10,
@@ -290,7 +292,7 @@
 
     // Add extra information like the number of concepts mapped for this row, comments & the assigned reviewer to the row
     mappedRow.mappingStatus = 'SEMI-APPROVED'
-    mappedRow.statusSetBy = settings!.author
+    mappedRow.statusSetBy = settings!.author?.displayName
 
     mappedRow['ADD_INFO:lastAthenaFilter'] = lastTypedFilter
 
@@ -351,9 +353,12 @@
     } else {
       // Check if there is a conceptId or a sourceAutoAssignedConceptIds (this is the conceptId that is assigned by the automapping proces)
       if (event.detail.action == 'APPROVED') {
-        if (event.detail.row.statusSetBy == undefined || event.detail.row.statusSetBy == settings!.author) {
+        if (
+          event.detail.row.statusSetBy == undefined ||
+          event.detail.row.statusSetBy == settings!.author?.displayName
+        ) {
           // If statusSetBy is empty, it means the author is the first reviewer of this row
-          updatingObj.statusSetBy = settings!.author
+          updatingObj.statusSetBy = settings!.author?.displayName
           updatingObj.statusSetOn = Date.now()
           updatingObj.mappingStatus = 'SEMI-APPROVED'
           if (event.detail.row.conceptId == 0 || !event.detail.row.conceptId) {
@@ -361,15 +366,15 @@
           } else updatingObj.conceptId = event.detail.row.conceptId
         } else if (
           event.detail.row.statusSetBy &&
-          event.detail.row.statusSetBy != settings!.author &&
+          event.detail.row.statusSetBy != settings!.author?.displayName &&
           event.detail.row.mappingStatus == 'SEMI-APPROVED'
         ) {
           // StatusSetBy is not empty and it's not the current author so it means it's the second reviewer
-          updatingObj['ADD_INFO:approvedBy'] = settings!.author
+          updatingObj['ADD_INFO:approvedBy'] = settings!.author?.displayName
           updatingObj['ADD_INFO:approvedOn'] = Date.now()
           updatingObj.mappingStatus = 'APPROVED'
-        } else if (event.detail.row.statusSetBy && event.detail.row.statusSetBy != settings!.author) {
-          updatingObj.statusSetBy = settings!.author
+        } else if (event.detail.row.statusSetBy && event.detail.row.statusSetBy != settings!.author?.displayName) {
+          updatingObj.statusSetBy = settings!.author?.displayName
           updatingObj.statusSetOn = Date.now()
           updatingObj.mappingStatus = 'SEMI-APPROVED'
           if (event.detail.row.conceptId == 0 || !event.detail.row.conceptId) {
@@ -377,7 +382,7 @@
           } else updatingObj.conceptId = event.detail.row.conceptId
         }
       } else {
-        updatingObj.statusSetBy = settings!.author
+        updatingObj.statusSetBy = settings!.author?.displayName
         updatingObj.statusSetOn = Date.now()
         updatingObj.mappingStatus = event.detail.action
       }
@@ -504,6 +509,10 @@
       const row = await dataTableFile.getFullRow(event.detail.index)
       await autoMapRow(signal, row, event.detail.index)
     })
+  }
+
+  async function authorChanged(event: CustomEvent<AuthorChangedEventDetail>) {
+    $user = event.detail.author
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -711,14 +720,14 @@
 
           case 'statusSetBy':
           case 'statusSetOn':
-            mappedUsagiRow.statusSetBy = settings!.author
+            mappedUsagiRow.statusSetBy = settings!.author?.displayName
             mappedUsagiRow.statusSetOn = Date.now()
             break
 
           case 'createdBy':
           case 'createdOn':
-            if (!usagiRow.createdBy && usagiRow.createdBy != settings!.author) {
-              mappedUsagiRow.createdBy = settings!.author
+            if (!usagiRow.createdBy && usagiRow.createdBy != settings!.author?.displayName) {
+              mappedUsagiRow.createdBy = settings!.author?.displayName
               mappedUsagiRow.createdOn = Date.now()
             }
             break
@@ -727,12 +736,12 @@
             if (
               (usagiRow.statusSetBy == null ||
                 usagiRow.statusSetBy == undefined ||
-                usagiRow.statusSetBy == settings!.author) &&
+                usagiRow.statusSetBy == settings!.author?.displayName) &&
               !autoMap
             ) {
               mappedUsagiRow.mappingStatus = 'SEMI-APPROVED'
               break
-            } else if (usagiRow.statusSetBy != settings!.author && !autoMap) {
+            } else if (usagiRow.statusSetBy != settings!.author?.displayName && !autoMap) {
               mappedUsagiRow.mappingStatus = 'APPROVED'
               break
             }
@@ -790,15 +799,15 @@
         case 'statusSetBy':
         case 'statusSetOn':
           if (String(usagiRow.statusSetBy).replaceAll(' ', '') == '' || usagiRow.statusSetBy == undefined) {
-            mappedUsagiRow.statusSetBy = settings!.author
+            mappedUsagiRow.statusSetBy = settings!.author?.displayName
             mappedUsagiRow.statusSetOn = Date.now()
           }
           break
 
         case 'createdBy':
         case 'createdOn':
-          if (!usagiRow.createdBy && usagiRow.createdBy != settings!.author) {
-            mappedUsagiRow.createdBy = settings!.author
+          if (!usagiRow.createdBy && usagiRow.createdBy != settings!.author?.displayName) {
+            mappedUsagiRow.createdBy = settings!.author?.displayName
             mappedUsagiRow.createdOn = Date.now()
           }
           break
@@ -807,11 +816,11 @@
           if (
             usagiRow.statusSetBy == null ||
             usagiRow.statusSetBy == undefined ||
-            usagiRow.statusSetBy == settings!.author
+            usagiRow.statusSetBy == settings!.author?.displayName
           ) {
             mappedUsagiRow.mappingStatus = 'SEMI-APPROVED'
             break
-          } else if (usagiRow.statusSetBy != settings!.author) {
+          } else if (usagiRow.statusSetBy != settings!.author?.displayName) {
             mappedUsagiRow.mappingStatus = 'APPROVED'
             break
           }
@@ -932,13 +941,13 @@
     for (let [index, row] of currentVisibleRows) {
       if (!row.conceptId) row.conceptId = row.sourceAutoAssignedConceptIds
       if (row.statusSetBy) {
-        if (row.statusSetBy != settings!.author) {
-          row['ADD_INFO:approvedBy'] = settings!.author
+        if (row.statusSetBy != settings!.author?.displayName) {
+          row['ADD_INFO:approvedBy'] = settings!.author?.displayName
           row['ADD_INFO:approvedOn'] = Date.now()
           row.mappingStatus = 'APPROVED'
         }
       } else {
-        row.statusSetBy = settings!.author
+        row.statusSetBy = settings!.author?.displayName
         row.statusSetOn = Date.now()
         row.mappingStatus = 'SEMI-APPROVED'
       }
@@ -999,14 +1008,14 @@
     }
 
     // Get the settings from the local storage
-    const storedSettings: ISettings = localStorageGetter('settings')
-    if (storedSettings) {
-      Object.assign(settings, storedSettings)
-      settings = settings
-    }
+    // const storedSettings: ISettings = localStorageGetter('settings')
+    // if (storedSettings) {
+    //   Object.assign(settings, storedSettings)
+    //   settings = settings
+    // }
   })
 
-  if (!dev) {
+  if (dev) {
     if (browser) {
       window.addEventListener('beforeunload', e => {
         const confirmationMessage = 'Save the file you were mapping before leaving the application.'
@@ -1050,7 +1059,7 @@
     <Manual />
     {#if settings}
       <Settings {settings} on:settingsChanged={settingsChanged} />
-      <User {settings} />
+      <User {settings} on:authorChanged={authorChanged}/>
     {/if}
   </div>
 </section>
@@ -1078,11 +1087,11 @@
   />
 {/if}
 
-{#if file}
+{#if file && $user}
   <DataTable
     data={file}
     bind:this={dataTableFile}
-    options={{ id: 'usagi', rowsPerPage: 15, rowsPerPageOptions: [5, 10, 15, 20, 50, 100], actionColumn: true }}
+    options={{ id: 'usagi', rowsPerPage: 15, rowsPerPageOptions: [5, 10, 15, 20, 50, 100], actionColumn: true, storageMethod: "Firebase", userId: $user.id }}
     on:rendering={abortAutoMap}
     on:initialized={dataTableInitialized}
     on:renderingComplete={autoMapPage}

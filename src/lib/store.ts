@@ -1,4 +1,5 @@
 import { writable } from 'svelte/store'
+import type { IFirebaseUser } from './components/Types'
 
 const customConcept = writable<Record<string, string>>({
   domain_id: '',
@@ -7,4 +8,6 @@ const customConcept = writable<Record<string, string>>({
   concept_name: '',
 })
 
-export { customConcept }
+const user = writable<IFirebaseUser | undefined>()
+
+export { customConcept, user }
