@@ -17,6 +17,7 @@ export interface CustomOptionsEvents {
   autoMapRow: AutoMapRowEventDetail
   autoComplete: AutoCompleteEventDetail
   updateDetails: UpdateDetailsEventDetail
+  authorChanged: AuthorChangedEventDetail
 }
 
 export interface VisibilityChangedEventDetail {
@@ -103,6 +104,10 @@ export interface UpdateDetailsEventDetail {
   assignedReviewer: string
 }
 
+export interface AuthorChangedEventDetail {
+  author: IFirebaseUser
+}
+
 export interface FileUploadedEventDetail {
   file: File
 }
@@ -127,11 +132,17 @@ export interface ISettings {
   mapToMultipleConcepts: boolean
   autoMap: boolean
   language: string
-  author: string
+  author: IFirebaseUser | undefined
   savedAuthors: string[]
   vocabularyIdCustomConcept: string
   fontsize: number
   popupSidesShowed: { filters: boolean; details: boolean }
+}
+
+export interface IFirebaseUser {
+  id: string | null | undefined
+  email: string | null | undefined
+  displayName: string | null | undefined
 }
 
 export interface ITableInformation {

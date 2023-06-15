@@ -1,31 +1,16 @@
 <script lang="ts">
   import SvgIcon from './SvgIcon.svelte'
-  import { localStorageSetter } from '$lib/utils'
-  import { dev } from '$app/environment'
   import { clickOutside } from '$lib/actions/clickOutside'
-  import type { ISettings } from '$lib/components/Types'
+  import type { CustomOptionsEvents, IFirebaseUser, ISettings } from '$lib/components/Types'
+  import { login } from '$lib/useFirebase'
+  import { createEventDispatcher } from 'svelte'
 
   export let settings: ISettings
 
-  let author: string | undefined = undefined,
-    backupAuthor: string | undefined,
+  const dispatch = createEventDispatcher<CustomOptionsEvents>()
+
+  let author: string | null | undefined = undefined,
     userDialog: HTMLDialogElement
-
-  // A method to cancel the update of the author
-  async function cancelAuthorUpdate(): Promise<void> {
-    closeDialog()
-    settings.author = backupAuthor == undefined ? '' : backupAuthor
-  }
-
-  // A method to save the author and close the dialog
-  async function saveAuthorUpdate(): Promise<void> {
-    if (dev) console.log('saveAuthorUpdate: Saving author update')
-    settings.author = author == undefined ? '' : author
-    settings = settings
-    backupAuthor = settings.author
-    localStorageSetter('settings', settings)
-    closeDialog()
-  }
 
   // A method to close the dialog
   function closeDialog(): void {
@@ -35,22 +20,34 @@
 
   // A method to open the dialog
   function openDialog(): void {
-    if (settings.author) author = settings.author
-    if (!backupAuthor) backupAuthor = settings?.author
+    if (settings.author) author = settings.author.displayName
     // Check if the dialog is not already open
     if (userDialog) if (userDialog.attributes.getNamedItem('open') == null) userDialog.showModal()
+  }
+
+  async function loginGoogle() {
+    const user = await login('google')
+    let authorObj: IFirebaseUser = {
+      id: user.user.uid,
+      email: user?.user.email,
+      displayName: user?.user.displayName,
+    }
+    settings.author = authorObj
+    dispatch('authorChanged', { author: authorObj })
+    closeDialog()
   }
 
   $: {
     // If the userdialog is closed and there has not been an author set yet, open the dialog
     userDialog
     if (userDialog)
-      if (userDialog.attributes.getNamedItem('open') == null) if (settings && !settings.author) userDialog.showModal()
+      if (userDialog.attributes.getNamedItem('open') == null)
+        if (settings && !settings.author?.displayName) userDialog.showModal()
   }
 </script>
 
 <button title="Author" aria-label="User button" on:click={openDialog} data-name="header-button">
-  <p>{settings?.author ?? ''}</p>
+  <p>{settings?.author?.displayName ?? ''}</p>
   <SvgIcon href="icons.svg" id="user" width="16px" height="16px" />
 </button>
 
@@ -61,16 +58,7 @@
         <SvgIcon href="icons.svg" id="x" width="16px" height="16px" />
       </button>
       <section data-name="author">
-        <h2>Who is the author?</h2>
-        <input id="author" type="text" placeholder="John Wick" bind:value={author} />
-        <div data-name="buttons-container">
-          <button data-name="cancel" on:click={cancelAuthorUpdate} disabled={author == undefined ? true : false}>
-            Cancel
-          </button>
-          <button data-name="save" on:click={saveAuthorUpdate} disabled={author == undefined ? true : false}>
-            Save
-          </button>
-        </div>
+        <button on:click={loginGoogle}>Google</button>
       </section>
     {/if}
   </div>
