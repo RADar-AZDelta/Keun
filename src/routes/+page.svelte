@@ -23,8 +23,13 @@
     FileUploadWithColumnChanges,
     AuthorChangedEventDetail,
   } from '$lib/components/Types'
-  import type { IColumnMetaData, IPagination, SortDirection, TFilter } from '@radar-azdelta/svelte-datatable'
-  import { localStorageGetter } from '$lib/utils'
+  import type {
+    IColumnMetaData,
+    IPagination,
+    ITableOptions,
+    SortDirection,
+    TFilter,
+  } from '@radar-azdelta/svelte-datatable'
   import AthenaLayout from '$lib/components/Extra/AthenaLayout.svelte'
   import UsagiRow from '$lib/components/Mapping/UsagiRow.svelte'
   import { onMount, tick } from 'svelte'
@@ -33,7 +38,6 @@
   import Settings from '$lib/components/Extra/Settings.svelte'
   // @ts-ignore
   import { LatencyOptimisedTranslator } from '@browsermt/bergamot-translator/translator.js'
-  import SvgIcon from '$lib/components/Extra/SvgIcon.svelte'
   import { page } from '$app/stores'
   import { browser, dev } from '$app/environment'
   import DragAndDrop from '$lib/components/Extra/DragAndDrop.svelte'
@@ -43,6 +47,7 @@
   import Progress from '$lib/components/Extra/Progress.svelte'
   import Upload from '$lib/components/Extra/Upload.svelte'
   import { user } from '$lib/store'
+  import { firebase } from '$lib/firebase'
 
   // General variables
   let file: File | undefined = undefined
@@ -56,8 +61,18 @@
     fontsize: 10,
     popupSidesShowed: { filters: true, details: true },
   }
+
+  let tableOptions: ITableOptions = {
+    id: 'usagi',
+    rowsPerPage: 15,
+    rowsPerPageOptions: [5, 10, 15, 20, 50, 100],
+    actionColumn: true,
+    storageMethod: 'Firebase',
+    userId: $user !== undefined ? $user.id : undefined,
+  }
   let disableInteraction: boolean = false
   let translator: LatencyOptimisedTranslator
+  let storageMethod: firebase
 
   // Athena related variables
   let mappingVisibility: boolean = false
@@ -513,6 +528,20 @@
 
   async function authorChanged(event: CustomEvent<AuthorChangedEventDetail>) {
     $user = event.detail.author
+    let options = tableOptions
+    options.userId = $user.id
+    storageMethod = new firebase(options)
+    const results = await storageMethod.load()
+    if (results.savedData instanceof File) {
+      if (results.savedData.name !== 'undefined') {
+        file = results.savedData
+      }
+    }
+    if (results.savedSettings) settings = results.savedSettings
+    if (results.savedOptions) tableOptions = results.savedOptions
+
+    tableOptions = tableOptions
+    file = file
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -1020,6 +1049,7 @@
       window.addEventListener('beforeunload', e => {
         const confirmationMessage = 'Save the file you were mapping before leaving the application.'
         ;(e || window.event).returnValue = confirmationMessage
+        if (file && storageMethod) storageMethod.store(settings, file)
         return confirmationMessage
       })
     }
@@ -1059,7 +1089,7 @@
     <Manual />
     {#if settings}
       <Settings {settings} on:settingsChanged={settingsChanged} />
-      <User {settings} on:authorChanged={authorChanged}/>
+      <User {settings} on:authorChanged={authorChanged} />
     {/if}
   </div>
 </section>
@@ -1091,7 +1121,7 @@
   <DataTable
     data={file}
     bind:this={dataTableFile}
-    options={{ id: 'usagi', rowsPerPage: 15, rowsPerPageOptions: [5, 10, 15, 20, 50, 100], actionColumn: true, storageMethod: "Firebase", userId: $user.id }}
+    options={tableOptions}
     on:rendering={abortAutoMap}
     on:initialized={dataTableInitialized}
     on:renderingComplete={autoMapPage}

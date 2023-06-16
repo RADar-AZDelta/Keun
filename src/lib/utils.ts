@@ -23,7 +23,26 @@ export function localStorageSetter(key: string, value: any) {
 
 export function localStorageGetter(key: string) {
   const item = localStorage.getItem(key)
-  if (!item)
-    return undefined
+  if (!item) return undefined
   return JSON.parse(item, jsonMapReviver)
+}
+
+export function fileToBase64(file: File): Promise<string | ArrayBuffer | null> {
+  return new Promise((resolve, reject) => {
+    var reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.readAsDataURL(file)
+  })
+}
+
+export function base64ToFile(dataUrl: string, fileName: string) {
+  var arr = dataUrl.split(','),
+    mime = arr[0].match(/:(.*?);/)![1],
+    bstr = atob(arr[arr.length - 1]),
+    n = bstr.length,
+    u8arr = new Uint8Array(n)
+  while (n--) {
+    u8arr[n] = bstr.charCodeAt(n)
+  }
+  return new File([u8arr], fileName, { type: mime })
 }
