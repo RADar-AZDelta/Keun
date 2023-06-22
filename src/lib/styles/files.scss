@@ -1,0 +1,476 @@
+$neutral-xxx-light: #f6f6f6;
+$neutral-x-light: #d8d8d8;
+$neutral-xx-light: #e2e2e2;
+$neutral: #cecece;
+$neutral-x-dark: #c5c5c5;
+$neutral-xx-dark: #bbbbbb;
+
+$darkgray-xx-light: #636363;
+$darkgray-x-light: #595959;
+$darkgray: #4f4f4f;
+$darkgray-x-dark: #454545;
+$darkgray-xx-dark: #3b3b3b;
+
+$blue-xx-light: #9ed1e1;
+$blue-x-light: #8fcadd;
+$blue: #80c3d8;
+$blue-x-dark: #71bbd4;
+$blue-xx-dark: #62b4cf;
+
+$brightblue: #0094d3;
+$brightblue-x-dark: #0082ba;
+$brightblue-xx-dark: #0070a0;
+
+$lightred: #ff7f7f;
+$lightred-x-dark: #e67f7f;
+$lightgreen: #90ee90;
+$lightgreen-x-dark: #7feb7f;
+
+$font-size: 10px;
+
+dialog[data-name='file-input'] {
+  width: 80%;
+  height: 80%;
+  border-radius: 10px;
+  border: none;
+
+  div[data-name='file-input-container'] {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  button[data-name='close-dialog'] {
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+    border: none;
+    background-color: inherit;
+    color: $darkgray;
+  }
+
+  img {
+    max-width: 80%;
+  }
+}
+
+main[data-name='file-selection'] {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+
+  section[data-name='header'] {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1rem;
+
+    div[data-name='header-buttons-container'] {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+
+      button[data-name='header-button'] {
+        border: 1px solid $neutral-x-light;
+        border-radius: 5px;
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+        justify-content: center;
+        background-color: $neutral-xxx-light;
+        min-width: 40px;
+        height: 40px !important;
+        font-size: 1rem;
+      }
+
+      button[data-name='header-button']:hover {
+        background-color: $neutral-x-light;
+      }
+
+      button[data-name='header-button']:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px $neutral-x-dark;
+      }
+
+      dialog[data-name='manual-dialog'] {
+        width: 80%;
+        height: 80%;
+        border-radius: 10px;
+        border: none;
+
+        div[data-name='manual-container'] {
+          width: 100%;
+          height: 100%;
+          margin: 0;
+          padding: 0;
+        }
+
+        button[data-name='close-dialog'] {
+          position: absolute;
+          right: 1rem;
+          top: 1rem;
+          border: none;
+          background-color: inherit;
+          color: $darkgray;
+        }
+
+        img {
+          max-width: 80%;
+        }
+      }
+
+      dialog[data-name='settings-dialog'] {
+        width: 50%;
+        height: 50%;
+        border-radius: 10px;
+        border: none;
+        font-size: 16px;
+
+        button[data-name='close-dialog'] {
+          position: absolute;
+          right: 16px;
+          top: 16px;
+          border: none;
+          background-color: inherit;
+          color: $darkgray;
+          padding: 8px;
+        }
+
+        button[data-name='close-dialog']:hover {
+          color: $darkgray-xx-dark;
+        }
+
+        button[data-name='close-dialog']:focus {
+          outline: none;
+          box-shadow: 0 0 0 2px $neutral;
+        }
+
+        section[data-name='settings'] {
+          h2 {
+            font-size: 24px;
+            text-align: center;
+            font-weight: 600;
+            margin: 0;
+          }
+
+          div[data-name='options'] {
+            padding: 16px 32px;
+
+            div[data-name='option'] {
+              display: flex;
+              align-items: center;
+              justify-content: space-between;
+              gap: 32px;
+              margin-bottom: 16px;
+              font-size: 20px;
+
+              input,
+              select,
+              option,
+              p,
+              span {
+                font-size: 16px;
+              }
+            }
+
+            div[data-name='switch'] {
+              input {
+                height: 0;
+                width: 0;
+                visibility: hidden;
+              }
+
+              label {
+                cursor: pointer;
+                text-indent: -9999px;
+                top: -15px;
+                width: 60px;
+                height: 30px;
+                background: $neutral-x-dark;
+                display: block;
+                border-radius: 20px;
+                position: relative;
+              }
+
+              label:hover {
+                background: $neutral-xx-dark;
+              }
+
+              input:checked + label:hover {
+                background: $brightblue-x-dark;
+              }
+
+              label:focus {
+                outline: none;
+                box-shadow: 0 0 0 2px $neutral;
+              }
+
+              input:checked + label:focus {
+                outline: none;
+                box-shadow: 0 0 0 2px $brightblue-xx-dark;
+              }
+
+              label:after {
+                content: '';
+                position: absolute;
+                top: 4px;
+                left: 4px;
+                width: 22px;
+                height: 22px;
+                background: white;
+                border-radius: 20px;
+                transition: 0.3s;
+              }
+
+              input:checked + label {
+                background: $brightblue;
+              }
+
+              input:checked + label:after {
+                left: calc(100% - 4px);
+                transform: translateX(-100%);
+              }
+
+              label:active:after {
+                width: 20px;
+              }
+            }
+
+            select {
+              width: auto;
+              height: 40px;
+              padding: 8px;
+              font-size: 16px;
+              border-radius: 10px;
+              border: 1px solid $neutral;
+            }
+
+            select:hover {
+              border: 1px solid $neutral-xx-dark;
+            }
+
+            select:focus {
+              outline: none;
+              box-shadow: 0 0 0 2px $neutral-x-dark;
+            }
+
+            input {
+              padding: 0 8px;
+              border: 1px solid $neutral;
+              border-radius: 10px;
+              height: 40px;
+            }
+
+            input:hover {
+              border: 1px solid $neutral-xx-dark;
+            }
+
+            input:focus {
+              outline: none;
+              box-shadow: 0 0 0 2px $neutral-x-dark;
+            }
+          }
+        }
+      }
+
+      dialog[data-name='user-dialog'] {
+        border-radius: 10px;
+        border: none;
+        width: 400px;
+
+        div[data-name='user-manual'] {
+          width: 100%;
+          height: 100%;
+          margin: 0;
+          padding: 0;
+        }
+
+        button[data-name='close-dialog'] {
+          position: absolute;
+          right: 1rem;
+          top: 1rem;
+          border: none;
+          background-color: inherit;
+          color: $darkgray;
+        }
+
+        button[data-name='close-dialog']:hover {
+          color: $darkgray-xx-dark;
+        }
+
+        button[data-name='close-dialog']:focus {
+          outline: none;
+          box-shadow: 0 0 0 2px $neutral;
+        }
+
+        section[data-name='author'] {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          gap: 1rem;
+
+          h2 {
+            text-align: center;
+            font-size: 24px;
+            font-weight: 600;
+            padding: 0 2rem;
+            margin: 0;
+          }
+
+          input {
+            width: 80%;
+            padding: 0.5rem;
+            border: 1px solid $neutral;
+            border-radius: 5px;
+            font-size: 1rem;
+          }
+
+          input:hover {
+            border: 1px solid $neutral-xx-dark;
+          }
+
+          input:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px $neutral-x-dark;
+          }
+
+          div[data-name='buttons-container'] {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 85%;
+
+            button {
+              height: auto;
+              padding: 0.5rem 1rem;
+              font-size: 1rem;
+            }
+
+            button[data-name='cancel'] {
+              background-color: $neutral-xx-light;
+              color: black;
+            }
+
+            button[data-name='cancel']:hover {
+              background-color: $neutral-x-light;
+            }
+
+            button[data-name='cancel']:focus {
+              outline: none;
+              box-shadow: 0 0 0 2px $neutral-x-dark;
+            }
+
+            button[data-name='save'] {
+              background-color: $blue;
+              color: black;
+            }
+
+            button[data-name='save']:hover {
+              background-color: $blue-x-dark;
+            }
+
+            button[data-name='save']:focus {
+              outline: none;
+              box-shadow: 0 0 0 2px $blue-xx-dark;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  section[data-name='file-container'] {
+    width: 95%;
+    flex: 1 1 auto;
+    margin: auto;
+    padding: 1rem 0 2rem 0;
+
+    div[data-name='file-menu'] {
+      height: 100%;
+      border-radius: 10px;
+      box-shadow: 3px 3px 3px lightgray;
+      border: 1px solid lightgray;
+      display: flex;
+      flex-direction: column;
+
+      h1 {
+        padding: 0 1rem 1rem 1rem;
+      }
+
+      div[data-name='file-list'] {
+        flex: 1 1 auto;
+        overflow-y: auto;
+
+        // div[data-name="loader"] {
+        //   align-self: center;
+        //   justify-self: center;
+        // }
+
+        button[data-name='file-card'] {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 1rem;
+          border: none;
+          background-color: inherit;
+
+          div[data-name='file-name'] {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+
+            p {
+              font-size: 1rem;
+            }
+          }
+
+          button[data-name='delete-file'] {
+            border: none;
+            background-color: inherit;
+          }
+
+          button[data-name='delete-file']:hover {
+            background-color: $lightred;
+          }
+
+          button[data-name='delete-file']:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px $lightred-x-dark;
+            background-color: $lightred;
+          }
+        }
+
+        button[data-name='file-card']:hover {
+          background-color: $neutral;
+        }
+
+        button[data-name='file-card']:focus {
+          outline: none;
+          box-shadow: 0 0 0 2px $neutral-x-dark;
+          background-color: $neutral-x-light;
+        }
+      }
+
+      button[data-name='file-add'] {
+        width: 100%;
+        background-color: inherit;
+        border: 1px solid $neutral;
+        font-size: 1rem;
+      }
+
+      button[data-name='file-add']:hover {
+        background-color: $lightgreen;
+      }
+
+      button[data-name='file-add']:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px $lightgreen-x-dark;
+        background-color: $lightgreen;
+      }
+    }
+  }
+}

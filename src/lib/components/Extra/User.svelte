@@ -2,7 +2,7 @@
   import SvgIcon from './SvgIcon.svelte'
   import { clickOutside } from '$lib/actions/clickOutside'
   import type { CustomOptionsEvents, IFirebaseUser, ISettings } from '$lib/components/Types'
-  import { login } from '$lib/useFirebase'
+  import { logIn } from '$lib/firebase'
   import { createEventDispatcher } from 'svelte'
 
   export let settings: ISettings
@@ -26,7 +26,7 @@
   }
 
   async function loginGoogle() {
-    const user = await login('google')
+    const user = await logIn('google')
     let authorObj: IFirebaseUser = {
       id: user.user.uid,
       email: user?.user.email,
