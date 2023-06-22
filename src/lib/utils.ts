@@ -46,3 +46,5 @@ export function base64ToFile(dataUrl: string, fileName: string) {
   }
   return new File([u8arr], fileName, { type: mime })
 }
+
+export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));

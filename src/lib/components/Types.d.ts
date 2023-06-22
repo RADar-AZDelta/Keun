@@ -160,3 +160,9 @@ interface IExtra {
   comment: string
   reviewer: string
 }
+
+export interface IDatabaseFile {
+  data: Record<string, any>[]
+  fileName: string
+  usersUID?: string[]
+}
