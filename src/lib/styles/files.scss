@@ -442,6 +442,21 @@ main[data-name='file-selection'] {
             box-shadow: 0 0 0 2px $lightred-x-dark;
             background-color: $lightred;
           }
+
+          button[data-name='edit-file'] {
+            border: none;
+            background-color: inherit;
+          }
+
+          button[data-name='edit-file']:hover {
+            background-color: $blue;
+          }
+
+          button[data-name='edit-file']:focus {
+            outline: none;
+            box-shadow: 0 0 0 2px $blue-x-dark;
+            background-color: $blue;
+          }
         }
 
         button[data-name='file-card']:hover {

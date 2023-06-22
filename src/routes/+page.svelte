@@ -32,11 +32,14 @@
 
   let files: Record<string, Record<number, string>>
   let fileInputDialog: HTMLDialogElement
+  let authorsDialog: HTMLDialogElement
   let users: Record<string, string>
   let file: File
   let authorizedAuthors: any[]
   let customUser: string | undefined = undefined
   let processing = writable<boolean>(false)
+  let selectedFile: string
+  let currentAuthors: any
 
   let settings: ISettings = {
     mapToMultipleConcepts: false,
@@ -79,13 +82,24 @@
       }
   }
 
-  async function openDialog() {
+  async function openFileInputDialog() {
     users = await readDatabase('authors')
     fileInputDialog.showModal()
   }
 
-  function closeDialog() {
+  function closeFileInputDialog() {
     fileInputDialog.close()
+    authorizedAuthors = []
+  }
+
+  async function openEditDialog() {
+    users = await readDatabase('authors')
+    authorsDialog.showModal()
+  }
+
+  function closeEditDialog() {
+    authorsDialog.close()
+    authorizedAuthors = []
   }
 
   async function fileToText(file: File) {
@@ -176,6 +190,13 @@
     $processing = false
   }
 
+  async function editFile() {
+    await deleteDatabase(`/files/${selectedFile}`)
+    for (let author of authorizedAuthors) {
+      await pushToDatabase(`/files/${selectedFile}`, author)
+    }
+  }
+
   async function addCustomUser() {
     if (customUser) {
       await pushToDatabase('/authors', customUser)
@@ -207,8 +228,8 @@
 </svelte:head>
 
 <dialog bind:this={fileInputDialog} data-name="file-input">
-  <div data-name="file-input-container" use:clickOutside on:outClick={closeDialog}>
-    <button on:click={closeDialog} data-name="close-dialog" disabled={$processing}
+  <div data-name="file-input-container">
+    <button on:click={closeFileInputDialog} data-name="close-dialog" disabled={$processing}
       ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" />
     </button>
     <label>
@@ -236,6 +257,29 @@
     {#if $processing}
       <Spinner />
     {/if}
+  </div>
+</dialog>
+
+<dialog bind:this={authorsDialog} data-name="authors-dialog">
+  <div data-name="file-input-container" use:clickOutside on:outClick={closeEditDialog}>
+    <button on:click={closeEditDialog} data-name="close-dialog" disabled={$processing}
+      ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" />
+    </button>
+      Authorized authors
+      <div>
+        {#if users}
+          {#each Object.values(users) as user}
+            <input type="checkbox" id={user} bind:group={authorizedAuthors} value={user} checked={Object.values(currentAuthors).includes(user)}>
+            <label for={user}>{user}</label>
+          {/each}
+          <label>
+            Add a user by e-mail
+            <input type="text" bind:value={customUser} />
+            <button on:click={addCustomUser} disabled={$processing}>Add</button>
+          </label>
+        {/if}
+      </div>
+    <button on:click={editFile}>Update</button>
   </div>
 </dialog>
 
@@ -269,9 +313,24 @@
                 <SvgIcon href="icons.svg" id="excel" width="40px" height="40px" />
                 <p>{file}</p>
               </div>
-              <button data-name="delete-file" on:click={() => deleteFile(file)}
-                ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
-              >
+              {#if $userSessionStore.roles?.includes('Admin')}
+                <div>
+                  <button
+                    data-name="edit-file"
+                    on:click={async () => {
+                      selectedFile = file
+                      currentAuthors = await readDatabase(`/files/${file}`)
+                      authorizedAuthors = Object.values(currentAuthors)
+                      openEditDialog()
+                    }}
+                  >
+                    <SvgIcon href="icons.svg" id="edit" width="16px" height="16px" />
+                  </button>
+                  <button data-name="delete-file" on:click={() => deleteFile(file)}
+                    ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
+                  >
+                </div>
+              {/if}
             </button>
           {/each}
         {/if}
@@ -279,7 +338,7 @@
       {#if $processing}
         <Spinner />
       {/if}
-      <button on:click={openDialog} data-name="file-add">+ Add file</button>
+      <button on:click={openFileInputDialog} data-name="file-add">+ Add file</button>
     </div>
   </section>
 </main>
