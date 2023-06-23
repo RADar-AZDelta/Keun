@@ -630,12 +630,8 @@
     let filter = filteredColumns.values().next().value
     // Check if there is a filter filled in
     if (globalAthenaFilter.filter === undefined) {
-      if (selectedRow) {
-        filter = await translate(selectedRow.sourceName)
-      }
-    } else if (globalAthenaFilter.filter && filter === undefined) {
-      filter = globalAthenaFilter.filter
-    }
+      if (selectedRow) filter = await translate(selectedRow.sourceName)
+    } else filter = globalAthenaFilter.filter
 
     const url = await assembleAthenaURL(filter, sortedColumns.entries().next().value, pagination, false)
     const response = await fetch(url)
