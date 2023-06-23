@@ -19,17 +19,22 @@
 
     reader.onload = () => {
       let content = reader.result?.toString()
+      let importantColumns: string[] = ['sourceCode', 'sourceName', 'sourceFrequency']
       if (content) {
         if (
           !content.includes('sourceName') ||
           !content.includes('sourceCode') ||
           !content.includes('sourceFrequency')
         ) {
-          // alert('Provide a file that contains the following columns: sourceCode, sourceName & sourceFrequency')
           currentColumns = content.split(/\n/)[0].split(',')
+          importantColumns.forEach(col => {
+            if (!currentColumns.includes(col)) missingColumns[col] = ''
+          })
+          // alert('Provide a file that contains the following columns: sourceCode, sourceName & sourceFrequency')
           openDialog()
         } else dispatch('fileUploaded', { file })
       }
+      inputFile.value = ''
       return
     }
 

@@ -76,8 +76,7 @@
   }
   let selectedRow: Record<string, any>
   let selectedRowIndex: number
-  let columnChanges: Record<string, string>
-  let columnsNeedToChange: boolean = false
+  let columnChanges: Record<string, string> | undefined = undefined
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // DATA
@@ -104,53 +103,22 @@
   // EVENTS
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
-  // When there is a new file uploaded
-  async function onFileInputChange(e: Event) {
-    if (dev) console.log('onFileInputChange: New file uploaded')
-    // Check if the automapping proces is running and if this is happening, abort the promise because it could give unexpected results.
-    if (autoMappingPromise) autoMappingAbortController.abort()
-    var reader = new FileReader()
-    file = undefined
-    await tick()
-
-    reader.onload = () => {
-      let content = reader.result?.toString()
-      if (content)
-        if (
-          !content.includes('sourceName') ||
-          !content.includes('sourceCode') ||
-          !content.includes('sourceFrequency')
-        ) {
-          alert('Provide a file that contains the following columns: sourceCode, sourceName & sourceFrequency')
-          file = undefined
-          tableInit = false
-        }
-    }
-
-    const inputFiles = (e.target as HTMLInputElement).files
-    if (!inputFiles) return
-
-    // Check the files if the extension is allowed
-    for (const f of inputFiles) {
-      const extension = f.name.split('.').pop()
-      if (extension == 'csv') {
-        file = f
-        reader.readAsText(f)
-        break
-      }
-    }
-  }
-
   // When there is a new file uploaded for the first time (drag & drop)
   async function fileUploaded(e: CustomEvent<FileUploadedEventDetail>) {
     if (dev) console.log('fileUploaded: New file uploaded')
     file = e.detail.file
+    columnChanges = undefined
+
+    var fileReader = new FileReader()
+    fileReader.onload = evt => {
+      console.log('RES ', evt.target!.result)
+    }
+    fileReader.readAsText(file)
   }
 
   async function fileUploadWithColumnChanges(e: CustomEvent<FileUploadWithColumnChanges>) {
     if (dev) console.log('fileUploadWithColumnChanges: New file uploaded and columns have changed')
     file = e.detail.file
-    columnsNeedToChange = true
     columnChanges = Object.fromEntries(Object.entries(e.detail.columnChange).map(a => a.reverse()))
   }
 
@@ -847,7 +815,7 @@
   // A method to set a variable when the table is initialized
   function dataTableInitialized(): void {
     tableInit = true
-    if (columnsNeedToChange) changeColumnNames()
+    changeColumnNames()
   }
 
   // A method to abort the auto mapping
@@ -983,8 +951,7 @@
   }
 
   async function changeColumnNames() {
-    await dataTableFile.renameColumns(columnChanges)
-    columnsNeedToChange = false
+    if (columnChanges) await dataTableFile.renameColumns(columnChanges)
   }
 
   let fetchDataFunc = fetchData
