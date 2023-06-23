@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount } from 'svelte'
+  import { createEventDispatcher } from 'svelte'
   import type { CustomOptionsEvents } from '../Types'
   import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
   import SvgIcon from '../Extra/SvgIcon.svelte'
