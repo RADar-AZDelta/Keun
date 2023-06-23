@@ -1385,7 +1385,7 @@ div[data-component='svelte-datatable'] {
             height: 100%;
 
             div[data-name='actions-grid'] {
-              min-width: calc(8rem + 10px);
+              // min-width: calc(9rem + 10px);
               display: grid;
               grid-template-columns: repeat(4, 1fr);
               grid-template-rows: repeat(2, 1fr);
