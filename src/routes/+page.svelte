@@ -444,19 +444,46 @@
     new Promise(async (resolve, reject) => {
       tablePagination = await dataTableFile.getTablePagination()
       // Check to wich direction the user is moving
-      if (event.detail.up && selectedRowIndex + 1 < tablePagination.totalRows!) selectedRowIndex += 1
-      if (!event.detail.up && selectedRowIndex - 1 >= 0) selectedRowIndex -= 1
+      const currentIndex = Array.from(currentVisibleRows.keys()).indexOf(selectedRowIndex)
+      if (event.detail.up && selectedRowIndex + 1 < tablePagination.totalRows!) {
+        if (currentIndex + 1 >= currentVisibleRows.size) {
+          // Get the indexes of the rows of the next page
+          changePagination(event.detail.up, tablePagination).then(async () => {
+            selectedRowIndex = Array.from(currentVisibleRows.keys())[0]
+            selectedRow = await dataTableFile.getFullRow(selectedRowIndex)
+            const translation = await translate(selectedRow.sourceName)
+            globalAthenaFilter.filter = typeof translation == 'string' ? translation : selectedRow.sourceName
+          })
+          Array.from(currentVisibleRows.keys())[0]
+        } else {
+          selectedRowIndex = Array.from(currentVisibleRows.keys())[currentIndex + 1]
+          selectedRow = await dataTableFile.getFullRow(selectedRowIndex)
+          const translation = await translate(selectedRow.sourceName)
+          globalAthenaFilter.filter = typeof translation == 'string' ? translation : selectedRow.sourceName
+        }
+      }
+      if (!event.detail.up && selectedRowIndex - 1 >= 0) {
+        if (currentIndex - 1 < 0) {
+          // Get the indexes of the rows of the previous page
+          await changePagination(event.detail.up, tablePagination).then(async () => {
+            selectedRowIndex = Array.from(currentVisibleRows.keys())[Array.from(currentVisibleRows.keys()).length - 1]
+            selectedRow = await dataTableFile.getFullRow(selectedRowIndex)
+            const translation = await translate(selectedRow.sourceName)
+            globalAthenaFilter.filter = typeof translation == 'string' ? translation : selectedRow.sourceName
+          })
+          Array.from(currentVisibleRows.keys())[Array.from(currentVisibleRows.keys()).length - 1]
+        } else {
+          selectedRowIndex = Array.from(currentVisibleRows.keys())[currentIndex - 1]
+          selectedRow = await dataTableFile.getFullRow(selectedRowIndex)
+          const translation = await translate(selectedRow.sourceName)
+          globalAthenaFilter.filter = typeof translation == 'string' ? translation : selectedRow.sourceName
+        }
+      }
 
       if (dev) console.log('selectRow: Select row with index ', selectedRowIndex)
 
       // Set the new filter with the translated source name
-      selectedRow = await dataTableFile.getFullRow(selectedRowIndex)
-      const translation = await translate(selectedRow.sourceName)
-      globalAthenaFilter.filter = typeof translation == 'string' ? translation : selectedRow.sourceName
       resolve(null)
-    }).then(() => {
-      // Check if the pagination needs to change, and do so if needed
-      changePagination(event.detail.up, selectedRowIndex, tablePagination)
     })
   }
 
@@ -521,23 +548,25 @@
   }
 
   // A method to change the pagination of the table based on the index and the rows per page
-  async function changePagination(
-    up: boolean,
-    selectedRowIndex: number,
-    pagination: Record<string, any>
-  ): Promise<void> {
-    // When the index exceeds the number of rows per page, go to the next page or go to the previous page
-    if (up && selectedRowIndex !== 0) {
-      if (selectedRowIndex % pagination.rowsPerPage! === 0) {
+  async function changePagination(up: boolean, pagination: Record<string, any>): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (up && pagination.currentPage !== pagination.totalPages) {
         if (dev) console.log('changePagination: change pagination to ', pagination.currentPage! + 1)
         dataTableFile.changePagination({ currentPage: pagination.currentPage! + 1 })
-      }
-    } else if (!up && selectedRowIndex !== 0) {
-      if ((selectedRowIndex + 1) % pagination.rowsPerPage! === 0) {
+      } else if (!up && pagination.currentPage !== 1) {
         if (dev) console.log('changePagination: change pagination to ', pagination.currentPage! - 1)
         dataTableFile.changePagination({ currentPage: pagination.currentPage! - 1 })
       }
-    }
+      // Wait for currentVisibleRows to be filled in because we need those for the selectedRowIndex
+      currentVisibleRows = new Map()
+      for (let i = 0; i < 5; i++) {
+        setTimeout(() => {
+          if (currentVisibleRows.size > 0) {
+            resolve()
+          }
+        }, 500)
+      }
+    })
   }
 
   // A method to automatically map a given row
