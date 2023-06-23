@@ -44,7 +44,10 @@
 
   // A method to set the settings in the localstorage
   async function saveSettings(): Promise<void> {
+    if (settings.fontsize > 15) settings.fontsize = 15
+    else if (settings.fontsize < 6) settings.fontsize = 6
     if (settingsDialog.attributes.getNamedItem('open') != null) {
+      settings.fontsize = settings.fontsize > 15 ? 51 : settings.fontsize
       const previous = localStorageGetter('settings')
       localStorageSetter('settings', settings)
       // Check if the automap setting has changed and if so, dispatch an event with the new settings and explicitly set the automap to true to trigger the automapping again
@@ -118,7 +121,13 @@
           </div>
           <div data-name="option">
             <p>Font size</p>
-            <input type="number" bind:value={settings.fontsize} on:change={saveSettings} />
+            <input
+              type="number"
+              bind:value={settings.fontsize}
+              on:change={saveSettings}
+              min="6"
+              max="15"
+            />
           </div>
         </div>
       </section>
