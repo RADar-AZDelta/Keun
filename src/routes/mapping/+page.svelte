@@ -18,12 +18,12 @@
     SettingsChangedEventDetail,
     AutoMapRowEventDetail,
     UpdateDetailsEventDetail,
-    ISettings,
     ITableInformation,
     FileUploadWithColumnChanges,
     AuthorChangedEventDetail,
   } from '$lib/components/Types'
   import type {
+    FetchDataFunc,
     IColumnMetaData,
     IPagination,
     ITableOptions,
@@ -32,45 +32,52 @@
   } from '@radar-azdelta/svelte-datatable'
   import AthenaLayout from '$lib/components/Extra/AthenaLayout.svelte'
   import UsagiRow from '$lib/components/Mapping/UsagiRow.svelte'
-  import { onMount, tick } from 'svelte'
+  import { onMount } from 'svelte'
   import { query } from 'arquero'
-  import Download from '$lib/components/Extra/Download.svelte'
   import Settings from '$lib/components/Extra/Settings.svelte'
   // @ts-ignore
   import { LatencyOptimisedTranslator } from '@browsermt/bergamot-translator/translator.js'
   import { page } from '$app/stores'
   import { browser, dev } from '$app/environment'
-  import DragAndDrop from '$lib/components/Extra/DragAndDrop.svelte'
   import DataTable from '@radar-azdelta/svelte-datatable'
   import Manual from '$lib/components/Extra/Manual.svelte'
   import type Query from 'arquero/dist/types/query/query'
   import Progress from '$lib/components/Extra/Progress.svelte'
-  import Upload from '$lib/components/Extra/Upload.svelte'
-  import { user } from '$lib/store'
+  import { settings, user } from '$lib/store'
+  import { executeFilterOrderPaginationQueryFirestore, readCollectionFirestore, readFirestore } from '$lib/firebase'
+  import { where, orderBy, type OrderByDirection, startAt, endAt } from 'firebase/firestore'
 
   // General variables
   let file: File | undefined = undefined
-  let settings: ISettings = {
-    mapToMultipleConcepts: false,
-    autoMap: false,
-    language: 'en',
-    author: undefined,
-    savedAuthors: [],
-    vocabularyIdCustomConcept: '',
-    fontsize: 10,
-    popupSidesShowed: { filters: true, details: true },
-  }
 
   let tableOptions: ITableOptions = {
     id: 'usagi',
     rowsPerPage: 15,
     rowsPerPageOptions: [5, 10, 15, 20, 50, 100],
     actionColumn: true,
-    storageMethod: 'Firebase',
+    storageMethod: 'localStorage',
     userId: $user !== undefined ? $user.id : undefined,
   }
   let disableInteraction: boolean = false
   let translator: LatencyOptimisedTranslator
+  let fetchDataFile: FetchDataFunc
+  let columns: IColumnMetaData[] = [
+    {
+      id: 'sourceCode',
+      visible: true,
+      editable: false,
+    },
+    {
+      id: 'sourceName',
+      visible: true,
+      editable: false,
+    },
+    {
+      id: 'sourceFrequency',
+      visible: false,
+      editable: false,
+    },
+  ]
 
   // Athena related variables
   let mappingVisibility: boolean = false
@@ -123,13 +130,10 @@
   async function fileUploaded(e: CustomEvent<FileUploadedEventDetail>) {
     if (dev) console.log('fileUploaded: New file uploaded')
     tableInit = false
-    console.log("NEW FILE ", e.detail.file)
-  
     file = e.detail.file
     tableOptions.currentPage = 1
     tableOptions = tableOptions
     file = file
-    console.log("CURRENT FILE ", file)
   }
 
   async function fileUploadWithColumnChanges(e: CustomEvent<FileUploadWithColumnChanges>) {
@@ -225,9 +229,9 @@
     if (!mappedRow['ADD_INFO:numberOfConcepts']) mappedRow['ADD_INFO:numberOfConcepts'] = 1
     mappedRow['comment'] = event.detail.extra.comment
     mappedRow['assignedReviewer'] = event.detail.extra.reviewer
-    if (settings) {
+    if ($settings) {
       // If multiplemapping is enabled, update the previous rows and add the new one
-      if (settings.mapToMultipleConcepts) {
+      if ($settings.mapToMultipleConcepts) {
         // Get previous mapped concepts
         const q = (<Query>query().params({ sourceCode: mappedRow.sourceCode }))
           .filter((r: any, params: any) => r.sourceCode == params.sourceCode)
@@ -274,7 +278,7 @@
 
     // Add extra information like the number of concepts mapped for this row, comments & the assigned reviewer to the row
     mappedRow.mappingStatus = 'SEMI-APPROVED'
-    mappedRow.statusSetBy = settings!.author?.displayName
+    mappedRow.statusSetBy = $settings!.author?.displayName
 
     mappedRow['ADD_INFO:lastAthenaFilter'] = lastTypedFilter
 
@@ -337,10 +341,10 @@
       if (event.detail.action == 'APPROVED') {
         if (
           event.detail.row.statusSetBy == undefined ||
-          event.detail.row.statusSetBy == settings!.author?.displayName
+          event.detail.row.statusSetBy == $settings!.author?.displayName
         ) {
           // If statusSetBy is empty, it means the author is the first reviewer of this row
-          updatingObj.statusSetBy = settings!.author?.displayName
+          updatingObj.statusSetBy = $settings!.author?.displayName
           updatingObj.statusSetOn = Date.now()
           updatingObj.mappingStatus = 'SEMI-APPROVED'
           if (event.detail.row.conceptId == 0 || !event.detail.row.conceptId) {
@@ -348,15 +352,15 @@
           } else updatingObj.conceptId = event.detail.row.conceptId
         } else if (
           event.detail.row.statusSetBy &&
-          event.detail.row.statusSetBy != settings!.author?.displayName &&
+          event.detail.row.statusSetBy != $settings!.author?.displayName &&
           event.detail.row.mappingStatus == 'SEMI-APPROVED'
         ) {
           // StatusSetBy is not empty and it's not the current author so it means it's the second reviewer
-          updatingObj['ADD_INFO:approvedBy'] = settings!.author?.displayName
+          updatingObj['ADD_INFO:approvedBy'] = $settings!.author?.displayName
           updatingObj['ADD_INFO:approvedOn'] = Date.now()
           updatingObj.mappingStatus = 'APPROVED'
-        } else if (event.detail.row.statusSetBy && event.detail.row.statusSetBy != settings!.author?.displayName) {
-          updatingObj.statusSetBy = settings!.author?.displayName
+        } else if (event.detail.row.statusSetBy && event.detail.row.statusSetBy != $settings!.author?.displayName) {
+          updatingObj.statusSetBy = $settings!.author?.displayName
           updatingObj.statusSetOn = Date.now()
           updatingObj.mappingStatus = 'SEMI-APPROVED'
           if (event.detail.row.conceptId == 0 || !event.detail.row.conceptId) {
@@ -364,7 +368,7 @@
           } else updatingObj.conceptId = event.detail.row.conceptId
         }
       } else {
-        updatingObj.statusSetBy = settings!.author?.displayName
+        updatingObj.statusSetBy = $settings!.author?.displayName
         updatingObj.statusSetOn = Date.now()
         updatingObj.mappingStatus = event.detail.action
       }
@@ -538,11 +542,11 @@
   async function translate(text: string): Promise<string | undefined> {
     if (!browser) return undefined
     // Check the settings and if the language set is not english, translate the text
-    if (settings) {
-      if (settings.language && settings.language !== 'en') {
+    if ($settings) {
+      if ($settings.language && $settings.language !== 'en') {
         const translator = await createTranslator()
         let translation = await translator.translate({
-          from: settings!.language,
+          from: $settings!.language,
           to: 'en',
           text: text,
           html: true,
@@ -587,9 +591,9 @@
     // When the signal is aborted quit the method
     if (signal.aborted) return
     let filter = row.sourceName
-    // Check the language set in the settings and translate the filter to English if it's not English
-    if (settings) {
-      if (!settings.language) settings.language = 'en'
+    // Check the language set in the $settings and translate the filter to English if it's not English
+    if ($settings) {
+      if (!$settings.language) $settings.language = 'en'
       filter = await translate(filter)
     }
     if (signal.aborted) return
@@ -657,6 +661,49 @@
     return encodeURI(assembledAthenaUrl)
   }
 
+  async function getDatabaseData(
+    filteredColumns: Map<String, TFilter>,
+    sortedColumns: Map<string, SortDirection>,
+    pagination: IPagination
+  ): Promise<{ data: Record<string, any>[]; totalRows: number }> {
+    const fileName = $page.url.searchParams.get('file')!
+    // const res = await readCollectionFirestore(fileName!)
+    let filters = []
+    for (let f of Object.keys(Object.fromEntries(filteredColumns))) {
+      const createdFilter = where(f, 'in', Object.fromEntries(filteredColumns)[f as keyof object])
+      filters.push(createdFilter)
+    }
+    let orders = []
+    const orderObj: Record<string, SortDirection> = Object.fromEntries(sortedColumns)
+    if (Object.keys(orderObj).length > 0) {
+      for (let o of Object.keys(orderObj)) {
+        let orderWay: OrderByDirection = orderObj[o] == 'asc' ? 'asc' : 'desc'
+        const order = orderBy(o, orderWay)
+        orders.push(order)
+      }
+    } else {
+      orders.push(orderBy('sourceCode', 'asc'))
+    }
+    let start, end
+    if (pagination.currentPage && pagination.rowsPerPage) {
+      start = startAt((pagination.currentPage - 1) * pagination.rowsPerPage)
+      end = endAt(pagination.currentPage * pagination.rowsPerPage)
+    } else {
+      start = startAt(0)
+      end = endAt(20)
+    }
+    // TODO: filtering & sorting does not work yet
+    const res = await executeFilterOrderPaginationQueryFirestore({coll: fileName, filters, orders, start, end})
+    let data = []
+    for(let row of Object.values(res)) {
+      data.push(row)
+    }
+    return {
+      data,
+      totalRows: res.length,
+    }
+  }
+
   // A method to fetch the data from the Athena API, this method is used for the DataTable in the Athena pop-up
   async function fetchData(
     filteredColumns: Map<String, TFilter>,
@@ -716,14 +763,14 @@
 
           case 'statusSetBy':
           case 'statusSetOn':
-            mappedUsagiRow.statusSetBy = settings!.author?.displayName
+            mappedUsagiRow.statusSetBy = $settings!.author?.displayName
             mappedUsagiRow.statusSetOn = Date.now()
             break
 
           case 'createdBy':
           case 'createdOn':
-            if (!usagiRow.createdBy && usagiRow.createdBy != settings!.author?.displayName) {
-              mappedUsagiRow.createdBy = settings!.author?.displayName
+            if (!usagiRow.createdBy && usagiRow.createdBy != $settings!.author?.displayName) {
+              mappedUsagiRow.createdBy = $settings!.author?.displayName
               mappedUsagiRow.createdOn = Date.now()
             }
             break
@@ -732,12 +779,12 @@
             if (
               (usagiRow.statusSetBy == null ||
                 usagiRow.statusSetBy == undefined ||
-                usagiRow.statusSetBy == settings!.author?.displayName) &&
+                usagiRow.statusSetBy == $settings!.author?.displayName) &&
               !autoMap
             ) {
               mappedUsagiRow.mappingStatus = 'SEMI-APPROVED'
               break
-            } else if (usagiRow.statusSetBy != settings!.author?.displayName && !autoMap) {
+            } else if (usagiRow.statusSetBy != $settings!.author?.displayName && !autoMap) {
               mappedUsagiRow.mappingStatus = 'APPROVED'
               break
             }
@@ -795,15 +842,15 @@
         case 'statusSetBy':
         case 'statusSetOn':
           if (String(usagiRow.statusSetBy).replaceAll(' ', '') == '' || usagiRow.statusSetBy == undefined) {
-            mappedUsagiRow.statusSetBy = settings!.author?.displayName
+            mappedUsagiRow.statusSetBy = $settings!.author?.displayName
             mappedUsagiRow.statusSetOn = Date.now()
           }
           break
 
         case 'createdBy':
         case 'createdOn':
-          if (!usagiRow.createdBy && usagiRow.createdBy != settings!.author?.displayName) {
-            mappedUsagiRow.createdBy = settings!.author?.displayName
+          if (!usagiRow.createdBy && usagiRow.createdBy != $settings!.author?.displayName) {
+            mappedUsagiRow.createdBy = $settings!.author?.displayName
             mappedUsagiRow.createdOn = Date.now()
           }
           break
@@ -812,11 +859,11 @@
           if (
             usagiRow.statusSetBy == null ||
             usagiRow.statusSetBy == undefined ||
-            usagiRow.statusSetBy == settings!.author?.displayName
+            usagiRow.statusSetBy == $settings!.author?.displayName
           ) {
             mappedUsagiRow.mappingStatus = 'SEMI-APPROVED'
             break
-          } else if (usagiRow.statusSetBy != settings!.author?.displayName) {
+          } else if (usagiRow.statusSetBy != $settings!.author?.displayName) {
             mappedUsagiRow.mappingStatus = 'APPROVED'
             break
           }
@@ -870,7 +917,7 @@
   // A method to start the auto mapping
   async function autoMapPage(): Promise<void> {
     let start: number, end: number
-    if (settings!.autoMap) {
+    if ($settings!.autoMap) {
       if (dev) {
         start = performance.now()
         console.log('autoMapPage: Starting auto mapping')
@@ -937,13 +984,13 @@
     for (let [index, row] of currentVisibleRows) {
       if (!row.conceptId) row.conceptId = row.sourceAutoAssignedConceptIds
       if (row.statusSetBy) {
-        if (row.statusSetBy != settings!.author?.displayName) {
-          row['ADD_INFO:approvedBy'] = settings!.author?.displayName
+        if (row.statusSetBy != $settings!.author?.displayName) {
+          row['ADD_INFO:approvedBy'] = $settings!.author?.displayName
           row['ADD_INFO:approvedOn'] = Date.now()
           row.mappingStatus = 'APPROVED'
         }
       } else {
-        row.statusSetBy = settings!.author?.displayName
+        row.statusSetBy = $settings!.author?.displayName
         row.statusSetOn = Date.now()
         row.mappingStatus = 'SEMI-APPROVED'
       }
@@ -983,11 +1030,11 @@
     }
   }
 
-  // A method for when the settings are changed
+  // A method for when the $settings are changed
   function settingsChanged(e: CustomEvent<SettingsChangedEventDetail>) {
-    settings = e.detail.settings
-    document.documentElement.style.setProperty('--font-size', `${settings.fontsize}px`)
-    document.documentElement.style.setProperty('--font-number', `${settings.fontsize}`)
+    $settings = e.detail.settings
+    document.documentElement.style.setProperty('--font-size', `${$settings.fontsize}px`)
+    document.documentElement.style.setProperty('--font-number', `${$settings.fontsize}`)
     if (e.detail.autoMap == true && tableInit == true) {
       autoMapPage()
     }
@@ -1004,6 +1051,7 @@
   }
 
   let fetchDataFunc = fetchData
+  fetchDataFile = getDatabaseData
 
   onMount(async () => {
     // Get the URL parameters and put them in apiFilters
@@ -1013,13 +1061,6 @@
         if (!apiFilters.includes(`&${param}=${urlParam}`)) apiFilters.push(`&${param}=${urlParam}`)
       }
     }
-
-    // Get the settings from the local storage
-    // const storedSettings: ISettings = localStorageGetter('settings')
-    // if (storedSettings) {
-    //   Object.assign(settings, storedSettings)
-    //   settings = settings
-    // }
   })
 
   if (dev) {
@@ -1032,6 +1073,8 @@
       })
     }
   }
+
+  // TODO: when saving, go to server.page.ts and check if the user has rights to update
 </script>
 
 <svelte:head>
@@ -1045,20 +1088,6 @@
 <section data-name="header">
   <Header />
 
-  <div data-name="table-options">
-    {#if file}
-      <Upload on:fileUploaded={fileUploaded} on:fileUploadWithColumnChanges={fileUploadWithColumnChanges} {file} />
-      <Download dataTable={dataTableFile} title="Download file" />
-
-      {#if customConceptsArrayOfObjects.length > 0}
-        {#if Object.keys(customConceptsArrayOfObjects[0]).length != 0}
-          <p>Custom concepts download:</p>
-          <Download dataTable={dataTableCustomConcepts} title="Download custom concepts" />
-        {/if}
-      {/if}
-    {/if}
-  </div>
-
   {#if tableInit == true}
     <Progress {tableInformation} />
   {/if}
@@ -1066,13 +1095,13 @@
   <div data-name="header-buttons-container" id="settings">
     <Manual />
     {#if settings}
-      <Settings {settings} on:settingsChanged={settingsChanged} />
-      <User {settings} on:authorChanged={authorChanged} />
+      <Settings settings={$settings} on:settingsChanged={settingsChanged} />
+      <User settings={$settings} on:authorChanged={authorChanged} />
     {/if}
   </div>
 </section>
 
-{#if settings}
+{#if $settings}
   <AthenaLayout
     bind:equivalenceMapping
     {selectedRow}
@@ -1095,36 +1124,33 @@
   />
 {/if}
 
-{#if file && $user}
-  <DataTable
-    data={file}
-    bind:this={dataTableFile}
-    options={tableOptions}
-    on:rendering={abortAutoMap}
-    on:initialized={dataTableInitialized}
-    on:renderingComplete={autoMapPage}
-    modifyColumnMetadata={modifyUsagiColumnMetadata}
-  >
-    <UsagiRow
-      slot="default"
-      let:renderedRow
-      let:columns
-      let:originalIndex
-      on:generalVisibilityChanged={mappingVisibilityChanged}
-      on:actionPerformed={actionPerformed}
-      on:deleteRow={deleteRow}
-      on:autoMapRow={autoMapSingleRow}
-      {renderedRow}
-      {columns}
-      {settings}
-      disable={disableInteraction}
-      index={originalIndex}
-      bind:currentVisibleRows
-    />
-  </DataTable>
-{:else}
-  <DragAndDrop on:fileUploaded={fileUploaded} on:fileUploadWithColumnChanges={fileUploadWithColumnChanges} />
-{/if}
+<DataTable
+  data={fetchDataFile}
+  {columns}
+  bind:this={dataTableFile}
+  options={tableOptions}
+  on:rendering={abortAutoMap}
+  on:initialized={dataTableInitialized}
+  on:renderingComplete={autoMapPage}
+  modifyColumnMetadata={modifyUsagiColumnMetadata}
+>
+  <UsagiRow
+    slot="default"
+    let:renderedRow
+    let:columns
+    let:originalIndex
+    on:generalVisibilityChanged={mappingVisibilityChanged}
+    on:actionPerformed={actionPerformed}
+    on:deleteRow={deleteRow}
+    on:autoMapRow={autoMapSingleRow}
+    {renderedRow}
+    {columns}
+    settings={$settings}
+    disable={disableInteraction}
+    index={originalIndex}
+    bind:currentVisibleRows
+  />
+</DataTable>
 
 <div data-name="custom-concepts">
   <DataTable data={customConceptsArrayOfObjects} columns={customConceptColumns} bind:this={dataTableCustomConcepts} />

@@ -272,6 +272,21 @@ async function executeOrderQueryFirestore(coll: string, order: QueryOrderByConst
 	return queriedData
 }
 
+async function executeFilterOrderPaginationQueryFirestore(specs: {coll: string, filters?: QueryFieldFilterConstraint[], orders?: QueryOrderByConstraint[], start?: QueryStartAtConstraint, end?: QueryEndAtConstraint}) {
+	const queryConst: any = []
+	if(specs.orders) queryConst.push(...specs.orders)
+	if(specs.filters) queryConst.push(...specs.filters)
+	if(specs.start) queryConst.push(specs.start)
+	if(specs.end) queryConst.push(specs.end)
+	const q = query(collection(firestore, specs.coll), queryConst)
+	const querySnapshot = await getDocs(q)
+	let queriedData: Record<string, any> = {}
+	querySnapshot.forEach((doc) => {
+		queriedData[doc.id as keyof Object] = doc.data()
+	})
+	return queriedData
+}
+
 export {
 	logIn,
 	logOut,
@@ -289,6 +304,7 @@ export {
 	checkIfCollectionExists,
 	executeFilterQueryFirestore,
 	executeOrderQueryFirestore,
+	executeFilterOrderPaginationQueryFirestore,
 	watchCollectionFirestore,
 	watchCollectionWithQueryFirestore
 };

@@ -1,6 +1,5 @@
 <script lang="ts">
   import { clickOutside } from '$lib/actions/clickOutside'
-  import DragAndDrop from '$lib/components/Extra/DragAndDrop.svelte'
   import Header from '$lib/components/Extra/Header.svelte'
   import Manual from '$lib/components/Extra/Manual.svelte'
   import Settings from '$lib/components/Extra/Settings.svelte'
@@ -10,25 +9,22 @@
   import type {
     AuthorChangedEventDetail,
     FileUploadWithColumnChanges,
-    FileUploadedEventDetail,
-    IDatabaseFile,
-    ISettings,
     SettingsChangedEventDetail,
   } from '$lib/components/Types'
-  import { user } from '$lib/store'
+  import { settings, user } from '$lib/store'
   import {
     checkIfCollectionExists,
     deleteCollectionFirestore,
     deleteDatabase,
     pushToDatabase,
     readDatabase,
-    readFirestore,
     userSessionStore,
     writeToDatabase,
     writeToFirestore,
   } from '$lib/firebase'
   import { fromCSV } from 'arquero'
   import { writable } from 'svelte/store'
+  import { goto } from '$app/navigation'
 
   let files: Record<string, Record<number, string>>
   let fileInputDialog: HTMLDialogElement
@@ -41,22 +37,11 @@
   let selectedFile: string
   let currentAuthors: any
 
-  let settings: ISettings = {
-    mapToMultipleConcepts: false,
-    autoMap: false,
-    language: 'en',
-    author: undefined,
-    savedAuthors: [],
-    vocabularyIdCustomConcept: '',
-    fontsize: 10,
-    popupSidesShowed: { filters: true, details: true },
-  }
-
   // A method for when the settings are changed
   function settingsChanged(e: CustomEvent<SettingsChangedEventDetail>) {
-    settings = e.detail.settings
-    document.documentElement.style.setProperty('--font-size', `${settings.fontsize}px`)
-    document.documentElement.style.setProperty('--font-number', `${settings.fontsize}`)
+    $settings = e.detail.settings
+    document.documentElement.style.setProperty('--font-size', `${$settings.fontsize}px`)
+    document.documentElement.style.setProperty('--font-number', `${$settings.fontsize}`)
   }
 
   async function authorChanged(event: CustomEvent<AuthorChangedEventDetail>) {
@@ -205,13 +190,17 @@
     }
   }
 
+  async function openFileMapping(fileName: string) {
+    goto(`/mapping?file=${fileName}`)
+  }
+
   $: {
     if ($userSessionStore) getFiles()
   }
 
   $: {
-    if ($userSessionStore && !settings.author)
-      settings.author = {
+    if ($userSessionStore && !$settings.author)
+      $settings.author = {
         id: $userSessionStore.uid,
         email: $userSessionStore.email,
         displayName: $userSessionStore.name,
@@ -265,20 +254,26 @@
     <button on:click={closeEditDialog} data-name="close-dialog" disabled={$processing}
       ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" />
     </button>
-      Authorized authors
-      <div>
-        {#if users}
-          {#each Object.values(users) as user}
-            <input type="checkbox" id={user} bind:group={authorizedAuthors} value={user} checked={Object.values(currentAuthors).includes(user)}>
-            <label for={user}>{user}</label>
-          {/each}
-          <label>
-            Add a user by e-mail
-            <input type="text" bind:value={customUser} />
-            <button on:click={addCustomUser} disabled={$processing}>Add</button>
-          </label>
-        {/if}
-      </div>
+    Authorized authors
+    <div>
+      {#if users}
+        {#each Object.values(users) as user}
+          <input
+            type="checkbox"
+            id={user}
+            bind:group={authorizedAuthors}
+            value={user}
+            checked={Object.values(currentAuthors).includes(user)}
+          />
+          <label for={user}>{user}</label>
+        {/each}
+        <label>
+          Add a user by e-mail
+          <input type="text" bind:value={customUser} />
+          <button on:click={addCustomUser} disabled={$processing}>Add</button>
+        </label>
+      {/if}
+    </div>
     <button on:click={editFile}>Update</button>
   </div>
 </dialog>
@@ -289,10 +284,10 @@
 
     <div data-name="header-buttons-container" id="settings">
       <Manual />
-      {#if settings}
-        <Settings {settings} on:settingsChanged={settingsChanged} />
+      {#if $settings}
+        <Settings settings={$settings} on:settingsChanged={settingsChanged} />
         <!-- TODO: let user be set, but do not activate the modal in the beginning. Show the modal when navigating to a file and if the user is not set yet -->
-        <User {settings} on:authorChanged={authorChanged} />
+        <User settings={$settings} on:authorChanged={authorChanged} />
       {/if}
     </div>
   </section>
@@ -308,7 +303,7 @@
           </div>
         {:else if files}
           {#each Object.keys(files) as file}
-            <button data-name="file-card">
+            <button data-name="file-card" on:click={() => openFileMapping(file)}>
               <div data-name="file-name">
                 <SvgIcon href="icons.svg" id="excel" width="40px" height="40px" />
                 <p>{file}</p>

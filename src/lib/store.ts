@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store'
-import type { IFirebaseUser } from './components/Types'
+import type { ISettings, IFirebaseUser } from './components/Types'
 
 const customConcept = writable<Record<string, string>>({
   domain_id: '',
@@ -10,4 +10,15 @@ const customConcept = writable<Record<string, string>>({
 
 const user = writable<IFirebaseUser | undefined>()
 
-export { customConcept, user }
+const settings = writable<ISettings>({
+  mapToMultipleConcepts: false,
+  autoMap: false,
+  language: 'en',
+  author: undefined,
+  savedAuthors: [],
+  vocabularyIdCustomConcept: '',
+  fontsize: 10,
+  popupSidesShowed: { filters: true, details: true },
+})
+
+export { customConcept, user, settings }
