@@ -1,12 +1,13 @@
 import { getApps, initializeApp, cert, type App } from 'firebase-admin/app'
-import { PUBLIC_FIREBASE_PROJECT_ID } from '$env/static/public'
+import { PUBLIC_FIREBASE_PROJECT_ID, PUBLIC_FIREBASE_DATABASE_URL } from '$env/static/public'
 import { SECRET_FIREBASE_ADMIN_SDK_CLIENT_EMAIL, SECRET_FIREBASE_ADMIN_SDK_PRIVATE_KEY } from '$env/static/private'
 import { getAuth, type DecodedIdToken } from 'firebase-admin/auth'
+import { getDatabase } from 'firebase-admin/database'
 
 const firebaseAdminConfig = {
   projectId: PUBLIC_FIREBASE_PROJECT_ID,
   privateKey: SECRET_FIREBASE_ADMIN_SDK_PRIVATE_KEY.replace(/\\n/gm, '\n'),
-  clientEmail: SECRET_FIREBASE_ADMIN_SDK_CLIENT_EMAIL,
+  clientEmail: SECRET_FIREBASE_ADMIN_SDK_CLIENT_EMAIL
 }
 
 // Initialize Firebase
@@ -15,11 +16,14 @@ let firebaseAdminApp: App | undefined
 if (!getApps().length) {
   firebaseAdminApp = initializeApp({
     credential: cert(firebaseAdminConfig),
+    databaseURL: PUBLIC_FIREBASE_DATABASE_URL
   })
 }
 
 // Auth
 const firebaseAdminAuth = getAuth(firebaseAdminApp)
+// Database
+const firebaseAdminDatabase = getDatabase(firebaseAdminApp)
 
 // decode JWT token
 async function decodeToken(token: string): Promise<DecodedIdToken | null> {
@@ -39,6 +43,7 @@ async function createUser(email: string, customClaims?: object) {
     if (customClaims) {
       await firebaseAdminAuth.setCustomUserClaims(userRecord.uid, customClaims)
       console.log('Successfully set custom user claims on user: ', userRecord)
+      return userRecord
     }
   } catch (error: any) {
     console.error(error)
@@ -46,4 +51,14 @@ async function createUser(email: string, customClaims?: object) {
   }
 }
 
-export { decodeToken, createUser }
+async function writeToDatabaseAdmin(path: string, data: Object) {
+  const reference = firebaseAdminDatabase.ref(path)
+  reference.set(data)
+}
+
+async function updateDatabaseAdmin(path: string, data: Object) {
+  const reference = firebaseAdminDatabase.ref(path)
+  reference.update(data)
+}
+
+export { decodeToken, createUser, writeToDatabaseAdmin, updateDatabaseAdmin }

@@ -3,8 +3,6 @@
   import columnNamesAthena from '$lib/data/columnNamesAthena.json'
   import additionalColumns from '$lib/data/additionalColumns.json'
   import columnsCustomConcept from '$lib/data/columnsCustomConcept.json'
-  import Header from '$lib/components/Extra/Header.svelte'
-  import User from '$lib/components/Extra/User.svelte'
   import type {
     ActionPerformedEventDetail,
     DeleteRowEventDetail,
@@ -14,14 +12,11 @@
     RowChangeEventDetail,
     DeleteRowInnerMappingEventDetail,
     CustomMappingEventDetail,
-    FileUploadedEventDetail,
     SettingsChangedEventDetail,
     AutoMapRowEventDetail,
     UpdateDetailsEventDetail,
     ISettings,
     ITableInformation,
-    FileUploadWithColumnChanges,
-    AuthorChangedEventDetail,
   } from '$lib/components/Types'
   import type {
     IColumnMetaData,
@@ -32,21 +27,18 @@
   } from '@radar-azdelta/svelte-datatable'
   import AthenaLayout from '$lib/components/Extra/AthenaLayout.svelte'
   import UsagiRow from '$lib/components/Mapping/UsagiRow.svelte'
-  import { onMount, tick } from 'svelte'
+  import { onMount } from 'svelte'
   import { query } from 'arquero'
-  import Download from '$lib/components/Extra/Download.svelte'
-  import Settings from '$lib/components/Extra/Settings.svelte'
   // @ts-ignore
   import { LatencyOptimisedTranslator } from '@browsermt/bergamot-translator/translator.js'
   import { page } from '$app/stores'
   import { browser, dev } from '$app/environment'
-  import DragAndDrop from '$lib/components/Extra/DragAndDrop.svelte'
   import DataTable from '@radar-azdelta/svelte-datatable'
-  import Manual from '$lib/components/Extra/Manual.svelte'
   import type Query from 'arquero/dist/types/query/query'
-  import Progress from '$lib/components/Extra/Progress.svelte'
-  import Upload from '$lib/components/Extra/Upload.svelte'
   import { user } from '$lib/store'
+  import { readDatabase, readFileStorage, uploadFileToStorage } from '$lib/firebase'
+  import { goto } from '$app/navigation'
+  import { base64ToFile, fileToBase64 } from '$lib/utils'
 
   // General variables
   let file: File | undefined = undefined
@@ -60,13 +52,30 @@
     fontsize: 10,
     popupSidesShowed: { filters: true, details: true },
   }
+  const columns: IColumnMetaData[] = [
+    {
+      id: 'sourceCode',
+      visible: true,
+      editable: false,
+    },
+    {
+      id: 'sourceName',
+      visible: true,
+      editable: false,
+    },
+    {
+      id: 'sourceFrequency',
+      visible: false,
+      editable: false,
+    },
+  ]
 
   let tableOptions: ITableOptions = {
     id: 'usagi',
     rowsPerPage: 15,
     rowsPerPageOptions: [5, 10, 15, 20, 50, 100],
     actionColumn: true,
-    storageMethod: 'Firebase',
+    storageMethod: 'localStorage',
     userId: $user !== undefined ? $user.id : undefined,
   }
   let disableInteraction: boolean = false
@@ -118,26 +127,6 @@
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // EVENTS
   ///////////////////////////////////////////////////////////////////////////////////////////////
-
-  // When there is a new file uploaded for the first time (drag & drop)
-  async function fileUploaded(e: CustomEvent<FileUploadedEventDetail>) {
-    if (dev) console.log('fileUploaded: New file uploaded')
-    tableInit = false
-    console.log("NEW FILE ", e.detail.file)
-  
-    file = e.detail.file
-    tableOptions.currentPage = 1
-    tableOptions = tableOptions
-    file = file
-    console.log("CURRENT FILE ", file)
-  }
-
-  async function fileUploadWithColumnChanges(e: CustomEvent<FileUploadWithColumnChanges>) {
-    if (dev) console.log('fileUploadWithColumnChanges: New file uploaded and columns have changed')
-    file = e.detail.file
-    columnsNeedToChange = true
-    columnChanges = Object.fromEntries(Object.entries(e.detail.columnChange).map(a => a.reverse()))
-  }
 
   // When the visibility of the mapping pop-up changes
   async function mappingVisibilityChanged(event: CustomEvent<VisibilityChangedEventDetail>) {
@@ -227,7 +216,7 @@
     mappedRow['assignedReviewer'] = event.detail.extra.reviewer
     if (settings) {
       // If multiplemapping is enabled, update the previous rows and add the new one
-      if (settings.mapToMultipleConcepts) {
+      if (settings.mapToMultipleConcepts && fileName) {
         // Get previous mapped concepts
         const q = (<Query>query().params({ sourceCode: mappedRow.sourceCode }))
           .filter((r: any, params: any) => r.sourceCode == params.sourceCode)
@@ -491,24 +480,6 @@
       const row = await dataTableFile.getFullRow(event.detail.index)
       await autoMapRow(signal, row, event.detail.index)
     })
-  }
-
-  async function authorChanged(event: CustomEvent<AuthorChangedEventDetail>) {
-    $user = event.detail.author
-    let options = tableOptions
-    options.userId = $user.id
-    // firebase = new firebaseUtilities(options)
-    // const results = await firebase.load()
-    // if (results.savedData instanceof File) {
-    //   if (results.savedData.name !== 'undefined') {
-    //     file = results.savedData
-    //   }
-    // }
-    // if (results.savedSettings) settings = results.savedSettings
-    // if (results.savedOptions) tableOptions = results.savedOptions
-
-    // tableOptions = tableOptions
-    // file = file
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -955,7 +926,6 @@
 
   // A method to calculate the progress of the mapping
   async function calculateProgress(origin: string) {
-    console.log('ORIGIN CALCULATION ', origin)
     if (dev) console.log('calculateProgress: Calculating progress')
     // TODO: Check if mappingStatus exists
     const qMapping = query().slice(0, 1).toObject()
@@ -967,11 +937,9 @@
           valid: 'd => op.valid(d.mappingStatus)',
         }
         const expressionResults = await dataTableFile.executeExpressionsAndReturnResults(expressions)
-        console.log('SEARCHING FOR ERROR')
         const qAppr = query()
           .filter((r: any) => r.mappingStatus == 'APPROVED')
           .toObject()
-        console.log('FOUND ERROR IN CALCULATE PROGRESS')
         const resAppr = await dataTableFile.executeQueryAndReturnResults(qAppr)
 
         tableInformation = {
@@ -1007,13 +975,12 @@
 
   onMount(async () => {
     // Get the URL parameters and put them in apiFilters
-    for (let param of Array.from($page.url.searchParams.keys())) {
-      const urlParam = $page.url.searchParams.get(param)
-      if (urlParam) {
-        if (!apiFilters.includes(`&${param}=${urlParam}`)) apiFilters.push(`&${param}=${urlParam}`)
-      }
-    }
-
+    // for (let param of Array.from($page.url.searchParams.keys())) {
+    //   const urlParam = $page.url.searchParams.get(param)
+    //   if (urlParam) {
+    //     if (!apiFilters.includes(`&${param}=${urlParam}`)) apiFilters.push(`&${param}=${urlParam}`)
+    //   }
+    // }
     // Get the settings from the local storage
     // const storedSettings: ISettings = localStorageGetter('settings')
     // if (storedSettings) {
@@ -1032,6 +999,115 @@
       })
     }
   }
+
+  async function getFileFromStorage() {
+    const storageBlob = await readFileStorage(`/mapping-files/${$page.url.searchParams.get('file')}`)
+    file = new File([storageBlob], $page.url.searchParams.get('file')!)
+    return file
+  }
+
+  async function pushFileFromIndexedDBToStorage(db: IDBDatabase, fileName: string) {
+    const transaction = db.transaction(fileName)
+    const objectStore = transaction.objectStore(fileName)
+    const request = objectStore.get(fileName)
+    request.onsuccess = async e => {
+      const newFile = new File([(e.target as IDBRequest).result.file], fileName)
+      await uploadFileToStorage(`/mapping-files/${newFile.name}`, newFile)
+    }
+    request.onerror = e => {
+      console.error('Could not read the file in indexedDB')
+    }
+  }
+
+  async function writeFileToIndexedDB(file: File, db: IDBDatabase) {
+    const transaction = db.transaction(file.name, 'readwrite')
+    const store = transaction.objectStore(file.name)
+    const base64 = await fileToBase64(file)
+    const item = {
+      fileName: file.name.substring(0, file.name.indexOf('.')),
+      file: base64,
+    }
+    store.add(item)
+  }
+
+  async function getFileFromIndexedDB(fileName: string, db: IDBDatabase): Promise<void> {
+    return new Promise((resolve, reject) => {
+      let write: boolean = false
+
+      db.transaction(fileName).objectStore(fileName).get(fileName).onsuccess = function (e) {
+        console.log((e.target as IDBRequest).result)
+        if ((e.target as IDBRequest).result && write === false) {
+          const base64 = (e.target as IDBRequest).result.file
+          const res = base64ToFile(base64, fileName)
+          file = res
+          resolve()
+        } else {
+          write = true
+          return
+        }
+      }
+
+      db
+        .transaction(fileName)
+        .objectStore(fileName)
+        .get(fileName.substring(0, fileName.indexOf('.'))).onsuccess = async function (e) {
+        if (write === true) {
+          const storageFile = await getFileFromStorage()
+          const base64 = await fileToBase64(storageFile)
+          db.transaction(fileName, 'readwrite').objectStore(fileName).add({ fileName, file: base64 })
+          resolve()
+        }
+      }
+    })
+  }
+
+  async function openAndWriteToIndexedDB() {
+    const openIndexedDBRequest = indexedDB.open($page.url.searchParams.get('file')!)
+    openIndexedDBRequest.onsuccess = async function (e) {
+      const storageFile = await getFileFromStorage()
+      writeFileToIndexedDB(storageFile, openIndexedDBRequest.result)
+    }
+
+    openIndexedDBRequest.onupgradeneeded = function (e) {
+      const db = (e.target as IDBOpenDBRequest).result
+      const store = db.createObjectStore($page.url.searchParams.get('file')!, { keyPath: 'fileName' })
+      store.createIndex('fileName', 'fileName', { unique: true })
+    }
+
+    openIndexedDBRequest.onerror = async function (e) {
+      await getFileFromStorage()
+    }
+  }
+
+  onMount(async () => {
+    if (!$page.url.searchParams.get('file')) goto('/')
+    const fileName = $page.url.searchParams.get('file')?.substring(0, $page.url.searchParams.get('file')?.indexOf('.'))
+    const version: number = await readDatabase(`/files/${fileName}`)
+    const openIndexedDBRequest = indexedDB.open($page.url.searchParams.get('file')!)
+    openIndexedDBRequest.onsuccess = async function (e) {
+      const dbVersion = (event?.target as IDBOpenDBRequest).result.version
+      if (dbVersion < version) {
+        const storageFile = await getFileFromStorage()
+        await writeFileToIndexedDB(storageFile, openIndexedDBRequest.result)
+      } else if (dbVersion > version) {
+        await pushFileFromIndexedDBToStorage(openIndexedDBRequest.result, $page.url.searchParams.get('file')!)
+      } else {
+        await getFileFromIndexedDB($page.url.searchParams.get('file')!, openIndexedDBRequest.result)
+      }
+    }
+
+    openIndexedDBRequest.onupgradeneeded = function (e) {
+      const db = (e.target as IDBOpenDBRequest).result
+      const store = db.createObjectStore($page.url.searchParams.get('file')!, { keyPath: 'fileName' })
+      store.createIndex('fileName', 'fileName', { unique: true })
+    }
+
+    openIndexedDBRequest.onerror = async function (e) {
+      await getFileFromStorage()
+    }
+  })
+
+  $: fileName = $page.url.searchParams.get('file')
 </script>
 
 <svelte:head>
@@ -1042,35 +1118,23 @@
   />
 </svelte:head>
 
-<section data-name="header">
-  <Header />
+<!-- <div data-name="table-options">
+  {#if file}
+    <Upload on:fileUploaded={fileUploaded} on:fileUploadWithColumnChanges={fileUploadWithColumnChanges} {file} />
+    <Download dataTable={dataTableFile} title="Download file" />
 
-  <div data-name="table-options">
-    {#if file}
-      <Upload on:fileUploaded={fileUploaded} on:fileUploadWithColumnChanges={fileUploadWithColumnChanges} {file} />
-      <Download dataTable={dataTableFile} title="Download file" />
-
-      {#if customConceptsArrayOfObjects.length > 0}
-        {#if Object.keys(customConceptsArrayOfObjects[0]).length != 0}
-          <p>Custom concepts download:</p>
-          <Download dataTable={dataTableCustomConcepts} title="Download custom concepts" />
-        {/if}
+    {#if customConceptsArrayOfObjects.length > 0}
+      {#if Object.keys(customConceptsArrayOfObjects[0]).length != 0}
+        <p>Custom concepts download:</p>
+        <Download dataTable={dataTableCustomConcepts} title="Download custom concepts" />
       {/if}
     {/if}
-  </div>
-
-  {#if tableInit == true}
-    <Progress {tableInformation} />
   {/if}
+</div>
 
-  <div data-name="header-buttons-container" id="settings">
-    <Manual />
-    {#if settings}
-      <Settings {settings} on:settingsChanged={settingsChanged} />
-      <User {settings} on:authorChanged={authorChanged} />
-    {/if}
-  </div>
-</section>
+{#if tableInit == true}
+  <Progress {tableInformation} />
+{/if} -->
 
 {#if settings}
   <AthenaLayout
@@ -1095,36 +1159,32 @@
   />
 {/if}
 
-{#if file && $user}
-  <DataTable
-    data={file}
-    bind:this={dataTableFile}
-    options={tableOptions}
-    on:rendering={abortAutoMap}
-    on:initialized={dataTableInitialized}
-    on:renderingComplete={autoMapPage}
-    modifyColumnMetadata={modifyUsagiColumnMetadata}
-  >
-    <UsagiRow
-      slot="default"
-      let:renderedRow
-      let:columns
-      let:originalIndex
-      on:generalVisibilityChanged={mappingVisibilityChanged}
-      on:actionPerformed={actionPerformed}
-      on:deleteRow={deleteRow}
-      on:autoMapRow={autoMapSingleRow}
-      {renderedRow}
-      {columns}
-      {settings}
-      disable={disableInteraction}
-      index={originalIndex}
-      bind:currentVisibleRows
-    />
-  </DataTable>
-{:else}
-  <DragAndDrop on:fileUploaded={fileUploaded} on:fileUploadWithColumnChanges={fileUploadWithColumnChanges} />
-{/if}
+<DataTable
+  data={file}
+  bind:this={dataTableFile}
+  options={tableOptions}
+  on:rendering={abortAutoMap}
+  on:initialized={dataTableInitialized}
+  on:renderingComplete={autoMapPage}
+  modifyColumnMetadata={modifyUsagiColumnMetadata}
+>
+  <UsagiRow
+    slot="default"
+    let:renderedRow
+    let:columns
+    let:originalIndex
+    on:generalVisibilityChanged={mappingVisibilityChanged}
+    on:actionPerformed={actionPerformed}
+    on:deleteRow={deleteRow}
+    on:autoMapRow={autoMapSingleRow}
+    {renderedRow}
+    {columns}
+    {settings}
+    disable={disableInteraction}
+    index={originalIndex}
+    bind:currentVisibleRows
+  />
+</DataTable>
 
 <div data-name="custom-concepts">
   <DataTable data={customConceptsArrayOfObjects} columns={customConceptColumns} bind:this={dataTableCustomConcepts} />

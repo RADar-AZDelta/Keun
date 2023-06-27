@@ -9,8 +9,8 @@ import {
 } from '$env/static/public';
 import { getApp, type FirebaseApp, type FirebaseOptions, initializeApp } from "firebase/app";
 import { GithubAuthProvider, GoogleAuthProvider, getAuth, type AuthProvider, signInWithPopup, signOut, type User, type IdTokenResult, onAuthStateChanged } from 'firebase/auth';
-import { DataSnapshot, child, get, getDatabase, off, onValue, push, ref, remove, set } from 'firebase/database'
-import { QueryEndAtConstraint, QueryFieldFilterConstraint, QueryOrderByConstraint, QueryStartAtConstraint, collection, deleteDoc, doc, endAt, getDoc, getDocs, getFirestore, limit, onSnapshot, orderBy, query, setDoc, startAt, updateDoc } from 'firebase/firestore'
+import { DataSnapshot, child, get, getDatabase, off, onValue, push, ref, remove, set, update } from 'firebase/database'
+import { deleteObject, getBlob, getStorage, ref as storageRef, uploadBytes } from 'firebase/storage'
 import type { UserSession } from '../app';
 import { sleep } from './utils';
 import { writable } from 'svelte/store';
@@ -38,8 +38,8 @@ try {
 const firebaseAuth = getAuth(firebaseApp);
 // Realtime Database
 const firebaseDatabase = getDatabase(firebaseApp);
-// Firestore
-const firestore = getFirestore(firebaseApp)
+// Storage
+const firebaseStorage = getStorage(firebaseApp)
 
 // Analytics
 //const firebaseAnalytics = getAnalytics(firebaseApp)
@@ -183,93 +183,28 @@ async function deleteDatabase(path: string) {
 	remove(ref(firebaseDatabase, path))
 }
 
-async function writeToFirestore(collection: string, id: string, data: Object) {
-	return new Promise(async(resolve, reject) => {
-		try {
-			await setDoc(doc(firestore, collection, id), data)
-			resolve(true)
-		} catch(e: any) {
-			console.error(e)
-			resolve(false)
-		}
-	})
+async function updateDatabase(path: string, data: Object) {
+	const reference = ref(firebaseDatabase, path)
+	await update(reference, data)
 }
 
-async function updateToFirestore(collection: string, id: string, data: any) {
-	await updateDoc(doc(firestore, collection, id), data)
-}
-
-async function deleteCollectionFirestore(coll: string) {
+async function uploadFileToStorage(reference: string, file: File): Promise<string | void> {
 	return new Promise(async (resolve, reject) => {
-		const allSubCollections = await readCollectionFirestore(coll)
-		for(let sub of Object.keys(allSubCollections)) {
-			await deleteDoc(doc(firestore, coll, sub))
-		}
-		resolve(true)
+		const storageReference = storageRef(firebaseStorage, reference)
+		await uploadBytes(storageReference, file).catch((e) => {resolve(e.message)}).finally(() => resolve())
 	})
 }
 
-async function readFirestore(collection: string, id: string) {
-	const refer = doc(firestore, collection, id)
-	const docSnap = await getDoc(refer)
-	return docSnap.data()
+async function readFileStorage(reference: string) {
+	const storageReference = storageRef(firebaseStorage, reference)
+	return await getBlob(storageReference)
 }
 
-async function readCollectionFirestore(coll: string) {
-    let data: Record<string, Record<any, any>> = {}
-    const snapshot = await getDocs(collection(firestore, coll))
-    snapshot.forEach((doc) => {
-		data[doc.id] = doc.data()
-    })
-    return data
-}
-
-async function checkIfCollectionExists(coll: string): Promise<boolean> {
-	const q = query(collection(firestore, coll), limit(1))
-	const querySnapshot = await getDocs(q)
-	if(querySnapshot.empty) return false
-	else return true
-}
-
-async function watchCollectionFirestore(collection: string, id: string) {
-	const unsub = onSnapshot(doc(firestore, collection, id), (doc) => {
-		console.log("WATCHED ", doc.data)
+async function deleteFileStorage(reference: string): Promise<string | void> {
+	return new Promise((resolve, reject) => {
+		const storageReference = storageRef(firebaseStorage, reference)
+		deleteObject(storageReference).catch((e: Error) => resolve(e.message)).finally(() => resolve())
 	})
-}
-
-async function watchCollectionWithQueryFirestore(coll: string, filter: QueryFieldFilterConstraint) {
-	const q = query(collection(firestore, coll), filter)
-	const unsub = onSnapshot(q, (querySnapshot) => {
-		const values: any[] = []
-		querySnapshot.forEach((doc) => {
-			values.push(doc.data())
-		})
-		console.log("WATCHED WITH QUERY ", values)
-	})
-}
-
-async function executeFilterQueryFirestore(coll: string, filter: QueryFieldFilterConstraint) {
-	const q = query(collection(firestore, coll), filter)
-	const querySnapshot = await getDocs(q)
-	let queriedData: Record<string, any> = {}
-	querySnapshot.forEach((doc) => {
-		queriedData[doc.id as keyof Object] = doc.data()
-	})
-
-	return queriedData
-}
-
-async function executeOrderQueryFirestore(coll: string, order: QueryOrderByConstraint, start?: QueryStartAtConstraint, end?: QueryEndAtConstraint){
-	let q
-	if(start || end) q = query(collection(firestore, 'countries.csv'), orderBy('sourceCode'), startAt(0), endAt(5))
-	else q = query(collection(firestore, coll), order)
-	const querySnapshot = await getDocs(q)
-	let queriedData: Record<string, any> = {}
-	querySnapshot.forEach((doc) => {
-		queriedData[doc.id as keyof Object] = doc.data()
-	})
-
-	return queriedData
 }
 
 export {
@@ -281,14 +216,8 @@ export {
     pushToDatabase,
 	readDatabase,
 	deleteDatabase,
-    readCollectionFirestore,
-	writeToFirestore,
-	updateToFirestore,
-    deleteCollectionFirestore,
-	readFirestore,
-	checkIfCollectionExists,
-	executeFilterQueryFirestore,
-	executeOrderQueryFirestore,
-	watchCollectionFirestore,
-	watchCollectionWithQueryFirestore
+	updateDatabase,
+	uploadFileToStorage,
+	readFileStorage,
+	deleteFileStorage
 };
