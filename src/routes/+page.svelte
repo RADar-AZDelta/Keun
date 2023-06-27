@@ -1,6 +1,5 @@
 <script lang="ts">
   import { clickOutside } from '$lib/actions/clickOutside'
-  import DragAndDrop from '$lib/components/Extra/DragAndDrop.svelte'
   import Header from '$lib/components/Extra/Header.svelte'
   import Manual from '$lib/components/Extra/Manual.svelte'
   import Settings from '$lib/components/Extra/Settings.svelte'
@@ -150,6 +149,10 @@
   }
 
   function openMappingTool(fileName: string) {
+    goto(`/mapping?file=${fileName}`)
+  }
+
+  async function openFileMapping(fileName: string) {
     goto(`/mapping?file=${fileName}`)
   }
 
