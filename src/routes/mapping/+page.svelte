@@ -37,7 +37,7 @@
   import DataTable from '@radar-azdelta/svelte-datatable'
   import type Query from 'arquero/dist/types/query/query'
   import { user, settings } from '$lib/store'
-  import { readDatabase, readFileStorage, uploadFileToStorage } from '$lib/firebase'
+  import { readDatabase, readFileStorage, uploadFileToStorage, writeToDatabase } from '$lib/firebase'
   import { goto } from '$app/navigation'
   import { base64ToFile, fileToBase64 } from '$lib/utils'
 
@@ -964,22 +964,6 @@
 
   let fetchDataFunc = fetchData
 
-  onMount(async () => {
-    // Get the URL parameters and put them in apiFilters
-    // for (let param of Array.from($page.url.searchParams.keys())) {
-    //   const urlParam = $page.url.searchParams.get(param)
-    //   if (urlParam) {
-    //     if (!apiFilters.includes(`&${param}=${urlParam}`)) apiFilters.push(`&${param}=${urlParam}`)
-    //   }
-    // }
-    // Get the settings from the local storage
-    // const storedSettings: ISettings = localStorageGetter('settings')
-    // if (storedSettings) {
-    //   Object.assign(settings, storedSettings)
-    //   settings = settings
-    // }
-  })
-
   if (dev) {
     if (browser) {
       window.addEventListener('beforeunload', e => {
@@ -1011,14 +995,13 @@
   }
 
   async function writeFileToIndexedDB(file: File, db: IDBDatabase) {
-    const transaction = db.transaction(file.name, 'readwrite')
-    const store = transaction.objectStore(file.name)
     const base64 = await fileToBase64(file)
-    const item = {
-      fileName: file.name.substring(0, file.name.indexOf('.')),
-      file: base64,
-    }
-    store.add(item)
+    db.transaction(file.name, 'readwrite')
+      .objectStore(file.name)
+      .add({
+        fileName: file.name.substring(0, file.name.indexOf('.')),
+        file: base64,
+      })
   }
 
   async function getFileFromIndexedDB(fileName: string, db: IDBDatabase): Promise<void> {
@@ -1052,21 +1035,23 @@
     })
   }
 
-  async function openAndWriteToIndexedDB() {
-    const openIndexedDBRequest = indexedDB.open($page.url.searchParams.get('file')!)
-    openIndexedDBRequest.onsuccess = async function (e) {
-      const storageFile = await getFileFromStorage()
-      writeFileToIndexedDB(storageFile, openIndexedDBRequest.result)
-    }
+  async function syncFile() {
+    let currentVersion: number = await readDatabase(`files/${fileName?.substring(0, fileName.indexOf('.'))}`)
+    const blob = await dataTableFile.getFile(fileName)
+    const f = new File([blob], fileName!, { type: 'text/csv' })
+    await uploadFileToStorage(`/mapping-files/${fileName}`, f)
+    await writeToDatabase(`/files/${fileName?.substring(0, fileName.indexOf('.'))}`, currentVersion + 1)
+    const openIndexedDBRequest = indexedDB.open($page.url.searchParams.get('file')!, currentVersion + 1)
 
     openIndexedDBRequest.onupgradeneeded = function (e) {
       const db = (e.target as IDBOpenDBRequest).result
+      db.deleteObjectStore($page.url.searchParams.get('file')!)
       const store = db.createObjectStore($page.url.searchParams.get('file')!, { keyPath: 'fileName' })
       store.createIndex('fileName', 'fileName', { unique: true })
     }
 
-    openIndexedDBRequest.onerror = async function (e) {
-      await getFileFromStorage()
+    openIndexedDBRequest.onsuccess = async function (e) {
+      await writeFileToIndexedDB(f, openIndexedDBRequest.result)
     }
   }
 
@@ -1099,6 +1084,7 @@
   })
 
   $: fileName = $page.url.searchParams.get('file')
+  // TODO: add all custom concepts to a file that only the admin can see
 </script>
 
 <svelte:head>
@@ -1126,6 +1112,8 @@
 {#if tableInit == true}
   <Progress {tableInformation} />
 {/if} -->
+
+<button on:click={syncFile}>Sync</button>
 
 {#if $settings}
   <AthenaLayout
