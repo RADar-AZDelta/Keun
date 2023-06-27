@@ -47,6 +47,8 @@
     if (settingsDialog.attributes.getNamedItem('open') != null) {
       const previous = localStorageGetter('settings')
       localStorageSetter('settings', settings)
+      document.documentElement.style.setProperty('--font-size', `${settings.fontsize}px`)
+      document.documentElement.style.setProperty('--font-number', `${settings.fontsize}`)
       // Check if the automap setting has changed and if so, dispatch an event with the new settings and explicitly set the automap to true to trigger the automapping again
       if (settings.autoMap == true && previous.autoMap !== settings.autoMap) {
         if (dev) console.log('saveSettings: The settings have been saved and the automapping has been triggered')

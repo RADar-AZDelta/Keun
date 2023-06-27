@@ -1,32 +1,38 @@
-import { createUser } from '$lib/firebaseAdmin.server'
-import { redirect, type Actions, fail } from '@sveltejs/kit'
+import { pushToDatabase } from '$lib/firebase'
+import { createUser, updateDatabaseAdmin, writeToDatabaseAdmin } from '$lib/firebaseAdmin.server'
+import { type Actions, fail } from '@sveltejs/kit'
 
 export const prerender = false
 
 export const actions: Actions = {
   create: async ({ locals, request }) => {
-    if (!locals.userSession?.uid || !locals.userSession?.roles?.includes('admin')) {
-      console.error(`'${locals.userSession?.email}' tried to create an user and was not authorised!`)
-      throw redirect(302, '/')
-    }
-
     const formData = await request.formData()
     const email = formData.get('email')
     const role = formData.get('role')
-    // let fileNames = formData.get('fileNames')
+    let fileNames = formData.getAll('files')
+
     if (!email) return fail(422, { error: 'Email is required' })
     if (!role) return fail(422, { error: 'Role is required' })
-    // else if (!fileNames) return fail(422, { error: 'File names are required' })
 
     let customClaims = {
       role: role,
-      // fileNames: fileNames,
     }
 
-    console.log('CUSTOMCLAIMS ', customClaims)
-
     try {
-      await createUser(email?.toString(), customClaims)
+      await createUser(email?.toString(), customClaims).then(async(user) => {
+        if(user) await updateDatabaseAdmin('/authors', {
+          [user.uid]: {
+            email: user.email
+          }
+        })
+        return user
+      }).then(async (user) => {
+        if(user && fileNames) {
+          for(let file of fileNames) {
+            await pushToDatabase(`/authors/${user.uid}/files`, file)
+          }
+        }
+      })
     } catch (error: any) {
       return fail(422, {
         email,
