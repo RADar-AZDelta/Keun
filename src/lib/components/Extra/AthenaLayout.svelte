@@ -26,6 +26,7 @@
   import { dev } from '$app/environment'
   import CustomConceptInputRow from '../Mapping/CustomConceptInputRow.svelte'
   import { customConcept } from '$lib/store'
+  import { AthenaDataTypeImpl } from '$lib/utilClasses/AthenaDataTypeImpl'
 
   export let equivalenceMapping: string,
     selectedRow: Record<string, any>,
@@ -264,8 +265,8 @@
     // Check if the value needs to be erased, if there are multiple mappings for the same sourceCode it needs to be erased
     let erase = alreadyMapped[selectedRow.sourceCode].conceptId.length > 1
     const index = customConceptData.findIndex((r: any) => r.concept_id == conceptId && r.concept_name == conceptName)
-    if(customConceptData.length > 1) customConceptData.splice(index, 1)
-    
+    if (customConceptData.length > 1) customConceptData.splice(index, 1)
+
     dispatch('deleteRowInnerMapping', { conceptId, conceptName, erase, custom: true })
     removeUniqueConcept(conceptId, conceptName)
     fillMappedTable()
@@ -592,6 +593,7 @@
                 globalFilter: globalFilter,
                 saveOptions: false,
                 singleSort: true,
+                dataTypeImpl: new AthenaDataTypeImpl(),
               }}
               bind:this={dataTableAthena}
             >

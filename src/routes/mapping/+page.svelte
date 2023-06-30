@@ -12,7 +12,6 @@
     RowChangeEventDetail,
     DeleteRowInnerMappingEventDetail,
     CustomMappingEventDetail,
-    SettingsChangedEventDetail,
     AutoMapRowEventDetail,
     UpdateDetailsEventDetail,
     ITableInformation,
@@ -36,39 +35,25 @@
   import { browser, dev } from '$app/environment'
   import DataTable from '@radar-azdelta/svelte-datatable'
   import type Query from 'arquero/dist/types/query/query'
-  import { user, settings } from '$lib/store'
+  import { settings, triggerAutoMapping } from '$lib/store'
   import { readDatabase, readFileStorage, uploadFileToStorage, writeToDatabase } from '$lib/firebase'
   import { goto } from '$app/navigation'
-  import { base64ToFile, fileToBase64 } from '$lib/utils'
+  import { convertBlobToHexString, convertHexStringToBlob, onInterval } from '$lib/utils'
+  import { FirebaseSaveImpl } from '$lib/utilClasses/FirebaseSaveImpl'
+  import { IndexedDB } from '$lib/utilClasses/IndexedDB'
 
   // General variables
   let file: File | undefined = undefined
-  const columns: IColumnMetaData[] = [
-    {
-      id: 'sourceCode',
-      visible: true,
-      editable: false,
-    },
-    {
-      id: 'sourceName',
-      visible: true,
-      editable: false,
-    },
-    {
-      id: 'sourceFrequency',
-      visible: false,
-      editable: false,
-    },
-  ]
+  let render: boolean = false
 
   let tableOptions: ITableOptions = {
     id: 'usagi',
     rowsPerPage: 15,
     rowsPerPageOptions: [5, 10, 15, 20, 50, 100],
     actionColumn: true,
-    storageMethod: 'localStorage',
-    userId: $user !== undefined ? $user.id : undefined,
   }
+
+  let tableFullOptions: ITableOptions = Object.assign(tableOptions, { saveImpl: new FirebaseSaveImpl(tableOptions) })
   let disableInteraction: boolean = false
   let translator: LatencyOptimisedTranslator
 
@@ -244,7 +229,7 @@
   async function multipleMapping(event: CustomEvent<MappingEventDetail>) {
     if (dev) console.log('multipleMapping: Multiple mapping for the row with sourceCode ', selectedRow.sourceCode)
     // Map the selected row with the selected concept
-    const { mappedIndex, mappedRow } = await rowMapping(event.detail.originalRow!, event.detail.row)
+    const { mappedRow } = await rowMapping(event.detail.originalRow!, event.detail.row)
 
     // Create a query and execute it to get all the rows that are already mapped and got the same sourceCode
     const q = (<Query>query().params({ value: mappedRow.sourceCode }))
@@ -942,16 +927,6 @@
     }
   }
 
-  // A method for when the $settings are changed
-  function settingsChanged(e: CustomEvent<SettingsChangedEventDetail>) {
-    $settings = e.detail.settings
-    document.documentElement.style.setProperty('--font-size', `${$settings.fontsize}px`)
-    document.documentElement.style.setProperty('--font-number', `${$settings.fontsize}`)
-    if (e.detail.autoMap == true && tableInit == true) {
-      autoMapPage()
-    }
-  }
-
   // A method to save the facets
   function saveFacets(facets: Record<string, any>) {
     athenaFacets = facets
@@ -975,115 +950,76 @@
     }
   }
 
-  async function getFileFromStorage() {
-    const storageBlob = await readFileStorage(`/mapping-files/${$page.url.searchParams.get('file')}`)
-    file = new File([storageBlob], $page.url.searchParams.get('file')!)
-    return file
-  }
-
-  async function pushFileFromIndexedDBToStorage(db: IDBDatabase, fileName: string) {
-    const transaction = db.transaction(fileName)
-    const objectStore = transaction.objectStore(fileName)
-    const request = objectStore.get(fileName)
-    request.onsuccess = async e => {
-      const newFile = new File([(e.target as IDBRequest).result.file], fileName)
-      await uploadFileToStorage(`/mapping-files/${newFile.name}`, newFile)
-    }
-    request.onerror = e => {
-      console.error('Could not read the file in indexedDB')
-    }
-  }
-
-  async function writeFileToIndexedDB(file: File, db: IDBDatabase) {
-    const base64 = await fileToBase64(file)
-    db.transaction(file.name, 'readwrite')
-      .objectStore(file.name)
-      .add({
-        fileName: file.name.substring(0, file.name.indexOf('.')),
-        file: base64,
-      })
-  }
-
-  async function getFileFromIndexedDB(fileName: string, db: IDBDatabase): Promise<void> {
-    return new Promise((resolve, reject) => {
-      let write: boolean = false
-
-      db.transaction(fileName).objectStore(fileName).get(fileName).onsuccess = function (e) {
-        console.log((e.target as IDBRequest).result)
-        if ((e.target as IDBRequest).result && write === false) {
-          const base64 = (e.target as IDBRequest).result.file
-          const res = base64ToFile(base64, fileName)
-          file = res
-          resolve()
-        } else {
-          write = true
-          return
+  async function syncFile(upload: boolean = false) {
+    let version: number = await readDatabase(`files/${fileName?.substring(0, fileName.indexOf('.'))}`)
+    if (version) {
+      if (upload) {
+        if (dev) console.log('syncFile: The file is syncing with the storage for version ', version + 1)
+        const blob = await dataTableFile.getBlob()
+        const fileToUpload = new File([blob], fileName!, { type: 'text/csv' })
+        await uploadFileToStorage(`/mapping-files/${fileName}`, fileToUpload)
+        await writeToDatabase(`/files/${fileName?.substring(0, fileName.indexOf('.'))}`, version + 1)
+      }
+      const db = new IndexedDB(fileName!, fileName!)
+      const dbVersion = await db.get('version', true)
+      if (dbVersion < version) {
+        if (dev) console.log('syncFile: Get file from storage & write to indexedDB')
+        const storageBlob = await readFileStorage(`/mapping-files/${fileName}`)
+        file = new File([storageBlob], fileName!, { type: 'text/csv' })
+        const hex = await convertBlobToHexString(storageBlob)
+        await db.set({ fileName: fileName!, file: hex }, 'fileData')
+        await db.set(version, 'version', true)
+      } else if (dbVersion > version) {
+        if (dev) console.log('syncFile: Newer version in indexedDB & write to storage')
+        const fileData = await db.get('fileData', true)
+        const blob = convertHexStringToBlob(fileData.file, 'text/csv')
+        file = new File([blob], fileName!)
+        await uploadFileToStorage(`/mapping-files/${fileName}`, file)
+        await writeToDatabase(`/files/${fileName!.substring(0, fileName!.indexOf('.'))}`, dbVersion)
+      } else {
+        if (dev) console.log('syncFile: The versions are the same, but check if there is a version in indexedDB')
+        const fileData = await db.get('fileData', true)
+        if (!fileData) {
+          if (dev) console.log('syncFile: There is no file in indexedDB, upload the file from storage to indexedDB')
+          const storageBlob = await readFileStorage(`/mapping-files/${fileName}`)
+          file = new File([storageBlob], fileName!, { type: 'text/csv' })
+          const hex = await convertBlobToHexString(storageBlob)
+          await db.set({ fileName: fileName!, file: hex }, 'fileData')
+          await db.set(version, 'version', true)
+        } else if (!file) {
+          if (dev) console.log('syncFile: There is no file in the Datatable, get it from indexedDB')
+          const fileData = await db.get('fileData', true)
+          const blob = convertHexStringToBlob(fileData.file, 'text/csv')
+          file = new File([blob], fileName!)
         }
       }
-
-      db
-        .transaction(fileName)
-        .objectStore(fileName)
-        .get(fileName.substring(0, fileName.indexOf('.'))).onsuccess = async function (e) {
-        if (write === true) {
-          const storageFile = await getFileFromStorage()
-          const base64 = await fileToBase64(storageFile)
-          db.transaction(fileName, 'readwrite').objectStore(fileName).add({ fileName, file: base64 })
-          resolve()
-        }
-      }
-    })
+    } else {
+      throw new Error(`It is not possible to sync the file because the version is ${version}`)
+    }
   }
 
-  async function syncFile() {
-    let currentVersion: number = await readDatabase(`files/${fileName?.substring(0, fileName.indexOf('.'))}`)
-    const blob = await dataTableFile.getFile(fileName)
-    const f = new File([blob], fileName!, { type: 'text/csv' })
-    await uploadFileToStorage(`/mapping-files/${fileName}`, f)
-    await writeToDatabase(`/files/${fileName?.substring(0, fileName.indexOf('.'))}`, currentVersion + 1)
-    const openIndexedDBRequest = indexedDB.open($page.url.searchParams.get('file')!, currentVersion + 1)
-
-    openIndexedDBRequest.onupgradeneeded = function (e) {
-      const db = (e.target as IDBOpenDBRequest).result
-      db.deleteObjectStore($page.url.searchParams.get('file')!)
-      const store = db.createObjectStore($page.url.searchParams.get('file')!, { keyPath: 'fileName' })
-      store.createIndex('fileName', 'fileName', { unique: true })
-    }
-
-    openIndexedDBRequest.onsuccess = async function (e) {
-      await writeFileToIndexedDB(f, openIndexedDBRequest.result)
-    }
+  function startInterval() {
+    onInterval(async () => {
+      syncFile(false)
+    }, 5000)
   }
 
   onMount(async () => {
     if (!$page.url.searchParams.get('file')) goto('/')
-    const fileName = $page.url.searchParams.get('file')?.substring(0, $page.url.searchParams.get('file')?.indexOf('.'))
-    const version: number = await readDatabase(`/files/${fileName}`)
-    const openIndexedDBRequest = indexedDB.open($page.url.searchParams.get('file')!)
-    openIndexedDBRequest.onsuccess = async function (e) {
-      const dbVersion = (event?.target as IDBOpenDBRequest).result.version
-      if (dbVersion < version) {
-        const storageFile = await getFileFromStorage()
-        await writeFileToIndexedDB(storageFile, openIndexedDBRequest.result)
-      } else if (dbVersion > version) {
-        await pushFileFromIndexedDBToStorage(openIndexedDBRequest.result, $page.url.searchParams.get('file')!)
-      } else {
-        await getFileFromIndexedDB($page.url.searchParams.get('file')!, openIndexedDBRequest.result)
-      }
-    }
-
-    openIndexedDBRequest.onupgradeneeded = function (e) {
-      const db = (e.target as IDBOpenDBRequest).result
-      const store = db.createObjectStore($page.url.searchParams.get('file')!, { keyPath: 'fileName' })
-      store.createIndex('fileName', 'fileName', { unique: true })
-    }
-
-    openIndexedDBRequest.onerror = async function (e) {
-      await getFileFromStorage()
-    }
+    syncFile(false)
   })
 
+  startInterval()
+
   $: fileName = $page.url.searchParams.get('file')
+
+  $: {
+    if ($triggerAutoMapping === true) {
+      autoMapPage()
+      $triggerAutoMapping = false
+    }
+  }
+
   // TODO: add all custom concepts to a file that only the admin can see
 </script>
 
@@ -1113,7 +1049,7 @@
   <Progress {tableInformation} />
 {/if} -->
 
-<button on:click={syncFile}>Sync</button>
+<button on:click={() => syncFile(true)}>Sync</button>
 
 {#if $settings}
   <AthenaLayout
@@ -1138,32 +1074,34 @@
   />
 {/if}
 
-<DataTable
-  data={file}
-  bind:this={dataTableFile}
-  options={tableOptions}
-  on:rendering={abortAutoMap}
-  on:initialized={dataTableInitialized}
-  on:renderingComplete={autoMapPage}
-  modifyColumnMetadata={modifyUsagiColumnMetadata}
->
-  <UsagiRow
-    slot="default"
-    let:renderedRow
-    let:columns
-    let:originalIndex
-    on:generalVisibilityChanged={mappingVisibilityChanged}
-    on:actionPerformed={actionPerformed}
-    on:deleteRow={deleteRow}
-    on:autoMapRow={autoMapSingleRow}
-    {renderedRow}
-    {columns}
-    {settings}
-    disable={disableInteraction}
-    index={originalIndex}
-    bind:currentVisibleRows
-  />
-</DataTable>
+{#if file}
+  <DataTable
+    data={file}
+    bind:this={dataTableFile}
+    options={tableFullOptions}
+    on:rendering={abortAutoMap}
+    on:initialized={dataTableInitialized}
+    on:renderingComplete={autoMapPage}
+    modifyColumnMetadata={modifyUsagiColumnMetadata}
+  >
+    <UsagiRow
+      slot="default"
+      let:renderedRow
+      let:columns
+      let:originalIndex
+      on:generalVisibilityChanged={mappingVisibilityChanged}
+      on:actionPerformed={actionPerformed}
+      on:deleteRow={deleteRow}
+      on:autoMapRow={autoMapSingleRow}
+      {renderedRow}
+      {columns}
+      {settings}
+      disable={disableInteraction}
+      index={originalIndex}
+      bind:currentVisibleRows
+    />
+  </DataTable>
+{/if}
 
 <div data-name="custom-concepts">
   <DataTable data={customConceptsArrayOfObjects} columns={customConceptColumns} bind:this={dataTableCustomConcepts} />

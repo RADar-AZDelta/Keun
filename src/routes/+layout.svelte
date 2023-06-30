@@ -9,18 +9,7 @@
   import Manual from '$lib/components/Extra/Manual.svelte'
   import Settings from '$lib/components/Extra/Settings.svelte'
   import User from '$lib/components/Extra/User.svelte'
-  import { settings, user } from '$lib/store'
-  import type { AuthorChangedEventDetail, SettingsChangedEventDetail } from '$lib/components/Types'
-
-  function settingsChanged(e: CustomEvent<SettingsChangedEventDetail>) {
-    $settings = e.detail.settings
-  }
-
-  async function authorChanged(event: CustomEvent<AuthorChangedEventDetail>) {
-    if (event.detail.author) {
-      $user = event.detail.author
-    }
-  }
+  import { settings } from '$lib/store'
 </script>
 
 <main>
@@ -36,11 +25,11 @@
       <div data-name="header-buttons-container" id="settings">
         <Manual />
         {#if $settings}
-          <Settings settings={$settings} on:settingsChanged={settingsChanged} />
-          <User settings={$settings} on:authorChanged={authorChanged} />
+          <Settings />
+          <User />
         {/if}
       </div>
     {/if}
   </header>
-  <slot></slot>
+  <slot />
 </main>

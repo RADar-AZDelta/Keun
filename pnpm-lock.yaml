@@ -23,6 +23,9 @@ importers:
       lodash.debounce:
         specifier: ^4.0.8
         version: 4.0.8
+      lodash.isequal:
+        specifier: ^4.5.0
+        version: 4.5.0
     devDependencies:
       '@browsermt/bergamot-translator':
         specifier: ^0.4.9
@@ -3206,6 +3209,10 @@ packages:
 
   /lodash.debounce@4.0.8:
     resolution: {integrity: sha512-FT1yDzDYEoYWhnSGnpE/4Kj1fLZkDFyqRb7fNt6FdYOSxlUWAtp42Eh6Wb0rGIv/m9Bgo7x4GhQbm5Ys4SG5ow==}
+    dev: false
+
+  /lodash.isequal@4.5.0:
+    resolution: {integrity: sha512-pDo3lu8Jhfjqls6GkMgpahsF9kCyayhgykjyLMNFTKWrpVdAQtYyB4muAMWozBB4ig/dtWAmsMxLEI8wuz+DYQ==}
     dev: false
 
   /lodash.merge@4.6.2:
