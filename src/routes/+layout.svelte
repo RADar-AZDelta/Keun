@@ -21,7 +21,7 @@
         <li><a href="/register">Registration</a></li>
       {/if}
     </ul>
-    {#if $page.url.pathname.substr($page.url.pathname.lastIndexOf('/')) !== 'registration'}
+    {#if $page.url.pathname.substring($page.url.pathname.lastIndexOf('/')) !== 'registration'}
       <div data-name="header-buttons-container" id="settings">
         <Manual />
         {#if $settings}

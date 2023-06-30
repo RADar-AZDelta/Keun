@@ -201,10 +201,12 @@ async function uploadFileToStorage(reference: string, file: File): Promise<strin
 	})
 }
 
-async function readFileStorage(reference: string) {
-	if(dev) console.log('readFileStorage: Read the file from storage at reference ', reference)
+async function readFileStorage(reference: string): Promise<Blob | undefined> {
+	return new Promise(async(resolve, reject) => {
+		if(dev) console.log('readFileStorage: Read the file from storage at reference ', reference)
 	const storageReference = storageRef(firebaseStorage, reference)
-	return await getBlob(storageReference)
+		await getBlob(storageReference).then((blob: Blob) => resolve(blob)).catch(() => resolve(undefined))
+	})
 }
 
 async function deleteFileStorage(reference: string): Promise<string | void> {
