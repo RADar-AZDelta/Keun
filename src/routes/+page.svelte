@@ -194,19 +194,21 @@
   }
 
   function openMappingTool(fileName: string) {
-    goto(`/mapping?file=${fileName}`)
+    if (fileName !== 'customConcepts.csv') goto(`/mapping?file=${fileName}`)
   }
 
   async function downloadFile(fileName: string) {
     let element = document.createElement('a')
     const fileToDownload = await readFileStorage(`/mapping-files/${fileName}`)
-    const url = URL.createObjectURL(fileToDownload)
-    element.setAttribute('href', url)
-    element.setAttribute('download', fileName!)
-    document.body.appendChild(element)
-    element.click()
-    document.body.removeChild(element)
-    URL.revokeObjectURL(url)
+    if (fileToDownload) {
+      const url = URL.createObjectURL(fileToDownload)
+      element.setAttribute('href', url)
+      element.setAttribute('download', fileName!)
+      document.body.appendChild(element)
+      element.click()
+      document.body.removeChild(element)
+      URL.revokeObjectURL(url)
+    }
   }
 
   $: {
@@ -384,11 +386,14 @@
                       <SvgIcon href="icons.svg" id="download" width="16px" height="16px" />
                     </button>
                     <button
+                      disabled={file === "customConcepts.csv"}
                       data-name="edit-file"
                       on:click={async e => {
                         if (e && e.stopPropagation) e.stopPropagation()
-                        chosenFile = file
-                        authorsDialog.showModal()
+                        if (file !== 'customConcepts.csv') {
+                          chosenFile = file
+                          authorsDialog.showModal()
+                        }
                       }}
                     >
                       <SvgIcon href="icons.svg" id="edit" width="16px" height="16px" />

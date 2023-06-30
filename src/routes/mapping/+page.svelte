@@ -952,23 +952,32 @@
 
   async function syncFile(upload: boolean = false) {
     let version: number = await readDatabase(`files/${fileName?.substring(0, fileName.indexOf('.'))}`)
+    let customVersion: number = await readDatabase(`files/customConcepts`)
     if (version) {
       if (upload) {
         if (dev) console.log('syncFile: The file is syncing with the storage for version ', version + 1)
         const blob = await dataTableFile.getBlob()
+        const customBlob = await dataTableCustomConcepts.getBlob()
         const fileToUpload = new File([blob], fileName!, { type: 'text/csv' })
+        const customFileToUpload = new File([customBlob], 'customConcepts.csv', { type: 'text/csv' })
         await uploadFileToStorage(`/mapping-files/${fileName}`, fileToUpload)
+        await uploadFileToStorage(`/mapping-files/customConcepts.csv`, customFileToUpload)
         await writeToDatabase(`/files/${fileName?.substring(0, fileName.indexOf('.'))}`, version + 1)
+        await writeToDatabase('/files/customConcepts', customVersion + 1)
       }
       const db = new IndexedDB(fileName!, fileName!)
+      const customDB = new IndexedDB('customConcepts.csv', 'customConcepts.csv')
       const dbVersion = await db.get('version', true)
+      const customDBVersion = await customDB.get('version', true)
       if (dbVersion < version) {
         if (dev) console.log('syncFile: Get file from storage & write to indexedDB')
         const storageBlob = await readFileStorage(`/mapping-files/${fileName}`)
-        file = new File([storageBlob], fileName!, { type: 'text/csv' })
-        const hex = await convertBlobToHexString(storageBlob)
-        await db.set({ fileName: fileName!, file: hex }, 'fileData')
-        await db.set(version, 'version', true)
+        if (storageBlob) {
+          file = new File([storageBlob], fileName!, { type: 'text/csv' })
+          const hex = await convertBlobToHexString(storageBlob)
+          await db.set({ fileName: fileName!, file: hex }, 'fileData')
+          await db.set(version, 'version', true)
+        } else console.error('syncFile: There was no file found in storage')
       } else if (dbVersion > version) {
         if (dev) console.log('syncFile: Newer version in indexedDB & write to storage')
         const fileData = await db.get('fileData', true)
@@ -982,15 +991,57 @@
         if (!fileData) {
           if (dev) console.log('syncFile: There is no file in indexedDB, upload the file from storage to indexedDB')
           const storageBlob = await readFileStorage(`/mapping-files/${fileName}`)
-          file = new File([storageBlob], fileName!, { type: 'text/csv' })
-          const hex = await convertBlobToHexString(storageBlob)
-          await db.set({ fileName: fileName!, file: hex }, 'fileData')
-          await db.set(version, 'version', true)
+          if (storageBlob) {
+            file = new File([storageBlob], fileName!, { type: 'text/csv' })
+            const hex = await convertBlobToHexString(storageBlob)
+            await db.set({ fileName: fileName!, file: hex }, 'fileData')
+            await db.set(version, 'version', true)
+          } else console.error('syncFile: There was no file found in storage')
         } else if (!file) {
           if (dev) console.log('syncFile: There is no file in the Datatable, get it from indexedDB')
           const fileData = await db.get('fileData', true)
           const blob = convertHexStringToBlob(fileData.file, 'text/csv')
           file = new File([blob], fileName!)
+        }
+      }
+
+      if (customDBVersion < customVersion) {
+        if (dev) console.log('syncFile: Get customConcepts file from storage & write to IndexedDB')
+        const customBlob = await readFileStorage(`/mapping-files/customConcepts.csv`)
+        if (customBlob) {
+          const customHex = await convertBlobToHexString(customBlob)
+          await customDB.set({ fileName: 'customConcepts.csv', file: customHex }, 'fileData')
+          await customDB.set(version, 'version', true)
+        } else console.error('syncFile: There was no file with custom concepts found in storage')
+      } else if (customDBVersion > customVersion) {
+        if (dev) console.log('syncFile: Newer version of custom concetps in indexedDB & write to storage')
+        const customFileData = await customDB.get('customConcepts.csv', true)
+        const blob = convertHexStringToBlob(customFileData.file, 'text/csv')
+        const customFile = new File([blob], 'text/csv')
+        await uploadFileToStorage('/mapping-files/customConcepts.csv', customFile)
+        await writeToDatabase('/files/customConcepts', customDBVersion)
+      } else {
+        if (dev)
+          console.log(
+            'syncFile: The versions of the custom concepts file are the same, but check if there is a version in indexedDB'
+          )
+        const customFileData = await customDB.get('fileData', true)
+        if (!customFileData) {
+          if (dev)
+            console.log(
+              'syncFile: There is no file for custom concepts in indexedDB, upload the file from storage to indexedDB'
+            )
+          const customStorageBlob = await readFileStorage('/mapping-files/customConcepts.csv')
+          if (customStorageBlob) {
+            const hex = await convertBlobToHexString(customStorageBlob)
+            await customDB.set({ fileName: 'customConcepts.csv', file: hex }, 'fileData')
+            await customDB.set(customVersion, 'version', true)
+          } else {
+            const customBlob = await dataTableCustomConcepts.getBlob()
+            const customFileToUpload = new File([customBlob], 'customConcepts.csv', { type: 'text/csv' })
+            await uploadFileToStorage(`/mapping-files/customConcepts.csv`, customFileToUpload)
+            await writeToDatabase('/files/customConcepts', customVersion + 1)
+          }
         }
       }
     } else {
@@ -1019,8 +1070,6 @@
       $triggerAutoMapping = false
     }
   }
-
-  // TODO: add all custom concepts to a file that only the admin can see
 </script>
 
 <svelte:head>
