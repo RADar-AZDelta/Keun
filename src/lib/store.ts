@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store'
-import type { IFirebaseUser, ISettings } from './components/Types'
+import type { ISettings } from './components/Types'
 
 const customConcept = writable<Record<string, string>>({
   domain_id: '',
@@ -19,6 +19,6 @@ const settings = writable<ISettings>({
   popupSidesShowed: { filters: true, details: true },
 })
 
-const user = writable<IFirebaseUser | undefined>()
+const triggerAutoMapping = writable<boolean>(false)
 
-export { customConcept, user, settings }
+export { customConcept, settings, triggerAutoMapping }

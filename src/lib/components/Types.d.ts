@@ -11,13 +11,10 @@ export interface CustomOptionsEvents {
   updateUniqueConceptIds: UpdateUniqueConceptIdsEventDetail
   customMapping: CustomMappingEventDetail
   customMappingInput: CustomMappingInputEventDetail
-  fileUploaded: FileUploadedEventDetail
   fileUploadWithColumnChanges: FileUploadWithColumnChanges
-  settingsChanged: SettingsChangedEventDetail
   autoMapRow: AutoMapRowEventDetail
   autoComplete: AutoCompleteEventDetail
   updateDetails: UpdateDetailsEventDetail
-  authorChanged: AuthorChangedEventDetail
 }
 
 export interface VisibilityChangedEventDetail {
@@ -104,22 +101,9 @@ export interface UpdateDetailsEventDetail {
   assignedReviewer: string
 }
 
-export interface AuthorChangedEventDetail {
-  author: IFirebaseUser
-}
-
-export interface FileUploadedEventDetail {
-  file: File
-}
-
 export interface FileUploadWithColumnChanges {
   file: File
   columnChange: Record<string, string>
-}
-
-export interface SettingsChangedEventDetail {
-  settings: ISettings
-  autoMap?: boolean
 }
 
 export interface ICategories {

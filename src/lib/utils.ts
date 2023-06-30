@@ -1,3 +1,5 @@
+import { onDestroy } from "svelte"
+
 function jsonMapReviver(key: string, value: any) {
   if (value && value.dataType === 'Map') {
     return new Map(value.value)
@@ -48,3 +50,47 @@ export function base64ToFile(dataUrl: string, fileName: string) {
 }
 
 export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+export function removeUndefineds(obj: any): any {
+  if (!obj) {
+      return null;
+  }
+  if (typeof obj === 'object') {
+      for (let key in obj) {
+          obj[key] = removeUndefineds(obj[key]);
+      }
+  }
+  return obj;
+}
+
+export function onInterval(callback: () => void, milliseconds: number) {
+  const interval = setInterval(callback, milliseconds)
+
+  onDestroy(() => {
+    clearInterval(interval)
+  })
+}
+
+export async function convertBlobToHexString(blob: Blob): Promise<string> {
+  const buffer = await blob.arrayBuffer()
+  const hex = [...new Uint8Array(buffer)]
+      .map(x => x.toString(16).padStart(2, '0'))
+      .join('')
+  return "\\x".concat(hex)
+}
+
+export function convertHexStringToBlob(hex: string, mimeType: string): Blob {
+  if (hex.startsWith("\\x"))
+      hex = hex.slice("\\x".length)
+  let previousValue = ""
+  const bytes = [...hex].reduce((acc, _, i) => { 
+      if (i - 1 & 1) //even
+          previousValue = _
+      else //odd  
+          acc.push(parseInt(previousValue.concat(_), 16))
+      return acc
+  }, [] as number[])
+  return new Blob([new Uint8Array(bytes)], {type: mimeType})
+}
+
+export const fileToBlob = async (file: File) => new Blob([new Uint8Array(await file.arrayBuffer())], {type: file.type });
