@@ -1,11 +1,29 @@
 import { dev } from "$app/environment"
 import type { TFilter } from "@radar-azdelta/svelte-datatable"
+import type { IDataTypeInfo } from "@radar-azdelta/svelte-datatable/components/DataTable"
 import type { FetchDataFunc, IColumnMetaData, IDataTypeFunctionalities, IRender, SortDirection } from "@radar-azdelta/svelte-datatable/components/DataTable"
-import { DataTypeBase } from "@radar-azdelta/svelte-datatable/components/datatable/data/DataTypeBase"
+import { DataTypeCommonBase } from '@radar-azdelta/svelte-datatable/components/datatable/data/DataTypeCommonBase'
 import type Query from "arquero/dist/types/query/query"
 
 
-export class AthenaDataTypeImpl extends DataTypeBase implements IDataTypeFunctionalities {
+export class AthenaDataTypeImpl extends DataTypeCommonBase implements IDataTypeFunctionalities {
+      async setData (data: IDataTypeInfo): Promise<void> {
+      if (data.data) this.data = data.data as FetchDataFunc
+      if (data.internalOptions) this.internalOptions = data.internalOptions
+      if (data.internalColumns) this.internalColumns = data.internalColumns
+      if (data.renderedData) this.renderedData = data.renderedData
+    }
+
+  async setInternalColumns(columns: IColumnMetaData[] | undefined): Promise<IColumnMetaData[]> {
+    if(columns) this.internalColumns = columns
+    if(this.internalColumns) {
+              this.internalColumns!.forEach(col => {
+          if (!col.width) col.width = this.internalOptions!.defaultColumnWidth
+        })
+    }
+    return (this.internalColumns as IColumnMetaData[])
+  }
+  
   async render (onlyPaginationChanged: boolean): Promise<IRender> {
     let start: number
     const filteredColumns = this.internalColumns!.reduce<Map<string, TFilter>>((acc, cur, i) => {

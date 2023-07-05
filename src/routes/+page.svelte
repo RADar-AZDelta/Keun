@@ -159,6 +159,7 @@
       if (name == fileName) await deleteDatabase(`/admin/${uid}`)
     }
     await deleteFileStorage(`/mapping-files/${fileName}`)
+    await deleteDatabase(`/files/${fileName.substring(0, fileName.indexOf('.'))}`)
     const authors: Record<string, { email: string; files: Record<string, string> }> = await readDatabase('/authors')
     for (let [uid, info] of Object.entries(authors)) {
       if (info.email) {
@@ -386,7 +387,7 @@
                       <SvgIcon href="icons.svg" id="download" width="16px" height="16px" />
                     </button>
                     <button
-                      disabled={file === "customConcepts.csv"}
+                      disabled={file === 'customConcepts.csv'}
                       data-name="edit-file"
                       on:click={async e => {
                         if (e && e.stopPropagation) e.stopPropagation()
@@ -399,10 +400,11 @@
                       <SvgIcon href="icons.svg" id="edit" width="16px" height="16px" />
                     </button>
                     <button
+                    disabled={file === 'customConcepts.csv'}
                       data-name="delete-file"
                       on:click={e => {
                         if (e && e.stopPropagation) e.stopPropagation()
-                        deleteFile(file)
+                        if (file !== 'customConcepts.csv') deleteFile(file)
                       }}><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
                     >
                   </div>

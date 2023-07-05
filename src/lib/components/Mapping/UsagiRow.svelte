@@ -116,11 +116,7 @@
   </div>
 </td>
 {#each columns || [] as column, i}
-  <td
-    on:dblclick={onClickMapping}
-    style={`background-color: ${color}`}
-    title={renderedRow[column.id]}
-  >
+  <td on:dblclick={onClickMapping} style={`background-color: ${color}`} title={renderedRow[column.id]}>
     {#if ['statusSetOn', 'createdOn', 'ADD_INFO:approvedOn'].includes(column.id)}
       <p>{renderedRow[column.id] ? new Date(parseInt(renderedRow[column.id])).toLocaleString() : 0}</p>
     {:else}

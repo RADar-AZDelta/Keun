@@ -38,6 +38,9 @@ try {
 const firebaseAuth = getAuth(firebaseApp);
 // Realtime Database
 const firebaseDatabase = getDatabase(firebaseApp);
+
+const firebaseDatabaseListeners: Record<string, any> = {}
+
 // Storage
 const firebaseStorage = getStorage(firebaseApp)
 
@@ -182,6 +185,16 @@ async function readDatabase(path: string) {
 	return receivedData;
 }
 
+async function watchValueDatabase(path: string, callback: (snapshot: DataSnapshot) => unknown, remove: boolean = false) {
+	const reference = ref(firebaseDatabase, path)
+	if(dev) console.log('watchValueDatabase: Watching the value at path ', path)
+	const valueCheck = onValue(reference, callback)
+	if(remove) {
+		// Close twice because it will create the listener twice
+		valueCheck()
+		valueCheck()
+	}
+}
 async function deleteDatabase(path: string) {
 	if(dev) console.log('deleteDatabase: Delete the data at the path ', path)
 	remove(ref(firebaseDatabase, path))
@@ -225,6 +238,7 @@ export {
 	writeToDatabase,
     pushToDatabase,
 	readDatabase,
+	watchValueDatabase,
 	deleteDatabase,
 	updateDatabase,
 	uploadFileToStorage,

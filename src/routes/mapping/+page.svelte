@@ -15,10 +15,8 @@
     AutoMapRowEventDetail,
     UpdateDetailsEventDetail,
     ITableInformation,
-    ISettings,
   } from '$lib/components/Types'
   import type {
-    FetchDataFunc,
     IColumnMetaData,
     IPagination,
     ITableOptions,
@@ -27,7 +25,7 @@
   } from '@radar-azdelta/svelte-datatable'
   import AthenaLayout from '$lib/components/Extra/AthenaLayout.svelte'
   import UsagiRow from '$lib/components/Mapping/UsagiRow.svelte'
-  import { onMount } from 'svelte'
+  import { onDestroy, onMount } from 'svelte'
   import { query } from 'arquero'
   // @ts-ignore
   import { LatencyOptimisedTranslator } from '@browsermt/bergamot-translator/translator.js'
@@ -36,26 +34,40 @@
   import DataTable from '@radar-azdelta/svelte-datatable'
   import type Query from 'arquero/dist/types/query/query'
   import { settings, triggerAutoMapping } from '$lib/store'
-  import { readDatabase, readFileStorage, uploadFileToStorage, writeToDatabase } from '$lib/firebase'
+  import {
+    readFileStorage,
+    watchValueDatabase,
+  } from '$lib/firebase'
   import { goto } from '$app/navigation'
-  import { convertBlobToHexString, convertHexStringToBlob, onInterval } from '$lib/utils'
   import { FirebaseSaveImpl } from '$lib/utilClasses/FirebaseSaveImpl'
-  import { IndexedDB } from '$lib/utilClasses/IndexedDB'
+  import { FileDataTypeImpl } from '$lib/utilClasses/FileDataTypeImpl'
 
   // General variables
   let file: File | undefined = undefined
-  let render: boolean = false
+  let customConceptsFile: File | undefined = undefined
 
   let tableOptions: ITableOptions = {
-    id: 'usagi',
+    id: `${$page.url.searchParams.get('file')?.substring(0, $page.url.searchParams.get('file')?.indexOf('.'))}-usagi`,
     rowsPerPage: 15,
     rowsPerPageOptions: [5, 10, 15, 20, 50, 100],
     actionColumn: true,
   }
 
-  let tableFullOptions: ITableOptions = Object.assign(tableOptions, { saveImpl: new FirebaseSaveImpl(tableOptions) })
+  let tableFullOptions: ITableOptions = Object.assign(tableOptions, {
+    saveImpl: new FirebaseSaveImpl(tableOptions),
+    dataTypeImpl: new FileDataTypeImpl($page.url.searchParams.get('file')),
+  })
+
+  let customTableOptions: ITableOptions = {
+    id: 'customConceptsTable',
+    dataTypeImpl: new FileDataTypeImpl('customConcepts.csv'),
+    saveOptions: false
+  }
+
   let disableInteraction: boolean = false
   let translator: LatencyOptimisedTranslator
+  let dbVersion: number = 1,
+    customDBVersion: number = 1
 
   // Athena related variables
   let mappingVisibility: boolean = false
@@ -85,10 +97,6 @@
 
   let dataTableFile: DataTable
   let dataTableCustomConcepts: DataTable
-
-  let customConceptColumns: IColumnMetaData[] = columnsCustomConcept
-
-  let customConceptsArrayOfObjects: Record<string, any>[] = [{}]
 
   let importantAthenaColumns = new Map<string, string>([
     ['id', 'conceptId'],
@@ -154,11 +162,6 @@
   async function customMapping(event: CustomEvent<CustomMappingEventDetail>) {
     if (dev) console.log('customMapping: Custom mapping for the row with sourceCode ', selectedRow.sourceCode)
     // Remove the first empty object from the array (this empty object is needed to determain the datatype)
-    if (customConceptsArrayOfObjects.length > 0) {
-      if (Object.keys(customConceptsArrayOfObjects[0]).length == 0) {
-        customConceptsArrayOfObjects = []
-      }
-    }
     const customConcept = {
       concept_id: event.detail.customConcept.conceptId,
       concept_name: event.detail.customConcept.conceptName,
@@ -171,18 +174,25 @@
       valid_end_date: event.detail.customConcept.validEndDate,
       invalid_reason: event.detail.customConcept.invalidReason,
     }
-    const existingConcept = customConceptsArrayOfObjects.find(
-      concept =>
-        concept.concept_id === customConcept.concept_id &&
-        concept.concept_name === customConcept.concept_name &&
-        concept.domain_id === customConcept.domain_id &&
-        concept.vocabulary_id === customConcept.vocabulary_id &&
-        concept.concept_class_id === customConcept.concept_class_id
-    )
-    // Push the custom concept to the hidden table that can be downloaded, if it does not exist yet
-    if (!existingConcept) {
-      customConceptsArrayOfObjects.push(customConcept)
-      customConceptsArrayOfObjects = customConceptsArrayOfObjects
+    const q = (<Query>query().params({
+      concept_id: customConcept.concept_id,
+      concept_name: customConcept.concept_name,
+      domain_id: customConcept.domain_id,
+      vocabulary_id: customConcept.vocabulary_id,
+      concept_class_id: customConcept.concept_class_id,
+    }))
+      .filter(
+        (r: any, params: any) =>
+          r.concept_id == params.concept_id &&
+          r.concept_name == params.concept_name &&
+          r.domain_id == params.domain_id &&
+          r.vocabulary_id == params.vocabulary_id &&
+          r.concept_class_id == params.concept_class_id
+      )
+      .toObject()
+    const customRes = await dataTableCustomConcepts.executeQueryAndReturnResults(q)
+    if (customRes.queriedData.length === 0) {
+      await dataTableCustomConcepts.insertRows([customConcept])
     }
 
     // Map the selected row with the custom concept
@@ -206,7 +216,7 @@
           await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
         } else {
           // If the custom concept didn't exist yet
-          if (!existingConcept) {
+          if (customRes.queriedData.length == 0) {
             mappedRow['ADD_INFO:numberOfConcepts'] = res.queriedData.length + 1
             mappedRow['comment'] = event.detail.extra.comment
             mappedRow['assignedReviewer'] = event.detail.extra.reviewer
@@ -377,10 +387,13 @@
     if (dev) console.log('deleteRowInnerMapping: Delete mapping with conceptId ', event.detail.conceptId)
     // If the row is a custom concept, delete it from the custom concepts table
     if (event.detail.custom) {
-      const deletionIndex = customConceptsArrayOfObjects.findIndex(
-        row => row.conceptId === event.detail.conceptId && row.concept_name === event.detail.conceptName
-      )
-      customConceptsArrayOfObjects.splice(deletionIndex, 1)
+      const q = (<Query>query().params({ concept_id: event.detail.conceptId, concept_name: event.detail.conceptName }))
+        .filter((r: any, params: any) => r.concept_id == params.concept_id && r.concept_name == params.concept_name)
+        .toObject()
+      const res = await dataTableCustomConcepts.executeQueryAndReturnResults(q)
+      if (res.indices.length > 0) {
+        await dataTableCustomConcepts.deleteRows(res.indices)
+      }
     }
 
     // Create a query to find the index of the row that needs to be removed, can be an index that is not visualised and therefor we use the query
@@ -877,6 +890,26 @@
     return modifiedColumns.concat(addedColumns)
   }
 
+  function modifyCustomConceptsColumnMetadata(columns: IColumnMetaData[]): IColumnMetaData[] {
+    if (dev) console.log('modifyCustomConceptsColumnMetaData: Modifying custom concepts column metadata')
+    const customConceptsColumnMap = columnsCustomConcept.reduce((acc, cur) => {
+      acc.set(cur.id, cur)
+      return acc
+    }, new Map<string, IColumnMetaData>())
+    const columnIds = columns.map(col => col.id)
+    const modifiedColumns = columns.map(col => {
+      const customConceptColumn = customConceptsColumnMap.get(col.id)
+      if (customConceptColumn) Object.assign(col, customConceptColumn)
+      else col.visible = false
+      return col
+    })
+    const addedColumns = columnsCustomConcept.reduce<IColumnMetaData[]>((acc, cur) => {
+      if (!columnIds.includes(cur.id)) acc.push(cur)
+      return acc
+    }, [])
+    return modifiedColumns.concat(addedColumns)
+  }
+
   // A method to approve a whole page
   async function approvePage() {
     if (dev) console.log('approvePage: Approving page')
@@ -918,11 +951,11 @@
           .toObject()
         const resAppr = await dataTableFile.executeQueryAndReturnResults(qAppr)
 
-        tableInformation = {
-          totalRows: expressionResults.expressionData[0].total,
-          mappedRows: expressionResults.expressionData[1].valid,
-          approvedRows: resAppr.queriedData.length,
-        }
+        // tableInformation = {
+        //   totalRows: expressionResults.expressionData[0].total,
+        //   mappedRows: expressionResults.expressionData[1].valid,
+        //   approvedRows: resAppr.queriedData.length,
+        // }
       }
     }
   }
@@ -940,7 +973,7 @@
   let fetchDataFunc = fetchData
 
   if (dev) {
-    if (browser) {
+    if (browser && window) {
       window.addEventListener('beforeunload', e => {
         const confirmationMessage = 'Save the file you were mapping before leaving the application.'
         ;(e || window.event).returnValue = confirmationMessage
@@ -950,119 +983,37 @@
     }
   }
 
-  async function syncFile(upload: boolean = false) {
-    let version: number = await readDatabase(`files/${fileName?.substring(0, fileName.indexOf('.'))}`)
-    let customVersion: number = await readDatabase(`files/customConcepts`)
-    if (version) {
-      if (upload) {
-        if (dev) console.log('syncFile: The file is syncing with the storage for version ', version + 1)
-        const blob = await dataTableFile.getBlob()
-        const customBlob = await dataTableCustomConcepts.getBlob()
-        const fileToUpload = new File([blob], fileName!, { type: 'text/csv' })
-        const customFileToUpload = new File([customBlob], 'customConcepts.csv', { type: 'text/csv' })
-        await uploadFileToStorage(`/mapping-files/${fileName}`, fileToUpload)
-        await uploadFileToStorage(`/mapping-files/customConcepts.csv`, customFileToUpload)
-        await writeToDatabase(`/files/${fileName?.substring(0, fileName.indexOf('.'))}`, version + 1)
-        await writeToDatabase('/files/customConcepts', customVersion + 1)
-      }
-      const db = new IndexedDB(fileName!, fileName!)
-      const customDB = new IndexedDB('customConcepts.csv', 'customConcepts.csv')
-      const dbVersion = await db.get('version', true)
-      const customDBVersion = await customDB.get('version', true)
-      if (dbVersion < version) {
-        if (dev) console.log('syncFile: Get file from storage & write to indexedDB')
-        const storageBlob = await readFileStorage(`/mapping-files/${fileName}`)
-        if (storageBlob) {
-          file = new File([storageBlob], fileName!, { type: 'text/csv' })
-          const hex = await convertBlobToHexString(storageBlob)
-          await db.set({ fileName: fileName!, file: hex }, 'fileData')
-          await db.set(version, 'version', true)
-        } else console.error('syncFile: There was no file found in storage')
-      } else if (dbVersion > version) {
-        if (dev) console.log('syncFile: Newer version in indexedDB & write to storage')
-        const fileData = await db.get('fileData', true)
-        const blob = convertHexStringToBlob(fileData.file, 'text/csv')
-        file = new File([blob], fileName!)
-        await uploadFileToStorage(`/mapping-files/${fileName}`, file)
-        await writeToDatabase(`/files/${fileName!.substring(0, fileName!.indexOf('.'))}`, dbVersion)
-      } else {
-        if (dev) console.log('syncFile: The versions are the same, but check if there is a version in indexedDB')
-        const fileData = await db.get('fileData', true)
-        if (!fileData) {
-          if (dev) console.log('syncFile: There is no file in indexedDB, upload the file from storage to indexedDB')
-          const storageBlob = await readFileStorage(`/mapping-files/${fileName}`)
-          if (storageBlob) {
-            file = new File([storageBlob], fileName!, { type: 'text/csv' })
-            const hex = await convertBlobToHexString(storageBlob)
-            await db.set({ fileName: fileName!, file: hex }, 'fileData')
-            await db.set(version, 'version', true)
-          } else console.error('syncFile: There was no file found in storage')
-        } else if (!file) {
-          if (dev) console.log('syncFile: There is no file in the Datatable, get it from indexedDB')
-          const fileData = await db.get('fileData', true)
-          const blob = convertHexStringToBlob(fileData.file, 'text/csv')
-          file = new File([blob], fileName!)
-        }
-      }
-
-      if (customDBVersion < customVersion) {
-        if (dev) console.log('syncFile: Get customConcepts file from storage & write to IndexedDB')
-        const customBlob = await readFileStorage(`/mapping-files/customConcepts.csv`)
-        if (customBlob) {
-          const customHex = await convertBlobToHexString(customBlob)
-          await customDB.set({ fileName: 'customConcepts.csv', file: customHex }, 'fileData')
-          await customDB.set(version, 'version', true)
-        } else console.error('syncFile: There was no file with custom concepts found in storage')
-      } else if (customDBVersion > customVersion) {
-        if (dev) console.log('syncFile: Newer version of custom concetps in indexedDB & write to storage')
-        const customFileData = await customDB.get('customConcepts.csv', true)
-        const blob = convertHexStringToBlob(customFileData.file, 'text/csv')
-        const customFile = new File([blob], 'text/csv')
-        await uploadFileToStorage('/mapping-files/customConcepts.csv', customFile)
-        await writeToDatabase('/files/customConcepts', customDBVersion)
-      } else {
-        if (dev)
-          console.log(
-            'syncFile: The versions of the custom concepts file are the same, but check if there is a version in indexedDB'
-          )
-        const customFileData = await customDB.get('fileData', true)
-        if (!customFileData) {
-          if (dev)
-            console.log(
-              'syncFile: There is no file for custom concepts in indexedDB, upload the file from storage to indexedDB'
-            )
-          const customStorageBlob = await readFileStorage('/mapping-files/customConcepts.csv')
-          if (customStorageBlob) {
-            const hex = await convertBlobToHexString(customStorageBlob)
-            await customDB.set({ fileName: 'customConcepts.csv', file: hex }, 'fileData')
-            await customDB.set(customVersion, 'version', true)
-          } else {
-            const customBlob = await dataTableCustomConcepts.getBlob()
-            const customFileToUpload = new File([customBlob], 'customConcepts.csv', { type: 'text/csv' })
-            await uploadFileToStorage(`/mapping-files/customConcepts.csv`, customFileToUpload)
-            await writeToDatabase('/files/customConcepts', customVersion + 1)
-          }
-        }
-      }
-    } else {
-      throw new Error(`It is not possible to sync the file because the version is ${version}`)
+  async function readFileFirstTime() {
+    if (dev) console.log('readFileFirstTime: Get the file from storage for the setup')
+    const blob = await readFileStorage(`/mapping-files/${fileName}`)
+    const customBlob = await readFileStorage('/mapping-files/customConcepts.csv')
+    if (blob) file = new File([blob], fileName!, { type: 'text/csv' })
+    else {
+      if (dev) console.error('readFileFirstTime: There was no file found in storage')
+      goto('/')
     }
-  }
 
-  function startInterval() {
-    onInterval(async () => {
-      syncFile(false)
-    }, 5000)
+    if (customBlob) customConceptsFile = new File([customBlob], 'customConcepts.csv', { type: 'text/csv' })
   }
 
   onMount(async () => {
     if (!$page.url.searchParams.get('file')) goto('/')
-    syncFile(false)
   })
 
-  startInterval()
-
   $: fileName = $page.url.searchParams.get('file')
+
+  $: {
+    fileName
+    readFileFirstTime()
+    watchValueDatabase(`/files/${fileName?.substring(0, fileName.indexOf('.'))}`, snapshot => {
+      if (dev) console.log('watchValueDatabase: The version of the file has changed')
+      dbVersion = snapshot.val()
+    })
+    watchValueDatabase('/files/customConcepts', snapshot => {
+      if (dev) console.log('watchValueDatabase: The version of the custom concepts file has changed')
+      customDBVersion = snapshot.val()
+    })
+  }
 
   $: {
     if ($triggerAutoMapping === true) {
@@ -1070,6 +1021,51 @@
       $triggerAutoMapping = false
     }
   }
+
+  async function renewFile() {
+    if (!file) file = await tableFullOptions.dataTypeImpl.syncFile(false, true)
+    else {
+      const syncedFile = await tableFullOptions.dataTypeImpl.syncFile()
+      if (syncedFile) file = syncedFile
+    }
+  }
+
+  async function renewCustomFile() {
+    if(!customConceptsFile) customConceptsFile = await customTableOptions.dataTypeImpl.syncFile(false, true)
+    else {
+      const syncedFile = await customTableOptions.dataTypeImpl.syncFile()
+      if(syncedFile) customConceptsFile = syncedFile
+    }
+  }
+
+  $: {
+    dbVersion
+    if (tableFullOptions.dataTypeImpl) renewFile()
+  }
+
+  $: {
+    customDBVersion
+    if(customTableOptions.dataTypeImpl) renewCustomFile()
+  }
+
+  onDestroy(() => {
+    watchValueDatabase(
+      `/files/${fileName?.substring(0, fileName.indexOf('.'))}`,
+      snapshot => {
+        if (dev) console.log('watchValueDatabase: The version of the file has changed')
+        dbVersion = snapshot.val()
+      },
+      true
+    )
+    watchValueDatabase(
+      '/files/customConcepts',
+      snapshot => {
+        if (dev) console.log('watchValueDatabase: The version of the custom concepts file has changed')
+        customDBVersion = snapshot.val()
+      },
+      true
+    )
+  })
 </script>
 
 <svelte:head>
@@ -1080,25 +1076,9 @@
   />
 </svelte:head>
 
-<!-- <div data-name="table-options">
-  {#if file}
-    <Upload on:fileUploaded={fileUploaded} on:fileUploadWithColumnChanges={fileUploadWithColumnChanges} {file} />
-    <Download dataTable={dataTableFile} title="Download file" />
-
-    {#if customConceptsArrayOfObjects.length > 0}
-      {#if Object.keys(customConceptsArrayOfObjects[0]).length != 0}
-        <p>Custom concepts download:</p>
-        <Download dataTable={dataTableCustomConcepts} title="Download custom concepts" />
-      {/if}
-    {/if}
-  {/if}
-</div>
-
 {#if tableInit == true}
-  <Progress {tableInformation} />
-{/if} -->
-
-<button on:click={() => syncFile(true)}>Sync</button>
+  <button on:click={approvePage}>Approve page</button>
+{/if}
 
 {#if $settings}
   <AthenaLayout
@@ -1107,10 +1087,8 @@
     {selectedRowIndex}
     mainTable={dataTableFile}
     fetchData={fetchDataFunc}
-    {settings}
     bind:globalFilter={globalAthenaFilter}
     showModal={mappingVisibility}
-    {customConceptColumns}
     bind:facets={athenaFacets}
     on:rowChange={selectRow}
     on:singleMapping={singleMapping}
@@ -1153,9 +1131,10 @@
 {/if}
 
 <div data-name="custom-concepts">
-  <DataTable data={customConceptsArrayOfObjects} columns={customConceptColumns} bind:this={dataTableCustomConcepts} />
+  <DataTable
+    data={customConceptsFile}
+    options={customTableOptions}
+    bind:this={dataTableCustomConcepts}
+    modifyColumnMetadata={modifyCustomConceptsColumnMetadata}
+  />
 </div>
-
-{#if tableInit == true}
-  <button on:click={approvePage}>Approve page</button>
-{/if}

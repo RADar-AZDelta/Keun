@@ -3,26 +3,26 @@
   import type { CustomOptionsEvents } from '../Types'
   import SvgIcon from '../Extra/SvgIcon.svelte'
   import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
+  import { settings } from '$lib/store'
 
   export let renderedRow: Record<string, any>,
     columns: IColumnMetaData[] | undefined,
-    settings: Record<string, any>,
     alreadyMapped: Record<string, any>
 
   let mapped: boolean = false
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
   let multipleConcepts: boolean
-  if (!settings.mapToMultipleConcepts) multipleConcepts = false
-  else multipleConcepts = settings.mapToMultipleConcepts
+  if (!$settings.mapToMultipleConcepts) multipleConcepts = false
+  else multipleConcepts = $settings.mapToMultipleConcepts
 
   // A method to map a certain concept to a certain row (can be single mapping or multiple mapping depending on the settings)
   async function onClickMapping() {
     if (multipleConcepts == true) {
-      dispatch('multipleMapping', { row: renderedRow, extra: { comment: '', reviewer: ''} })
+      dispatch('multipleMapping', { row: renderedRow, extra: { comment: '', reviewer: '' } })
       dispatch('updateUniqueConceptIds', { conceptId: renderedRow.id, conceptName: renderedRow.name, multiple: true })
     } else {
-      dispatch('singleMapping', { row: renderedRow, extra: { comment: '', reviewer: ''} })
+      dispatch('singleMapping', { row: renderedRow, extra: { comment: '', reviewer: '' } })
       dispatch('updateUniqueConceptIds', { conceptId: renderedRow.id, conceptName: renderedRow.name, multiple: false })
     }
   }

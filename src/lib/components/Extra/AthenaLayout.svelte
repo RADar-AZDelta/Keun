@@ -4,6 +4,7 @@
   import AthenaFilter from './AthenaFilter.svelte'
   import filtersJSON from '$lib/data/filters.json'
   import columnsAthena from '$lib/data/columnsAthena.json'
+  import columnCustomConcept from '$lib/data/columnsCustomConcept.json'
   import columnsAlreadyMapped from '$lib/data/columnsAlreadyMapped.json'
   import { localStorageGetter, localStorageSetter } from '$lib/utils'
   import type {
@@ -25,7 +26,7 @@
   import { clickOutside } from '$lib/actions/clickOutside'
   import { dev } from '$app/environment'
   import CustomConceptInputRow from '../Mapping/CustomConceptInputRow.svelte'
-  import { customConcept } from '$lib/store'
+  import { customConcept, settings } from '$lib/store'
   import { AthenaDataTypeImpl } from '$lib/utilClasses/AthenaDataTypeImpl'
 
   export let equivalenceMapping: string,
@@ -33,9 +34,7 @@
     selectedRowIndex: number,
     mainTable: DataTable,
     fetchData: FetchDataFunc,
-    settings: Record<string, any>,
     globalFilter: { column: string; filter: string | undefined },
-    customConceptColumns: IColumnMetaData[],
     showModal: boolean = false,
     facets: Record<string, any> | undefined
 
@@ -316,7 +315,7 @@
           },
         })
 
-        if (settings.mapToMultipleConcepts == true) {
+        if ($settings.mapToMultipleConcepts == true) {
           customConceptData.push({
             concept_id: e.detail.conceptId,
             concept_code: e.detail.conceptCode,
@@ -362,17 +361,17 @@
 
   // A method to set the custom concept vocabulary id from the settings
   function setVocabularyId(): void {
-    if (settings) {
-      if (settings.hasOwnProperty('vocabularyIdCustomConcept'))
-        $customConcept.vocabularyId = settings.vocabularyIdCustomConcept
+    if ($settings) {
+      if ($settings.hasOwnProperty('vocabularyIdCustomConcept'))
+        $customConcept.vocabularyId = $settings.vocabularyIdCustomConcept
     }
   }
 
   // A method to set the visibility of the sides in the pop-up
   function sideVisibilityChange(side: string, value: boolean): void {
     sidesShowed[side] = value
-    if (side == 'filters') settings.popupSidesShowed.filters = value
-    else if (side == 'detail') settings.popupSidesShowed.details = value
+    if (side == 'filters') $settings.popupSidesShowed.filters = value
+    else if (side == 'detail') $settings.popupSidesShowed.details = value
   }
 
   // A method for when the user fills in the comment
@@ -382,9 +381,9 @@
 
   // A method to sync the sidesShowed object with the settings
   function setSidesShowed(): void {
-    if (settings) {
-      if (settings.popupSidesShowed) {
-        sidesShowed = settings.popupSidesShowed
+    if ($settings) {
+      if ($settings.popupSidesShowed) {
+        sidesShowed = $settings.popupSidesShowed
       }
     }
   }
@@ -446,8 +445,8 @@
   }
 
   $: {
-    settings
-    if (settings && sidesSet == false) {
+    $settings
+    if ($settings && sidesSet == false) {
       setSidesShowed()
       sidesSet = true
     }
@@ -602,7 +601,6 @@
                 let:renderedRow
                 let:columns
                 {renderedRow}
-                {settings}
                 {columns}
                 bind:alreadyMapped
                 on:singleMapping={singleMapping}
@@ -616,7 +614,7 @@
             <h2>Create a custom concept</h2>
             <DataTable
               data={customConceptData}
-              columns={customConceptColumns}
+              columns={columnCustomConcept}
               options={{ actionColumn: true, id: 'createCustomConcepts', saveOptions: false }}
             >
               <CustomConceptInputRow
@@ -684,7 +682,7 @@
             <Equivalence bind:Eq={equivalenceMapping} />
             <div data-name="reviewer">
               <p>Assigned reviewer: {reviewer}</p>
-              <AutocompleteInputSettings {settings} on:reviewerChanged={reviewerChanged} />
+              <AutocompleteInputSettings on:reviewerChanged={reviewerChanged} />
             </div>
             <div data-name="comments">
               <p>Comments</p>
