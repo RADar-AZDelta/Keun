@@ -36,6 +36,7 @@
   import { settings, triggerAutoMapping } from '$lib/store'
   import {
     readFileStorage,
+    userSessionStore,
     watchValueDatabase,
   } from '$lib/firebase'
   import { goto } from '$app/navigation'
@@ -249,7 +250,7 @@
 
     // Add extra information like the number of concepts mapped for this row, comments & the assigned reviewer to the row
     mappedRow.mappingStatus = 'SEMI-APPROVED'
-    mappedRow.statusSetBy = $settings!.author?.displayName
+    mappedRow.statusSetBy = $userSessionStore.name
 
     mappedRow['ADD_INFO:lastAthenaFilter'] = lastTypedFilter
 
@@ -310,12 +311,13 @@
     } else {
       // Check if there is a conceptId or a sourceAutoAssignedConceptIds (this is the conceptId that is assigned by the automapping proces)
       if (event.detail.action == 'APPROVED') {
+        console.log("ACTION ", $userSessionStore.name)
         if (
           event.detail.row.statusSetBy == undefined ||
-          event.detail.row.statusSetBy == $settings!.author?.displayName
+          event.detail.row.statusSetBy == $userSessionStore.name
         ) {
           // If statusSetBy is empty, it means the author is the first reviewer of this row
-          updatingObj.statusSetBy = $settings!.author?.displayName
+          updatingObj.statusSetBy = $userSessionStore.name
           updatingObj.statusSetOn = Date.now()
           updatingObj.mappingStatus = 'SEMI-APPROVED'
           if (event.detail.row.conceptId == 0 || !event.detail.row.conceptId) {
@@ -323,15 +325,15 @@
           } else updatingObj.conceptId = event.detail.row.conceptId
         } else if (
           event.detail.row.statusSetBy &&
-          event.detail.row.statusSetBy != $settings!.author?.displayName &&
+          event.detail.row.statusSetBy != $userSessionStore.name &&
           event.detail.row.mappingStatus == 'SEMI-APPROVED'
         ) {
           // StatusSetBy is not empty and it's not the current author so it means it's the second reviewer
-          updatingObj['ADD_INFO:approvedBy'] = $settings!.author?.displayName
+          updatingObj['ADD_INFO:approvedBy'] = $userSessionStore.name
           updatingObj['ADD_INFO:approvedOn'] = Date.now()
           updatingObj.mappingStatus = 'APPROVED'
-        } else if (event.detail.row.statusSetBy && event.detail.row.statusSetBy != $settings!.author?.displayName) {
-          updatingObj.statusSetBy = $settings!.author?.displayName
+        } else if (event.detail.row.statusSetBy && event.detail.row.statusSetBy != $userSessionStore.name) {
+          updatingObj.statusSetBy = $userSessionStore.name
           updatingObj.statusSetOn = Date.now()
           updatingObj.mappingStatus = 'SEMI-APPROVED'
           if (event.detail.row.conceptId == 0 || !event.detail.row.conceptId) {
@@ -339,7 +341,7 @@
           } else updatingObj.conceptId = event.detail.row.conceptId
         }
       } else {
-        updatingObj.statusSetBy = $settings!.author?.displayName
+        updatingObj.statusSetBy = $userSessionStore.name
         updatingObj.statusSetOn = Date.now()
         updatingObj.mappingStatus = event.detail.action
       }
@@ -676,14 +678,14 @@
 
           case 'statusSetBy':
           case 'statusSetOn':
-            mappedUsagiRow.statusSetBy = $settings!.author?.displayName
+            mappedUsagiRow.statusSetBy = $userSessionStore.name
             mappedUsagiRow.statusSetOn = Date.now()
             break
 
           case 'createdBy':
           case 'createdOn':
-            if (!usagiRow.createdBy && usagiRow.createdBy != $settings!.author?.displayName) {
-              mappedUsagiRow.createdBy = $settings!.author?.displayName
+            if (!usagiRow.createdBy && usagiRow.createdBy != $userSessionStore.name) {
+              mappedUsagiRow.createdBy = $userSessionStore.name
               mappedUsagiRow.createdOn = Date.now()
             }
             break
@@ -692,12 +694,12 @@
             if (
               (usagiRow.statusSetBy == null ||
                 usagiRow.statusSetBy == undefined ||
-                usagiRow.statusSetBy == $settings!.author?.displayName) &&
+                usagiRow.statusSetBy == $userSessionStore.name) &&
               !autoMap
             ) {
               mappedUsagiRow.mappingStatus = 'SEMI-APPROVED'
               break
-            } else if (usagiRow.statusSetBy != $settings!.author?.displayName && !autoMap) {
+            } else if (usagiRow.statusSetBy != $userSessionStore.name && !autoMap) {
               mappedUsagiRow.mappingStatus = 'APPROVED'
               break
             }
@@ -755,15 +757,15 @@
         case 'statusSetBy':
         case 'statusSetOn':
           if (String(usagiRow.statusSetBy).replaceAll(' ', '') == '' || usagiRow.statusSetBy == undefined) {
-            mappedUsagiRow.statusSetBy = $settings!.author?.displayName
+            mappedUsagiRow.statusSetBy = $userSessionStore.name
             mappedUsagiRow.statusSetOn = Date.now()
           }
           break
 
         case 'createdBy':
         case 'createdOn':
-          if (!usagiRow.createdBy && usagiRow.createdBy != $settings!.author?.displayName) {
-            mappedUsagiRow.createdBy = $settings!.author?.displayName
+          if (!usagiRow.createdBy && usagiRow.createdBy != $userSessionStore.name) {
+            mappedUsagiRow.createdBy = $userSessionStore.name
             mappedUsagiRow.createdOn = Date.now()
           }
           break
@@ -772,11 +774,11 @@
           if (
             usagiRow.statusSetBy == null ||
             usagiRow.statusSetBy == undefined ||
-            usagiRow.statusSetBy == $settings!.author?.displayName
+            usagiRow.statusSetBy == $userSessionStore.name
           ) {
             mappedUsagiRow.mappingStatus = 'SEMI-APPROVED'
             break
-          } else if (usagiRow.statusSetBy != $settings!.author?.displayName) {
+          } else if (usagiRow.statusSetBy != $userSessionStore.name) {
             mappedUsagiRow.mappingStatus = 'APPROVED'
             break
           }
@@ -917,13 +919,13 @@
     for (let [index, row] of currentVisibleRows) {
       if (!row.conceptId) row.conceptId = row.sourceAutoAssignedConceptIds
       if (row.statusSetBy) {
-        if (row.statusSetBy != $settings!.author?.displayName) {
-          row['ADD_INFO:approvedBy'] = $settings!.author?.displayName
+        if (row.statusSetBy != $userSessionStore.name) {
+          row['ADD_INFO:approvedBy'] = $userSessionStore.name
           row['ADD_INFO:approvedOn'] = Date.now()
           row.mappingStatus = 'APPROVED'
         }
       } else {
-        row.statusSetBy = $settings!.author?.displayName
+        row.statusSetBy = $userSessionStore.name
         row.statusSetOn = Date.now()
         row.mappingStatus = 'SEMI-APPROVED'
       }
@@ -1066,6 +1068,10 @@
       true
     )
   })
+
+  // TODO: check to map with two authors
+  // TODO: check all functionalities
+  // TODO: try to work with empty customConcepts.csv file
 </script>
 
 <svelte:head>
