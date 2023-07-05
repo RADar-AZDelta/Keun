@@ -1,8 +1,7 @@
 <script lang="ts">
   import { readDatabase } from '$lib/firebase'
 
-  export let form: { email: string; role: 'User' | 'Admin'; fileNames: string[] }
-  let fileNames: string[] | undefined
+  export let fileNames: string[] | undefined
   let email: string
   let authorizedFiles: any[]
 

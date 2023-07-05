@@ -1069,9 +1069,7 @@
     )
   })
 
-  // TODO: check to map with two authors
   // TODO: check all functionalities
-  // TODO: try to work with empty customConcepts.csv file
 </script>
 
 <svelte:head>
