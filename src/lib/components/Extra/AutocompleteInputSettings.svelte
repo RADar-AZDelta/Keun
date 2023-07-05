@@ -3,8 +3,7 @@
   import { createEventDispatcher } from 'svelte'
   import type { CustomOptionsEvents } from '../Types'
   import debounce from 'lodash.debounce'
-
-  export let settings: Record<string, any>
+  import { settings } from '$lib/store'
 
   let inputValue: string,
     value: string,
@@ -16,12 +15,12 @@
   // A method for when the input needs to be saved
   function save(): void {
     value = inputValue
-    if (!settings.savedAuthors) {
-      settings.savedAuthors = []
+    if (!$settings.savedAuthors) {
+      $settings.savedAuthors = []
     }
-    if (!settings.savedAuthors.includes(inputValue)) {
-      settings.savedAuthors.push(inputValue)
-      localStorageSetter('settings', settings)
+    if (!$settings.savedAuthors.includes(inputValue)) {
+      $settings.savedAuthors.push(inputValue)
+      localStorageSetter('settings', $settings)
     }
     dispatch('reviewerChanged', { reviewer: value })
   }
@@ -38,8 +37,8 @@
   function filterNames(): void {
     let filteredNames = []
     if (inputValue) {
-      if (settings.savedAuthors) {
-        for (let name of settings.savedAuthors) {
+      if ($settings.savedAuthors) {
+        for (let name of $settings.savedAuthors) {
           if (name) {
             if (name.toLowerCase().startsWith(inputValue.toLowerCase())) {
               if (name.toLowerCase() != inputValue.toLowerCase()) filteredNames.push(name)

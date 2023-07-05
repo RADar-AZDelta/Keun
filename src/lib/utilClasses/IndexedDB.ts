@@ -112,4 +112,11 @@ export class IndexedDB {
             }
         })
     }
+
+    async close(): Promise<void> {
+        return new Promise(async (resolve, reject) => {
+            const db = await this.db
+            db.close()
+        })
+    }
 }

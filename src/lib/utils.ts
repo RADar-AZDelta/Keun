@@ -63,6 +63,34 @@ export function removeUndefineds(obj: any): any {
   return obj;
 }
 
+export function replaceNullsWithFalse(obj: any, specificProperties?: string[] | undefined): any {
+  if(!obj) {
+    return false;
+  }
+  if(typeof obj === 'object') {
+    if(Array.isArray(obj)) {
+      for(let innerObj in obj) {
+        for(let [key, value] of Object.entries(obj[innerObj])) {
+          if(specificProperties){
+            if(specificProperties.includes(key)) obj[innerObj][key] = replaceNullsWithFalse(obj[innerObj][key])
+          } else {
+            obj[innerObj][key] = replaceNullsWithFalse(obj[innerObj][key])
+          }
+        }
+      }
+    } else {
+      for(let [key, value] of Object.entries(obj)) {
+        if(specificProperties){
+          if(specificProperties.includes(key)) obj[key] = replaceNullsWithFalse(obj[key])
+        } else {
+          obj[key] = replaceNullsWithFalse(obj[key])
+        }
+      }
+    }
+  }
+  return obj
+}
+
 export function onInterval(callback: () => void, milliseconds: number) {
   const interval = setInterval(callback, milliseconds)
 

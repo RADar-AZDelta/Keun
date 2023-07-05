@@ -1,7 +1,7 @@
 import { readDatabase, writeToDatabase } from '$lib/firebase'
 import type { IColumnMetaData, ICustomStoreOptions, IStoredOptions, ITableOptions } from '@radar-azdelta/svelte-datatable/components/DataTable'
 import { userSessionStore } from '$lib/firebase';
-import { removeUndefineds } from '$lib/utils';
+import { removeUndefineds, replaceNullsWithFalse } from '$lib/utils';
 
 export class FirebaseSaveImpl implements ICustomStoreOptions {
   storedOptions: ITableOptions
@@ -76,8 +76,11 @@ export class FirebaseSaveImpl implements ICustomStoreOptions {
     // If there is no userId given for authentication, create a deviceId and save it in the localStorage to identify the device
     if(this.initialized){
       if(options.saveImpl) delete options.saveImpl
+      if(options.dataTypeImpl) delete options.dataTypeImpl
       this.storedOptions = removeUndefineds(options)
+      this.storedOptions = replaceNullsWithFalse(this.storedOptions, ['actionColumn', 'singleSort', 'saveOptions'])
       this.storedColumns = removeUndefineds(columns)
+      this.storedColumns = replaceNullsWithFalse(this.storedColumns, ["visible", "sortable", "filterable", "resizable", "repositionalbe", "editable"])
       let uid: string | undefined
       userSessionStore.subscribe((userSession) => {
           uid = userSession.uid

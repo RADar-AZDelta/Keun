@@ -1,3 +1,5 @@
+import { IDataTypeFunctionalities } from '@radar-azdelta/svelte-datatable/components/DataTable'
+
 export interface CustomOptionsEvents {
   generalVisibilityChanged: VisibilityChangedEventDetail
   filterOptionsChanged: FilterOptionsChangedEventDetail
@@ -149,4 +151,8 @@ export interface IDatabaseFile {
   data: Record<string, any>[]
   fileName: string
   usersUID?: string[]
+}
+
+export interface IDataTypeFile extends IDataTypeFunctionalities {
+  syncFile(update: boolean): Promise<File | void>
 }
