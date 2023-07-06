@@ -118,17 +118,10 @@ export interface ISettings {
   mapToMultipleConcepts: boolean
   autoMap: boolean
   language: string
-  author: IFirebaseUser | undefined
   savedAuthors: string[]
   vocabularyIdCustomConcept: string
   fontsize: number
   popupSidesShowed: { filters: boolean; details: boolean }
-}
-
-export interface IFirebaseUser {
-  id: string | null | undefined
-  email: string | null | undefined
-  displayName: string | null | undefined
 }
 
 export interface ITableInformation {

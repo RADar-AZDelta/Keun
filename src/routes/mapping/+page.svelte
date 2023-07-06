@@ -35,7 +35,7 @@
   import DataTable from '@radar-azdelta/svelte-datatable'
   import type Query from 'arquero/dist/types/query/query'
   import { settings, triggerAutoMapping } from '$lib/store'
-  import { readFileStorage, userSessionStore, watchValueDatabase } from '$lib/firebase'
+  import { readDatabase, readFileStorage, userSessionStore, watchValueDatabase, writeToDatabase } from '$lib/firebase'
   import { goto } from '$app/navigation'
   import { FirebaseSaveImpl } from '$lib/utilClasses/FirebaseSaveImpl'
   import { FileDataTypeImpl } from '$lib/utilClasses/FileDataTypeImpl'
@@ -965,15 +965,23 @@
     columnsNeedToChange = false
   }
 
+  async function syncSettings(action: 'read' | 'write') {
+    if (action == 'read') {
+      if (dev) console.log('syncSettings: Reading the settings for Keun from database')
+      const storedSettings = await readDatabase(`/authors/${$userSessionStore.uid}/usagi-settings`)
+      if (storedSettings) settings.set(storedSettings)
+    } else if (action == 'write') {
+      if (dev) console.log('syncSettings: Write the settings for keun to database')
+      await writeToDatabase(`/authors/${$userSessionStore.uid}/usagi-settings`, $settings)
+    } else console.error(`syncSettings: Action (${action}) is not supported`)
+  }
+
   let fetchDataFunc = fetchData
 
   if (dev) {
     if (browser && window) {
-      window.addEventListener('beforeunload', e => {
-        const confirmationMessage = 'Save the file you were mapping before leaving the application.'
-        ;(e || window.event).returnValue = confirmationMessage
-        // if (file && firebase) firebase.store(settings, file)
-        return confirmationMessage
+      window.addEventListener('beforeunload', async e => {
+        await syncSettings('write')
       })
     }
   }
@@ -1047,6 +1055,12 @@
   $: {
     customDBVersion
     if (customTableOptions.dataTypeImpl) renewCustomFile()
+  }
+
+  $: {
+    if ($userSessionStore) {
+      syncSettings('read')
+    }
   }
 
   onDestroy(() => {

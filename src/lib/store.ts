@@ -12,7 +12,6 @@ const settings = writable<ISettings>({
   mapToMultipleConcepts: false,
   autoMap: false,
   language: 'en',
-  author: undefined,
   savedAuthors: [],
   vocabularyIdCustomConcept: '',
   fontsize: 10,
