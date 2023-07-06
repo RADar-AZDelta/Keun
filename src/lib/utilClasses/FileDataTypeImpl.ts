@@ -11,7 +11,7 @@ import type {
   import type { MessageRequestLoadFile, MessageRequestInsertColumns, MessageRequestFetchData, MessageResponseFetchData, MessageRequestSaveToFile, MessageRequestGetBlob, MessageResponseGetBlob, MessageRequestReplaceValuesOfColumn, MessageRequestExecuteExpressionsAndReturnResults, MessageResponseExecuteExpressionsAndReturnResults, MessageRequestExecuteQueryAndReturnResults, MessageResponseExecuteQueryAndReturnResults, MessageRequestGetRow, MessageResponseGetRow, MessageRequestDeleteRows, MessageRequestInsertRows, MessageRespnseInsertColumns, MessageRequestUpdateRows, MessageRequestRenameColumns, PostMessage } from '@radar-azdelta/svelte-datatable/workers/messages'
   import DataTableWorker from '@radar-azdelta/svelte-datatable/workers/DataTable.worker?worker'
   import { DataTypeCommonBase } from '@radar-azdelta/svelte-datatable/components/datatable/data/DataTypeCommonBase'
-  import { readDatabase, readFileStorage, uploadFileToStorage, writeToDatabase } from '$lib/firebase'
+  import { readDatabase, readFileStorage, uploadFileToStorage, userSessionStore, writeToDatabase } from '$lib/firebase'
   import { IndexedDB } from './IndexedDB'
   import { convertBlobToHexString, convertHexStringToBlob } from '$lib/utils'
   import type { IDataTypeFile } from '$lib/components/Types'
@@ -66,7 +66,28 @@ import type {
               }
             }
           }
-        } else this.internalColumns = columns
+        } else  {
+          if(this.data) {
+            const cols = (await this.executeWorkerMethod<unknown, string[]>('getColumnNames')).map((key, index) => ({
+              id: key,
+              position: index + 1,
+            }))
+            if(cols.length < columns.length)  {
+              if (this.modifyColumnMetaData) {
+                const internalColumnsCopy = cols.map(col => col.id)
+                this.internalColumns = this.modifyColumnMetaData(cols)
+                const addedColumns = this.internalColumns.map(col => col.id).filter(x => !internalColumnsCopy.includes(x))
+                if (addedColumns.length > 0){
+                  const addedCols = this.internalColumns.reduce<IColumnMetaData[]>((acc, cur) => {
+                    if (addedColumns.includes(cur.id)) acc.push(cur)
+                    return acc
+                  }, [])
+                  await this.executeWorkerMethod<MessageRequestInsertColumns, void>('insertColumns', { columns: addedCols })
+                  await this.syncFile(true)
+                }
+              }
+            }
+        }}
   
 
         if(this.internalColumns) {
@@ -143,9 +164,8 @@ import type {
       return await this.executeWorkerMethod<
       MessageRequestExecuteExpressionsAndReturnResults,
       MessageResponseExecuteExpressionsAndReturnResults
-    >('executeExpressionsAndReturnResults', {
-      expressions,
-    })  }
+    >('executeExpressionsAndReturnResults', {expressions})  
+  }
   
     async executeQueryAndReturnResults (query: Query | object): Promise<any> {
       const sortedColumns = this.internalColumns!.reduce<Map<string, SortDirection>>((acc, cur, i) => {
@@ -215,8 +235,9 @@ import type {
         },
         new Map<number, Record<string, any>>()
       )
-      await this.executeWorkerMethod<MessageRequestUpdateRows, void>('updateRows', { rowsByIndex: rowsToUpdateByWorkerIndex })
-      await this.syncFile(true)
+      await this.executeWorkerMethod<MessageRequestUpdateRows, void>('updateRows', { rowsByIndex: rowsToUpdateByWorkerIndex }).then(() => {
+        this.syncFile(true)
+      })
     }
   
     async renameColumns (columns: Record<string, string>): Promise<void> {
@@ -263,30 +284,38 @@ import type {
       return new Promise(async (resolve, reject) => {
         if(this.fileName) {
           if(update) {
-            if (dev) console.log(`syncFile: Syncing (${this.fileName}) with updating`)
-            const version: number = await readDatabase(`files/${this.fileName.substring(0, this.fileName.indexOf('.'))}`)
-            const db = new IndexedDB(this.fileName, this.fileName)
-
-            if (dev) console.log(`syncFile: Get the blob (${this.fileName}) from the datatable and write to storage & IndexedDB`)
-            const blob = await this.getBlob()
-            if(blob) {
-              if (dev) console.log(`syncFile: Blob (${this.fileName}) found and syncing ...`)
-              const file = new File([blob], this.fileName, { type: 'text/csv' })
-              await uploadFileToStorage(`/mapping-files/${this.fileName}`, file)
-              await writeToDatabase(`/files/${this.fileName.substring(0, this.fileName.indexOf('.'))}`, version + 1)
-              const hex = await convertBlobToHexString(blob)
-              await db.set({ fileName: this.fileName, file: hex }, 'fileData')
-              await db.set(version + 1, 'version', true)
-              if (dev) console.log(`syncFile: The syncing of the file (version ${version + 1}) (${this.fileName}) to the storage & IndexedDB is done!`)
-              resolve()
-            } else {
-              await db.close()
-              resolve()
-            }
+            if(this.timeout) clearTimeout(this.timeout)
+            this.timeout = setTimeout(async() => {
+              if (dev) console.log(`syncFile: Syncing (${this.fileName}) with updating`)
+              const { version }: {version: number, lastAuthor: string} = await readDatabase(`files/${this.fileName!.substring(0, this.fileName!.indexOf('.'))}`)
+              const db = new IndexedDB(this.fileName!, this.fileName!)
+  
+              if (dev) console.log(`syncFile: Get the blob (${this.fileName}) from the datatable and write to storage & IndexedDB`)
+              const blob = await this.getBlob()
+              if(blob) {
+                if (dev) console.log(`syncFile: Blob (${this.fileName}) found and syncing ...`)
+                const file = new File([blob], this.fileName!, { type: 'text/csv' })
+                await uploadFileToStorage(`/mapping-files/${this.fileName}`, file)
+                let name: string = ""
+                userSessionStore.subscribe((user) => {
+                  name = user.name
+                })
+                await writeToDatabase(`/files/${this.fileName!.substring(0, this.fileName!.indexOf('.'))}`, { version: version + 1, lastAuthor: name})
+                const hex = await convertBlobToHexString(blob)
+                console.log(hex)
+                await db.set({ fileName: this.fileName, file: hex }, 'fileData')
+                await db.set(version + 1, 'version', true)
+                if (dev) console.log(`syncFile: The syncing of the file (version ${version + 1}) (${this.fileName}) to the storage & IndexedDB is done!`)
+                resolve()
+              } else {
+                await db.close()
+                resolve()
+              }
+            }, 3000)
           } else {
             if(this.timeout) clearTimeout(this.timeout)
             this.timeout = setTimeout(async() => {
-              const version: number = await readDatabase(`files/${this.fileName!.substring(0, this.fileName!.indexOf('.'))}`)
+              const { version }: {version: number, lastAuthor: string} = await readDatabase(`files/${this.fileName!.substring(0, this.fileName!.indexOf('.'))}`)
               const db = new IndexedDB(this.fileName!, this.fileName!)
               const dbVersion: number = await db.get('version', true)
     
@@ -308,7 +337,11 @@ import type {
                 const blob = convertHexStringToBlob(fileData.file, 'text/csv')
                 const file = new File([blob], this.fileName!)
                 await uploadFileToStorage(`/mapping-files/${this.fileName}`, file)
-                await writeToDatabase(`/files/${this.fileName!.substring(0, this.fileName!.indexOf('.'))}`, dbVersion)
+                let name: string = ""
+                userSessionStore.subscribe((user) => {
+                  name = user.name
+                })
+                await writeToDatabase(`/files/${this.fileName!.substring(0, this.fileName!.indexOf('.'))}`, { version: dbVersion, lastAuthor: name })
                 await db.set(version, 'version', true)
                 resolve(file)
               } else {
