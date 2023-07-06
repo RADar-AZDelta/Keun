@@ -65,7 +65,11 @@
   let disableInteraction: boolean = false
   let translator: LatencyOptimisedTranslator
   let dbVersion: number = 1,
-    customDBVersion: number = 1
+    customDBVersion: number = 1,
+    lastDBAuthor: string = '',
+    lastCustomDBAuthor: string = ''
+
+  let fileName: string | null = ''
 
   // Athena related variables
   let mappingVisibility: boolean = false
@@ -1003,19 +1007,30 @@
     if (!$page.url.searchParams.get('file')) goto('/')
   })
 
-  $: fileName = $page.url.searchParams.get('file')
-
   $: {
-    fileName
-    readFileFirstTime()
-    watchValueDatabase(`/files/${fileName?.substring(0, fileName.indexOf('.'))}`, snapshot => {
-      if (dev) console.log('watchValueDatabase: The version of the file has changed')
-      dbVersion = snapshot.val()
-    })
-    watchValueDatabase('/files/customConcepts', snapshot => {
-      if (dev) console.log('watchValueDatabase: The version of the custom concepts file has changed')
-      customDBVersion = snapshot.val()
-    })
+    if ($page.url.searchParams.get('file') !== fileName) {
+      fileName = $page.url.searchParams.get('file')
+      readFileFirstTime()
+
+      watchValueDatabase(`/files/${fileName?.substring(0, fileName.indexOf('.'))}`, snapshot => {
+        if (dev) console.log('watchValueDatabase: The version of the file has changed')
+        if (snapshot.val()) {
+          if (snapshot.val().lastAuthor !== $userSessionStore.name) {
+            dbVersion = snapshot.val().version
+            lastDBAuthor = snapshot.val().lastAuthor
+          }
+        }
+      })
+      watchValueDatabase('/files/customConcepts', snapshot => {
+        if (dev) console.log('watchValueDatabase: The version of the custom concepts file has changed')
+        if (snapshot.val()) {
+          if (snapshot.val().lastAuthor !== $userSessionStore.name) {
+            customDBVersion = snapshot.val().version
+            lastCustomDBAuthor = snapshot.val().lastAuthor
+          }
+        }
+      })
+    }
   }
 
   $: {
@@ -1038,13 +1053,17 @@
 
   async function renewCustomFile() {
     if (!customConceptsFile) {
-      const resFile = await (tableFullOptions.dataTypeImpl! as IDataTypeFile).syncFile(false, true)
+      const resFile = await (customTableOptions.dataTypeImpl! as IDataTypeFile).syncFile(false, true)
       if (resFile) customConceptsFile = resFile
       else console.error('renewCustomFile: Syncfile did not return a file')
     } else {
-      const syncedFile = await (tableFullOptions.dataTypeImpl! as IDataTypeFile).syncFile()
+      const syncedFile = await (customTableOptions.dataTypeImpl! as IDataTypeFile).syncFile()
       if (syncedFile) customConceptsFile = syncedFile
     }
+  }
+
+  async function insertRow() {
+    await dataTableFile.insertRows([{ sourceCode: 'TE', sourceName: 'TESTING', sourceFrequency: 1 }])
   }
 
   $: {
@@ -1068,7 +1087,12 @@
       `/files/${fileName?.substring(0, fileName.indexOf('.'))}`,
       snapshot => {
         if (dev) console.log('watchValueDatabase: The version of the file has changed')
-        dbVersion = snapshot.val()
+        if (snapshot.val()) {
+          if (snapshot.val().lastAuthor !== $userSessionStore.name) {
+            dbVersion = snapshot.val().version
+            lastDBAuthor = snapshot.val().lastAuthor
+          }
+        }
       },
       true
     )
@@ -1076,14 +1100,18 @@
       '/files/customConcepts',
       snapshot => {
         if (dev) console.log('watchValueDatabase: The version of the custom concepts file has changed')
-        customDBVersion = snapshot.val()
+        if (snapshot.val()) {
+          if (snapshot.val().lastAuthor !== $userSessionStore.name) {
+            customDBVersion = snapshot.val().version
+            lastCustomDBAuthor = snapshot.val().lastAuthor
+          }
+        }
       },
       true
     )
   })
 
   // TODO: check all functionalities
-  // TODO: fix multiple mapping
 </script>
 
 <svelte:head>
@@ -1098,26 +1126,7 @@
   <button on:click={approvePage}>Approve page</button>
 {/if}
 
-{#if $settings}
-  <AthenaLayout
-    bind:equivalenceMapping
-    {selectedRow}
-    {selectedRowIndex}
-    mainTable={dataTableFile}
-    fetchData={fetchDataFunc}
-    bind:globalFilter={globalAthenaFilter}
-    showModal={mappingVisibility}
-    bind:facets={athenaFacets}
-    on:rowChange={selectRow}
-    on:singleMapping={singleMapping}
-    on:multipleMapping={multipleMapping}
-    on:deleteRowInnerMapping={deleteRowInnerMapping}
-    on:filterOptionsChanged={filterOptionsChanged}
-    on:generalVisibilityChanged={mappingVisibilityChanged}
-    on:customMapping={customMapping}
-    on:updateDetails={updateDetailsRow}
-  />
-{/if}
+<button on:click={insertRow}>Insert Row</button>
 
 {#if file}
   <DataTable
@@ -1146,13 +1155,34 @@
       bind:currentVisibleRows
     />
   </DataTable>
-{/if}
 
-<div data-name="custom-concepts">
-  <DataTable
-    data={customConceptsFile}
-    options={customTableOptions}
-    bind:this={dataTableCustomConcepts}
-    modifyColumnMetadata={modifyCustomConceptsColumnMetadata}
-  />
-</div>
+  {#if $settings}
+    <AthenaLayout
+      bind:equivalenceMapping
+      {selectedRow}
+      {selectedRowIndex}
+      mainTable={dataTableFile}
+      fetchData={fetchDataFunc}
+      bind:globalFilter={globalAthenaFilter}
+      showModal={mappingVisibility}
+      bind:facets={athenaFacets}
+      on:rowChange={selectRow}
+      on:singleMapping={singleMapping}
+      on:multipleMapping={multipleMapping}
+      on:deleteRowInnerMapping={deleteRowInnerMapping}
+      on:filterOptionsChanged={filterOptionsChanged}
+      on:generalVisibilityChanged={mappingVisibilityChanged}
+      on:customMapping={customMapping}
+      on:updateDetails={updateDetailsRow}
+    />
+  {/if}
+
+  <div data-name="custom-concepts">
+    <DataTable
+      data={customConceptsFile}
+      options={customTableOptions}
+      bind:this={dataTableCustomConcepts}
+      modifyColumnMetadata={modifyCustomConceptsColumnMetadata}
+    />
+  </div>
+{/if}

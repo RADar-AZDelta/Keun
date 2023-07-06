@@ -7,9 +7,9 @@
     pushToDatabase,
     readDatabase,
     readFileStorage,
-    updateDatabase,
     uploadFileToStorage,
     userSessionStore,
+    writeToDatabase,
   } from '$lib/firebase'
   import { writable } from 'svelte/store'
   import { goto } from '$app/navigation'
@@ -51,7 +51,7 @@
           await pushToDatabase(`/authors/${u}/files`, file.name)
         }
       }
-      await updateDatabase(`/files`, { [file.name.substring(0, file.name.indexOf('.'))]: 1 })
+      await writeToDatabase(`/files/${file.name.substring(0, file.name.indexOf('.'))}`, { version: 1, lastAuthor: '' })
     }
     getFiles()
     fileInputDialog.close()
