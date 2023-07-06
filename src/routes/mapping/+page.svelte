@@ -1069,6 +1069,7 @@
   })
 
   // TODO: check all functionalities
+  // TODO: fix multiple mapping
 </script>
 
 <svelte:head>
