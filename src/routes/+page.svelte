@@ -400,7 +400,7 @@
                       <SvgIcon href="icons.svg" id="edit" width="16px" height="16px" />
                     </button>
                     <button
-                    disabled={file === 'customConcepts.csv'}
+                      disabled={file === 'customConcepts.csv'}
                       data-name="delete-file"
                       on:click={e => {
                         if (e && e.stopPropagation) e.stopPropagation()

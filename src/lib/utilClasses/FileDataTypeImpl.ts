@@ -38,7 +38,7 @@ import type {
       if(this.worker && this.data instanceof File) {
         const url = URL.createObjectURL(this.data as File)
         const extension = (this.data as File)!.name.split('.').pop()!
-        if(dev) console.log(`setData: Loading file (${this.fileName}) in webworker`)
+        if (dev) console.log(`setData: Loading file (${this.fileName}) in webworker`)
         await this.executeWorkerMethod<MessageRequestLoadFile, undefined>('loadFile', { url, extension })
         URL.revokeObjectURL(url)
       }
@@ -263,21 +263,21 @@ import type {
       return new Promise(async (resolve, reject) => {
         if(this.fileName) {
           if(update) {
-            if(dev) console.log(`syncFile: Syncing (${this.fileName}) with updating`)
+            if (dev) console.log(`syncFile: Syncing (${this.fileName}) with updating`)
             const version: number = await readDatabase(`files/${this.fileName.substring(0, this.fileName.indexOf('.'))}`)
             const db = new IndexedDB(this.fileName, this.fileName)
 
-            if(dev) console.log(`syncFile: Get the blob (${this.fileName}) from the datatable and write to storage & IndexedDB`)
+            if (dev) console.log(`syncFile: Get the blob (${this.fileName}) from the datatable and write to storage & IndexedDB`)
             const blob = await this.getBlob()
             if(blob) {
-              if(dev) console.log(`syncFile: Blob (${this.fileName}) found and syncing ...`)
+              if (dev) console.log(`syncFile: Blob (${this.fileName}) found and syncing ...`)
               const file = new File([blob], this.fileName, { type: 'text/csv' })
               await uploadFileToStorage(`/mapping-files/${this.fileName}`, file)
               await writeToDatabase(`/files/${this.fileName.substring(0, this.fileName.indexOf('.'))}`, version + 1)
               const hex = await convertBlobToHexString(blob)
               await db.set({ fileName: this.fileName, file: hex }, 'fileData')
               await db.set(version + 1, 'version', true)
-              if(dev) console.log(`syncFile: The syncing of the file (version ${version + 1}) (${this.fileName}) to the storage & IndexedDB is done!`)
+              if (dev) console.log(`syncFile: The syncing of the file (version ${version + 1}) (${this.fileName}) to the storage & IndexedDB is done!`)
               resolve()
             } else {
               await db.close()
@@ -290,9 +290,9 @@ import type {
               const db = new IndexedDB(this.fileName!, this.fileName!)
               const dbVersion: number = await db.get('version', true)
     
-              if(dev) console.log(`syncFile: Syncing the file (${this.fileName}) without updating`)
+              if (dev) console.log(`syncFile: Syncing the file (${this.fileName}) without updating`)
               if(version > dbVersion) {
-                if(dev) console.log(`syncFile: The version in the storage (${this.fileName}) is newer than the version in IndexedDB`)
+                if (dev) console.log(`syncFile: The version in the storage (${this.fileName}) is newer than the version in IndexedDB`)
                 const blob = await readFileStorage(`/mapping-files/${this.fileName}`)
                 if(blob) {
                   const file = new File([blob], this.fileName!, { type: 'text/csv' })
@@ -303,7 +303,7 @@ import type {
                 } else console.error(`syncFile: There was no file (${this.fileName}) found in storage`)
               }
               else if(version < dbVersion) {
-                if(dev) console.log(`syncFile: The version (${this.fileName}) in IndexedDB is newer than the version in storage`)
+                if (dev) console.log(`syncFile: The version (${this.fileName}) in IndexedDB is newer than the version in storage`)
                 const fileData = await db.get('fileData', true)
                 const blob = convertHexStringToBlob(fileData.file, 'text/csv')
                 const file = new File([blob], this.fileName!)
@@ -313,7 +313,7 @@ import type {
                 resolve(file)
               } else {
                 if(init){
-                  if(dev) console.log(`syncFile: Get the file (${this.fileName}) from IndexedDB`)
+                  if (dev) console.log(`syncFile: Get the file (${this.fileName}) from IndexedDB`)
                   const fileData = await db.get('fileData', true)
                   if(fileData){
                     const blob = convertHexStringToBlob(fileData.file, 'text/csv')
