@@ -15,6 +15,7 @@
     AutoMapRowEventDetail,
     UpdateDetailsEventDetail,
     ITableInformation,
+    IDataTypeFile,
   } from '$lib/components/Types'
   import type {
     IColumnMetaData,
@@ -34,11 +35,7 @@
   import DataTable from '@radar-azdelta/svelte-datatable'
   import type Query from 'arquero/dist/types/query/query'
   import { settings, triggerAutoMapping } from '$lib/store'
-  import {
-    readFileStorage,
-    userSessionStore,
-    watchValueDatabase,
-  } from '$lib/firebase'
+  import { readFileStorage, userSessionStore, watchValueDatabase } from '$lib/firebase'
   import { goto } from '$app/navigation'
   import { FirebaseSaveImpl } from '$lib/utilClasses/FirebaseSaveImpl'
   import { FileDataTypeImpl } from '$lib/utilClasses/FileDataTypeImpl'
@@ -62,7 +59,7 @@
   let customTableOptions: ITableOptions = {
     id: 'customConceptsTable',
     dataTypeImpl: new FileDataTypeImpl('customConcepts.csv'),
-    saveOptions: false
+    saveOptions: false,
   }
 
   let disableInteraction: boolean = false
@@ -311,11 +308,7 @@
     } else {
       // Check if there is a conceptId or a sourceAutoAssignedConceptIds (this is the conceptId that is assigned by the automapping proces)
       if (event.detail.action == 'APPROVED') {
-        console.log("ACTION ", $userSessionStore.name)
-        if (
-          event.detail.row.statusSetBy == undefined ||
-          event.detail.row.statusSetBy == $userSessionStore.name
-        ) {
+        if (event.detail.row.statusSetBy == undefined || event.detail.row.statusSetBy == $userSessionStore.name) {
           // If statusSetBy is empty, it means the author is the first reviewer of this row
           updatingObj.statusSetBy = $userSessionStore.name
           updatingObj.statusSetOn = Date.now()
@@ -1025,18 +1018,24 @@
   }
 
   async function renewFile() {
-    if (!file) file = await tableFullOptions.dataTypeImpl.syncFile(false, true)
-    else {
-      const syncedFile = await tableFullOptions.dataTypeImpl.syncFile()
+    if (!file) {
+      const resFile = await (tableFullOptions.dataTypeImpl! as IDataTypeFile).syncFile(false, true)
+      if (resFile) file = resFile
+      else console.error('renewFile: Syncfile did not return a file')
+    } else {
+      const syncedFile = await (tableFullOptions.dataTypeImpl! as IDataTypeFile).syncFile()
       if (syncedFile) file = syncedFile
     }
   }
 
   async function renewCustomFile() {
-    if(!customConceptsFile) customConceptsFile = await customTableOptions.dataTypeImpl.syncFile(false, true)
-    else {
-      const syncedFile = await customTableOptions.dataTypeImpl.syncFile()
-      if(syncedFile) customConceptsFile = syncedFile
+    if (!customConceptsFile) {
+      const resFile = await (tableFullOptions.dataTypeImpl! as IDataTypeFile).syncFile(false, true)
+      if (resFile) customConceptsFile = resFile
+      else console.error('renewCustomFile: Syncfile did not return a file')
+    } else {
+      const syncedFile = await (tableFullOptions.dataTypeImpl! as IDataTypeFile).syncFile()
+      if (syncedFile) customConceptsFile = syncedFile
     }
   }
 
@@ -1047,7 +1046,7 @@
 
   $: {
     customDBVersion
-    if(customTableOptions.dataTypeImpl) renewCustomFile()
+    if (customTableOptions.dataTypeImpl) renewCustomFile()
   }
 
   onDestroy(() => {

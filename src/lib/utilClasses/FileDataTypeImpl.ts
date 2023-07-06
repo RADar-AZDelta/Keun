@@ -69,15 +69,19 @@ import type {
         } else this.internalColumns = columns
   
 
-        this.internalColumns!.forEach(col => {
-          if (!col.width) col.width = this.internalOptions!.defaultColumnWidth
-        })
+        if(this.internalColumns) {
+          this.internalColumns!.forEach(col => {
+            if (!col.width) col.width = this.internalOptions!.defaultColumnWidth
+          })
+        }
       
       return (this.internalColumns as IColumnMetaData[])
     }
   
     async render (onlyPaginationChanged: boolean): Promise<IRender> {
-      const filteredColumns = this.internalOptions?.globalFilter?.filter
+      let totalRows: number = 0, originalIndices: number[] = []
+      if(this.internalColumns) {
+        const filteredColumns = this.internalOptions?.globalFilter?.filter
         ? new Map<string, TFilter>([
             [this.internalOptions!.globalFilter!.column, this.internalOptions!.globalFilter!.filter],
           ])
@@ -95,17 +99,18 @@ import type {
         pagination: { rowsPerPage: this.internalOptions?.rowsPerPage, currentPage: this.internalOptions?.currentPage},
         onlyPaginationChanged,
       })
-      let totalRows = results!.totalRows
+      totalRows = results!.totalRows
       this.renderedData = results!.data.map(row =>
         this.internalColumns?.reduce((acc, cur, index) => {
           acc[cur.id!] = row[index]
           return acc
         }, {} as Record<string, any>)
       )
-      const originalIndices = results!.indices.reduce<number[]>((acc, cur) => {
+      originalIndices = results!.indices.reduce<number[]>((acc, cur) => {
         acc.push(cur)
         return acc
       }, [])
+      } else console.error('render: The internalcolumns are undefined, so it could not render')
   
       return {
         originalIndices,
