@@ -28,11 +28,14 @@
     if (userDialog)
       if (userDialog.attributes.getNamedItem('open') == null) if (!$userSessionStore.uid) userDialog.showModal()
   }
+
+  $: {
+    if ($userSessionStore.uid) if (userDialog.attributes.getNamedItem('open')) userDialog.close()
+  }
 </script>
 
 <button title="Author" aria-label="User button" on:click={openDialog} data-name="header-button">
   <p>{$userSessionStore ? $userSessionStore.name : ''}</p>
-  <p>{$userSessionStore ? $userSessionStore.uid : ''}</p>
   <SvgIcon href="icons.svg" id="user" width="16px" height="16px" />
 </button>
 

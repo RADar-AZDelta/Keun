@@ -154,5 +154,5 @@ export interface IDatabaseFile {
 }
 
 export interface IDataTypeFile extends IDataTypeFunctionalities {
-  syncFile(update: boolean): Promise<File | void>
+  syncFile(update?: boolean, init?: boolean): Promise<File | void>
 }
