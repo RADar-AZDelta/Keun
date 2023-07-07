@@ -14,7 +14,6 @@
     CustomMappingEventDetail,
     AutoMapRowEventDetail,
     UpdateDetailsEventDetail,
-    ITableInformation,
     IDataTypeFile,
   } from '$lib/components/Types'
   import type {
@@ -66,10 +65,7 @@
   let translator: LatencyOptimisedTranslator
   let dbVersion: number = 1,
     customDBVersion: number = 1,
-    lastDBAuthor: string = '',
-    lastCustomDBAuthor: string = ''
-
-  let fileName: string | null = ''
+    fileName: string | null = ''
 
   // Athena related variables
   let mappingVisibility: boolean = false
@@ -83,15 +79,8 @@
   // Table related variables
   let tableInit: boolean = false
   let currentVisibleRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>()
-  let tableInformation: ITableInformation = {
-    totalRows: undefined,
-    mappedRows: undefined,
-    approvedRows: undefined,
-  }
   let selectedRow: Record<string, any>
   let selectedRowIndex: number
-  let columnChanges: Record<string, string>
-  let columnsNeedToChange: boolean = false
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // DATA
@@ -157,13 +146,12 @@
     mappedRow['assignedReviewer'] = event.detail.extra.reviewer
     // Update the selected row to the updated row
     await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
-    calculateProgress('singleMapping')
   }
 
   // When the user custom maps a concept to a row
   async function customMapping(event: CustomEvent<CustomMappingEventDetail>) {
     if (dev) console.log('customMapping: Custom mapping for the row with sourceCode ', selectedRow.sourceCode)
-    // Remove the first empty object from the array (this empty object is needed to determain the datatype)
+    // Create the custom concept object
     const customConcept = {
       concept_id: event.detail.customConcept.conceptId,
       concept_name: event.detail.customConcept.conceptName,
@@ -176,6 +164,7 @@
       valid_end_date: event.detail.customConcept.validEndDate,
       invalid_reason: event.detail.customConcept.invalidReason,
     }
+    // Check if the custom concepts already exists in the custom concepts DataTable (avoid duplicates)
     const q = (<Query>query().params({
       concept_id: customConcept.concept_id,
       concept_name: customConcept.concept_name,
@@ -193,9 +182,10 @@
       )
       .toObject()
     const customRes = await dataTableCustomConcepts.executeQueryAndReturnResults(q)
+    // If there are no duplicates, add the row to the custom concepts DataTable
     if (customRes.queriedData.length === 0) {
       await dataTableCustomConcepts.insertRows([customConcept])
-    }
+    } else if (dev) console.log('customMapping: The custom concept already exists in the custom concepts DataTable')
 
     // Map the selected row with the custom concept
     const { mappedIndex, mappedRow } = await customRowMapping(selectedRow, customConcept)
@@ -233,8 +223,6 @@
         }
       } else await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
     } else await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
-
-    calculateProgress('customRowMapping')
   }
 
   // When the mapping button in the Athena pop-up is clicked and the settins "Map to multiple concepts" is enabled
@@ -275,7 +263,6 @@
       await dataTableFile.updateRows(rowsToUpdate)
       await dataTableFile.insertRows([mappedRow])
     }
-    calculateProgress('multipleMapping')
   }
 
   // When the comments or assingedReviewer are filled in, update these fields in a row
@@ -330,21 +317,23 @@
           updatingObj['ADD_INFO:approvedOn'] = Date.now()
           updatingObj.mappingStatus = 'APPROVED'
         } else if (event.detail.row.statusSetBy && event.detail.row.statusSetBy != $userSessionStore.name) {
+          // If the mappingStatus is APPROVED & the statusSetBy is an other author
           updatingObj.statusSetBy = $userSessionStore.name
           updatingObj.statusSetOn = Date.now()
           updatingObj.mappingStatus = 'SEMI-APPROVED'
           if (event.detail.row.conceptId == 0 || !event.detail.row.conceptId) {
+            // If the conceptId is not filled in, fill in the sourceAutoAssignedConceptIds
             updatingObj.conceptId = event.detail.row.sourceAutoAssignedConceptIds
           } else updatingObj.conceptId = event.detail.row.conceptId
         }
       } else {
+        // If the action clicked is UNAPPROVED or FLAGGED
         updatingObj.statusSetBy = $userSessionStore.name
         updatingObj.statusSetOn = Date.now()
         updatingObj.mappingStatus = event.detail.action
       }
     }
     await dataTableFile.updateRows(new Map([[event.detail.index, updatingObj]]))
-    calculateProgress('actionPerformed')
   }
 
   // When the delete button is clicked (left-side of the table in the action column)
@@ -368,6 +357,7 @@
         }
         await dataTableFile.updateRows(rowsToUpdate)
       }
+      // Delete the selected row
       await dataTableFile.deleteRows(event.detail.indexes)
     } else {
       // When the mapping is one on one, erase the mapping from that row
@@ -378,7 +368,6 @@
       delete updatedFields.sourceAutoAssignedConceptIds
       await dataTableFile.updateRows(new Map([[event.detail.indexes[0], updatedFields]]))
     }
-    calculateProgress('deleteRow')
   }
 
   // When the delete button in the table of mapped concepts is clicked, delete the row
@@ -386,11 +375,13 @@
     if (dev) console.log('deleteRowInnerMapping: Delete mapping with conceptId ', event.detail.conceptId)
     // If the row is a custom concept, delete it from the custom concepts table
     if (event.detail.custom) {
+      // Find a row with the same concept_id & concept_name
       const q = (<Query>query().params({ concept_id: event.detail.conceptId, concept_name: event.detail.conceptName }))
         .filter((r: any, params: any) => r.concept_id == params.concept_id && r.concept_name == params.concept_name)
         .toObject()
       const res = await dataTableCustomConcepts.executeQueryAndReturnResults(q)
       if (res.indices.length > 0) {
+        // If a row exists with the same concept_id & concept_name, delete it
         await dataTableCustomConcepts.deleteRows(res.indices)
       }
     }
@@ -474,6 +465,7 @@
   // METHODS
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
+  // A method to check if the translator exists, and if it doesn't exists, create one
   function createTranslator(): Promise<any> {
     return new Promise((resolve, reject) => {
       // Recreate a translator if it's a browser because the previous instance is still pending and can't be used
@@ -499,7 +491,9 @@
     // Check the settings and if the language set is not english, translate the text
     if ($settings) {
       if ($settings.language && $settings.language !== 'en') {
+        // Check for translator
         const translator = await createTranslator()
+        // Translate the text to English
         let translation = await translator.translate({
           from: $settings!.language,
           to: 'en',
@@ -524,11 +518,13 @@
   ): Promise<void> {
     // When the index exceeds the number of rows per page, go to the next page or go to the previous page
     if (up && selectedRowIndex !== 0) {
+      // If the selected row index divided is an even number & the direction is up, change pagination up
       if (selectedRowIndex % pagination.rowsPerPage! === 0) {
         if (dev) console.log('changePagination: change pagination to ', pagination.currentPage! + 1)
         dataTableFile.changePagination({ currentPage: pagination.currentPage! + 1 })
       }
     } else if (!up && selectedRowIndex !== 0) {
+      // If the selected row index + 1 divided is an even number & the direction is down, change pagination down
       if ((selectedRowIndex + 1) % pagination.rowsPerPage! === 0) {
         if (dev) console.log('changePagination: change pagination to ', pagination.currentPage! - 1)
         dataTableFile.changePagination({ currentPage: pagination.currentPage! - 1 })
@@ -627,9 +623,11 @@
     // Check if there is a filter filled in
     if (globalAthenaFilter.filter === undefined) {
       if (selectedRow) {
+        // If there is no filter, get the sourceName and translate it to English and use this as the filter
         filter = await translate(selectedRow.sourceName)
       }
     } else if (globalAthenaFilter.filter && filter === undefined) {
+      // If the user types his own filter & the filter is undefinedv, use the custom filter
       filter = globalAthenaFilter.filter
     }
 
@@ -642,6 +640,51 @@
       data: apiData.content,
       totalRows: apiData.totalElements,
     }
+  }
+
+  // A method to fill in the additional fields of a row
+  async function fillInAdditionalFields(
+    row: Record<string, any>,
+    usagiRow: Record<string, any>,
+    autoMap: boolean
+  ): Promise<Record<string, any>> {
+    for (let col of Object.keys(additionalFields)) {
+      switch (col) {
+        case 'equivalence':
+          row.equivalence = equivalenceMapping
+          break
+
+        case 'statusSetBy':
+        case 'statusSetOn':
+          row.statusSetBy = $userSessionStore.name
+          row.statusSetOn = Date.now()
+          break
+
+        case 'createdBy':
+        case 'createdOn':
+          // If createdBy is not filled in or someone else
+          if (!usagiRow.createdBy && usagiRow.createdBy != $userSessionStore.name) {
+            row.createdBy = $userSessionStore.name
+            row.createdOn = Date.now()
+          }
+          break
+
+        case 'mappingStatus':
+          // If the statusSetBy is not filled in or it is our name that is filled in & when not automapping
+          if ((!usagiRow.statusSetBy || usagiRow.statusSetBy == $userSessionStore.name) && !autoMap) {
+            row.mappingStatus = 'SEMI-APPROVED'
+          }
+          break
+        case 'ADD_INFO:customConcept':
+          row['ADD_INFO:customConcept'] = null
+          break
+        default:
+          // Fill in the additionalFields, but skip the conceptName & conceptId
+          if (col !== 'conceptName' && col !== 'conceptId') row[col] = additionalFields[col]
+          break
+      }
+    }
+    return row
   }
 
   // A method to map a certain row to a given Athena concept
@@ -657,7 +700,7 @@
       start = performance.now()
       console.log('rowMapping: Start mapping row with index ', rowIndex)
     }
-    const mappedUsagiRow: Record<string, any> = usagiRow
+    let mappedUsagiRow: Record<string, any> = usagiRow
 
     if (mappedUsagiRow != undefined) {
       // Map the import columns that are given from Athena
@@ -667,48 +710,7 @@
         } else mappedUsagiRow[alt] = athenaRow[name]
       }
       // Map the extra columns that are not from Athena
-      for (let col of Object.keys(additionalFields)) {
-        switch (col) {
-          case 'equivalence':
-            mappedUsagiRow.equivalence = equivalenceMapping
-            break
-
-          case 'statusSetBy':
-          case 'statusSetOn':
-            mappedUsagiRow.statusSetBy = $userSessionStore.name
-            mappedUsagiRow.statusSetOn = Date.now()
-            break
-
-          case 'createdBy':
-          case 'createdOn':
-            if (!usagiRow.createdBy && usagiRow.createdBy != $userSessionStore.name) {
-              mappedUsagiRow.createdBy = $userSessionStore.name
-              mappedUsagiRow.createdOn = Date.now()
-            }
-            break
-
-          case 'mappingStatus':
-            if (
-              (usagiRow.statusSetBy == null ||
-                usagiRow.statusSetBy == undefined ||
-                usagiRow.statusSetBy == $userSessionStore.name) &&
-              !autoMap
-            ) {
-              mappedUsagiRow.mappingStatus = 'SEMI-APPROVED'
-              break
-            } else if (usagiRow.statusSetBy != $userSessionStore.name && !autoMap) {
-              mappedUsagiRow.mappingStatus = 'APPROVED'
-              break
-            }
-            break
-          case 'ADD_INFO:customConcept':
-            mappedUsagiRow['ADD_INFO:customConcept'] = null
-            break
-          default:
-            if (col !== 'conceptName' && col !== 'conceptId') mappedUsagiRow[col] = additionalFields[col]
-            break
-        }
-      }
+      mappedUsagiRow = await fillInAdditionalFields(mappedUsagiRow, usagiRow, autoMap)
     }
 
     if (dev) {
@@ -733,62 +735,13 @@
     }
 
     // Map the import columns that are given
-    const mappedUsagiRow: Record<string, any> = usagiRow
+    let mappedUsagiRow: Record<string, any> = usagiRow
     for (let col of Object.keys(customRow)) {
-      switch (col) {
-        case 'concept_id':
-          mappedUsagiRow.conceptId = customRow[col]
-          break
-        case 'concept_name':
-          mappedUsagiRow.conceptName = customRow[col]
-          break
-      }
+      if (col === 'concept_id') mappedUsagiRow.conceptId = customRow[col]
+      else if (col === 'concept_name') mappedUsagiRow.conceptName = customRow[col]
     }
     // Map the additional columns
-    for (let col of Object.keys(additionalFields)) {
-      switch (col) {
-        case 'equivalence':
-          mappedUsagiRow.equivalence = equivalenceMapping
-          break
-
-        case 'statusSetBy':
-        case 'statusSetOn':
-          if (String(usagiRow.statusSetBy).replaceAll(' ', '') == '' || usagiRow.statusSetBy == undefined) {
-            mappedUsagiRow.statusSetBy = $userSessionStore.name
-            mappedUsagiRow.statusSetOn = Date.now()
-          }
-          break
-
-        case 'createdBy':
-        case 'createdOn':
-          if (!usagiRow.createdBy && usagiRow.createdBy != $userSessionStore.name) {
-            mappedUsagiRow.createdBy = $userSessionStore.name
-            mappedUsagiRow.createdOn = Date.now()
-          }
-          break
-
-        case 'mappingStatus':
-          if (
-            usagiRow.statusSetBy == null ||
-            usagiRow.statusSetBy == undefined ||
-            usagiRow.statusSetBy == $userSessionStore.name
-          ) {
-            mappedUsagiRow.mappingStatus = 'SEMI-APPROVED'
-            break
-          } else if (usagiRow.statusSetBy != $userSessionStore.name) {
-            mappedUsagiRow.mappingStatus = 'APPROVED'
-            break
-          }
-
-        case 'ADD_INFO:numberOfConcepts':
-          mappedUsagiRow['ADD_INFO:numberOfConcepts'] = null
-          break
-        default:
-          mappedUsagiRow[col] = additionalFields[col]
-          break
-      }
-    }
-
+    mappedUsagiRow = await fillInAdditionalFields(mappedUsagiRow, usagiRow, false)
     mappedUsagiRow['ADD_INFO:customConcept'] = true
 
     if (dev) {
@@ -811,18 +764,15 @@
   // A method to set a variable when the table is initialized
   function dataTableInitialized(): void {
     tableInit = true
-    if (columnsNeedToChange) changeColumnNames()
   }
 
   // A method to abort the auto mapping
   async function abortAutoMap(): Promise<void> {
     if (dev) console.log('abortAutoMap: Aborting auto mapping')
+    // Enable the interaction with the DataTable
     disableInteraction = false
     dataTableFile.setDisabled(false)
-    if (autoMappingPromise) {
-      autoMappingAbortController.abort()
-      calculateProgress('abortAutoMap')
-    }
+    if (autoMappingPromise) autoMappingAbortController.abort()
     currentVisibleRows = new Map<number, Record<string, any>>()
   }
 
@@ -842,15 +792,19 @@
 
       autoMappingPromise = new Promise(async (resolve, reject): Promise<void> => {
         const pag = dataTableFile.getTablePagination()
+        // Get the rows that are visible for the user
         const q = query()
           .slice(pag.rowsPerPage! * (pag.currentPage! - 1), pag.rowsPerPage! * pag.currentPage!)
           .toObject()
         const res = await dataTableFile.executeQueryAndReturnResults(q)
-        for (let i = 0; i < res.queriedData.length; i++) {
+        if (res.queriedData.length > 0) {
           disableInteraction = true
           dataTableFile.setDisabled(true)
+        }
+        for (let i = 0; i < res.queriedData.length; i++) {
           if (signal.aborted) return Promise.resolve()
           const row = res.queriedData[i]
+          // If the conceptId is empty & sourceAutoassignedConceptIds is not filled in. The sourceAutoAssignedConceptIds is filled in by automapping so if it was already filled in, it was automapped already
           if (!row.conceptId && !row.sourceAutoAssignedConceptIds) await autoMapRow(signal, row, res.indices[i])
         }
         if (dev) {
@@ -859,12 +813,10 @@
         }
         resolve(null)
       }).then(() => {
+        // Enable interaction with the DataTable for the user
         disableInteraction = false
         dataTableFile.setDisabled(false)
-        calculateProgress('AutomapPage')
       })
-    } else {
-      calculateProgress('autoMapPage when not automapping')
     }
   }
 
@@ -889,6 +841,7 @@
     return modifiedColumns.concat(addedColumns)
   }
 
+  // A method to create the meta data per column for custom concepts
   function modifyCustomConceptsColumnMetadata(columns: IColumnMetaData[]): IColumnMetaData[] {
     if (dev) console.log('modifyCustomConceptsColumnMetaData: Modifying custom concepts column metadata')
     const customConceptsColumnMap = columnsCustomConcept.reduce((acc, cur) => {
@@ -914,14 +867,22 @@
     if (dev) console.log('approvePage: Approving page')
     let approveRows = new Map<number, Record<string, any>>()
     for (let [index, row] of currentVisibleRows) {
+      // If the conceptId is not filled in, fill in the sourceAutoAssignedConceptIds
       if (!row.conceptId) row.conceptId = row.sourceAutoAssignedConceptIds
       if (row.statusSetBy) {
+        // If the statusSetBy is not the current user, this means the user is the second authorv (4-eyes principal)
         if (row.statusSetBy != $userSessionStore.name) {
           row['ADD_INFO:approvedBy'] = $userSessionStore.name
           row['ADD_INFO:approvedOn'] = Date.now()
           row.mappingStatus = 'APPROVED'
+        } else {
+          // The user is the first author
+          row.statusSetBy = $userSessionStore.name
+          row.statusSetOn = Date.now()
+          row.mappingStatus = 'SEMI-APPROVED'
         }
       } else {
+        // The user is the first author
         row.statusSetBy = $userSessionStore.name
         row.statusSetOn = Date.now()
         row.mappingStatus = 'SEMI-APPROVED'
@@ -929,34 +890,6 @@
       approveRows.set(index, row)
     }
     await dataTableFile.updateRows(approveRows)
-    calculateProgress('approvePage')
-  }
-
-  // A method to calculate the progress of the mapping
-  async function calculateProgress(origin: string) {
-    if (dev) console.log('calculateProgress: Calculating progress')
-    // TODO: Check if mappingStatus exists
-    const qMapping = query().slice(0, 1).toObject()
-    const qMappingResult = await dataTableFile.executeQueryAndReturnResults(qMapping)
-    if (qMappingResult[0]) {
-      if (qMappingResult[0].mappingStatus) {
-        const expressions = {
-          total: 'd => op.count()',
-          valid: 'd => op.valid(d.mappingStatus)',
-        }
-        const expressionResults = await dataTableFile.executeExpressionsAndReturnResults(expressions)
-        const qAppr = query()
-          .filter((r: any) => r.mappingStatus == 'APPROVED')
-          .toObject()
-        const resAppr = await dataTableFile.executeQueryAndReturnResults(qAppr)
-
-        // tableInformation = {
-        //   totalRows: expressionResults.expressionData[0].total,
-        //   mappedRows: expressionResults.expressionData[1].valid,
-        //   approvedRows: resAppr.queriedData.length,
-        // }
-      }
-    }
   }
 
   // A method to save the facets
@@ -964,17 +897,15 @@
     athenaFacets = facets
   }
 
-  async function changeColumnNames() {
-    await dataTableFile.renameColumns(columnChanges)
-    columnsNeedToChange = false
-  }
-
+  // A method to sync the settings with Firebase
   async function syncSettings(action: 'read' | 'write') {
+    // Get the settings from Firebase
     if (action == 'read') {
       if (dev) console.log('syncSettings: Reading the settings for Keun from database')
       const storedSettings = await readDatabase(`/authors/${$userSessionStore.uid}/usagi-settings`)
       if (storedSettings) settings.set(storedSettings)
     } else if (action == 'write') {
+      // Write the settings to Firebase
       if (dev) console.log('syncSettings: Write the settings for keun to database')
       await writeToDatabase(`/authors/${$userSessionStore.uid}/usagi-settings`, $settings)
     } else console.error(`syncSettings: Action (${action}) is not supported`)
@@ -982,18 +913,20 @@
 
   let fetchDataFunc = fetchData
 
-  if (dev) {
-    if (browser && window) {
-      window.addEventListener('beforeunload', async e => {
-        await syncSettings('write')
-      })
-    }
+  if (browser && window) {
+    window.addEventListener('beforeunload', async e => {
+      await syncSettings('write')
+    })
   }
 
+  // A method to get the file from the Firebase file storage when loading the page
   async function readFileFirstTime() {
     if (dev) console.log('readFileFirstTime: Get the file from storage for the setup')
+    // Get the file for the page, but also the custom concepts file
     const blob = await readFileStorage(`/mapping-files/${fileName}`)
     const customBlob = await readFileStorage('/mapping-files/customConcepts.csv')
+    dbVersion = await readDatabase(`/files/${fileName?.substring(0, fileName.indexOf('.'))}/version`)
+    customDBVersion = await readDatabase(`/files/customConcepts/version`)
     if (blob) file = new File([blob], fileName!, { type: 'text/csv' })
     else {
       if (dev) console.error('readFileFirstTime: There was no file found in storage')
@@ -1003,115 +936,119 @@
     if (customBlob) customConceptsFile = new File([customBlob], 'customConcepts.csv', { type: 'text/csv' })
   }
 
-  onMount(async () => {
-    if (!$page.url.searchParams.get('file')) goto('/')
-  })
-
-  $: {
-    if ($page.url.searchParams.get('file') !== fileName) {
-      fileName = $page.url.searchParams.get('file')
-      readFileFirstTime()
-
-      watchValueDatabase(`/files/${fileName?.substring(0, fileName.indexOf('.'))}`, snapshot => {
-        if (dev) console.log('watchValueDatabase: The version of the file has changed')
-        if (snapshot.val()) {
-          if (snapshot.val().lastAuthor !== $userSessionStore.name) {
-            dbVersion = snapshot.val().version
-            lastDBAuthor = snapshot.val().lastAuthor
-          }
-        }
-      })
-      watchValueDatabase('/files/customConcepts', snapshot => {
-        if (dev) console.log('watchValueDatabase: The version of the custom concepts file has changed')
-        if (snapshot.val()) {
-          if (snapshot.val().lastAuthor !== $userSessionStore.name) {
-            customDBVersion = snapshot.val().version
-            lastCustomDBAuthor = snapshot.val().lastAuthor
-          }
-        }
-      })
-    }
-  }
-
-  $: {
-    if ($triggerAutoMapping === true) {
-      autoMapPage()
-      $triggerAutoMapping = false
-    }
-  }
-
+  // A method to sync the file from the DataTable with the file storage & IndexedDB
   async function renewFile() {
+    // If there is no file loaded
     if (!file) {
       const resFile = await (tableFullOptions.dataTypeImpl! as IDataTypeFile).syncFile(false, true)
       if (resFile) file = resFile
-      else console.error('renewFile: Syncfile did not return a file')
+      else console.error('renewFile: Syncfile did not return a file, does the file exist?')
     } else {
+      // If a file is already loaded
       const syncedFile = await (tableFullOptions.dataTypeImpl! as IDataTypeFile).syncFile()
       if (syncedFile) file = syncedFile
     }
   }
 
+  // A method to sync the file from the DataTable with the file storage & IndexedDB
   async function renewCustomFile() {
+    // If there is no custom concepts file loaded
     if (!customConceptsFile) {
       const resFile = await (customTableOptions.dataTypeImpl! as IDataTypeFile).syncFile(false, true)
       if (resFile) customConceptsFile = resFile
       else console.error('renewCustomFile: Syncfile did not return a file')
     } else {
+      // If a custom concepts file is already loaded
       const syncedFile = await (customTableOptions.dataTypeImpl! as IDataTypeFile).syncFile()
       if (syncedFile) customConceptsFile = syncedFile
     }
   }
 
-  async function insertRow() {
-    await dataTableFile.insertRows([{ sourceCode: 'TE', sourceName: 'TESTING', sourceFrequency: 1 }])
+  $: {
+    if ($triggerAutoMapping === true) {
+      // Trigger the automapping
+      autoMapPage()
+      $triggerAutoMapping = false
+    }
+  }
+
+  $: {
+    if ($page.url.searchParams.get('file') !== fileName) {
+      // When the fileName changes
+      fileName = $page.url.searchParams.get('file')
+      readFileFirstTime()
+
+      // Watch the version & author of the current file
+      watchValueDatabase(`/files/${fileName?.substring(0, fileName.indexOf('.'))}`, snapshot => {
+        if (snapshot.val()) {
+          // If the last version is not created by us, update the dbVersion which triggers the sync
+          if (snapshot.val().lastAuthor !== $userSessionStore.name && dbVersion !== snapshot.val().version) {
+            if (dev) console.log('watchValueDatabase: The version of the file has changed')
+            dbVersion = snapshot.val().version
+          }
+        }
+      })
+      // Watch the version & author of the custom concepts
+      watchValueDatabase('/files/customConcepts', snapshot => {
+        if (snapshot.val()) {
+          // If the last version is not created by us, update the customDBVersion which triggers the sync
+          if (snapshot.val().lastAuthor !== $userSessionStore.name && customDBVersion !== snapshot.val().version) {
+            if (dev) console.log('watchValueDatabase: The version of the custom concepts file has changed')
+            customDBVersion = snapshot.val().version
+          }
+        }
+      })
+    }
   }
 
   $: {
     dbVersion
+    // When a new dbVersion is found, renew the file
     if (tableFullOptions.dataTypeImpl) renewFile()
   }
 
   $: {
     customDBVersion
+    // When a new customDBVersion is found, renew the file
     if (customTableOptions.dataTypeImpl) renewCustomFile()
   }
 
   $: {
     if ($userSessionStore) {
+      // When the user changes, read the user his settings from Firebase
       syncSettings('read')
     }
   }
 
+  onMount(async () => {
+    // Check if the file contains the file query parameter
+    if (!$page.url.searchParams.get('file')) goto('/')
+  })
+
   onDestroy(() => {
+    // Watch the value in Firebase but instantly destroy the current & previous event listener
     watchValueDatabase(
       `/files/${fileName?.substring(0, fileName.indexOf('.'))}`,
       snapshot => {
         if (dev) console.log('watchValueDatabase: The version of the file has changed')
         if (snapshot.val()) {
-          if (snapshot.val().lastAuthor !== $userSessionStore.name) {
-            dbVersion = snapshot.val().version
-            lastDBAuthor = snapshot.val().lastAuthor
-          }
+          if (snapshot.val().lastAuthor !== $userSessionStore.name) dbVersion = snapshot.val().version
         }
       },
       true
     )
+    // Watch the value for custom concepts in Firebase but instantly destroy the current & previous event listener
     watchValueDatabase(
       '/files/customConcepts',
       snapshot => {
         if (dev) console.log('watchValueDatabase: The version of the custom concepts file has changed')
         if (snapshot.val()) {
-          if (snapshot.val().lastAuthor !== $userSessionStore.name) {
-            customDBVersion = snapshot.val().version
-            lastCustomDBAuthor = snapshot.val().lastAuthor
-          }
+          if (snapshot.val().lastAuthor !== $userSessionStore.name) customDBVersion = snapshot.val().version
         }
       },
       true
     )
   })
-
-  // TODO: check all functionalities
 </script>
 
 <svelte:head>
@@ -1121,12 +1058,6 @@
     content="Keun is a mapping tool to map concepts to OMOP concepts. It's a web based modern variant of Usagi."
   />
 </svelte:head>
-
-{#if tableInit == true}
-  <button on:click={approvePage}>Approve page</button>
-{/if}
-
-<button on:click={insertRow}>Insert Row</button>
 
 {#if file}
   <DataTable
@@ -1185,4 +1116,8 @@
       modifyColumnMetadata={modifyCustomConceptsColumnMetadata}
     />
   </div>
+
+  {#if tableInit == true}
+    <button on:click={approvePage}>Approve page</button>
+  {/if}
 {/if}

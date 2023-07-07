@@ -5,11 +5,13 @@
   let email: string
   let authorizedFiles: any[]
 
+  // A method to get all the files that are under "/admin" in Firebase
   async function getFiles() {
     const files = await readDatabase('/admin')
-    if(files) fileNames = Object.values(files)
+    if (files) fileNames = Object.values(files)
   }
 
+  // Get all the files to be able to give users access when registrating them
   getFiles()
 </script>
 

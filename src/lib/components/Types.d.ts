@@ -124,12 +124,6 @@ export interface ISettings {
   popupSidesShowed: { filters: boolean; details: boolean }
 }
 
-export interface ITableInformation {
-  totalRows: number | undefined
-  mappedRows: number | undefined
-  approvedRows: number | undefined
-}
-
 export interface IFilter {
   name: string
   categories: ICategories
@@ -147,5 +141,5 @@ export interface IDatabaseFile {
 }
 
 export interface IDataTypeFile extends IDataTypeFunctionalities {
-  syncFile(update?: boolean, init?: boolean): Promise<File | void>
+  syncFile(update?: boolean, get?: boolean): Promise<File | void>
 }

@@ -3,6 +3,7 @@
   import type { CustomOptionsEvents } from '../Types'
   import debounce from 'lodash.debounce'
   import { clickOutside } from '$lib/actions/clickOutside'
+  import { customConcept } from '$lib/store'
 
   export let id: string,
     list: Record<string, any>,
@@ -57,6 +58,7 @@
 
   $: {
     inputValue
+    if (inputValue) $customConcept[id] = inputValue
     filter()
   }
 </script>

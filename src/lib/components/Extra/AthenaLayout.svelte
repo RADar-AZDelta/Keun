@@ -363,7 +363,7 @@
   function setVocabularyId(): void {
     if ($settings) {
       if ($settings.hasOwnProperty('vocabularyIdCustomConcept'))
-        $customConcept.vocabularyId = $settings.vocabularyIdCustomConcept
+        $customConcept.vocabulary_id = $settings.vocabularyIdCustomConcept
     }
   }
 

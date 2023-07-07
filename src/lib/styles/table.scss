@@ -106,20 +106,6 @@ section[data-name='header'] {
     }
   }
 
-  div[data-name='progress'] {
-    width: 40%;
-    display: flex;
-    gap: 1rem;
-    align-items: center;
-    justify-content: space-between;
-
-    div {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-  }
-
   div[data-name='header-buttons-container'] {
     display: flex;
     gap: 1rem;

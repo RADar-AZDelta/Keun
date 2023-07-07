@@ -280,7 +280,7 @@ import type {
   
     async applySort(data: any[] | any[][]): Promise<void> {}
 
-    async syncFile(update?: boolean, init?: boolean): Promise<File | void> {
+    async syncFile(update?: boolean, get?: boolean): Promise<File | void> {
       return new Promise(async (resolve, reject) => {
         if(this.fileName) {
           if(update) {
@@ -302,7 +302,6 @@ import type {
                 })
                 await writeToDatabase(`/files/${this.fileName!.substring(0, this.fileName!.indexOf('.'))}`, { version: version + 1, lastAuthor: name})
                 const hex = await convertBlobToHexString(blob)
-                console.log(hex)
                 await db.set({ fileName: this.fileName, file: hex }, 'fileData')
                 await db.set(version + 1, 'version', true)
                 if (dev) console.log(`syncFile: The syncing of the file (version ${version + 1}) (${this.fileName}) to the storage & IndexedDB is done!`)
@@ -319,7 +318,7 @@ import type {
               const db = new IndexedDB(this.fileName!, this.fileName!)
               const dbVersion: number = await db.get('version', true)
     
-              if (dev) console.log(`syncFile: Syncing the file (${this.fileName}) without updating`)
+              if (dev) console.log(`syncFile: Syncing the file (${this.fileName}, storage version: ${version} & db version: ${dbVersion}) without updating`)
               if(version > dbVersion) {
                 if (dev) console.log(`syncFile: The version in the storage (${this.fileName}) is newer than the version in IndexedDB`)
                 const blob = await readFileStorage(`/mapping-files/${this.fileName}`)
@@ -345,7 +344,7 @@ import type {
                 await db.set(version, 'version', true)
                 resolve(file)
               } else {
-                if(init){
+                if(get){
                   if (dev) console.log(`syncFile: Get the file (${this.fileName}) from IndexedDB`)
                   const fileData = await db.get('fileData', true)
                   if(fileData){
