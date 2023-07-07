@@ -44,14 +44,14 @@
 
   // A method to get all the authors of the application
   async function getAllAuthors(): Promise<Record<string, { email: string; files: Record<string, string> }> | void> {
-    if ($userSessionStore?.uid)
+    if ($userSessionStore?.uid && $userSessionStore?.roles?.includes('Admin'))
       return (await readDatabase('/authors')) as Record<string, { email: string; files: Record<string, string> }>
     else return
   }
 
   // A method to upload a file
   async function fileUploaded() {
-    if (file) {
+    if (file && $userSessionStore?.uid && $userSessionStore?.roles?.includes('Admin')) {
       // If the file is uploaded, push it to Firebase
       await uploadFileToStorage(`/mapping-files/${file.name}`, file)
       // Push the file name to admin in Firebase
@@ -153,20 +153,22 @@
 
   // A method to rename the columns to get a standardized version of the file
   function fileUploadWithColumnChanges() {
-    var reader = new FileReader()
-    reader.onload = evt => {
-      // Get the columns row of the file
-      let sub = evt.target!.result!.toString().substring(0, evt.target!.result!.toString().indexOf('\n'))
-      for (let [newColumn, oldColumn] of Object.entries(missingColumns)) {
-        // Replace the old columns with the standardized columns
-        sub = sub.replace(oldColumn, newColumn)
+    if ($userSessionStore?.uid && $userSessionStore?.roles?.includes('Admin')) {
+      var reader = new FileReader()
+      reader.onload = evt => {
+        // Get the columns row of the file
+        let sub = evt.target!.result!.toString().substring(0, evt.target!.result!.toString().indexOf('\n'))
+        for (let [newColumn, oldColumn] of Object.entries(missingColumns)) {
+          // Replace the old columns with the standardized columns
+          sub = sub.replace(oldColumn, newColumn)
+        }
+        const result = sub + evt.target!.result!.toString().slice(evt.target!.result!.toString().indexOf('\n'))
+        const blob = new Blob([result], { type: 'text/csv' })
+        file = new File([blob], file.name, { type: 'text/csv' })
+        columnDialog.close()
       }
-      const result = sub + evt.target!.result!.toString().slice(evt.target!.result!.toString().indexOf('\n'))
-      const blob = new Blob([result], { type: 'text/csv' })
-      file = new File([blob], file.name, { type: 'text/csv' })
-      columnDialog.close()
+      reader.readAsText(file)
     }
-    reader.readAsText(file)
   }
 
   // A method to delete a file
@@ -200,25 +202,27 @@
 
   // A method to edit the authors that have access to a file
   async function editFile(fileName: string) {
-    if (dev) console.log('editFile: Editing the authorized authors for the file ', fileName)
-    const authors = await getAllAuthors()
-    if (authors) {
-      for (let [uid, info] of Object.entries(authors)) {
-        // Check if the user is registered, it could be that a user has no email
-        if (info.email) {
-          if (info.files) {
-            // If the user has access to the file, but he is removed from the list of authorized authors
-            if (Object.values(info.files).includes(fileName) && !authorizedAuthors.includes(uid)) {
-              const fileComb = Object.entries(info.files).find(arr => arr.includes(fileName))
-              // Delete the file from the user his files list
-              await deleteDatabase(`/authors/${uid}/files/${fileComb![0] === fileName ? fileComb![1] : fileComb![0]}`)
-            } else if (!Object.values(info.files).includes(fileName) && authorizedAuthors.includes(uid)) {
-              // If the user didn't have access, but now he does
+    if ($userSessionStore?.uid && $userSessionStore?.roles?.includes('Admin')) {
+      if (dev) console.log('editFile: Editing the authorized authors for the file ', fileName)
+      const authors = await getAllAuthors()
+      if (authors) {
+        for (let [uid, info] of Object.entries(authors)) {
+          // Check if the user is registered, it could be that a user has no email
+          if (info.email) {
+            if (info.files) {
+              // If the user has access to the file, but he is removed from the list of authorized authors
+              if (Object.values(info.files).includes(fileName) && !authorizedAuthors.includes(uid)) {
+                const fileComb = Object.entries(info.files).find(arr => arr.includes(fileName))
+                // Delete the file from the user his files list
+                await deleteDatabase(`/authors/${uid}/files/${fileComb![0] === fileName ? fileComb![1] : fileComb![0]}`)
+              } else if (!Object.values(info.files).includes(fileName) && authorizedAuthors.includes(uid)) {
+                // If the user didn't have access, but now he does
+                await pushToDatabase(`/authors/${uid}/files`, fileName)
+              }
+            } else if (authorizedAuthors.includes(uid)) {
+              // If the user didn't have access to any files yet
               await pushToDatabase(`/authors/${uid}/files`, fileName)
             }
-          } else if (authorizedAuthors.includes(uid)) {
-            // If the user didn't have access to any files yet
-            await pushToDatabase(`/authors/${uid}/files`, fileName)
           }
         }
       }
@@ -233,17 +237,19 @@
 
   // A method to download the selected file
   async function downloadFile(fileName: string) {
-    let element = document.createElement('a')
-    // Get the file from the file storage in Firebase
-    const fileToDownload = await readFileStorage(`/mapping-files/${fileName}`)
-    if (fileToDownload) {
-      const url = URL.createObjectURL(fileToDownload)
-      element.setAttribute('href', url)
-      element.setAttribute('download', fileName!)
-      document.body.appendChild(element)
-      element.click()
-      document.body.removeChild(element)
-      URL.revokeObjectURL(url)
+    if ($userSessionStore?.uid && $userSessionStore?.roles?.includes('Admin')) {
+      let element = document.createElement('a')
+      // Get the file from the file storage in Firebase
+      const fileToDownload = await readFileStorage(`/mapping-files/${fileName}`)
+      if (fileToDownload) {
+        const url = URL.createObjectURL(fileToDownload)
+        element.setAttribute('href', url)
+        element.setAttribute('download', fileName!)
+        document.body.appendChild(element)
+        element.click()
+        document.body.removeChild(element)
+        URL.revokeObjectURL(url)
+      }
     }
   }
 
