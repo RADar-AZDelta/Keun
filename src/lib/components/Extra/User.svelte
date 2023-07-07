@@ -30,7 +30,7 @@
   }
 
   $: {
-    if ($userSessionStore.uid) if (userDialog.attributes.getNamedItem('open')) userDialog.close()
+    if ($userSessionStore.uid && userDialog) if (userDialog.attributes.getNamedItem('open')) userDialog.close()
   }
 </script>
 

@@ -28,7 +28,7 @@
   // A method to get the files for the current user
   async function getFiles() {
     // Check if the user has logged in
-    if ($userSessionStore) {
+    if ($userSessionStore?.uid) {
       let filesArray: Record<string, string>
       // If the user has the role admin, get all the files
       if ($userSessionStore.roles?.includes('Admin')) {
@@ -43,8 +43,10 @@
   }
 
   // A method to get all the authors of the application
-  async function getAllAuthors(): Promise<Record<string, { email: string; files: Record<string, string> }>> {
-    return (await readDatabase('/authors')) as Record<string, { email: string; files: Record<string, string> }>
+  async function getAllAuthors(): Promise<Record<string, { email: string; files: Record<string, string> }> | void> {
+    if ($userSessionStore?.uid)
+      return (await readDatabase('/authors')) as Record<string, { email: string; files: Record<string, string> }>
+    else return
   }
 
   // A method to upload a file
@@ -169,51 +171,55 @@
 
   // A method to delete a file
   async function deleteFile(fileName: string) {
-    $processing = true
-    // Get filesArray and search for the fileName to get the UID of the file
-    const filesArray = await readDatabase('/admin')
-    for (let [uid, name] of Object.entries(filesArray)) {
-      if (name == fileName) await deleteDatabase(`/admin/${uid}`)
-    }
-    // Delete the file from the file storage from Firebase
-    await deleteFileStorage(`/mapping-files/${fileName}`)
-    // Delete the version & lastAuthor object for the file in Firebase Realtime Database
-    await deleteDatabase(`/files/${fileName.substring(0, fileName.indexOf('.'))}`)
-    // Get all the authors of this file & delete the file from their accessable files in Realtime Database
-    const authors: Record<string, { email: string; files: Record<string, string> }> = await readDatabase('/authors')
-    for (let [uid, info] of Object.entries(authors)) {
-      if (info.email) {
-        if (info.files) {
-          for (let [fileUid, name] of Object.entries(info.files)) {
-            if (name == fileName) await deleteDatabase(`/authors/${uid}/files/${fileUid}`)
+    if ($userSessionStore?.uid && $userSessionStore?.roles?.includes('Admin')) {
+      $processing = true
+      // Get filesArray and search for the fileName to get the UID of the file
+      const filesArray = await readDatabase('/admin')
+      for (let [uid, name] of Object.entries(filesArray)) {
+        if (name == fileName) await deleteDatabase(`/admin/${uid}`)
+      }
+      // Delete the file from the file storage from Firebase
+      await deleteFileStorage(`/mapping-files/${fileName}`)
+      // Delete the version & lastAuthor object for the file in Firebase Realtime Database
+      await deleteDatabase(`/files/${fileName.substring(0, fileName.indexOf('.'))}`)
+      // Get all the authors of this file & delete the file from their accessable files in Realtime Database
+      const authors: Record<string, { email: string; files: Record<string, string> }> = await readDatabase('/authors')
+      for (let [uid, info] of Object.entries(authors)) {
+        if (info.email) {
+          if (info.files) {
+            for (let [fileUid, name] of Object.entries(info.files)) {
+              if (name == fileName) await deleteDatabase(`/authors/${uid}/files/${fileUid}`)
+            }
           }
         }
       }
+      getFiles()
+      $processing = false
     }
-    getFiles()
-    $processing = false
   }
 
   // A method to edit the authors that have access to a file
   async function editFile(fileName: string) {
     if (dev) console.log('editFile: Editing the authorized authors for the file ', fileName)
     const authors = await getAllAuthors()
-    for (let [uid, info] of Object.entries(authors)) {
-      // Check if the user is registered, it could be that a user has no email
-      if (info.email) {
-        if (info.files) {
-          // If the user has access to the file, but he is removed from the list of authorized authors
-          if (Object.values(info.files).includes(fileName) && !authorizedAuthors.includes(uid)) {
-            const fileComb = Object.entries(info.files).find(arr => arr.includes(fileName))
-            // Delete the file from the user his files list
-            await deleteDatabase(`/authors/${uid}/files/${fileComb![0] === fileName ? fileComb![1] : fileComb![0]}`)
-          } else if (!Object.values(info.files).includes(fileName) && authorizedAuthors.includes(uid)) {
-            // If the user didn't have access, but now he does
+    if (authors) {
+      for (let [uid, info] of Object.entries(authors)) {
+        // Check if the user is registered, it could be that a user has no email
+        if (info.email) {
+          if (info.files) {
+            // If the user has access to the file, but he is removed from the list of authorized authors
+            if (Object.values(info.files).includes(fileName) && !authorizedAuthors.includes(uid)) {
+              const fileComb = Object.entries(info.files).find(arr => arr.includes(fileName))
+              // Delete the file from the user his files list
+              await deleteDatabase(`/authors/${uid}/files/${fileComb![0] === fileName ? fileComb![1] : fileComb![0]}`)
+            } else if (!Object.values(info.files).includes(fileName) && authorizedAuthors.includes(uid)) {
+              // If the user didn't have access, but now he does
+              await pushToDatabase(`/authors/${uid}/files`, fileName)
+            }
+          } else if (authorizedAuthors.includes(uid)) {
+            // If the user didn't have access to any files yet
             await pushToDatabase(`/authors/${uid}/files`, fileName)
           }
-        } else if (authorizedAuthors.includes(uid)) {
-          // If the user didn't have access to any files yet
-          await pushToDatabase(`/authors/${uid}/files`, fileName)
         }
       }
     }
@@ -285,10 +291,25 @@
       <input type="text" placeholder="search for an user" bind:value={userFilter} />
       <ul data-name="authors-list">
         {#await getAllAuthors() then users}
-          {#each Object.entries(users) as [uid, info]}
-            {#if info.email}
-              {#if userFilter}
-                {#if info.email.toLowerCase().includes(userFilter.toLowerCase())}
+          {#if users}
+            {#each Object.entries(users) as [uid, info]}
+              {#if info.email}
+                {#if userFilter}
+                  {#if info.email.toLowerCase().includes(userFilter.toLowerCase())}
+                    <li>
+                      <label>
+                        <input
+                          type="checkbox"
+                          name={info.email}
+                          id={info.email}
+                          bind:group={authorizedAuthors}
+                          value={uid}
+                        />
+                        {info.email}
+                      </label>
+                    </li>
+                  {/if}
+                {:else}
                   <li>
                     <label>
                       <input
@@ -302,22 +323,9 @@
                     </label>
                   </li>
                 {/if}
-              {:else}
-                <li>
-                  <label>
-                    <input
-                      type="checkbox"
-                      name={info.email}
-                      id={info.email}
-                      bind:group={authorizedAuthors}
-                      value={uid}
-                    />
-                    {info.email}
-                  </label>
-                </li>
               {/if}
-            {/if}
-          {/each}
+            {/each}
+          {/if}
         {/await}
       </ul>
 
@@ -370,23 +378,25 @@
       <h1>Update the authorized authors</h1>
       <ul>
         {#await getAllAuthors() then users}
-          {#each Object.entries(users) as [uid, info]}
-            {#if info.email}
-              <li>
-                <label>
-                  <input
-                    type="checkbox"
-                    name={info.email}
-                    id={info.email}
-                    checked={info.files ? Object.values(info.files).includes(chosenFile) : false}
-                    bind:group={authorizedAuthors}
-                    value={uid}
-                  />
-                  {info.email}
-                </label>
-              </li>
-            {/if}
-          {/each}
+          {#if users}
+            {#each Object.entries(users) as [uid, info]}
+              {#if info.email}
+                <li>
+                  <label>
+                    <input
+                      type="checkbox"
+                      name={info.email}
+                      id={info.email}
+                      checked={info.files ? Object.values(info.files).includes(chosenFile) : false}
+                      bind:group={authorizedAuthors}
+                      value={uid}
+                    />
+                    {info.email}
+                  </label>
+                </li>
+              {/if}
+            {/each}
+          {/if}
         {/await}
       </ul>
       <button on:click={() => editFile(chosenFile)}>Update</button>
