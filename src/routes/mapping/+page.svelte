@@ -1051,7 +1051,7 @@
   }
 
   $: {
-    if ($userSessionStore) {
+    if ($userSessionStore?.uid) {
       // When the user changes, read the user his settings from Firebase
       syncSettings('read')
     }
