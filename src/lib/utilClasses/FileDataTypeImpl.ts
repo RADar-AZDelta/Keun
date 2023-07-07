@@ -263,7 +263,6 @@ import type {
         this.worker!.onmessage = ({ data: { msg: responseMsg, data } }: MessageEvent<PostMessage<TResult>>) => {
           if (responseMsg === requestMsg) resolve(data as TResult)
         }
-        // TODO: fix issue here
         this.worker!.postMessage({ msg: requestMsg, data })
       })
       if (dev) {

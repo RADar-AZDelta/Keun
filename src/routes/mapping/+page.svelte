@@ -146,6 +146,7 @@
     mappedRow['assignedReviewer'] = event.detail.extra.reviewer
     // Update the selected row to the updated row
     await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
+    // calculateProgress()
   }
 
   // When the user custom maps a concept to a row
@@ -223,6 +224,8 @@
         }
       } else await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
     } else await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
+
+    // calculateProgress()
   }
 
   // When the mapping button in the Athena pop-up is clicked and the settins "Map to multiple concepts" is enabled
@@ -263,6 +266,7 @@
       await dataTableFile.updateRows(rowsToUpdate)
       await dataTableFile.insertRows([mappedRow])
     }
+    // calculateProgress()
   }
 
   // When the comments or assingedReviewer are filled in, update these fields in a row
@@ -334,6 +338,7 @@
       }
     }
     await dataTableFile.updateRows(new Map([[event.detail.index, updatingObj]]))
+    // calculateProgress()
   }
 
   // When the delete button is clicked (left-side of the table in the action column)
@@ -367,6 +372,7 @@
       updatedFields.conceptName = null
       delete updatedFields.sourceAutoAssignedConceptIds
       await dataTableFile.updateRows(new Map([[event.detail.indexes[0], updatedFields]]))
+      // calculateProgress()
     }
   }
 
@@ -772,7 +778,10 @@
     // Enable the interaction with the DataTable
     disableInteraction = false
     dataTableFile.setDisabled(false)
-    if (autoMappingPromise) autoMappingAbortController.abort()
+    if (autoMappingPromise) {
+      autoMappingAbortController.abort()
+      // calculateProgress()
+    }
     currentVisibleRows = new Map<number, Record<string, any>>()
   }
 
@@ -816,7 +825,10 @@
         // Enable interaction with the DataTable for the user
         disableInteraction = false
         dataTableFile.setDisabled(false)
+        // calculateProgress()
       })
+    } else {
+      // calculateProgress()
     }
   }
 
@@ -890,7 +902,32 @@
       approveRows.set(index, row)
     }
     await dataTableFile.updateRows(approveRows)
+    // calculateProgress()
   }
+
+  // async function calculateProgress() {
+  //   if (dev) console.log('calculateProgress: Calculating progress')
+  //   const qMapping = query().slice(0, 1).toObject()
+  //   const qMappingResult = await dataTableFile.executeQueryAndReturnResults(qMapping)
+  //   if (qMappingResult[0]) {
+  //     if (qMappingResult[0].mappingStatus) {
+  //       const expressions = {
+  //         total: 'd => op.count()',
+  //         valid: 'd => op.valid(d.mappingStatus)',
+  //       }
+  //       const expressionResults = await dataTableFile.executeExpressionsAndReturnResults(expressions)
+  //       const qAppr = query()
+  //         .filter((r: any) => r.mappingStatus == 'APPROVED')
+  //         .toObject()
+  //       const resAppr = await dataTableFile.executeQueryAndReturnResults(qAppr)
+  //       tableInformation = {
+  //         totalRows: expressionResults.expressionData[0].total,
+  //         mappedRows: expressionResults.expressionData[1].valid,
+  //         approvedRows: resAppr.queriedData.length,
+  //       }
+  //     }
+  //   }
+  // }
 
   // A method to save the facets
   function saveFacets(facets: Record<string, any>) {
