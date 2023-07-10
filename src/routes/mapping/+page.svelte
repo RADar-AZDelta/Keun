@@ -15,6 +15,8 @@
     AutoMapRowEventDetail,
     UpdateDetailsEventDetail,
     IDataTypeFile,
+    FileUploadedEventDetail,
+    FileUploadWithColumnChanges,
   } from '$lib/components/Types'
   import type {
     IColumnMetaData,
@@ -39,10 +41,13 @@
   import { FirebaseSaveImpl } from '$lib/utilClasses/FirebaseSaveImpl'
   import { FileDataTypeImpl } from '$lib/utilClasses/FileDataTypeImpl'
   import { urlToFile } from '$lib/utils'
+  import Download from '$lib/components/Extra/Download.svelte'
+  import Upload from '$lib/components/Extra/Upload.svelte'
 
   // General variables
   let file: File | undefined = undefined
   let customConceptsFile: File | undefined = undefined
+  let columnChanges: Record<string, string> | undefined = undefined
 
   let tableOptions: ITableOptions = {
     id: `${$page.url.searchParams
@@ -61,7 +66,7 @@
 
   let customTableOptions: ITableOptions = {
     id: 'customConceptsTable',
-    dataTypeImpl: new FileDataTypeImpl('customConcepts.csv'),
+    dataTypeImpl: $implementation == 'firebase' ? new FileDataTypeImpl('customConcepts.csv') : undefined,
     saveOptions: false,
   }
 
@@ -246,7 +251,7 @@
 
     // Add extra information like the number of concepts mapped for this row, comments & the assigned reviewer to the row
     mappedRow.mappingStatus = 'SEMI-APPROVED'
-    mappedRow.statusSetBy = $userSessionStore.name
+    mappedRow.statusSetBy = author
 
     mappedRow['ADD_INFO:lastAthenaFilter'] = lastTypedFilter
 
@@ -307,9 +312,9 @@
     } else {
       // Check if there is a conceptId or a sourceAutoAssignedConceptIds (this is the conceptId that is assigned by the automapping proces)
       if (event.detail.action == 'APPROVED') {
-        if (event.detail.row.statusSetBy == undefined || event.detail.row.statusSetBy == $userSessionStore.name) {
+        if (event.detail.row.statusSetBy == undefined || event.detail.row.statusSetBy == author) {
           // If statusSetBy is empty, it means the author is the first reviewer of this row
-          updatingObj.statusSetBy = $userSessionStore.name
+          updatingObj.statusSetBy = author
           updatingObj.statusSetOn = Date.now()
           updatingObj.mappingStatus = 'SEMI-APPROVED'
           if (event.detail.row.conceptId == 0 || !event.detail.row.conceptId) {
@@ -317,16 +322,16 @@
           } else updatingObj.conceptId = event.detail.row.conceptId
         } else if (
           event.detail.row.statusSetBy &&
-          event.detail.row.statusSetBy != $userSessionStore.name &&
+          event.detail.row.statusSetBy != author &&
           event.detail.row.mappingStatus == 'SEMI-APPROVED'
         ) {
           // StatusSetBy is not empty and it's not the current author so it means it's the second reviewer
-          updatingObj['ADD_INFO:approvedBy'] = $userSessionStore.name
+          updatingObj['ADD_INFO:approvedBy'] = author
           updatingObj['ADD_INFO:approvedOn'] = Date.now()
           updatingObj.mappingStatus = 'APPROVED'
-        } else if (event.detail.row.statusSetBy && event.detail.row.statusSetBy != $userSessionStore.name) {
+        } else if (event.detail.row.statusSetBy && event.detail.row.statusSetBy != author) {
           // If the mappingStatus is APPROVED & the statusSetBy is an other author
-          updatingObj.statusSetBy = $userSessionStore.name
+          updatingObj.statusSetBy = author
           updatingObj.statusSetOn = Date.now()
           updatingObj.mappingStatus = 'SEMI-APPROVED'
           if (event.detail.row.conceptId == 0 || !event.detail.row.conceptId) {
@@ -336,7 +341,7 @@
         }
       } else {
         // If the action clicked is UNAPPROVED or FLAGGED
-        updatingObj.statusSetBy = $userSessionStore.name
+        updatingObj.statusSetBy = author
         updatingObj.statusSetOn = Date.now()
         updatingObj.mappingStatus = event.detail.action
       }
@@ -474,6 +479,18 @@
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // METHODS
   ///////////////////////////////////////////////////////////////////////////////////////////////
+
+  async function fileUploaded(e: CustomEvent<FileUploadedEventDetail>) {
+    if(dev) console.log('fileUploaded: New File uploaded')
+    file = e.detail.file
+    columnChanges = undefined
+  }
+
+  async function fileUploadedWithColumnChanges(e: CustomEvent<FileUploadWithColumnChanges>) {
+    if(dev) console.log('fileUploadedWithColumnChanges: New file uploaded and columns have changed')
+    file = e.detail.file
+    columnChanges = Object.fromEntries(Object.entries(e.detail.columnChange).map(a => a.reverse()))
+  }
 
   // A method to check if the translator exists, and if it doesn't exists, create one
   function createTranslator(): Promise<any> {
@@ -666,22 +683,22 @@
 
         case 'statusSetBy':
         case 'statusSetOn':
-          row.statusSetBy = $userSessionStore.name
+          row.statusSetBy = author
           row.statusSetOn = Date.now()
           break
 
         case 'createdBy':
         case 'createdOn':
           // If createdBy is not filled in or someone else
-          if (!usagiRow.createdBy && usagiRow.createdBy != $userSessionStore.name) {
-            row.createdBy = $userSessionStore.name
+          if (!usagiRow.createdBy && usagiRow.createdBy != author) {
+            row.createdBy = author
             row.createdOn = Date.now()
           }
           break
 
         case 'mappingStatus':
           // If the statusSetBy is not filled in or it is our name that is filled in & when not automapping
-          if ((!usagiRow.statusSetBy || usagiRow.statusSetBy == $userSessionStore.name) && !autoMap) {
+          if ((!usagiRow.statusSetBy || usagiRow.statusSetBy == author) && !autoMap) {
             row.mappingStatus = 'SEMI-APPROVED'
           }
           break
@@ -887,19 +904,19 @@
       if (!row.conceptId) row.conceptId = row.sourceAutoAssignedConceptIds
       if (row.statusSetBy) {
         // If the statusSetBy is not the current user, this means the user is the second authorv (4-eyes principal)
-        if (row.statusSetBy != $userSessionStore.name) {
-          row['ADD_INFO:approvedBy'] = $userSessionStore.name
+        if (row.statusSetBy != author) {
+          row['ADD_INFO:approvedBy'] = author
           row['ADD_INFO:approvedOn'] = Date.now()
           row.mappingStatus = 'APPROVED'
         } else {
           // The user is the first author
-          row.statusSetBy = $userSessionStore.name
+          row.statusSetBy = author
           row.statusSetOn = Date.now()
           row.mappingStatus = 'SEMI-APPROVED'
         }
       } else {
         // The user is the first author
-        row.statusSetBy = $userSessionStore.name
+        row.statusSetBy = author
         row.statusSetOn = Date.now()
         row.mappingStatus = 'SEMI-APPROVED'
       }
@@ -1076,6 +1093,8 @@
     }
   }
 
+  $: author = $implementation == 'firebase' ? $userSessionStore.name : $settings.author
+
   onMount(async () => {
     // Check if the file contains the file query parameter
     if (!$page.url.searchParams.get('fileName')) goto('/')
@@ -1116,6 +1135,14 @@
     content="Keun is a mapping tool to map concepts to OMOP concepts. It's a web based modern variant of Usagi."
   />
 </svelte:head>
+
+{#if $implementation == 'none' || !implementation}
+  <section data-name="download-upload-header">
+    <Download dataTable={dataTableFile} title="Download CSV" />
+    <Upload on:fileUploaded={fileUploaded} on:fileUploadWithColumnChanges={fileUploadedWithColumnChanges} {file}/>
+    <Download dataTable={dataTableCustomConcepts} title="Download custom concepts" />
+  </section>
+{/if}
 
 {#if file}
   <DataTable

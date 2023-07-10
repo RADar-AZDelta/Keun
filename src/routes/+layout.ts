@@ -9,6 +9,6 @@ export const load = async () => {
         implementation.set('firebase')
     } else if (!PUBLIC_CLOUD_IMPLEMENTATION || String(PUBLIC_CLOUD_IMPLEMENTATION).toLowerCase() == 'none') {
         implementation.set('none')
-    }
+    } else implementation.set('none')
     return
 }
