@@ -33,26 +33,30 @@
   import { browser, dev } from '$app/environment'
   import DataTable from '@radar-azdelta/svelte-datatable'
   import type Query from 'arquero/dist/types/query/query'
-  import { settings, triggerAutoMapping } from '$lib/store'
+  import { implementation, settings, triggerAutoMapping } from '$lib/store'
   import { readDatabase, readFileStorage, userSessionStore, watchValueDatabase, writeToDatabase } from '$lib/firebase'
   import { goto } from '$app/navigation'
   import { FirebaseSaveImpl } from '$lib/utilClasses/FirebaseSaveImpl'
   import { FileDataTypeImpl } from '$lib/utilClasses/FileDataTypeImpl'
+  import { urlToFile } from '$lib/utils'
 
   // General variables
   let file: File | undefined = undefined
   let customConceptsFile: File | undefined = undefined
 
   let tableOptions: ITableOptions = {
-    id: `${$page.url.searchParams.get('file')?.substring(0, $page.url.searchParams.get('file')?.indexOf('.'))}-usagi`,
+    id: `${$page.url.searchParams
+      .get('fileName')
+      ?.substring(0, $page.url.searchParams.get('fileName')?.indexOf('.'))}-usagi`,
     rowsPerPage: 15,
     rowsPerPageOptions: [5, 10, 15, 20, 50, 100],
     actionColumn: true,
   }
 
   let tableFullOptions: ITableOptions = Object.assign(tableOptions, {
-    saveImpl: new FirebaseSaveImpl(tableOptions),
-    dataTypeImpl: new FileDataTypeImpl($page.url.searchParams.get('file')),
+    saveImpl: $implementation == 'firebase' ? new FirebaseSaveImpl(tableOptions) : undefined,
+    dataTypeImpl:
+      $implementation == 'firebase' ? new FileDataTypeImpl($page.url.searchParams.get('fileName')) : undefined,
   })
 
   let customTableOptions: ITableOptions = {
@@ -950,7 +954,7 @@
 
   let fetchDataFunc = fetchData
 
-  if (browser && window) {
+  if (browser && window && $implementation == 'firebase') {
     window.addEventListener('beforeunload', async e => {
       await syncSettings('write')
     })
@@ -1001,6 +1005,14 @@
     }
   }
 
+  async function getFileFromUrl(url: string) {
+    const res = await urlToFile(url, fileName!)
+    if (res) {
+      file = res
+      URL.revokeObjectURL(url)
+    } else goto('/')
+  }
+
   $: {
     if ($triggerAutoMapping === true) {
       // Trigger the automapping
@@ -1010,48 +1022,55 @@
   }
 
   $: {
-    if ($page.url.searchParams.get('file') !== fileName) {
+    if ($page.url.searchParams.get('fileName') !== fileName) {
       // When the fileName changes
-      fileName = $page.url.searchParams.get('file')
-      readFileFirstTime()
+      if ($implementation == 'firebase') {
+        fileName = $page.url.searchParams.get('fileName')
+        readFileFirstTime()
 
-      // Watch the version & author of the current file
-      watchValueDatabase(`/files/${fileName?.substring(0, fileName.indexOf('.'))}`, snapshot => {
-        if (snapshot.val()) {
-          // If the last version is not created by us, update the dbVersion which triggers the sync
-          if (snapshot.val().lastAuthor !== $userSessionStore.name && dbVersion !== snapshot.val().version) {
-            if (dev) console.log('watchValueDatabase: The version of the file has changed')
-            dbVersion = snapshot.val().version
+        // Watch the version & author of the current file
+        watchValueDatabase(`/files/${fileName?.substring(0, fileName.indexOf('.'))}`, snapshot => {
+          if (snapshot.val()) {
+            // If the last version is not created by us, update the dbVersion which triggers the sync
+            if (snapshot.val().lastAuthor !== $userSessionStore.name && dbVersion !== snapshot.val().version) {
+              if (dev) console.log('watchValueDatabase: The version of the file has changed')
+              dbVersion = snapshot.val().version
+            }
           }
-        }
-      })
-      // Watch the version & author of the custom concepts
-      watchValueDatabase('/files/customConcepts', snapshot => {
-        if (snapshot.val()) {
-          // If the last version is not created by us, update the customDBVersion which triggers the sync
-          if (snapshot.val().lastAuthor !== $userSessionStore.name && customDBVersion !== snapshot.val().version) {
-            if (dev) console.log('watchValueDatabase: The version of the custom concepts file has changed')
-            customDBVersion = snapshot.val().version
+        })
+        // Watch the version & author of the custom concepts
+        watchValueDatabase('/files/customConcepts', snapshot => {
+          if (snapshot.val()) {
+            // If the last version is not created by us, update the customDBVersion which triggers the sync
+            if (snapshot.val().lastAuthor !== $userSessionStore.name && customDBVersion !== snapshot.val().version) {
+              if (dev) console.log('watchValueDatabase: The version of the custom concepts file has changed')
+              customDBVersion = snapshot.val().version
+            }
           }
-        }
-      })
+        })
+      } else {
+        fileName = $page.url.searchParams.get('fileName')
+        const url = $page.url.searchParams.get('file')
+        if (url && fileName) getFileFromUrl(url)
+        else goto('/')
+      }
     }
   }
 
   $: {
     dbVersion
     // When a new dbVersion is found, renew the file
-    if (tableFullOptions.dataTypeImpl) renewFile()
+    if ($implementation == 'firebase') if (tableFullOptions.dataTypeImpl) renewFile()
   }
 
   $: {
     customDBVersion
     // When a new customDBVersion is found, renew the file
-    if (customTableOptions.dataTypeImpl) renewCustomFile()
+    if ($implementation == 'firebase') if (customTableOptions.dataTypeImpl) renewCustomFile()
   }
 
   $: {
-    if ($userSessionStore?.uid) {
+    if ($implementation == 'firebase' && $userSessionStore?.uid) {
       // When the user changes, read the user his settings from Firebase
       syncSettings('read')
     }
@@ -1059,32 +1078,34 @@
 
   onMount(async () => {
     // Check if the file contains the file query parameter
-    if (!$page.url.searchParams.get('file')) goto('/')
+    if (!$page.url.searchParams.get('fileName')) goto('/')
   })
 
   onDestroy(() => {
-    // Watch the value in Firebase but instantly destroy the current & previous event listener
-    watchValueDatabase(
-      `/files/${fileName?.substring(0, fileName.indexOf('.'))}`,
-      snapshot => {
-        if (dev) console.log('watchValueDatabase: The version of the file has changed')
-        if (snapshot.val()) {
-          if (snapshot.val().lastAuthor !== $userSessionStore.name) dbVersion = snapshot.val().version
-        }
-      },
-      true
-    )
-    // Watch the value for custom concepts in Firebase but instantly destroy the current & previous event listener
-    watchValueDatabase(
-      '/files/customConcepts',
-      snapshot => {
-        if (dev) console.log('watchValueDatabase: The version of the custom concepts file has changed')
-        if (snapshot.val()) {
-          if (snapshot.val().lastAuthor !== $userSessionStore.name) customDBVersion = snapshot.val().version
-        }
-      },
-      true
-    )
+    if ($implementation == 'firebase') {
+      // Watch the value in Firebase but instantly destroy the current & previous event listener
+      watchValueDatabase(
+        `/files/${fileName?.substring(0, fileName.indexOf('.'))}`,
+        snapshot => {
+          if (dev) console.log('watchValueDatabase: The version of the file has changed')
+          if (snapshot.val()) {
+            if (snapshot.val().lastAuthor !== $userSessionStore.name) dbVersion = snapshot.val().version
+          }
+        },
+        true
+      )
+      // Watch the value for custom concepts in Firebase but instantly destroy the current & previous event listener
+      watchValueDatabase(
+        '/files/customConcepts',
+        snapshot => {
+          if (dev) console.log('watchValueDatabase: The version of the custom concepts file has changed')
+          if (snapshot.val()) {
+            if (snapshot.val().lastAuthor !== $userSessionStore.name) customDBVersion = snapshot.val().version
+          }
+        },
+        true
+      )
+    }
   })
 </script>
 

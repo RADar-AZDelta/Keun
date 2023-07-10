@@ -4,8 +4,8 @@
 
 export interface UserSession {
 	uid?: string;
-	name?: sytring;
-	email?: string;
+	name?: string | null;
+	email?: string | null;
 	roles?: [string];
 	token?: string;
 }

@@ -20,4 +20,6 @@ const settings = writable<ISettings>({
 
 const triggerAutoMapping = writable<boolean>(false)
 
-export { customConcept, settings, triggerAutoMapping }
+const implementation = writable<string>('none')
+
+export { customConcept, settings, triggerAutoMapping, implementation }

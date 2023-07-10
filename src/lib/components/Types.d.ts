@@ -17,6 +17,7 @@ export interface CustomOptionsEvents {
   autoMapRow: AutoMapRowEventDetail
   autoComplete: AutoCompleteEventDetail
   updateDetails: UpdateDetailsEventDetail
+  fileUploaded: FileUploadedEventDetail
 }
 
 export interface VisibilityChangedEventDetail {
@@ -103,6 +104,10 @@ export interface UpdateDetailsEventDetail {
   assignedReviewer: string
 }
 
+export interface FileUploadedEventDetail {
+  file: File
+}
+
 export interface FileUploadWithColumnChanges {
   file: File
   columnChange: Record<string, string>
@@ -117,6 +122,7 @@ export interface ICategories {
 export interface ISettings {
   mapToMultipleConcepts: boolean
   autoMap: boolean
+  author?: string
   language: string
   savedAuthors: string[]
   vocabularyIdCustomConcept: string

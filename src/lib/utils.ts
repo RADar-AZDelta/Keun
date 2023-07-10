@@ -1,3 +1,4 @@
+import { dev } from "$app/environment"
 import { onDestroy } from "svelte"
 
 function jsonMapReviver(key: string, value: any) {
@@ -121,4 +122,18 @@ export function convertHexStringToBlob(hex: string, mimeType: string): Blob {
   return new Blob([new Uint8Array(bytes)], {type: mimeType})
 }
 
-export const fileToBlob = async (file: File) => new Blob([new Uint8Array(await file.arrayBuffer())], {type: file.type });
+export async function fileToBlob (file: File) {
+  new Blob([new Uint8Array(await file.arrayBuffer())], {type: file.type })
+}
+
+export async function urlToFile(url: string, fileName: string) {
+  try {
+    let res = await fetch(url)
+    let data = await res.blob()
+    let file = new File([data], fileName, { type: 'text/csv' })
+    return file
+  } catch(e) {
+    if(dev) console.log(e)
+    return undefined
+  }
+}

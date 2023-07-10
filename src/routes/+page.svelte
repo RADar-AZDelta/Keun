@@ -14,6 +14,9 @@
   import { writable } from 'svelte/store'
   import { goto } from '$app/navigation'
   import { dev } from '$app/environment'
+  import DragAndDrop from '$lib/components/Extra/DragAndDrop.svelte'
+  import { implementation } from '$lib/store'
+  import type { FileUploadedEventDetail } from '$lib/components/Types'
 
   let files: string[] = []
   let fileInputDialog: HTMLDialogElement, authorsDialog: HTMLDialogElement, columnDialog: HTMLDialogElement
@@ -24,6 +27,14 @@
   let authorizedAuthors: string[]
   let processing = writable<boolean>(false)
   let chosenFile: string
+
+  async function fileUploadedDragAndDrop(e: CustomEvent<FileUploadedEventDetail>) {
+    if (dev) console.log('fileUploaded: New file uploaded')
+    file = e.detail.file
+    const url = URL.createObjectURL(file)
+    goto(`/mapping?file=${url}&impl=none&fileName=${file.name}`)
+    // TODO: implement possibility to change the columns
+  }
 
   // A method to get the files for the current user
   async function getFiles() {
@@ -232,7 +243,7 @@
 
   // A method to send the user to the mappingtool
   function openMappingTool(fileName: string) {
-    if (fileName !== 'customConcepts.csv') goto(`/mapping?file=${fileName}`)
+    if (fileName !== 'customConcepts.csv') goto(`/mapping?file=${fileName}&impl=firebase&fileName=${fileName}`)
   }
 
   // A method to download the selected file
@@ -267,41 +278,56 @@
   />
 </svelte:head>
 
-<main data-name="files-screen">
-  <dialog bind:this={fileInputDialog} data-name="file-dialog">
-    <div data-name="file-input-container">
-      <h1 data-name="file-input-title">Upload a new file</h1>
-      <button
-        on:click={() => {
-          fileInputDialog.close()
-          authorizedAuthors = []
-        }}
-        data-name="close-dialog"
-        disabled={$processing}
-        ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" />
-      </button>
-      <div data-name="drag-drop-container" on:drop={dropHandler} on:dragover|preventDefault>
-        <label data-name="upload-file">
-          {#if file}
-            <SvgIcon href="icons.svg" id="excel" width="40px" height="40px" />
-            <p>{file.name}</p>
-          {:else}
-            <SvgIcon href="icons.svg" id="upload" width="24px" height="24px" />
-            <p>Drag or click to upload a file</p>
-          {/if}
-          <input type="file" name="file" id="file" accept=".csv" on:change={onFileInputChange} />
-        </label>
-      </div>
+{#if $implementation == 'firebase'}
+  <main data-name="files-screen">
+    <dialog bind:this={fileInputDialog} data-name="file-dialog">
+      <div data-name="file-input-container">
+        <h1 data-name="file-input-title">Upload a new file</h1>
+        <button
+          on:click={() => {
+            fileInputDialog.close()
+            authorizedAuthors = []
+          }}
+          data-name="close-dialog"
+          disabled={$processing}
+          ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" />
+        </button>
+        <div data-name="drag-drop-container" on:drop={dropHandler} on:dragover|preventDefault>
+          <label data-name="upload-file">
+            {#if file}
+              <SvgIcon href="icons.svg" id="excel" width="40px" height="40px" />
+              <p>{file.name}</p>
+            {:else}
+              <SvgIcon href="icons.svg" id="upload" width="24px" height="24px" />
+              <p>Drag or click to upload a file</p>
+            {/if}
+            <input type="file" name="file" id="file" accept=".csv" on:change={onFileInputChange} />
+          </label>
+        </div>
 
-      <h2>Select the authors that have permission to this file:</h2>
-      <input type="text" placeholder="search for an user" bind:value={userFilter} />
-      <ul data-name="authors-list">
-        {#await getAllAuthors() then users}
-          {#if users}
-            {#each Object.entries(users) as [uid, info]}
-              {#if info.email}
-                {#if userFilter}
-                  {#if info.email.toLowerCase().includes(userFilter.toLowerCase())}
+        <h2>Select the authors that have permission to this file:</h2>
+        <input type="text" placeholder="search for an user" bind:value={userFilter} />
+        <ul data-name="authors-list">
+          {#await getAllAuthors() then users}
+            {#if users}
+              {#each Object.entries(users) as [uid, info]}
+                {#if info.email}
+                  {#if userFilter}
+                    {#if info.email.toLowerCase().includes(userFilter.toLowerCase())}
+                      <li>
+                        <label>
+                          <input
+                            type="checkbox"
+                            name={info.email}
+                            id={info.email}
+                            bind:group={authorizedAuthors}
+                            value={uid}
+                          />
+                          {info.email}
+                        </label>
+                      </li>
+                    {/if}
+                  {:else}
                     <li>
                       <label>
                         <input
@@ -315,13 +341,71 @@
                       </label>
                     </li>
                   {/if}
-                {:else}
+                {/if}
+              {/each}
+            {/if}
+          {/await}
+        </ul>
+
+        <button on:click={fileUploaded} disabled={file ? false : true || $processing}>Upload</button>
+        {#if $processing}
+          <Spinner />
+        {/if}
+      </div>
+    </dialog>
+
+    <dialog bind:this={columnDialog} data-name="column-dialog">
+      <div data-name="dialog-container">
+        <button data-name="close-dialog" on:click={() => columnDialog.close()}>
+          <SvgIcon href="icons.svg" id="x" width="16px" height="16px" />
+        </button>
+        <h1>Set columns</h1>
+        {#each Object.entries(missingColumns) as [newColumn, oldColumn]}
+          <div data-name="column-selection">
+            <p>{newColumn} column:</p>
+            <select name={newColumn} id={newColumn} bind:value={missingColumns[newColumn]}>
+              {#if currentColumns}
+                {#each currentColumns as col}
+                  {#if col.toLowerCase() == newColumn.toLowerCase()}
+                    <option value={col} selected>{col}</option>
+                  {:else}
+                    <option value={col}>{col}</option>
+                  {/if}
+                {/each}
+              {/if}
+            </select>
+          </div>
+        {/each}
+        <div data-name="button-container">
+          <button data-name="save" on:click={fileUploadWithColumnChanges}>Save</button>
+        </div>
+      </div>
+    </dialog>
+
+    <dialog bind:this={authorsDialog} data-name="authors-dialog">
+      <div data-name="authors-container">
+        <button
+          on:click={() => {
+            authorsDialog.close()
+            authorizedAuthors = []
+          }}
+          data-name="close-dialog"
+          disabled={$processing}
+          ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" />
+        </button>
+        <h1>Update the authorized authors</h1>
+        <ul>
+          {#await getAllAuthors() then users}
+            {#if users}
+              {#each Object.entries(users) as [uid, info]}
+                {#if info.email}
                   <li>
                     <label>
                       <input
                         type="checkbox"
                         name={info.email}
                         id={info.email}
+                        checked={info.files ? Object.values(info.files).includes(chosenFile) : false}
                         bind:group={authorizedAuthors}
                         value={uid}
                       />
@@ -329,147 +413,78 @@
                     </label>
                   </li>
                 {/if}
-              {/if}
-            {/each}
-          {/if}
-        {/await}
-      </ul>
-
-      <button on:click={fileUploaded} disabled={file ? false : true || $processing}>Upload</button>
-      {#if $processing}
-        <Spinner />
-      {/if}
-    </div>
-  </dialog>
-
-  <dialog bind:this={columnDialog} data-name="column-dialog">
-    <div data-name="dialog-container">
-      <button data-name="close-dialog" on:click={() => columnDialog.close()}>
-        <SvgIcon href="icons.svg" id="x" width="16px" height="16px" />
-      </button>
-      <h1>Set columns</h1>
-      {#each Object.entries(missingColumns) as [newColumn, oldColumn]}
-        <div data-name="column-selection">
-          <p>{newColumn} column:</p>
-          <select name={newColumn} id={newColumn} bind:value={missingColumns[newColumn]}>
-            {#if currentColumns}
-              {#each currentColumns as col}
-                {#if col.toLowerCase() == newColumn.toLowerCase()}
-                  <option value={col} selected>{col}</option>
-                {:else}
-                  <option value={col}>{col}</option>
-                {/if}
               {/each}
             {/if}
-          </select>
-        </div>
-      {/each}
-      <div data-name="button-container">
-        <button data-name="save" on:click={fileUploadWithColumnChanges}>Save</button>
+          {/await}
+        </ul>
+        <button on:click={() => editFile(chosenFile)}>Update</button>
       </div>
-    </div>
-  </dialog>
+    </dialog>
 
-  <dialog bind:this={authorsDialog} data-name="authors-dialog">
-    <div data-name="authors-container">
-      <button
-        on:click={() => {
-          authorsDialog.close()
-          authorizedAuthors = []
-        }}
-        data-name="close-dialog"
-        disabled={$processing}
-        ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" />
-      </button>
-      <h1>Update the authorized authors</h1>
-      <ul>
-        {#await getAllAuthors() then users}
-          {#if users}
-            {#each Object.entries(users) as [uid, info]}
-              {#if info.email}
-                <li>
-                  <label>
-                    <input
-                      type="checkbox"
-                      name={info.email}
-                      id={info.email}
-                      checked={info.files ? Object.values(info.files).includes(chosenFile) : false}
-                      bind:group={authorizedAuthors}
-                      value={uid}
-                    />
-                    {info.email}
-                  </label>
-                </li>
-              {/if}
-            {/each}
-          {/if}
-        {/await}
-      </ul>
-      <button on:click={() => editFile(chosenFile)}>Update</button>
-    </div>
-  </dialog>
-
-  <section data-name="file-selection">
-    <section data-name="file-container">
-      <div data-name="file-menu">
-        <h1>Files to map</h1>
-        <div data-name="file-list">
-          {#if $userSessionStore}
-            {#each files as file}
-              <button data-name="file-card" on:click={() => openMappingTool(file)}>
-                <div data-name="file-name">
-                  <SvgIcon href="icons.svg" id="excel" width="40px" height="40px" />
-                  <p>{file}</p>
-                </div>
-                {#if $userSessionStore.roles?.includes('Admin')}
-                  <div>
-                    <button
-                      data-name="download-file"
-                      on:click={async e => {
-                        if (e && e.stopPropagation) e.stopPropagation()
-                        downloadFile(file)
-                      }}
-                    >
-                      <SvgIcon href="icons.svg" id="download" width="16px" height="16px" />
-                    </button>
-                    <button
-                      disabled={file === 'customConcepts.csv'}
-                      data-name="edit-file"
-                      on:click={async e => {
-                        if (e && e.stopPropagation) e.stopPropagation()
-                        if (file !== 'customConcepts.csv') {
-                          chosenFile = file
-                          authorsDialog.showModal()
-                        }
-                      }}
-                    >
-                      <SvgIcon href="icons.svg" id="edit" width="16px" height="16px" />
-                    </button>
-                    <button
-                      disabled={file === 'customConcepts.csv'}
-                      data-name="delete-file"
-                      on:click={e => {
-                        if (e && e.stopPropagation) e.stopPropagation()
-                        if (file !== 'customConcepts.csv') deleteFile(file)
-                      }}><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
-                    >
+    <section data-name="file-selection">
+      <section data-name="file-container">
+        <div data-name="file-menu">
+          <h1>Files to map</h1>
+          <div data-name="file-list">
+            {#if $userSessionStore}
+              {#each files as file}
+                <button data-name="file-card" on:click={() => openMappingTool(file)}>
+                  <div data-name="file-name">
+                    <SvgIcon href="icons.svg" id="excel" width="40px" height="40px" />
+                    <p>{file}</p>
                   </div>
-                {/if}
-              </button>
-            {/each}
-          {:else}
-            <div data-name="loader">
-              <Spinner />
-            </div>
+                  {#if $userSessionStore.roles?.includes('Admin')}
+                    <div>
+                      <button
+                        data-name="download-file"
+                        on:click={async e => {
+                          if (e && e.stopPropagation) e.stopPropagation()
+                          downloadFile(file)
+                        }}
+                      >
+                        <SvgIcon href="icons.svg" id="download" width="16px" height="16px" />
+                      </button>
+                      <button
+                        disabled={file === 'customConcepts.csv'}
+                        data-name="edit-file"
+                        on:click={async e => {
+                          if (e && e.stopPropagation) e.stopPropagation()
+                          if (file !== 'customConcepts.csv') {
+                            chosenFile = file
+                            authorsDialog.showModal()
+                          }
+                        }}
+                      >
+                        <SvgIcon href="icons.svg" id="edit" width="16px" height="16px" />
+                      </button>
+                      <button
+                        disabled={file === 'customConcepts.csv'}
+                        data-name="delete-file"
+                        on:click={e => {
+                          if (e && e.stopPropagation) e.stopPropagation()
+                          if (file !== 'customConcepts.csv') deleteFile(file)
+                        }}><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
+                      >
+                    </div>
+                  {/if}
+                </button>
+              {/each}
+            {:else}
+              <div data-name="loader">
+                <Spinner />
+              </div>
+            {/if}
+          </div>
+          {#if $processing}
+            <Spinner />
+          {/if}
+          {#if $userSessionStore.roles?.includes('Admin')}
+            <button on:click={() => fileInputDialog.showModal()} data-name="file-add">+ Add file</button>
           {/if}
         </div>
-        {#if $processing}
-          <Spinner />
-        {/if}
-        {#if $userSessionStore.roles?.includes('Admin')}
-          <button on:click={() => fileInputDialog.showModal()} data-name="file-add">+ Add file</button>
-        {/if}
-      </div>
+      </section>
     </section>
-  </section>
-</main>
+  </main>
+{:else}
+  <DragAndDrop on:fileUploaded={fileUploadedDragAndDrop} />
+{/if}
