@@ -9,14 +9,14 @@
   import Manual from '$lib/components/Extra/Manual.svelte'
   import Settings from '$lib/components/Extra/Settings.svelte'
   import User from '$lib/components/Extra/User.svelte'
-  import { settings } from '$lib/store'
+  import { implementation, settings } from '$lib/store'
 </script>
 
 <main>
   <header data-name="header">
     <Header />
     <ul data-name="page-nav">
-      <li><a href="/">File selection</a></li>
+      <li><a href="/">{$implementation == 'firebase' ? 'File selection' : 'Drag & Drop'}</a></li>
       {#if $userSessionStore && $userSessionStore.roles?.includes('Admin')}
         <li><a href="/register">Registration</a></li>
       {/if}
