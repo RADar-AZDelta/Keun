@@ -98,6 +98,9 @@
   let dataTableFile: DataTable
   let dataTableCustomConcepts: DataTable
 
+  let customConceptsArrayOfObjects: Record<string, any>[] = [{}]
+  let customConceptColumns: IColumnMetaData[] = columnsCustomConcept
+
   let importantAthenaColumns = new Map<string, string>([
     ['id', 'conceptId'],
     ['name', 'conceptName'],
@@ -161,6 +164,13 @@
   // When the user custom maps a concept to a row
   async function customMapping(event: CustomEvent<CustomMappingEventDetail>) {
     if (dev) console.log('customMapping: Custom mapping for the row with sourceCode ', selectedRow.sourceCode)
+
+    if ($implementation !== 'firebase' && customConceptsArrayOfObjects.length > 0) {
+      if (Object.keys(customConceptsArrayOfObjects[0]).length == 0) {
+        customConceptsArrayOfObjects = []
+      }
+    }
+
     // Create the custom concept object
     const customConcept = {
       concept_id: event.detail.customConcept.conceptId,
@@ -175,27 +185,48 @@
       invalid_reason: event.detail.customConcept.invalidReason,
     }
     // Check if the custom concepts already exists in the custom concepts DataTable (avoid duplicates)
-    const q = (<Query>query().params({
-      concept_id: customConcept.concept_id,
-      concept_name: customConcept.concept_name,
-      domain_id: customConcept.domain_id,
-      vocabulary_id: customConcept.vocabulary_id,
-      concept_class_id: customConcept.concept_class_id,
-    }))
-      .filter(
-        (r: any, params: any) =>
-          r.concept_id == params.concept_id &&
-          r.concept_name == params.concept_name &&
-          r.domain_id == params.domain_id &&
-          r.vocabulary_id == params.vocabulary_id &&
-          r.concept_class_id == params.concept_class_id
+    let existsAlready: boolean = false
+    if ($implementation == 'firebase') {
+      const q = (<Query>query().params({
+        concept_id: customConcept.concept_id,
+        concept_name: customConcept.concept_name,
+        domain_id: customConcept.domain_id,
+        vocabulary_id: customConcept.vocabulary_id,
+        concept_class_id: customConcept.concept_class_id,
+      }))
+        .filter(
+          (r: any, params: any) =>
+            r.concept_id == params.concept_id &&
+            r.concept_name == params.concept_name &&
+            r.domain_id == params.domain_id &&
+            r.vocabulary_id == params.vocabulary_id &&
+            r.concept_class_id == params.concept_class_id
+        )
+        .toObject()
+      const customRes = await dataTableCustomConcepts.executeQueryAndReturnResults(q)
+      // If there are no duplicates, add the row to the custom concepts DataTable
+      if (customRes.queriedData.length === 0) {
+        existsAlready = false
+        await dataTableCustomConcepts.insertRows([customConcept])
+      } else {
+        if (dev) console.log('customMapping: The custom concept already exists in the custom concepts DataTable')
+        existsAlready = true
+      }
+    } else {
+      const existingConcept = customConceptsArrayOfObjects.find(
+        concept =>
+          concept.concept_id === customConcept.concept_id &&
+          concept.concept_name === customConcept.concept_name &&
+          concept.domain_id === customConcept.domain_id &&
+          concept.vocabulary_id === customConcept.vocabulary_id &&
+          concept.concept_class_id === customConcept.concept_class_id
       )
-      .toObject()
-    const customRes = await dataTableCustomConcepts.executeQueryAndReturnResults(q)
-    // If there are no duplicates, add the row to the custom concepts DataTable
-    if (customRes.queriedData.length === 0) {
-      await dataTableCustomConcepts.insertRows([customConcept])
-    } else if (dev) console.log('customMapping: The custom concept already exists in the custom concepts DataTable')
+      if (!existingConcept) {
+        existsAlready = false
+        customConceptsArrayOfObjects.push(customConcept)
+        customConceptsArrayOfObjects = customConceptsArrayOfObjects
+      } else existsAlready = true
+    }
 
     // Map the selected row with the custom concept
     const { mappedIndex, mappedRow } = await customRowMapping(selectedRow, customConcept)
@@ -218,7 +249,7 @@
           await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
         } else {
           // If the custom concept didn't exist yet
-          if (customRes.queriedData.length == 0) {
+          if (!existsAlready) {
             mappedRow['ADD_INFO:numberOfConcepts'] = res.queriedData.length + 1
             mappedRow['comment'] = event.detail.extra.comment
             mappedRow['assignedReviewer'] = event.detail.extra.reviewer
@@ -390,14 +421,23 @@
     if (dev) console.log('deleteRowInnerMapping: Delete mapping with conceptId ', event.detail.conceptId)
     // If the row is a custom concept, delete it from the custom concepts table
     if (event.detail.custom) {
-      // Find a row with the same concept_id & concept_name
-      const q = (<Query>query().params({ concept_id: event.detail.conceptId, concept_name: event.detail.conceptName }))
-        .filter((r: any, params: any) => r.concept_id == params.concept_id && r.concept_name == params.concept_name)
-        .toObject()
-      const res = await dataTableCustomConcepts.executeQueryAndReturnResults(q)
-      if (res.indices.length > 0) {
-        // If a row exists with the same concept_id & concept_name, delete it
-        await dataTableCustomConcepts.deleteRows(res.indices)
+      if ($implementation == 'firebase') {
+        // Find a row with the same concept_id & concept_name
+        const q = (<Query>(
+          query().params({ concept_id: event.detail.conceptId, concept_name: event.detail.conceptName })
+        ))
+          .filter((r: any, params: any) => r.concept_id == params.concept_id && r.concept_name == params.concept_name)
+          .toObject()
+        const res = await dataTableCustomConcepts.executeQueryAndReturnResults(q)
+        if (res.indices.length > 0) {
+          // If a row exists with the same concept_id & concept_name, delete it
+          await dataTableCustomConcepts.deleteRows(res.indices)
+        }
+      } else {
+        const deletionIndex = customConceptsArrayOfObjects.findIndex(
+          row => row.conceptId === event.detail.conceptId && row.concept_name === event.detail.conceptName
+        )
+        customConceptsArrayOfObjects.splice(deletionIndex, 1)
       }
     }
 
@@ -481,13 +521,13 @@
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
   async function fileUploaded(e: CustomEvent<FileUploadedEventDetail>) {
-    if(dev) console.log('fileUploaded: New File uploaded')
+    if (dev) console.log('fileUploaded: New File uploaded')
     file = e.detail.file
     columnChanges = undefined
   }
 
   async function fileUploadedWithColumnChanges(e: CustomEvent<FileUploadWithColumnChanges>) {
-    if(dev) console.log('fileUploadedWithColumnChanges: New file uploaded and columns have changed')
+    if (dev) console.log('fileUploadedWithColumnChanges: New file uploaded and columns have changed')
     file = e.detail.file
     columnChanges = Object.fromEntries(Object.entries(e.detail.columnChange).map(a => a.reverse()))
   }
@@ -1139,8 +1179,12 @@
 {#if $implementation == 'none' || !implementation}
   <section data-name="download-upload-header">
     <Download dataTable={dataTableFile} title="Download CSV" />
-    <Upload on:fileUploaded={fileUploaded} on:fileUploadWithColumnChanges={fileUploadedWithColumnChanges} {file}/>
-    <Download dataTable={dataTableCustomConcepts} title="Download custom concepts" />
+    <Upload on:fileUploaded={fileUploaded} on:fileUploadWithColumnChanges={fileUploadedWithColumnChanges} {file} />
+    {#if customConceptsArrayOfObjects.length > 0 && $implementation !== 'firebase'}
+      {#if Object.keys(customConceptsArrayOfObjects[0]).length !== 0}
+        <Download dataTable={dataTableCustomConcepts} title="Download custom concepts" />
+      {/if}
+    {/if}
   </section>
 {/if}
 
@@ -1194,12 +1238,20 @@
   {/if}
 
   <div data-name="custom-concepts">
-    <DataTable
-      data={customConceptsFile}
-      options={customTableOptions}
-      bind:this={dataTableCustomConcepts}
-      modifyColumnMetadata={modifyCustomConceptsColumnMetadata}
-    />
+    {#if $implementation == 'firebase'}
+      <DataTable
+        data={customConceptsFile}
+        options={customTableOptions}
+        bind:this={dataTableCustomConcepts}
+        modifyColumnMetadata={modifyCustomConceptsColumnMetadata}
+      />
+    {:else}
+      <DataTable
+        data={customConceptsArrayOfObjects}
+        columns={customConceptColumns}
+        bind:this={dataTableCustomConcepts}
+      />
+    {/if}
   </div>
 
   {#if tableInit == true}
