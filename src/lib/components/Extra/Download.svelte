@@ -14,6 +14,9 @@
   }
 </script>
 
-<button {title} aria-label="Download button" on:click={onClick} data-name="header-button">
-  <SvgIcon href="icons.svg" id="download" width="16px" height="16px" />
-</button>
+<div data-name="download">
+  <button {title} aria-label="Download button" on:click={onClick} data-name="header-button">
+    <SvgIcon href="icons.svg" id="download" width="16px" height="16px" />
+  </button>
+  <p>{title}</p>
+</div>

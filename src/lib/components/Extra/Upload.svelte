@@ -99,10 +99,12 @@
   </div>
 </dialog>
 
-{#if file}
-  <p data-name="filename" title={file.name}>{file.name}</p>
-{/if}
-<label title="Upload" for="file-upload" data-name="file-upload"
-  ><SvgIcon href="icons.svg" id="upload" width="16px" height="16px" /></label
->
-<input id="file-upload" type="file" accept=".csv" on:change={onFileInputChange} bind:this={inputFile} />
+<div data-name="upload">
+  <button>
+    <label title="Upload" for="file-upload" data-name="file-upload"
+      ><SvgIcon href="icons.svg" id="upload" width="16px" height="16px" /></label
+    >
+  </button>
+  <p>Upload file</p>
+  <input id="file-upload" type="file" accept=".csv" on:change={onFileInputChange} bind:this={inputFile} />
+</div>

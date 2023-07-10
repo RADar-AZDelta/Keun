@@ -43,6 +43,30 @@ body {
   }
 }
 
+section[data-name="download-upload-header"] {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem 0;
+
+  div[data-name="download"] {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+
+  div[data-name="upload"] {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    input[type='file'] {
+      display: none;
+    }
+  }
+}
+
 section[data-name='header'] {
   display: flex;
   justify-content: space-between;
