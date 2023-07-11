@@ -15,16 +15,22 @@
       if ($implementation == 'firebase') {
         await import('$lib/utilClasses/FirebaseImpl').then(({ default: FirebaseImpl }) => {
           $implementationClass = new FirebaseImpl()
+          $implementationClass.syncSettings('read')
         })
       } else {
         import('$lib/utilClasses/LocalImpl').then(({ default: LocalImpl }) => {
           $implementationClass = new LocalImpl()
+          $implementationClass.syncSettings('read')
         })
       }
     }
   }
 
   loadImplementation()
+
+  window.addEventListener('beforeunload', async e => {
+    await $implementationClass.syncSettings('write')
+  })
 </script>
 
 <main>
