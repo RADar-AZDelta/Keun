@@ -35,11 +35,8 @@
   import { browser, dev } from '$app/environment'
   import DataTable from '@radar-azdelta/svelte-datatable'
   import type Query from 'arquero/dist/types/query/query'
-  import { implementation, settings, triggerAutoMapping } from '$lib/store'
-  import { readDatabase, readFileStorage, userSessionStore, watchValueDatabase, writeToDatabase } from '$lib/firebase'
+  import { columnChanges, implementation, implementationClass, settings, triggerAutoMapping } from '$lib/store'
   import { goto } from '$app/navigation'
-  import { FirebaseSaveImpl } from '$lib/utilClasses/FirebaseSaveImpl'
-  import { FileDataTypeImpl } from '$lib/utilClasses/FileDataTypeImpl'
   import { urlToFile } from '$lib/utils'
   import Download from '$lib/components/Extra/Download.svelte'
   import Upload from '$lib/components/Extra/Upload.svelte'
@@ -47,7 +44,6 @@
   // General variables
   let file: File | undefined = undefined
   let customConceptsFile: File | undefined = undefined
-  let columnChanges: Record<string, string> | undefined = undefined
 
   let tableOptions: ITableOptions = {
     id: `${$page.url.searchParams
@@ -58,23 +54,16 @@
     actionColumn: true,
   }
 
-  let tableFullOptions: ITableOptions = Object.assign(tableOptions, {
-    saveImpl: $implementation == 'firebase' ? new FirebaseSaveImpl(tableOptions) : undefined,
-    dataTypeImpl:
-      $implementation == 'firebase' ? new FileDataTypeImpl($page.url.searchParams.get('fileName')) : undefined,
-  })
-
   let customTableOptions: ITableOptions = {
     id: 'customConceptsTable',
-    dataTypeImpl: $implementation == 'firebase' ? new FileDataTypeImpl('customConcepts.csv') : undefined,
     saveOptions: false,
   }
 
+  setupDataTable()
+
   let disableInteraction: boolean = false
   let translator: LatencyOptimisedTranslator
-  let dbVersion: number = 1,
-    customDBVersion: number = 1,
-    fileName: string | null = ''
+  let fileName: string | null = ''
 
   // Athena related variables
   let mappingVisibility: boolean = false
@@ -95,7 +84,7 @@
   // DATA
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
-  let dataTableFile: DataTable
+  let dataTableMapping: DataTable
   let dataTableCustomConcepts: DataTable
 
   let customConceptsArrayOfObjects: Record<string, any>[] = [{}]
@@ -157,7 +146,7 @@
     mappedRow['comment'] = event.detail.extra.comment
     mappedRow['assignedReviewer'] = event.detail.extra.reviewer
     // Update the selected row to the updated row
-    await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
+    await dataTableMapping.updateRows(new Map([[mappedIndex, mappedRow]]))
     // calculateProgress()
   }
 
@@ -240,13 +229,13 @@
         const q = (<Query>query().params({ sourceCode: mappedRow.sourceCode }))
           .filter((r: any, params: any) => r.sourceCode == params.sourceCode)
           .toObject()
-        const res = await dataTableFile.executeQueryAndReturnResults(q)
+        const res = await dataTableMapping.executeQueryAndReturnResults(q)
         // Add extra information like the number of concepts mapped for this row, comments & the assigned reviewer to the row
         if (res.queriedData.length === 1 && !res.queriedData[0].conceptId) {
           mappedRow['ADD_INFO:numberOfConcepts'] = 1
           mappedRow['comment'] = event.detail.extra.comment
           mappedRow['assignedReviewer'] = event.detail.extra.reviewer
-          await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
+          await dataTableMapping.updateRows(new Map([[mappedIndex, mappedRow]]))
         } else {
           // If the custom concept didn't exist yet
           if (!existsAlready) {
@@ -258,12 +247,12 @@
             for (let index of res.indices) {
               rowsToUpdate.set(index, { 'ADD_INFO:numberOfConcepts': res.queriedData.length + 1 })
             }
-            await dataTableFile.updateRows(rowsToUpdate)
-            await dataTableFile.insertRows([mappedRow])
+            await dataTableMapping.updateRows(rowsToUpdate)
+            await dataTableMapping.insertRows([mappedRow])
           }
         }
-      } else await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
-    } else await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
+      } else await dataTableMapping.updateRows(new Map([[mappedIndex, mappedRow]]))
+    } else await dataTableMapping.updateRows(new Map([[mappedIndex, mappedRow]]))
 
     // calculateProgress()
   }
@@ -278,7 +267,7 @@
     const q = (<Query>query().params({ value: mappedRow.sourceCode }))
       .filter((r: any, params: any) => r.sourceCode == params.value)
       .toObject()
-    const res = await dataTableFile.executeQueryAndReturnResults(q)
+    const res = await dataTableMapping.executeQueryAndReturnResults(q)
 
     // Add extra information like the number of concepts mapped for this row, comments & the assigned reviewer to the row
     mappedRow.mappingStatus = 'SEMI-APPROVED'
@@ -292,7 +281,7 @@
       mappedRow['ADD_INFO:numberOfConcepts'] = 1
       mappedRow['comment'] = event.detail.extra.comment
       mappedRow['assignedReviewer'] = event.detail.extra.reviewer
-      await dataTableFile.updateRows(new Map([[res.indices[0], mappedRow]]))
+      await dataTableMapping.updateRows(new Map([[res.indices[0], mappedRow]]))
     } else {
       // This is not the first concept mapped to the row and the current row will be added to the table and the others will be updated
       mappedRow['ADD_INFO:numberOfConcepts'] = res.queriedData.length + 1
@@ -303,8 +292,8 @@
       for (let index of res.indices) {
         rowsToUpdate.set(index, { 'ADD_INFO:numberOfConcepts': res.queriedData.length + 1 })
       }
-      await dataTableFile.updateRows(rowsToUpdate)
-      await dataTableFile.insertRows([mappedRow])
+      await dataTableMapping.updateRows(rowsToUpdate)
+      await dataTableMapping.insertRows([mappedRow])
     }
     // calculateProgress()
   }
@@ -312,7 +301,7 @@
   // When the comments or assingedReviewer are filled in, update these fields in a row
   async function updateDetailsRow(event: CustomEvent<UpdateDetailsEventDetail>) {
     if (dev) console.log(`updateDetailsRow: Update details for the row on index ${event.detail.index}`)
-    await dataTableFile.updateRows(
+    await dataTableMapping.updateRows(
       new Map([
         [event.detail.index, { comment: event.detail.comment, assignedReviewer: event.detail.assignedReviewer }],
       ])
@@ -377,7 +366,7 @@
         updatingObj.mappingStatus = event.detail.action
       }
     }
-    await dataTableFile.updateRows(new Map([[event.detail.index, updatingObj]]))
+    await dataTableMapping.updateRows(new Map([[event.detail.index, updatingObj]]))
     // calculateProgress()
   }
 
@@ -393,17 +382,17 @@
       const q = (<Query>query().params({ source: event.detail.sourceCode }))
         .filter((r: any, params: any) => r.sourceCode == params.source)
         .toObject()
-      const res = await dataTableFile.executeQueryAndReturnResults(q)
+      const res = await dataTableMapping.executeQueryAndReturnResults(q)
       if (res.queriedData.length >= 1) {
         const rowsToUpdate = new Map()
         // Update the all the rows and set the number of concepts - 1
         for (let index of res.indices) {
           rowsToUpdate.set(index, { 'ADD_INFO:numberOfConcepts': res.queriedData.length - 1 })
         }
-        await dataTableFile.updateRows(rowsToUpdate)
+        await dataTableMapping.updateRows(rowsToUpdate)
       }
       // Delete the selected row
-      await dataTableFile.deleteRows(event.detail.indexes)
+      await dataTableMapping.deleteRows(event.detail.indexes)
     } else {
       // When the mapping is one on one, erase the mapping from that row
       const updatedFields = additionalFields
@@ -411,7 +400,7 @@
       updatedFields.domainId = null
       updatedFields.conceptName = null
       delete updatedFields.sourceAutoAssignedConceptIds
-      await dataTableFile.updateRows(new Map([[event.detail.indexes[0], updatedFields]]))
+      await dataTableMapping.updateRows(new Map([[event.detail.indexes[0], updatedFields]]))
       // calculateProgress()
     }
   }
@@ -452,7 +441,7 @@
           r.conceptId == params.conceptId && r.sourceCode == params.sourceCode && r.conceptName == params.conceptName
       )
       .toObject()
-    const res = await dataTableFile.executeQueryAndReturnResults(q)
+    const res = await dataTableMapping.executeQueryAndReturnResults(q)
 
     // If the row needs to be erased, in the case of multiple mapping
     if (event.detail.erase) {
@@ -460,14 +449,14 @@
       const q = (<Query>query().params({ sourceCode: selectedRow.sourceCode }))
         .filter((r: any, params: any) => r.sourceCode == params.sourceCode)
         .toObject()
-      const res2 = await dataTableFile.executeQueryAndReturnResults(q)
+      const res2 = await dataTableMapping.executeQueryAndReturnResults(q)
       const updatedRows = new Map<number, Record<string, any>>()
       // Update the number of concepts of all the found rows
       res2.indices.forEach((index: number) => {
         updatedRows.set(index, { 'ADD_INFO:numberOfConcepts': res2.indices.length - 1 })
       })
-      await dataTableFile.updateRows(updatedRows)
-      await dataTableFile.deleteRows(res.indices)
+      await dataTableMapping.updateRows(updatedRows)
+      await dataTableMapping.deleteRows(res.indices)
     } else {
       // Reset the row with the original values
       const updatedFields = additionalFields
@@ -476,7 +465,7 @@
       updatedFields.domainId = null
       updatedFields['ADD_INFO:numberOfConcepts'] = 1
       delete updatedFields.sourceAutoAssignedConceptIds
-      await dataTableFile.updateRows(new Map([[res.indices[0], updatedFields]]))
+      await dataTableMapping.updateRows(new Map([[res.indices[0], updatedFields]]))
     }
   }
 
@@ -484,7 +473,7 @@
   async function selectRow(event: CustomEvent<RowChangeEventDetail>) {
     let tablePagination: Record<string, any>
     new Promise(async (resolve, reject) => {
-      tablePagination = await dataTableFile.getTablePagination()
+      tablePagination = await dataTableMapping.getTablePagination()
       // Check to wich direction the user is moving
       if (event.detail.up && selectedRowIndex + 1 < tablePagination.totalRows!) selectedRowIndex += 1
       if (!event.detail.up && selectedRowIndex - 1 >= 0) selectedRowIndex -= 1
@@ -492,7 +481,7 @@
       if (dev) console.log('selectRow: Select row with index ', selectedRowIndex)
 
       // Set the new filter with the translated source name
-      selectedRow = await dataTableFile.getFullRow(selectedRowIndex)
+      selectedRow = await dataTableMapping.getFullRow(selectedRowIndex)
       const translation = await translate(selectedRow.sourceName)
       globalAthenaFilter.filter = typeof translation == 'string' ? translation : selectedRow.sourceName
       resolve(null)
@@ -511,7 +500,7 @@
     autoMappingAbortController = new AbortController()
     const signal = autoMappingAbortController.signal
     autoMappingPromise = new Promise(async (resolve, reject): Promise<void> => {
-      const row = await dataTableFile.getFullRow(event.detail.index)
+      const row = await dataTableMapping.getFullRow(event.detail.index)
       await autoMapRow(signal, row, event.detail.index)
     })
   }
@@ -520,16 +509,28 @@
   // METHODS
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
+  async function setupDataTable() {
+    if ($implementation == 'firebase') {
+      await import('$lib/utilClasses/FirebaseSaveImpl').then(({ default: FirebaseStore }) => {
+        tableOptions.saveImpl = new FirebaseStore()
+      })
+      await import('$lib/utilClasses/FileDataTypeImpl').then(({ default: FirebaseDataType }) => {
+        tableOptions.dataTypeImpl = new FirebaseDataType()
+        customTableOptions.dataTypeImpl = new FirebaseDataType()
+      })
+    }
+  }
+
   async function fileUploaded(e: CustomEvent<FileUploadedEventDetail>) {
     if (dev) console.log('fileUploaded: New File uploaded')
     file = e.detail.file
-    columnChanges = undefined
+    $columnChanges = undefined
   }
 
   async function fileUploadedWithColumnChanges(e: CustomEvent<FileUploadWithColumnChanges>) {
     if (dev) console.log('fileUploadedWithColumnChanges: New file uploaded and columns have changed')
     file = e.detail.file
-    columnChanges = Object.fromEntries(Object.entries(e.detail.columnChange).map(a => a.reverse()))
+    $columnChanges = Object.fromEntries(Object.entries(e.detail.columnChange).map(a => a.reverse()))
   }
 
   // A method to check if the translator exists, and if it doesn't exists, create one
@@ -588,13 +589,13 @@
       // If the selected row index divided is an even number & the direction is up, change pagination up
       if (selectedRowIndex % pagination.rowsPerPage! === 0) {
         if (dev) console.log('changePagination: change pagination to ', pagination.currentPage! + 1)
-        dataTableFile.changePagination({ currentPage: pagination.currentPage! + 1 })
+        dataTableMapping.changePagination({ currentPage: pagination.currentPage! + 1 })
       }
     } else if (!up && selectedRowIndex !== 0) {
       // If the selected row index + 1 divided is an even number & the direction is down, change pagination down
       if ((selectedRowIndex + 1) % pagination.rowsPerPage! === 0) {
         if (dev) console.log('changePagination: change pagination to ', pagination.currentPage! - 1)
-        dataTableFile.changePagination({ currentPage: pagination.currentPage! - 1 })
+        dataTableMapping.changePagination({ currentPage: pagination.currentPage! - 1 })
       }
     }
   }
@@ -628,7 +629,7 @@
       mappedRow['ADD_INFO:numberOfConcepts'] = numberOfConcepts
       mappedRow['ADD_INFO:lastAthenaFilter'] = filter
       if (signal.aborted) return
-      await dataTableFile.updateRows(new Map([[mappedIndex, mappedRow]]))
+      await dataTableMapping.updateRows(new Map([[mappedIndex, mappedRow]]))
     }
     if (dev) {
       end = performance.now()
@@ -831,6 +832,9 @@
   // A method to set a variable when the table is initialized
   function dataTableInitialized(): void {
     tableInit = true
+    if ($implementation !== 'firebase') {
+      changeColumnNames()
+    }
   }
 
   // A method to abort the auto mapping
@@ -838,7 +842,7 @@
     if (dev) console.log('abortAutoMap: Aborting auto mapping')
     // Enable the interaction with the DataTable
     disableInteraction = false
-    dataTableFile.setDisabled(false)
+    dataTableMapping.setDisabled(false)
     if (autoMappingPromise) {
       autoMappingAbortController.abort()
       // calculateProgress()
@@ -861,15 +865,15 @@
       const signal = autoMappingAbortController.signal
 
       autoMappingPromise = new Promise(async (resolve, reject): Promise<void> => {
-        const pag = dataTableFile.getTablePagination()
+        const pag = dataTableMapping.getTablePagination()
         // Get the rows that are visible for the user
         const q = query()
           .slice(pag.rowsPerPage! * (pag.currentPage! - 1), pag.rowsPerPage! * pag.currentPage!)
           .toObject()
-        const res = await dataTableFile.executeQueryAndReturnResults(q)
+        const res = await dataTableMapping.executeQueryAndReturnResults(q)
         if (res.queriedData.length > 0) {
           disableInteraction = true
-          dataTableFile.setDisabled(true)
+          dataTableMapping.setDisabled(true)
         }
         for (let i = 0; i < res.queriedData.length; i++) {
           if (signal.aborted) return Promise.resolve()
@@ -885,7 +889,7 @@
       }).then(() => {
         // Enable interaction with the DataTable for the user
         disableInteraction = false
-        dataTableFile.setDisabled(false)
+        dataTableMapping.setDisabled(false)
         // calculateProgress()
       })
     } else {
@@ -962,25 +966,25 @@
       }
       approveRows.set(index, row)
     }
-    await dataTableFile.updateRows(approveRows)
+    await dataTableMapping.updateRows(approveRows)
     // calculateProgress()
   }
 
   // async function calculateProgress() {
   //   if (dev) console.log('calculateProgress: Calculating progress')
   //   const qMapping = query().slice(0, 1).toObject()
-  //   const qMappingResult = await dataTableFile.executeQueryAndReturnResults(qMapping)
+  //   const qMappingResult = await dataTableMapping.executeQueryAndReturnResults(qMapping)
   //   if (qMappingResult[0]) {
   //     if (qMappingResult[0].mappingStatus) {
   //       const expressions = {
   //         total: 'd => op.count()',
   //         valid: 'd => op.valid(d.mappingStatus)',
   //       }
-  //       const expressionResults = await dataTableFile.executeExpressionsAndReturnResults(expressions)
+  //       const expressionResults = await dataTableMapping.executeExpressionsAndReturnResults(expressions)
   //       const qAppr = query()
   //         .filter((r: any) => r.mappingStatus == 'APPROVED')
   //         .toObject()
-  //       const resAppr = await dataTableFile.executeQueryAndReturnResults(qAppr)
+  //       const resAppr = await dataTableMapping.executeQueryAndReturnResults(qAppr)
   //       tableInformation = {
   //         totalRows: expressionResults.expressionData[0].total,
   //         mappedRows: expressionResults.expressionData[1].valid,
@@ -995,55 +999,37 @@
     athenaFacets = facets
   }
 
-  // A method to sync the settings with Firebase
-  async function syncSettings(action: 'read' | 'write') {
-    // Get the settings from Firebase
-    if (action == 'read') {
-      if (dev) console.log('syncSettings: Reading the settings for Keun from database')
-      const storedSettings = await readDatabase(`/authors/${$userSessionStore.uid}/usagi-settings`)
-      if (storedSettings) settings.set(storedSettings)
-    } else if (action == 'write') {
-      // Write the settings to Firebase
-      if (dev) console.log('syncSettings: Write the settings for keun to database')
-      await writeToDatabase(`/authors/${$userSessionStore.uid}/usagi-settings`, $settings)
-    } else console.error(`syncSettings: Action (${action}) is not supported`)
+  async function changeColumnNames() {
+    if ($columnChanges) await dataTableMapping.renameColumns($columnChanges)
   }
 
   let fetchDataFunc = fetchData
 
   if (browser && window && $implementation == 'firebase') {
     window.addEventListener('beforeunload', async e => {
-      await syncSettings('write')
+      await $implementationClass.syncSettings('write')
     })
   }
 
   // A method to get the file from the Firebase file storage when loading the page
   async function readFileFirstTime() {
-    if (dev) console.log('readFileFirstTime: Get the file from storage for the setup')
-    // Get the file for the page, but also the custom concepts file
-    const blob = await readFileStorage(`/mapping-files/${fileName}`)
-    const customBlob = await readFileStorage('/mapping-files/customConcepts.csv')
-    dbVersion = await readDatabase(`/files/${fileName?.substring(0, fileName.indexOf('.'))}/version`)
-    customDBVersion = await readDatabase(`/files/customConcepts/version`)
-    if (blob) file = new File([blob], fileName!, { type: 'text/csv' })
-    else {
-      if (dev) console.error('readFileFirstTime: There was no file found in storage')
-      goto('/')
+    if (fileName) {
+      const res = await $implementationClass.readFileFirstTime(fileName)
+      if (res && res?.file) file = res.file
+      if (res && res?.customConceptsFile) customConceptsFile = res.customConceptsFile
     }
-
-    if (customBlob) customConceptsFile = new File([customBlob], 'customConcepts.csv', { type: 'text/csv' })
   }
 
   // A method to sync the file from the DataTable with the file storage & IndexedDB
   async function renewFile() {
     // If there is no file loaded
     if (!file) {
-      const resFile = await (tableFullOptions.dataTypeImpl! as IDataTypeFile).syncFile(false, true)
+      const resFile = await (tableOptions.dataTypeImpl as IDataTypeFile)?.syncFile(false, true)
       if (resFile) file = resFile
       else console.error('renewFile: Syncfile did not return a file, does the file exist?')
     } else {
       // If a file is already loaded
-      const syncedFile = await (tableFullOptions.dataTypeImpl! as IDataTypeFile).syncFile()
+      const syncedFile = await (tableOptions.dataTypeImpl! as IDataTypeFile).syncFile()
       if (syncedFile) file = syncedFile
     }
   }
@@ -1070,6 +1056,16 @@
     } else goto('/')
   }
 
+  async function setupWatch() {
+    await $implementationClass.watchValueFromDatabase(`/files/${fileName?.substring(0, fileName.indexOf('.'))}`, () => {
+      renewFile()
+    })
+    // Watch the version & author of the custom concepts
+    await $implementationClass.watchValueFromDatabase('/files/customConcepts', () => {
+      renewCustomFile()
+    })
+  }
+
   $: {
     if ($triggerAutoMapping === true) {
       // Trigger the automapping
@@ -1079,32 +1075,13 @@
   }
 
   $: {
-    if ($page.url.searchParams.get('fileName') !== fileName) {
+    if ($page.url.searchParams.get('fileName') !== fileName && $settings?.author?.name) {
       // When the fileName changes
       if ($implementation == 'firebase') {
         fileName = $page.url.searchParams.get('fileName')
         readFileFirstTime()
 
-        // Watch the version & author of the current file
-        watchValueDatabase(`/files/${fileName?.substring(0, fileName.indexOf('.'))}`, snapshot => {
-          if (snapshot.val()) {
-            // If the last version is not created by us, update the dbVersion which triggers the sync
-            if (snapshot.val().lastAuthor !== $userSessionStore.name && dbVersion !== snapshot.val().version) {
-              if (dev) console.log('watchValueDatabase: The version of the file has changed')
-              dbVersion = snapshot.val().version
-            }
-          }
-        })
-        // Watch the version & author of the custom concepts
-        watchValueDatabase('/files/customConcepts', snapshot => {
-          if (snapshot.val()) {
-            // If the last version is not created by us, update the customDBVersion which triggers the sync
-            if (snapshot.val().lastAuthor !== $userSessionStore.name && customDBVersion !== snapshot.val().version) {
-              if (dev) console.log('watchValueDatabase: The version of the custom concepts file has changed')
-              customDBVersion = snapshot.val().version
-            }
-          }
-        })
+        setupWatch()
       } else {
         fileName = $page.url.searchParams.get('fileName')
         const url = $page.url.searchParams.get('file')
@@ -1115,52 +1092,32 @@
   }
 
   $: {
-    dbVersion
-    // When a new dbVersion is found, renew the file
-    if ($implementation == 'firebase') if (tableFullOptions.dataTypeImpl) renewFile()
-  }
-
-  $: {
-    customDBVersion
-    // When a new customDBVersion is found, renew the file
-    if ($implementation == 'firebase') if (customTableOptions.dataTypeImpl) renewCustomFile()
-  }
-
-  $: {
-    if ($implementation == 'firebase' && $userSessionStore?.uid) {
+    if ($implementation == 'firebase' && $settings?.author?.uid) {
       // When the user changes, read the user his settings from Firebase
-      syncSettings('read')
+      $implementationClass.syncSettings('read')
     }
   }
 
-  $: author = $implementation == 'firebase' ? $userSessionStore.name : $settings.author
+  $: author = $implementation == 'firebase' ? $settings?.author?.name : $settings.author
 
   onMount(async () => {
     // Check if the file contains the file query parameter
-    if (!$page.url.searchParams.get('fileName')) goto('/')
+    if (!$page.url.searchParams.get('fileName') || $settings?.author?.name) goto('/')
   })
 
   onDestroy(() => {
-    if ($implementation == 'firebase') {
-      // Watch the value in Firebase but instantly destroy the current & previous event listener
-      watchValueDatabase(
+    if ($implementation == 'firebase' && $implementationClass) {
+      $implementationClass.watchValueFromDatabase(
         `/files/${fileName?.substring(0, fileName.indexOf('.'))}`,
-        snapshot => {
-          if (dev) console.log('watchValueDatabase: The version of the file has changed')
-          if (snapshot.val()) {
-            if (snapshot.val().lastAuthor !== $userSessionStore.name) dbVersion = snapshot.val().version
-          }
+        () => {
+          renewFile()
         },
         true
       )
-      // Watch the value for custom concepts in Firebase but instantly destroy the current & previous event listener
-      watchValueDatabase(
+      $implementationClass.watchValueFromDatabase(
         '/files/customConcepts',
-        snapshot => {
-          if (dev) console.log('watchValueDatabase: The version of the custom concepts file has changed')
-          if (snapshot.val()) {
-            if (snapshot.val().lastAuthor !== $userSessionStore.name) customDBVersion = snapshot.val().version
-          }
+        () => {
+          renewCustomFile()
         },
         true
       )
@@ -1178,7 +1135,7 @@
 
 {#if $implementation == 'none' || !implementation}
   <section data-name="download-upload-header">
-    <Download dataTable={dataTableFile} title="Download CSV" />
+    <Download dataTable={dataTableMapping} title="Download CSV" />
     <Upload on:fileUploaded={fileUploaded} on:fileUploadWithColumnChanges={fileUploadedWithColumnChanges} {file} />
     {#if customConceptsArrayOfObjects.length > 0 && $implementation !== 'firebase'}
       {#if Object.keys(customConceptsArrayOfObjects[0]).length !== 0}
@@ -1191,8 +1148,8 @@
 {#if file}
   <DataTable
     data={file}
-    bind:this={dataTableFile}
-    options={tableFullOptions}
+    bind:this={dataTableMapping}
+    options={tableOptions}
     on:rendering={abortAutoMap}
     on:initialized={dataTableInitialized}
     on:renderingComplete={autoMapPage}
@@ -1221,7 +1178,7 @@
       bind:equivalenceMapping
       {selectedRow}
       {selectedRowIndex}
-      mainTable={dataTableFile}
+      mainTable={dataTableMapping}
       fetchData={fetchDataFunc}
       bind:globalFilter={globalAthenaFilter}
       showModal={mappingVisibility}

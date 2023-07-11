@@ -1,5 +1,4 @@
-import { pushToDatabase } from '$lib/firebase'
-import { createUser, updateDatabaseAdmin, writeToDatabaseAdmin } from '$lib/firebaseAdmin.server'
+import { createUser, pushToDatabaseAdmin, updateDatabaseAdmin } from '$lib/firebaseAdmin.server'
 import { type Actions, fail } from '@sveltejs/kit'
 
 export const prerender = false
@@ -29,7 +28,7 @@ export const actions: Actions = {
       }).then(async (user) => {
         if(user && fileNames) {
           for(let file of fileNames) {
-            await pushToDatabase(`/authors/${user.uid}/files`, file)
+            await pushToDatabaseAdmin(`/authors/${user.uid}/files`, file)
           }
         }
       })

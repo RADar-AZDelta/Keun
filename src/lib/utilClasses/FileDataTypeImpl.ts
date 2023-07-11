@@ -16,7 +16,7 @@ import type {
   import { convertBlobToHexString, convertHexStringToBlob } from '$lib/utils'
   import type { IDataTypeFile } from '$lib/components/Types'
   
-  export class FileDataTypeImpl extends DataTypeCommonBase implements IDataTypeFile {
+  export default class FileDataTypeImpl extends DataTypeCommonBase implements IDataTypeFile {
     worker: Worker | undefined
     modifyColumnMetaData: ModifyColumnMetadataFunc | undefined
     fileName: string | undefined
@@ -297,7 +297,7 @@ import type {
                 await uploadFileToStorage(`/mapping-files/${this.fileName}`, file)
                 let name: string = ""
                 userSessionStore.subscribe((user) => {
-                  name = user.name
+                  if(user && user?.name) name = user.name
                 })
                 await writeToDatabase(`/files/${this.fileName!.substring(0, this.fileName!.indexOf('.'))}`, { version: version + 1, lastAuthor: name})
                 const hex = await convertBlobToHexString(blob)
@@ -337,7 +337,7 @@ import type {
                 await uploadFileToStorage(`/mapping-files/${this.fileName}`, file)
                 let name: string = ""
                 userSessionStore.subscribe((user) => {
-                  name = user.name
+                  if(user && user?.name) name = user.name
                 })
                 await writeToDatabase(`/files/${this.fileName!.substring(0, this.fileName!.indexOf('.'))}`, { version: dbVersion, lastAuthor: name })
                 await db.set(version, 'version', true)

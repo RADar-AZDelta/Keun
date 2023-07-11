@@ -1,13 +1,14 @@
-import { readDatabase, writeToDatabase } from '$lib/firebase'
 import type { IColumnMetaData, ICustomStoreOptions, IStoredOptions, ITableOptions } from '@radar-azdelta/svelte-datatable/components/DataTable'
-import { userSessionStore } from '$lib/firebase';
+import { readDatabase, userSessionStore, writeToDatabase } from '$lib/firebase';
 import { removeUndefineds, replaceNullsWithFalse } from '$lib/utils';
 import { dev } from '$app/environment';
 
-export class FirebaseSaveImpl implements ICustomStoreOptions {
+export default class FirebaseSaveImpl implements ICustomStoreOptions {
   storedOptions: ITableOptions
   storedColumns: IColumnMetaData[] | undefined
   initialized: boolean = false
+  dbVersion: number = 0
+  customDBVersion: number = 0
 
   constructor(options?: ITableOptions | undefined) {
     if (dev) console.log('FirebaseSaveImpl: Creating the save implementation for Firebase')
