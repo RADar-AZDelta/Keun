@@ -42,7 +42,7 @@
   },
   "type": "module",
   "dependencies": {
-    "@radar-azdelta/svelte-datatable": "^0.0.45",
+    "@radar-azdelta/svelte-datatable": "^0.0.46",
     "arquero": "^5.2.0",
     "firebase": "^9.22.2",
     "firebase-admin": "^11.9.0",
