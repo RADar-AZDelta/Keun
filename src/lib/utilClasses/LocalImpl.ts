@@ -20,7 +20,18 @@ export default class LocalImpl implements IFunctionalityImpl {
 
     async uploadFile(file: File, authorizedAuthors: string[]): Promise<string[] | void> {}
 
-    async syncSettings(action: "read" | "write"): Promise<void> {}
+    async syncSettings(action: "read" | "write"): Promise<void> {
+        if(action == "read") {
+            if(dev) console.log('syncSettings: Reading the settings from the localStorage')
+            const storedSettings = await localStorageGetter('settings-Keun')
+            if(storedSettings) settings.set(storedSettings)
+        } else if (action == "write") {
+            if(dev) console.log('syncSettings: Write the settings to the localStorage')
+            settings.subscribe(async(settings) => {
+                await localStorageSetter('settings-Keun', settings)
+            })
+        }
+    }
 
     async readFileFirstTime(fileName: string): Promise<{ file: File | undefined; customConceptsFile: File | undefined; } | void> {}
 

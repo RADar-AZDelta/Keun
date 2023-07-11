@@ -1005,12 +1005,6 @@
 
   let fetchDataFunc = fetchData
 
-  if (browser && window && $implementation == 'firebase') {
-    window.addEventListener('beforeunload', async e => {
-      await $implementationClass.syncSettings('write')
-    })
-  }
-
   // A method to get the file from the Firebase file storage when loading the page
   async function readFileFirstTime() {
     if (fileName) {
@@ -1050,6 +1044,7 @@
 
   async function getFileFromUrl(url: string) {
     const res = await urlToFile(url, fileName!)
+    console.log("HERE ", res)
     if (res) {
       file = res
       URL.revokeObjectURL(url)
@@ -1091,18 +1086,11 @@
     }
   }
 
-  $: {
-    if ($implementation == 'firebase' && $settings?.author?.uid) {
-      // When the user changes, read the user his settings from Firebase
-      $implementationClass.syncSettings('read')
-    }
-  }
-
   $: author = $implementation == 'firebase' ? $settings?.author?.name : $settings.author
 
   onMount(async () => {
     // Check if the file contains the file query parameter
-    if (!$page.url.searchParams.get('fileName') || $settings?.author?.name) goto('/')
+    if (!$page.url.searchParams.get('fileName') || !$settings?.author?.name) goto('/')
   })
 
   onDestroy(() => {
