@@ -29,6 +29,10 @@
           !content.includes('sourceFrequency')
         ) {
           currentColumns = content.split(/\n/)[0].split(',')
+          for (let i = 0; i < currentColumns.length; i++) {
+            if (currentColumns[i].includes(';'))
+              currentColumns[i] = currentColumns[i].substring(0, currentColumns[i].indexOf(';'))
+          }
           importantColumns.forEach(col => {
             if (!currentColumns.includes(col)) missingColumns[col] = ''
           })
@@ -66,10 +70,21 @@
   }
 
   function saveColumnChange() {
-    if (!Object.values(missingColumns).includes('')) {
-      if (file) dispatch('fileUploadWithColumnChanges', { file, columnChange: missingColumns })
-      closeDialog()
+    var reader = new FileReader()
+    reader.onload = evt => {
+      // Get the columns row of the file
+      let sub = evt.target!.result!.toString().substring(0, evt.target!.result!.toString().indexOf('\n'))
+      for (let [newColumn, oldColumn] of Object.entries(missingColumns)) {
+        // Replace the old columns with the standardized columns
+        sub = sub.replace(oldColumn, newColumn)
+      }
+      const result = sub + evt.target!.result!.toString().slice(evt.target!.result!.toString().indexOf('\n'))
+      const blob = new Blob([result], { type: 'text/csv' })
+      file = new File([blob], file!.name, { type: 'text/csv' })
+      dispatch('fileUploaded', { file })
+      columnDialog.close()
     }
+    if(file) reader.readAsText(file)
   }
 </script>
 

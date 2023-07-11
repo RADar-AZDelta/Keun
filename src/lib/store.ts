@@ -25,6 +25,4 @@ const implementation = writable<string>('none')
 
 const implementationClass = writable<IFunctionalityImpl>()
 
-const columnChanges = writable<Record<string, string> | undefined>(undefined)
-
-export { customConcept, settings, triggerAutoMapping, implementation, implementationClass, columnChanges }
+export { customConcept, settings, triggerAutoMapping, implementation, implementationClass }

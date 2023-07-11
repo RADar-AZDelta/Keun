@@ -67,7 +67,6 @@
   }
 
   onMount(async () => {
-    // TODO: fix the userStoreSession bug, the first time checking the user, it is empty
     if (!$implementationClass)
       await loadImplementation().then(async () => {
         await $implementationClass.getSavedAuthor()

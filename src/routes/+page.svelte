@@ -5,8 +5,8 @@
   import { goto } from '$app/navigation'
   import { dev } from '$app/environment'
   import DragAndDrop from '$lib/components/Extra/DragAndDrop.svelte'
-  import { columnChanges, implementation, implementationClass, settings } from '$lib/store'
-  import type { FileUploadWithColumnChanges, FileUploadedEventDetail, IFunctionalityImpl } from '$lib/components/Types'
+  import { implementation, implementationClass, settings } from '$lib/store'
+  import type { FileUploadedEventDetail, IFunctionalityImpl } from '$lib/components/Types'
 
   let impl: IFunctionalityImpl
 
@@ -25,7 +25,6 @@
     file = e.detail.file
     const url = URL.createObjectURL(file)
     goto(`/mapping?file=${url}&impl=none&fileName=${file.name}`)
-    // TODO: implement possibility to change the columns
   }
 
   // A method to upload a file
@@ -54,6 +53,10 @@
           !content.includes('sourceFrequency')
         ) {
           currentColumns = content.split(/\n/)[0].split(',')
+          for (let i = 0; i < currentColumns.length; i++) {
+            if (currentColumns[i].includes(';'))
+              currentColumns[i] = currentColumns[i].substring(0, currentColumns[i].indexOf(';'))
+          }
           importantColumns.forEach(col => {
             if (!currentColumns.includes(col)) missingColumns[col] = ''
           })
@@ -90,6 +93,10 @@
           !content.includes('sourceFrequency')
         ) {
           currentColumns = content.split(/\n/)[0].split(',')
+          for (let i = 0; i < currentColumns.length; i++) {
+            if (currentColumns[i].includes(';'))
+              currentColumns[i] = currentColumns[i].substring(0, currentColumns[i].indexOf(';'))
+          }
           importantColumns.forEach(col => {
             if (!currentColumns.includes(col)) missingColumns[col] = ''
           })
@@ -134,12 +141,6 @@
       }
       reader.readAsText(file)
     }
-  }
-
-  function fileUploadedWithColumnChangesLocal(e: CustomEvent<FileUploadWithColumnChanges>) {
-    if (dev) console.log('fileUploadedWithColumnChanges: New file uploaded and columns have changed')
-    file = e.detail.file
-    $columnChanges = Object.fromEntries(Object.entries(e.detail.columnChange).map(a => a.reverse()))
   }
 
   // A method to delete a file
@@ -389,8 +390,5 @@
     </section>
   </main>
 {:else}
-  <DragAndDrop
-    on:fileUploaded={fileUploadedDragAndDrop}
-    on:fileUploadedWithColumnChanges={fileUploadedWithColumnChangesLocal}
-  />
+  <DragAndDrop on:fileUploaded={fileUploadedDragAndDrop} />
 {/if}

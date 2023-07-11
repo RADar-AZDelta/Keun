@@ -201,7 +201,6 @@ export default class FirebaseImpl implements IFunctionalityImpl {
     }
 
     async getSavedAuthor(): Promise<void> {
-      // TODO: in the start the userStoreSession is undefined
       userSessionStore.subscribe((u) => {
         settings.update((settings) => {
           settings.author = { name: u.name, uid: u.uid, roles: u.roles}

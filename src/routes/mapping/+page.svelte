@@ -16,7 +16,6 @@
     UpdateDetailsEventDetail,
     IDataTypeFile,
     FileUploadedEventDetail,
-    FileUploadWithColumnChanges,
   } from '$lib/components/Types'
   import type {
     IColumnMetaData,
@@ -35,7 +34,7 @@
   import { browser, dev } from '$app/environment'
   import DataTable from '@radar-azdelta/svelte-datatable'
   import type Query from 'arquero/dist/types/query/query'
-  import { columnChanges, implementation, implementationClass, settings, triggerAutoMapping } from '$lib/store'
+  import { implementation, implementationClass, settings, triggerAutoMapping } from '$lib/store'
   import { goto } from '$app/navigation'
   import { urlToFile } from '$lib/utils'
   import Download from '$lib/components/Extra/Download.svelte'
@@ -524,13 +523,6 @@
   async function fileUploaded(e: CustomEvent<FileUploadedEventDetail>) {
     if (dev) console.log('fileUploaded: New File uploaded')
     file = e.detail.file
-    $columnChanges = undefined
-  }
-
-  async function fileUploadedWithColumnChanges(e: CustomEvent<FileUploadWithColumnChanges>) {
-    if (dev) console.log('fileUploadedWithColumnChanges: New file uploaded and columns have changed')
-    file = e.detail.file
-    $columnChanges = Object.fromEntries(Object.entries(e.detail.columnChange).map(a => a.reverse()))
   }
 
   // A method to check if the translator exists, and if it doesn't exists, create one
@@ -832,9 +824,6 @@
   // A method to set a variable when the table is initialized
   function dataTableInitialized(): void {
     tableInit = true
-    if ($implementation !== 'firebase') {
-      changeColumnNames()
-    }
   }
 
   // A method to abort the auto mapping
@@ -999,10 +988,6 @@
     athenaFacets = facets
   }
 
-  async function changeColumnNames() {
-    if ($columnChanges) await dataTableMapping.renameColumns($columnChanges)
-  }
-
   let fetchDataFunc = fetchData
 
   // A method to get the file from the Firebase file storage when loading the page
@@ -1044,7 +1029,7 @@
 
   async function getFileFromUrl(url: string) {
     const res = await urlToFile(url, fileName!)
-    console.log("HERE ", res)
+    console.log('HERE ', res)
     if (res) {
       file = res
       URL.revokeObjectURL(url)
@@ -1124,7 +1109,7 @@
 {#if $implementation == 'none' || !implementation}
   <section data-name="download-upload-header">
     <Download dataTable={dataTableMapping} title="Download CSV" />
-    <Upload on:fileUploaded={fileUploaded} on:fileUploadWithColumnChanges={fileUploadedWithColumnChanges} {file} />
+    <Upload on:fileUploaded={fileUploaded} {file} />
     {#if customConceptsArrayOfObjects.length > 0 && $implementation !== 'firebase'}
       {#if Object.keys(customConceptsArrayOfObjects[0]).length !== 0}
         <Download dataTable={dataTableCustomConcepts} title="Download custom concepts" />
