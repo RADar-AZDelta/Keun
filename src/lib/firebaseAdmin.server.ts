@@ -61,4 +61,9 @@ async function updateDatabaseAdmin(path: string, data: Object) {
   reference.update(data)
 }
 
-export { decodeToken, createUser, writeToDatabaseAdmin, updateDatabaseAdmin }
+async function pushToDatabaseAdmin(path: string, data: any) {
+  const reference = firebaseAdminDatabase.ref(path)
+  reference.push(data)
+}
+
+export { decodeToken, createUser, writeToDatabaseAdmin, updateDatabaseAdmin, pushToDatabaseAdmin }

@@ -175,9 +175,6 @@ async function readDatabase(path: string) {
 	if (dev) console.log('readDatabase: Read data from the path ', path)
 	let receivedData: any;
 	const reference = ref(firebaseDatabase);
-	userSessionStore.subscribe((user) => {
-		console.log(user.uid)
-	})
 	await get(child(reference, path))
 		.then((snapshot: DataSnapshot) => {
 			receivedData = snapshot.val();

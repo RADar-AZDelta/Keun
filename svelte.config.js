@@ -1,5 +1,6 @@
 import preprocess from 'svelte-preprocess'
-import adapter from '@sveltejs/adapter-auto';
+import autoAdapter from '@sveltejs/adapter-auto';
+import staticAdapter from '@sveltejs/adapter-static'
 import { vitePreprocess } from '@sveltejs/kit/vite'
 
 const dev = process.argv.includes('dev');
@@ -24,7 +25,7 @@ const config = {
   },
 
   kit: {
-    adapter: adapter(),
+    adapter: process.env.PUBLIC_CLOUD_IMPLEMENTATION == "firebase" ? autoAdapter() : staticAdapter(),
     paths: {
       base: dev ? '' : process.env.BASE_PATH,
     }

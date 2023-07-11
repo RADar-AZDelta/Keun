@@ -1,4 +1,4 @@
-import { IDataTypeFunctionalities } from '@radar-azdelta/svelte-datatable/components/DataTable'
+import { IDataTypeFunctionalities, type ICustomStoreOptions } from '@radar-azdelta/svelte-datatable/components/DataTable'
 
 export interface CustomOptionsEvents {
   generalVisibilityChanged: VisibilityChangedEventDetail
@@ -122,12 +122,18 @@ export interface ICategories {
 export interface ISettings {
   mapToMultipleConcepts: boolean
   autoMap: boolean
-  author?: string
+  author?: IAuthor
   language: string
   savedAuthors: string[]
   vocabularyIdCustomConcept: string
   fontsize: number
   popupSidesShowed: { filters: boolean; details: boolean }
+}
+
+export interface IAuthor {
+  uid?: string | null
+  name?: string | null
+  roles?: [string]
 }
 
 export interface IFilter {
@@ -148,4 +154,23 @@ export interface IDatabaseFile {
 
 export interface IDataTypeFile extends IDataTypeFunctionalities {
   syncFile(update?: boolean, get?: boolean): Promise<File | void>
+}
+
+export interface IFunctionalityImpl {
+  deleteFile(fileName: string): Promise<string[] | void>
+  editFile(fileName: string, authorizedAuthors: string[]): Promise<void>
+  getFiles(): Promise<string[] | void>
+  getFilesAdmin(): Promise<string[] | void>
+  getAllAuthors(): Promise<Record<string, { email: string; files: Record<string, string> }> | void>
+  downloadFile(fileName: string): Promise<void>
+  uploadFile(file: File, authorizedAuthors: string[]): Promise<string[] | void>
+  syncSettings(action: 'read' | 'write'): Promise<void>
+  readFileFirstTime(fileName: string): Promise<{
+    file: File | undefined;
+    customConceptsFile: File | undefined;
+} | void>
+  watchValueFromDatabase(path: string, subCallback: () => unknown, remove?: boolean): Promise<void>
+  getSavedAuthor(): Promise<void>
+  logIn(author: string | null | undefined): Promise<void>
+  cancelLogIn(backupAuthor: string | null | undefined): Promise<void>
 }

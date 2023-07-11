@@ -4,12 +4,27 @@
   import '$lib/styles/files.scss'
   import '$lib/styles/layout.scss'
   import Header from '$lib/components/Extra/Header.svelte'
-  import { userSessionStore } from '$lib/firebase'
   import { page } from '$app/stores'
   import Manual from '$lib/components/Extra/Manual.svelte'
   import Settings from '$lib/components/Extra/Settings.svelte'
   import User from '$lib/components/Extra/User.svelte'
-  import { implementation, settings } from '$lib/store'
+  import { implementation, implementationClass, settings } from '$lib/store'
+
+  async function loadImplementation() {
+    if (!$implementationClass) {
+      if ($implementation == 'firebase') {
+        await import('$lib/utilClasses/FirebaseImpl').then(({ default: FirebaseImpl }) => {
+          $implementationClass = new FirebaseImpl()
+        })
+      } else {
+        import('$lib/utilClasses/LocalImpl').then(({ default: LocalImpl }) => {
+          $implementationClass = new LocalImpl()
+        })
+      }
+    }
+  }
+
+  loadImplementation()
 </script>
 
 <main>
@@ -17,7 +32,7 @@
     <Header />
     <ul data-name="page-nav">
       <li><a href="/">{$implementation == 'firebase' ? 'File selection' : 'Drag & Drop'}</a></li>
-      {#if $userSessionStore && $userSessionStore.roles?.includes('Admin')}
+      {#if $settings.author && $settings.author.roles?.includes('Admin') && $implementation == 'firebase'}
         <li><a href="/register">Registration</a></li>
       {/if}
     </ul>

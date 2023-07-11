@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { readDatabase } from '$lib/firebase'
+  import { implementationClass } from '$lib/store'
 
   export let fileNames: string[] | undefined
   let email: string
@@ -7,8 +7,8 @@
 
   // A method to get all the files that are under "/admin" in Firebase
   async function getFiles() {
-    const files = await readDatabase('/admin')
-    if (files) fileNames = Object.values(files)
+    const fileNamesFound = await $implementationClass.getFilesAdmin()
+    if (fileNamesFound) fileNames = fileNamesFound
   }
 
   // Get all the files to be able to give users access when registrating them

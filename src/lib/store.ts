@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store'
-import type { ISettings } from './components/Types'
+import type { IFunctionalityImpl, ISettings } from './components/Types'
 
 const customConcept = writable<Record<string, string>>({
   domain_id: '',
@@ -12,6 +12,7 @@ const settings = writable<ISettings>({
   mapToMultipleConcepts: false,
   autoMap: false,
   language: 'en',
+  author: {},
   savedAuthors: [],
   vocabularyIdCustomConcept: '',
   fontsize: 10,
@@ -22,4 +23,8 @@ const triggerAutoMapping = writable<boolean>(false)
 
 const implementation = writable<string>('none')
 
-export { customConcept, settings, triggerAutoMapping, implementation }
+const implementationClass = writable<IFunctionalityImpl>()
+
+const columnChanges = writable<Record<string, string> | undefined>(undefined)
+
+export { customConcept, settings, triggerAutoMapping, implementation, implementationClass, columnChanges }
