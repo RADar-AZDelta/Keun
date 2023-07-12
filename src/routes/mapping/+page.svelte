@@ -34,15 +34,18 @@
   import { browser, dev } from '$app/environment'
   import DataTable from '@radar-azdelta/svelte-datatable'
   import type Query from 'arquero/dist/types/query/query'
-  import { implementation, implementationClass, settings, triggerAutoMapping } from '$lib/store'
-  import { goto } from '$app/navigation'
-  import { urlToFile } from '$lib/utils'
+  import { fileName, implementation, implementationClass, settings, triggerAutoMapping } from '$lib/store'
+  import { beforeNavigate, goto } from '$app/navigation'
   import Download from '$lib/components/Extra/Download.svelte'
   import Upload from '$lib/components/Extra/Upload.svelte'
 
   // General variables
   let file: File | undefined = undefined
   let customConceptsFile: File | undefined = undefined
+
+  let navTriggered: boolean = false,
+    downloaded: boolean = false,
+    customDownloaded: boolean = false
 
   let tableOptions: ITableOptions = {
     id: `${$page.url.searchParams
@@ -62,7 +65,6 @@
 
   let disableInteraction: boolean = false
   let translator: LatencyOptimisedTranslator
-  let fileName: string | null = ''
 
   // Athena related variables
   let mappingVisibility: boolean = false
@@ -223,7 +225,7 @@
     mappedRow['assignedReviewer'] = event.detail.extra.reviewer
     if ($settings) {
       // If multiplemapping is enabled, update the previous rows and add the new one
-      if ($settings.mapToMultipleConcepts && fileName) {
+      if ($settings.mapToMultipleConcepts && $fileName) {
         // Get previous mapped concepts
         const q = (<Query>query().params({ sourceCode: mappedRow.sourceCode }))
           .filter((r: any, params: any) => r.sourceCode == params.sourceCode)
@@ -365,6 +367,7 @@
         updatingObj.mappingStatus = event.detail.action
       }
     }
+    console.log('UPDATE ROWS')
     await dataTableMapping.updateRows(new Map([[event.detail.index, updatingObj]]))
     // calculateProgress()
   }
@@ -992,8 +995,8 @@
 
   // A method to get the file from the Firebase file storage when loading the page
   async function readFileFirstTime() {
-    if (fileName) {
-      const res = await $implementationClass.readFileFirstTime(fileName)
+    if ($fileName) {
+      const res = await $implementationClass.readFileFirstTime($fileName)
       if (res && res?.file) file = res.file
       if (res && res?.customConceptsFile) customConceptsFile = res.customConceptsFile
     }
@@ -1003,12 +1006,12 @@
   async function renewFile() {
     // If there is no file loaded
     if (!file) {
-      const resFile = await (tableOptions.dataTypeImpl as IDataTypeFile)?.syncFile(false, true)
+      const resFile = await $implementationClass.syncFile({ fileName: $fileName })
       if (resFile) file = resFile
       else console.error('renewFile: Syncfile did not return a file, does the file exist?')
     } else {
       // If a file is already loaded
-      const syncedFile = await (tableOptions.dataTypeImpl! as IDataTypeFile).syncFile()
+      const syncedFile = await $implementationClass.syncFile({ fileName: $fileName })
       if (syncedFile) file = syncedFile
     }
   }
@@ -1017,33 +1020,33 @@
   async function renewCustomFile() {
     // If there is no custom concepts file loaded
     if (!customConceptsFile) {
-      const resFile = await (customTableOptions.dataTypeImpl! as IDataTypeFile).syncFile(false, true)
+      const resFile = await $implementationClass.syncFile({ fileName: $fileName })
       if (resFile) customConceptsFile = resFile
       else console.error('renewCustomFile: Syncfile did not return a file')
     } else {
       // If a custom concepts file is already loaded
-      const syncedFile = await (customTableOptions.dataTypeImpl! as IDataTypeFile).syncFile()
+      const syncedFile = await $implementationClass.syncFile({ fileName: $fileName })
       if (syncedFile) customConceptsFile = syncedFile
     }
   }
 
-  async function getFileFromUrl(url: string) {
-    const res = await urlToFile(url, fileName!)
-    console.log('HERE ', res)
-    if (res) {
-      file = res
-      URL.revokeObjectURL(url)
-    } else goto('/')
-  }
-
   async function setupWatch() {
-    await $implementationClass.watchValueFromDatabase(`/files/${fileName?.substring(0, fileName.indexOf('.'))}`, () => {
-      renewFile()
-    })
+    await $implementationClass.watchValueFromDatabase(
+      `/files/${$fileName?.substring(0, $fileName.indexOf('.'))}`,
+      () => {
+        renewFile()
+      }
+    )
     // Watch the version & author of the custom concepts
     await $implementationClass.watchValueFromDatabase('/files/customConcepts', () => {
       renewCustomFile()
     })
+  }
+
+  async function readFileLocally() {
+    const storedFile = await $implementationClass.readFileFirstTime($fileName)
+    if (!storedFile?.file) goto('/')
+    else file = storedFile.file
   }
 
   $: {
@@ -1055,33 +1058,31 @@
   }
 
   $: {
-    if ($page.url.searchParams.get('fileName') !== fileName && $settings?.author?.name) {
+    if ($page.url.searchParams.get('fileName') !== $fileName && $settings?.author?.name) {
       // When the fileName changes
       if ($implementation == 'firebase') {
-        fileName = $page.url.searchParams.get('fileName')
+        const querystringFile = $page.url.searchParams.get('fileName')
+        if (querystringFile) $fileName = querystringFile
         readFileFirstTime()
 
         setupWatch()
       } else {
-        fileName = $page.url.searchParams.get('fileName')
-        const url = $page.url.searchParams.get('file')
-        if (url && fileName) getFileFromUrl(url)
-        else goto('/')
+        readFileLocally()
       }
     }
   }
 
-  $: author = $implementation == 'firebase' ? $settings?.author?.name : $settings.author
+  $: author = $settings?.author?.name
 
   onMount(async () => {
     // Check if the file contains the file query parameter
-    if (!$page.url.searchParams.get('fileName') || !$settings?.author?.name) goto('/')
+    if (!$page.url.searchParams.get('fileName') && !$fileName) goto('/')
   })
 
   onDestroy(() => {
     if ($implementation == 'firebase' && $implementationClass) {
       $implementationClass.watchValueFromDatabase(
-        `/files/${fileName?.substring(0, fileName.indexOf('.'))}`,
+        `/files/${$fileName?.substring(0, $fileName.indexOf('.'))}`,
         () => {
           renewFile()
         },
@@ -1096,6 +1097,36 @@
       )
     }
   })
+
+  beforeNavigate(async ({ from, to, cancel }) => {
+    // When reloading or navigating in the window tab in the browser, save the file to cache
+    if (dev) console.log('beforeNavigate: Sync the file to IndexedDB')
+    // If downloaded, set the downloaded hex in IndexedDB & when leaving the application, compare the downloaded hex and the current hex to check if there were any changes
+    if (!navTriggered) {
+      cancel()
+      if (dataTableMapping) {
+        const blob = await dataTableMapping.getBlob()
+        const result = await $implementationClass.checkVersionFile($fileName, blob)
+        navTriggered = true
+        if (result == true) {
+          await $implementationClass?.syncFile({ fileName: $fileName, blob, action: 'update' })
+        } else {
+          if (downloaded == true) await $implementationClass?.removeCache($fileName)
+        }
+      }
+      if (dataTableCustomConcepts) {
+        const blob = await dataTableCustomConcepts.getBlob()
+        const result = await $implementationClass.checkVersionFile('customConcepts', blob)
+        navTriggered = true
+        if (result == true) {
+          await $implementationClass?.syncFile({ fileName: 'customConcepts', blob, action: 'update' })
+        } else {
+          if (downloaded == true) await $implementationClass?.removeCache('customConcepts')
+        }
+      }
+      goto(to?.url!)
+    }
+  })
 </script>
 
 <svelte:head>
@@ -1108,11 +1139,16 @@
 
 {#if $implementation == 'none' || !implementation}
   <section data-name="download-upload-header">
-    <Download dataTable={dataTableMapping} title="Download CSV" />
+    <Download dataTable={dataTableMapping} title="Download CSV" bind:downloaded />
     <Upload on:fileUploaded={fileUploaded} {file} />
     {#if customConceptsArrayOfObjects.length > 0 && $implementation !== 'firebase'}
       {#if Object.keys(customConceptsArrayOfObjects[0]).length !== 0}
-        <Download dataTable={dataTableCustomConcepts} title="Download custom concepts" />
+        <Download
+          dataTable={dataTableCustomConcepts}
+          title="Download custom concepts"
+          bind:downloaded={customDownloaded}
+          custom={true}
+        />
       {/if}
     {/if}
   </section>

@@ -150,6 +150,18 @@ export interface IDataTypeFile extends IDataTypeFunctionalities {
   syncFile(update?: boolean, get?: boolean): Promise<File | void>
 }
 
+export interface ISync {
+  fileName: string
+  blob?: Blob
+  action?: "get" | "update"
+}
+
+export interface ICache {
+  blob: Blob
+  fileName: string
+  action?: "get" | "update"
+}
+
 export interface IFunctionalityImpl {
   deleteFile(fileName: string): Promise<string[] | void>
   editFile(fileName: string, authorizedAuthors: string[]): Promise<void>
@@ -167,4 +179,10 @@ export interface IFunctionalityImpl {
   getSavedAuthor(): Promise<void>
   logIn(author: string | null | undefined): Promise<void>
   cancelLogIn(backupAuthor: string | null | undefined): Promise<void>
+  syncFile(data: ISync): Promise<File | void>
+  cache(data: ICache): Promise<File | void>
+  checkVersionFile(fileName: string, blob: Blob): Promise<boolean | void>
+  removeCache(fileName: string): Promise<void>
+  checkForCache(fileName: string): Promise<boolean | void>
+  getCachedFiles(): Promise<string[] | void>
 }

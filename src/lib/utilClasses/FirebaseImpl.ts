@@ -3,7 +3,9 @@ import { settings } from '$lib/store';
 import { goto } from '$app/navigation';
 import type { UserSession } from '../../app';
 import { dev } from '$app/environment';
-import type { IFunctionalityImpl } from '$lib/components/Types';
+import type { ICache, IFunctionalityImpl, ISync } from '$lib/components/Types';
+import { IndexedDB } from './IndexedDB';
+import { convertBlobToHexString, convertHexStringToBlob } from '$lib/utils';
 
 export default class FirebaseImpl implements IFunctionalityImpl {
     dbVersion: number = 0
@@ -218,4 +220,76 @@ export default class FirebaseImpl implements IFunctionalityImpl {
     }
 
     async cancelLogIn(backupAuthor: string | null | undefined): Promise<void> {}
+
+    async syncFile(data: ISync): Promise<File | void> {
+      return new Promise(async(resolve, reject) => {
+        const { version } = await readDatabase(`files/${data.fileName.substring(0, data.fileName.indexOf('.'))}`)
+        const db = new IndexedDB(data.fileName, data.fileName)
+        let name: string = ""
+        userSessionStore.subscribe((user) => {
+          if(user && user?.name) name = user.name
+        })
+        if(data.action == "update" && data.blob) {
+          const file = new File([data.blob], data.fileName, { type: "text/csv"})
+          await uploadFileToStorage(`/mapping-files/${data.fileName}`, file)
+          await writeToDatabase(`/files/${data.fileName.substring(0, data.fileName.indexOf('.'))}`, { version: version + 1, lastAuthor: name})
+          const hex = await convertBlobToHexString(data.blob)
+          await db.set({ fileName: data.fileName, file: hex}, 'fileData')
+          await db.set(version + 1, 'version', true)
+          resolve()
+        } else {
+          const fileData = await db.get('fileData', true)
+          const indexedVersion = fileData.version
+          if(indexedVersion > version) {
+            const blob = await convertHexStringToBlob(fileData.file, "text/csv")
+            const file = new File([blob], data.fileName, { type: "text/csv" })
+            await writeToDatabase(`/files/${data.fileName.substring(0, data.fileName.indexOf('.'))}`, { version: indexedVersion, lastAuthor: name})
+            await uploadFileToStorage(`/mapping-files/${data.fileName}`, file)
+            await db.close()
+            resolve(file)
+          } else if(version > indexedVersion) {
+            const blob = await readFileStorage(`/mapping-files/${data.fileName}`)
+            if(blob) {
+              const hex = await convertBlobToHexString(blob)
+              await db.set({ fileName: data.fileName, file: hex}, 'fileData')
+              await db.set(version, 'version', true)
+              const file = new File([blob], data.fileName, { type: 'text/csv' })
+              resolve(file)
+            } else {
+              await db.close()
+              console.error('syncFile: There was no file found in the file storage')
+            }
+          } else {
+            const fileData = await db.get('fileData', true)
+            if(fileData) {
+              const blob = convertHexStringToBlob(fileData.file, 'text/csv')
+              const file = new File([blob], data.fileName)
+              resolve(file)
+            } else {
+              const blob = await readFileStorage(`/mapping-files/${data.fileName}`)
+              if(blob) {
+                const file = new File([blob], data.fileName, { type: 'text/csv' })
+                const hex = await convertBlobToHexString(blob)
+                await db.set({ fileName: data.fileName, file: hex }, 'fileData')
+                await db.set(version, 'version', true)
+                resolve(file)
+              } else {
+                await db.close()
+                console.error('syncFile: There was no file found in IndexedDB or the storage')
+              }
+            }
+          }
+        }
+      })
+    }
+
+    async cache(data: ICache): Promise<void | File> {}
+
+    async checkVersionFile(fileName: string, blob: Blob): Promise<boolean | void> {}
+
+    async removeCache(fileName: string): Promise<void> {}
+
+    async checkForCache(fileName: string): Promise<boolean | void> {}
+
+    async getCachedFiles(): Promise<void | string[]> {}
 }

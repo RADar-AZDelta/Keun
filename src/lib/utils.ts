@@ -123,7 +123,7 @@ export function convertHexStringToBlob(hex: string, mimeType: string): Blob {
 }
 
 export async function fileToBlob (file: File) {
-  new Blob([new Uint8Array(await file.arrayBuffer())], {type: file.type })
+  return new Blob([new Uint8Array(await file.arrayBuffer())], {type: file.type })
 }
 
 export async function urlToFile(url: string, fileName: string) {

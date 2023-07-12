@@ -25,4 +25,6 @@ const implementation = writable<string>('none')
 
 const implementationClass = writable<IFunctionalityImpl>()
 
-export { customConcept, settings, triggerAutoMapping, implementation, implementationClass }
+const fileName = writable<string>()
+
+export { customConcept, settings, triggerAutoMapping, implementation, implementationClass, fileName }

@@ -80,6 +80,8 @@
             if (!currentColumns.includes(col)) missingColumns[col] = ''
           })
           columnDialog.showModal()
+        } else {
+          dispatch('fileUploaded', { file })
         }
       }
       return
