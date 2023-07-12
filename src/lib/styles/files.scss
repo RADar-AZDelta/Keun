@@ -114,6 +114,41 @@ dialog[data-name='file-dialog'] {
   }
 }
 
+dialog[data-name="location-dialog"] {
+  width: 40%;
+  border-radius: 10px;
+  border: none;
+
+  button[data-name='close-dialog'] {
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+    border: none;
+    background-color: inherit;
+    color: $darkgray;
+  }
+
+  div[data-name="location-container"] {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+
+    h2 {
+      font-size: 1.5rem;
+      text-align: center;
+    }
+
+    div[data-name="button-choices"] {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+  }
+}
+
 dialog[data-name="authors-dialog"] {
   width: 80%;
   height: 80%;

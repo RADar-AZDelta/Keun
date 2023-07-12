@@ -5,10 +5,8 @@
   import { goto } from '$app/navigation'
   import { dev } from '$app/environment'
   import DragAndDrop from '$lib/components/Extra/DragAndDrop.svelte'
-  import { implementation, implementationClass, settings } from '$lib/store'
-  import type { FileUploadedEventDetail, IFunctionalityImpl } from '$lib/components/Types'
-
-  let impl: IFunctionalityImpl
+  import { fileName, implementation, implementationClass, settings } from '$lib/store'
+  import type { FileUploadedEventDetail } from '$lib/components/Types'
 
   let files: string[] = []
   let fileInputDialog: HTMLDialogElement, authorsDialog: HTMLDialogElement, columnDialog: HTMLDialogElement
@@ -19,12 +17,36 @@
   let authorizedAuthors: string[]
   let processing = writable<boolean>(false)
   let chosenFile: string
+  let locationDialog: HTMLDialogElement
+
+  async function loadImplementation() {
+    return new Promise(async (resolve, reject) => {
+      if (!$implementationClass) {
+        if ($implementation == 'firebase') {
+          await import('$lib/utilClasses/FirebaseImpl').then(({ default: FirebaseImpl }) => {
+            $implementationClass = new FirebaseImpl()
+            resolve($implementationClass)
+          })
+        } else {
+          import('$lib/utilClasses/LocalImpl').then(({ default: LocalImpl }) => {
+            $implementationClass = new LocalImpl()
+            resolve($implementationClass)
+          })
+        }
+      } else resolve($implementationClass)
+    })
+  }
 
   async function fileUploadedDragAndDrop(e: CustomEvent<FileUploadedEventDetail>) {
     if (dev) console.log('fileUploaded: New file uploaded')
     file = e.detail.file
-    const url = URL.createObjectURL(file)
-    goto(`/mapping?file=${url}&impl=none&fileName=${file.name}`)
+    $fileName = file.name
+    const cache = await $implementationClass.checkForCache(file.name)
+    if (cache == true) locationDialog.showModal()
+    else {
+      await $implementationClass.uploadFile(file, authorizedAuthors)
+      goto('/mapping')
+    }
   }
 
   // A method to upload a file
@@ -166,6 +188,13 @@
     if (getFilesRes) files = getFilesRes
   }
 
+  async function getCachedFiles() {
+    if (!$implementationClass) await loadImplementation()
+    const res = await $implementationClass.getCachedFiles()
+    if (res) return res
+    else return []
+  }
+
   $: {
     // When the user changes, renew the files
     if ($settings.author && $implementationClass) {
@@ -181,6 +210,33 @@
     content="Keun is a mapping tool to map concepts to OMOP concepts. It's a web based modern variant of Usagi."
   />
 </svelte:head>
+
+<dialog data-name="location-dialog" bind:this={locationDialog}>
+  <div data-name="location-container">
+    <button
+      on:click={() => {
+        locationDialog.close()
+      }}
+      data-name="close-dialog"
+      disabled={$processing}
+      ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" />
+    </button>
+    <h2>Do you want to use this file or the cached version of this file?</h2>
+    <div data-name="button-choices">
+      <button
+        on:click={async () => {
+          await $implementationClass.uploadFile(file, authorizedAuthors)
+          goto(`/mapping`)
+        }}>File</button
+      >
+      <button
+        on:click={async () => {
+          goto('/mapping')
+        }}>Cached version</button
+      >
+    </div>
+  </div>
+</dialog>
 
 {#if $implementation == 'firebase'}
   <main data-name="files-screen">
@@ -343,7 +399,7 @@
                         data-name="download-file"
                         on:click={async e => {
                           if (e && e.stopPropagation) e.stopPropagation()
-                          $implementationClass.downloadFile(file)
+                          await $implementationClass.downloadFile(file)
                         }}
                       >
                         <SvgIcon href="icons.svg" id="download" width="16px" height="16px" />
@@ -390,5 +446,43 @@
     </section>
   </main>
 {:else}
-  <DragAndDrop on:fileUploaded={fileUploadedDragAndDrop} />
+  <main data-name="files-screen">
+    <section data-name="file-selection">
+      <section data-name="file-container">
+        <div data-name="file-menu">
+          <h1>Cached files to map</h1>
+          <div data-name="file-list">
+            {#await getCachedFiles() then files}
+              {#each files as file}
+                <button
+                  data-name="file-card"
+                  on:click={() => {
+                    $fileName = file
+                    goto('/mapping')
+                  }}
+                >
+                  <div data-name="file-name">
+                    <SvgIcon href="icons.svg" id="excel" width="40px" height="40px" />
+                    <p>{file}</p>
+                  </div>
+                  <div>
+                    <button
+                      data-name="download-file"
+                      on:click={async e => {
+                        if (e && e.stopPropagation) e.stopPropagation()
+                        await $implementationClass.downloadFile(file)
+                      }}
+                    >
+                      <SvgIcon href="icons.svg" id="download" width="16px" height="16px" />
+                    </button>
+                  </div>
+                </button>
+              {/each}
+            {/await}
+          </div>
+        </div>
+      </section>
+    </section>
+    <DragAndDrop on:fileUploaded={fileUploadedDragAndDrop} />
+  </main>
 {/if}
