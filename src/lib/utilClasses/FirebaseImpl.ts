@@ -6,6 +6,7 @@ import { dev } from '$app/environment';
 import type { ICache, IFunctionalityImpl, ISync } from '$lib/components/Types';
 import { IndexedDB } from './IndexedDB';
 import { convertBlobToHexString, convertHexStringToBlob } from '$lib/utils';
+import { base } from '$app/paths'
 
 export default class FirebaseImpl implements IFunctionalityImpl {
     dbVersion: number = 0
@@ -176,7 +177,7 @@ export default class FirebaseImpl implements IFunctionalityImpl {
       if (blob) file = new File([blob], fileName!, { type: 'text/csv' })
       else {
         if (dev) console.error('readFileFirstTime: There was no file found in storage')
-        goto('/')
+        goto(`${base}/`)
       }
   
       if (customBlob) customConceptsFile = new File([customBlob], 'customConcepts.csv', { type: 'text/csv' })
