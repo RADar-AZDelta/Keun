@@ -4,6 +4,7 @@ import type { ICache, IFunctionalityImpl, ISync } from '$lib/components/Types';
 import { settings } from '$lib/store';
 import { convertBlobToHexString, convertHexStringToBlob, fileToBlob, localStorageGetter, localStorageSetter } from '$lib/utils';
 import { IndexedDB } from './IndexedDB';
+import { base } from '$app/paths'
 
 export default class LocalImpl implements IFunctionalityImpl {
     constructor() {}
@@ -46,7 +47,7 @@ export default class LocalImpl implements IFunctionalityImpl {
         const blob = await fileToBlob(file)
         const hex = await convertBlobToHexString(blob)
         await db.set({ fileName: file.name, file: hex }, file.name, true)
-        goto('/mapping')
+        goto(`${base}/mapping`)
         return
     }
 

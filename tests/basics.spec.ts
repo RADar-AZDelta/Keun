@@ -1,7 +1,8 @@
 import { expect, test, type Page } from '@playwright/test'
+import { base } from '$app/paths'
 
 const init = async (page: Page) => {
-  await page.goto('/')
+  await page.goto(`${base}/`)
   await login(page)
   await importFile(page, 'static/file.csv')
 }
@@ -220,21 +221,21 @@ const removeConceptInMappedConceptsTable = async (page: Page, mainTableIndex: nu
 
 test.describe('Testing the author functionalities of the mappingtool', () => {
   test('Log in with an author', async ({ page }) => {
-    await page.goto('/')
+    await page.goto(`${base}/`)
     await login(page, 'John Doe')
     // Check the author name in the author button
     await expect(page.getByRole('button', { name: 'User button' }).locator('p')).toHaveText('John Doe')
   })
 
   test('Cancel the user in the onboarding', async ({ page }) => {
-    await page.goto('/')
+await page.goto(`${base}/`)
     await login(page)
     // Check if you have left the dialog because normally it is not possible, so you should still see the save button
     expect(await page.locator('button:text("Save")'))
   })
 
   test('Cancel change of user after it was filled in, in the onboarding', async ({ page }) => {
-    await page.goto('/')
+await page.goto(`${base}/`)
     await login(page, 'John Doe')
     // Click the author button again
     await page.getByRole('button', { name: 'User button' }).click()
@@ -277,7 +278,7 @@ test.describe('Testing the automapping functionalities', () => {
     await expect(page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4)).not.toBe('Unmapped')
   })
   test('Enable automapping and then import the file', async ({ page }) => {
-    await page.goto('/')
+await page.goto(`${base}/`)
     await login(page)
     await enableSettings(page, 'autoMapping')
     await importFile(page, 'static/file.csv')

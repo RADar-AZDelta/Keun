@@ -27,7 +27,7 @@ const config = {
   kit: {
     adapter: process.env.PUBLIC_CLOUD_IMPLEMENTATION == "firebase" ? autoAdapter() : staticAdapter({ strict: false }),
     paths: {
-      base: dev ? '' : process.env.BASE_PATH,
+      base: dev ? '' : '/Keun',
     }
   },
 }

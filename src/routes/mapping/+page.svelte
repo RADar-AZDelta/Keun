@@ -34,6 +34,7 @@
   import type Query from 'arquero/dist/types/query/query'
   import { fileName, implementation, implementationClass, settings, triggerAutoMapping } from '$lib/store'
   import { beforeNavigate, goto } from '$app/navigation'
+  import { base } from '$app/paths'
 
   // General variables
   let file: File | undefined = undefined
@@ -1004,7 +1005,7 @@
 
   async function readFileLocally() {
     const storedFile = await $implementationClass.readFileFirstTime($fileName)
-    if (!storedFile?.file) goto('/')
+    if (!storedFile?.file) goto(`${base}/`)
     else {
       file = storedFile.file
       customConceptsFile = storedFile.customConceptsFile
@@ -1039,7 +1040,7 @@
 
   onMount(async () => {
     // Check if the file contains the file query parameter
-    if (!$page.url.searchParams.get('fileName') && !$fileName) goto('/')
+    if (!$page.url.searchParams.get('fileName') && !$fileName) goto(`${base}/`)
     await $implementationClass.checkCustomConcepts()
   })
 

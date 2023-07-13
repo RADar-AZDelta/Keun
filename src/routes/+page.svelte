@@ -5,6 +5,7 @@
   import { goto } from '$app/navigation'
   import { dev } from '$app/environment'
   import { fileName, implementation, implementationClass, settings } from '$lib/store'
+  import { base } from '$app/paths'
 
   let files: string[] = []
   let fileInputDialog: HTMLDialogElement, authorsDialog: HTMLDialogElement, columnDialog: HTMLDialogElement
@@ -40,7 +41,7 @@
     if (dev) console.log(`mapCachedFile: Go to the route "/mapping" to map the file: ${fileName}`)
     $fileName = fileName
     await $implementationClass.checkCustomConcepts()
-    goto('/mapping')
+    goto(`${base}/mapping`)
   }
 
   function checkForMissingColumns(this: FileReader, ev: ProgressEvent<FileReader>) {
@@ -159,7 +160,7 @@
 
   // A method to send the user to the mappingtool
   function openMappingTool(fileName: string) {
-    if (fileName !== 'customConcepts.csv') goto(`/mapping?impl=firebase&fileName=${fileName}`)
+    if (fileName !== 'customConcepts.csv') goto(`${base}/mapping?impl=firebase&fileName=${fileName}`)
   }
 
   // A method to get all the files to map
