@@ -34,8 +34,6 @@
   import type Query from 'arquero/dist/types/query/query'
   import { fileName, implementation, implementationClass, settings, triggerAutoMapping } from '$lib/store'
   import { beforeNavigate, goto } from '$app/navigation'
-  import Download from '$lib/components/Extra/Download.svelte'
-  import Upload from '$lib/components/Extra/Upload.svelte'
 
   // General variables
   let file: File | undefined = undefined
