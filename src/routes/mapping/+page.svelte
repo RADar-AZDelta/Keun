@@ -88,9 +88,6 @@
   let dataTableMapping: DataTable
   let dataTableCustomConcepts: DataTable
 
-  let customConceptsArrayOfObjects: Record<string, any>[] = [{}]
-  let customConceptColumns: IColumnMetaData[] = columnsCustomConcept
-
   let importantAthenaColumns = new Map<string, string>([
     ['id', 'conceptId'],
     ['name', 'conceptName'],
@@ -155,12 +152,6 @@
   async function customMapping(event: CustomEvent<CustomMappingEventDetail>) {
     if (dev) console.log('customMapping: Custom mapping for the row with sourceCode ', selectedRow.sourceCode)
 
-    if ($implementation !== 'firebase' && customConceptsArrayOfObjects.length > 0) {
-      if (Object.keys(customConceptsArrayOfObjects[0]).length == 0) {
-        customConceptsArrayOfObjects = []
-      }
-    }
-
     // Create the custom concept object
     const customConcept = {
       concept_id: event.detail.customConcept.conceptId,
@@ -176,46 +167,31 @@
     }
     // Check if the custom concepts already exists in the custom concepts DataTable (avoid duplicates)
     let existsAlready: boolean = false
-    if ($implementation == 'firebase') {
-      const q = (<Query>query().params({
-        concept_id: customConcept.concept_id,
-        concept_name: customConcept.concept_name,
-        domain_id: customConcept.domain_id,
-        vocabulary_id: customConcept.vocabulary_id,
-        concept_class_id: customConcept.concept_class_id,
-      }))
-        .filter(
-          (r: any, params: any) =>
-            r.concept_id == params.concept_id &&
-            r.concept_name == params.concept_name &&
-            r.domain_id == params.domain_id &&
-            r.vocabulary_id == params.vocabulary_id &&
-            r.concept_class_id == params.concept_class_id
-        )
-        .toObject()
-      const customRes = await dataTableCustomConcepts.executeQueryAndReturnResults(q)
-      // If there are no duplicates, add the row to the custom concepts DataTable
-      if (customRes.queriedData.length === 0) {
-        existsAlready = false
-        await dataTableCustomConcepts.insertRows([customConcept])
-      } else {
-        if (dev) console.log('customMapping: The custom concept already exists in the custom concepts DataTable')
-        existsAlready = true
-      }
-    } else {
-      const existingConcept = customConceptsArrayOfObjects.find(
-        concept =>
-          concept.concept_id === customConcept.concept_id &&
-          concept.concept_name === customConcept.concept_name &&
-          concept.domain_id === customConcept.domain_id &&
-          concept.vocabulary_id === customConcept.vocabulary_id &&
-          concept.concept_class_id === customConcept.concept_class_id
+
+    const q = (<Query>query().params({
+      concept_id: customConcept.concept_id,
+      concept_name: customConcept.concept_name,
+      domain_id: customConcept.domain_id,
+      vocabulary_id: customConcept.vocabulary_id,
+      concept_class_id: customConcept.concept_class_id,
+    }))
+      .filter(
+        (r: any, params: any) =>
+          r.concept_id == params.concept_id &&
+          r.concept_name == params.concept_name &&
+          r.domain_id == params.domain_id &&
+          r.vocabulary_id == params.vocabulary_id &&
+          r.concept_class_id == params.concept_class_id
       )
-      if (!existingConcept) {
-        existsAlready = false
-        customConceptsArrayOfObjects.push(customConcept)
-        customConceptsArrayOfObjects = customConceptsArrayOfObjects
-      } else existsAlready = true
+      .toObject()
+    const customRes = await dataTableCustomConcepts.executeQueryAndReturnResults(q)
+    // If there are no duplicates, add the row to the custom concepts DataTable
+    if (customRes.queriedData.length === 0) {
+      existsAlready = false
+      await dataTableCustomConcepts.insertRows([customConcept])
+    } else {
+      if (dev) console.log('customMapping: The custom concept already exists in the custom concepts DataTable')
+      existsAlready = true
     }
 
     // Map the selected row with the custom concept
@@ -412,23 +388,14 @@
     if (dev) console.log('deleteRowInnerMapping: Delete mapping with conceptId ', event.detail.conceptId)
     // If the row is a custom concept, delete it from the custom concepts table
     if (event.detail.custom) {
-      if ($implementation == 'firebase') {
-        // Find a row with the same concept_id & concept_name
-        const q = (<Query>(
-          query().params({ concept_id: event.detail.conceptId, concept_name: event.detail.conceptName })
-        ))
-          .filter((r: any, params: any) => r.concept_id == params.concept_id && r.concept_name == params.concept_name)
-          .toObject()
-        const res = await dataTableCustomConcepts.executeQueryAndReturnResults(q)
-        if (res.indices.length > 0) {
-          // If a row exists with the same concept_id & concept_name, delete it
-          await dataTableCustomConcepts.deleteRows(res.indices)
-        }
-      } else {
-        const deletionIndex = customConceptsArrayOfObjects.findIndex(
-          row => row.conceptId === event.detail.conceptId && row.concept_name === event.detail.conceptName
-        )
-        customConceptsArrayOfObjects.splice(deletionIndex, 1)
+      // Find a row with the same concept_id & concept_name
+      const q = (<Query>query().params({ concept_id: event.detail.conceptId, concept_name: event.detail.conceptName }))
+        .filter((r: any, params: any) => r.concept_id == params.concept_id && r.concept_name == params.concept_name)
+        .toObject()
+      const res = await dataTableCustomConcepts.executeQueryAndReturnResults(q)
+      if (res.indices.length > 0) {
+        // If a row exists with the same concept_id & concept_name, delete it
+        await dataTableCustomConcepts.deleteRows(res.indices)
       }
     }
 
@@ -995,8 +962,10 @@
 
   // A method to get the file from the Firebase file storage when loading the page
   async function readFileFirstTime() {
+    console.log("READ FILE FIRST TIME")
     if ($fileName) {
       const res = await $implementationClass.readFileFirstTime($fileName)
+      console.log("RESULT READ FILE FIRST TIME ", res)
       if (res && res?.file) file = res.file
       if (res && res?.customConceptsFile) customConceptsFile = res.customConceptsFile
     }
@@ -1019,6 +988,7 @@
   // A method to sync the file from the DataTable with the file storage & IndexedDB
   async function renewCustomFile() {
     // If there is no custom concepts file loaded
+    console.log('RENEW ', customConceptsFile)
     if (!customConceptsFile) {
       const resFile = await $implementationClass.syncFile({ fileName: $fileName })
       if (resFile) customConceptsFile = resFile
@@ -1030,13 +1000,15 @@
     }
   }
 
-  async function setupWatch() {
-    await $implementationClass.watchValueFromDatabase(
-      `/files/${$fileName?.substring(0, $fileName.indexOf('.'))}`,
-      () => {
-        renewFile()
-      }
-    )
+  async function setupWatch(onlyCustom: boolean = false) {
+    if (onlyCustom == false) {
+      await $implementationClass.watchValueFromDatabase(
+        `/files/${$fileName?.substring(0, $fileName.indexOf('.'))}`,
+        () => {
+          renewFile()
+        }
+      )
+    }
     // Watch the version & author of the custom concepts
     await $implementationClass.watchValueFromDatabase('/files/customConcepts', () => {
       renewCustomFile()
@@ -1046,7 +1018,10 @@
   async function readFileLocally() {
     const storedFile = await $implementationClass.readFileFirstTime($fileName)
     if (!storedFile?.file) goto('/')
-    else file = storedFile.file
+    else {
+      file = storedFile.file
+      customConceptsFile = storedFile.customConceptsFile
+    }
   }
 
   $: {
@@ -1065,9 +1040,10 @@
         if (querystringFile) $fileName = querystringFile
         readFileFirstTime()
 
-        setupWatch()
+        setupWatch(false)
       } else {
         readFileLocally()
+        setupWatch(true)
       }
     }
   }
@@ -1077,10 +1053,11 @@
   onMount(async () => {
     // Check if the file contains the file query parameter
     if (!$page.url.searchParams.get('fileName') && !$fileName) goto('/')
+    await $implementationClass.checkCustomConcepts()
   })
 
   onDestroy(() => {
-    if ($implementation == 'firebase' && $implementationClass) {
+    if ($implementationClass) {
       $implementationClass.watchValueFromDatabase(
         `/files/${$fileName?.substring(0, $fileName.indexOf('.'))}`,
         () => {
@@ -1107,7 +1084,6 @@
       if (dataTableMapping) {
         const blob = await dataTableMapping.getBlob()
         const result = await $implementationClass.checkVersionFile($fileName, blob)
-        navTriggered = true
         if (result == true) {
           await $implementationClass?.syncFile({ fileName: $fileName, blob, action: 'update' })
         } else {
@@ -1116,14 +1092,15 @@
       }
       if (dataTableCustomConcepts) {
         const blob = await dataTableCustomConcepts.getBlob()
-        const result = await $implementationClass.checkVersionFile('customConcepts', blob)
-        navTriggered = true
+        const result = await $implementationClass.checkVersionFile('customConcepts.csv', blob)
         if (result == true) {
-          await $implementationClass?.syncFile({ fileName: 'customConcepts', blob, action: 'update' })
+          await $implementationClass?.syncFile({ fileName: 'customConcepts.csv', blob, action: 'update' })
         } else {
-          if (downloaded == true) await $implementationClass?.removeCache('customConcepts')
+          if (downloaded == true) await $implementationClass?.removeCache('customConcepts.csv')
         }
       }
+      navTriggered = true
+      console.log("TO ", to?.url)
       goto(to?.url!)
     }
   })
@@ -1141,16 +1118,12 @@
   <section data-name="download-upload-header">
     <Download dataTable={dataTableMapping} title="Download CSV" bind:downloaded />
     <Upload on:fileUploaded={fileUploaded} {file} />
-    {#if customConceptsArrayOfObjects.length > 0 && $implementation !== 'firebase'}
-      {#if Object.keys(customConceptsArrayOfObjects[0]).length !== 0}
-        <Download
-          dataTable={dataTableCustomConcepts}
-          title="Download custom concepts"
-          bind:downloaded={customDownloaded}
-          custom={true}
-        />
-      {/if}
-    {/if}
+    <Download
+      dataTable={dataTableCustomConcepts}
+      title="Download custom concepts"
+      bind:downloaded={customDownloaded}
+      custom={true}
+    />
   </section>
 {/if}
 
@@ -1203,21 +1176,14 @@
     />
   {/if}
 
+  <p>{customConceptsFile?.name}
   <div data-name="custom-concepts">
-    {#if $implementation == 'firebase'}
-      <DataTable
-        data={customConceptsFile}
-        options={customTableOptions}
-        bind:this={dataTableCustomConcepts}
-        modifyColumnMetadata={modifyCustomConceptsColumnMetadata}
-      />
-    {:else}
-      <DataTable
-        data={customConceptsArrayOfObjects}
-        columns={customConceptColumns}
-        bind:this={dataTableCustomConcepts}
-      />
-    {/if}
+    <DataTable
+      data={customConceptsFile}
+      options={customTableOptions}
+      bind:this={dataTableCustomConcepts}
+      modifyColumnMetadata={modifyCustomConceptsColumnMetadata}
+    />
   </div>
 
   {#if tableInit == true}

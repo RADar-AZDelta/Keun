@@ -45,6 +45,7 @@
     if (cache == true) locationDialog.showModal()
     else {
       await $implementationClass.uploadFile(file, authorizedAuthors)
+      await $implementationClass.checkCustomConcepts()
       goto('/mapping')
     }
   }
@@ -226,11 +227,13 @@
       <button
         on:click={async () => {
           await $implementationClass.uploadFile(file, authorizedAuthors)
+          await $implementationClass.checkCustomConcepts()
           goto(`/mapping`)
         }}>File</button
       >
       <button
         on:click={async () => {
+          await $implementationClass.checkCustomConcepts()
           goto('/mapping')
         }}>Cached version</button
       >
@@ -456,8 +459,11 @@
               {#each files as file}
                 <button
                   data-name="file-card"
-                  on:click={() => {
+                  on:click={async() => {
                     $fileName = file
+                    console.log("HERE&")
+                    await $implementationClass.checkCustomConcepts()
+                    console.log("HERE")
                     goto('/mapping')
                   }}
                 >

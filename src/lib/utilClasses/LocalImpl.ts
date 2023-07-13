@@ -1,8 +1,8 @@
-import { dev } from "$app/environment";
-import type { ICache, IFunctionalityImpl, ISync } from "$lib/components/Types";
-import { settings } from "$lib/store";
-import { convertBlobToHexString, convertHexStringToBlob, fileToBlob, localStorageGetter, localStorageSetter } from "$lib/utils";
-import { IndexedDB } from "./IndexedDB";
+import { dev } from '$app/environment';
+import type { ICache, IFunctionalityImpl, ISync } from '$lib/components/Types';
+import { settings } from '$lib/store';
+import { convertBlobToHexString, convertHexStringToBlob, fileToBlob, localStorageGetter, localStorageSetter } from '$lib/utils';
+import { IndexedDB } from './IndexedDB';
 
 export default class LocalImpl implements IFunctionalityImpl {
     constructor() {}
@@ -22,8 +22,8 @@ export default class LocalImpl implements IFunctionalityImpl {
         const db = new IndexedDB('localMapping', 'localMapping')
         const fileData = await db.get(fileName, true, true)
         const hex = fileData.file
-        const blob = await convertHexStringToBlob(hex, "text/csv")
-        const file = new File([blob], fileName, { type: "text/csv" })
+        const blob = await convertHexStringToBlob(hex, 'text/csv')
+        const file = new File([blob], fileName, { type: 'text/csv' })
         const url = URL.createObjectURL(file)
         element.setAttribute('href', url)
         element.setAttribute('download', fileName)
@@ -36,19 +36,19 @@ export default class LocalImpl implements IFunctionalityImpl {
 
     async uploadFile(file: File, authorizedAuthors: string[]): Promise<string[] | void> {
         if(dev) console.log('uploadFile: Uploading file to IndexedDB')
-        const db = new IndexedDB("localMapping", "localMapping")
+        const db = new IndexedDB('localMapping', 'localMapping')
         const blob = await fileToBlob(file)
         const hex = await convertBlobToHexString(blob)
         await db.set({ fileName: file.name, file: hex }, file.name, true)
         return
     }
 
-    async syncSettings(action: "read" | "write"): Promise<void> {
-        if(action == "read") {
+    async syncSettings(action: 'read' | 'write'): Promise<void> {
+        if(action == 'read') {
             if(dev) console.log('syncSettings: Reading the settings from the localStorage')
             const storedSettings = await localStorageGetter('settings-Keun')
             if(storedSettings) settings.set(storedSettings)
-        } else if (action == "write") {
+        } else if (action == 'write') {
             if(dev) console.log('syncSettings: Write the settings to the localStorage')
             settings.subscribe(async(settings) => {
                 await localStorageSetter('settings-Keun', settings)
@@ -57,15 +57,18 @@ export default class LocalImpl implements IFunctionalityImpl {
     }
 
     async readFileFirstTime(fileName: string): Promise<{ file: File | undefined; customConceptsFile: File | undefined; } | void> {
-        const db = new IndexedDB("localMapping", "localMapping")
+        const db = new IndexedDB('localMapping', 'localMapping')
         if(dev) console.log(`readFileFirstTime: Get the file (${fileName}) from IndexedDB for local mapping`)
-        const storedFile = await db.get(fileName, true, true)
-        if(storedFile) {
-            const blob = await convertHexStringToBlob(storedFile.file, "text/csv")
-            const file = new File([blob], storedFile.fileName)
+        const storedFile = await db.get(fileName, true)
+        const storedCustomConcepts = await db.get('customConcepts.csv', true, true)
+        if(storedFile && storedCustomConcepts) {
+            const blob = await convertHexStringToBlob(storedFile.file, 'text/csv')
+            const file = new File([blob], storedFile.fileName, { type: 'text/csv' })
+            const customBlob = await convertHexStringToBlob(storedCustomConcepts.file, 'text/csv')
+            const customFile = new File([customBlob], 'customConcepts.csv', { type: 'text/csv' })
             return {
                 file,
-                customConceptsFile: undefined
+                customConceptsFile: customFile
             }
         } else return
     }
@@ -104,7 +107,7 @@ export default class LocalImpl implements IFunctionalityImpl {
     async syncFile(data: ISync): Promise<File | void> {
         return new Promise(async(resolve, reject) => {
             const db = new IndexedDB('localMapping', 'localMapping')
-            if(data.action == "update" && data.blob) {
+            if(data.action == 'update' && data.blob) {
                 if(dev) console.log('syncFile: Updating the file in IndexedDB')
                 const hex = await convertBlobToHexString(data.blob)
                 await db.set({ fileName: data.fileName, file: hex }, data.fileName, true)
@@ -114,7 +117,7 @@ export default class LocalImpl implements IFunctionalityImpl {
                 if(res) {
                     if(dev) console.log('syncFile: Getting the file from IndexedDB')
                     const blob = await convertHexStringToBlob(res.file, 'text/csv')
-                    const file = new File([blob], data.fileName, { type: "text/csv" })
+                    const file = new File([blob], data.fileName, { type: 'text/csv' })
                     resolve(file)
                 } else {
                     console.error('syncFile: There was no file found in IndexedDB')
@@ -126,13 +129,13 @@ export default class LocalImpl implements IFunctionalityImpl {
 
     async cache(data: ICache): Promise<File | void> {
         const db = new IndexedDB('localMapping', 'localMapping')
-        if(data.action == "update") {
+        if(data.action == 'update') {
             const hex = await convertBlobToHexString(data.blob)
             await db.set({ fileName: data.fileName, file: hex }, data.fileName, true)
             return
-        } else if (data.action == "get") {
+        } else if (data.action == 'get') {
             const fileData = await db.get(data.fileName, true, true)
-            const blob = await convertHexStringToBlob(fileData.file, "text/csv")
+            const blob = await convertHexStringToBlob(fileData.file, 'text/csv')
             const file = new File([blob], data.fileName, { type: 'text/csv' })
             return file
         } else {
@@ -142,7 +145,7 @@ export default class LocalImpl implements IFunctionalityImpl {
     } 
 
     async checkVersionFile(fileName: string, blob: Blob): Promise<boolean | void> {
-        const db = new IndexedDB("localMapping", 'localMapping')
+        const db = new IndexedDB('localMapping', 'localMapping')
         const storedVersion = await db.get(fileName, true, true)
         if(storedVersion) {
             const storedHex = storedVersion.file
@@ -169,6 +172,27 @@ export default class LocalImpl implements IFunctionalityImpl {
     async getCachedFiles(): Promise<string[] | void> {
         const db = new IndexedDB('localMapping', 'localMapping')
         const files = await db.keys(true)
+        console.log("FILES ", files)
         return files
+    }
+
+    async checkCustomConcepts(): Promise<File | void> {
+        return new Promise(async(resolve, reject) => {
+            const db = new IndexedDB('localMapping', 'localMapping')
+            const res = await db.get('customConcepts', true)    
+            if(!res) {
+                const blob = new Blob(['concept_id,concept_code,concept_name,concept_class_id,domain_id,vocabulary_id,standard_concept,valid_start_date,valid_end_date,invalid_reason\n0,0,test,test,test,0,0,05/07/2023,31/12/2099,null'])
+                const file = new File([blob], 'customConcepts.csv', { type: 'text/csv' })
+                const hex = await convertBlobToHexString(blob)
+                await db.set({ fileName: 'customConcepts.csv', file: hex}, 'customConcepts.csv', true)
+                resolve(file)
+            } else {
+                await db.close()
+                const hex = res.file
+                const blob = await convertHexStringToBlob(hex, "text/csv")
+                const file = new File([blob], 'customConcepts.csv', { type: 'text/csv' })
+                resolve(file)
+            }
+        })
     }
 }
