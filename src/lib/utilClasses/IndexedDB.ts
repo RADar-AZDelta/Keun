@@ -94,22 +94,20 @@ export class IndexedDB {
 
     async keys (autoClose?: boolean): Promise<any[]> {
         return new Promise(async (resolve, reject) => {
-            const keys: any[] = []
             const db = await this.db
+            let getReq: IDBRequest<any>
             const transaction = db.transaction(this.storeName, 'readonly')
+
             transaction.oncomplete = () => {
-                if(autoClose) db.close
-                resolve(keys)
+                if(autoClose) db.close()
+                resolve(getReq ? getReq.result : undefined)
             }
+
             transaction.onabort = transaction.onerror = () => {
                 reject(transaction.error)
             }
 
-            transaction.objectStore(this.storeName).openKeyCursor.call(transaction.objectStore(this.storeName)).onsuccess = function() {
-                if(!this.result) return
-                keys.push(this.result.key)
-                this.result.continue
-            }
+            getReq = transaction.objectStore(this.storeName).getAllKeys()
         })
     }
 
