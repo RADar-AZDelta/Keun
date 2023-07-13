@@ -415,6 +415,13 @@
                   >
                     <SvgIcon href="icons.svg" id="download" width="16px" height="16px" />
                   </button>
+                  <button data-name="delete-file" disabled={file == "customConcepts.csv" ? true : false} on:click={async e => {
+                    if(e && e.stopPropagation) e.stopPropagation()
+                    await $implementationClass.removeCache(file)
+                    await getFiles()
+                  }}>
+                    <SvgIcon href="icons.svg" id="x" width="16px" height="16px" />
+                  </button>
                 </div>
               </button>
             {/each}

@@ -36,6 +36,7 @@ export default class LocalImpl implements IFunctionalityImpl {
         element.click()
         document.body.removeChild(element)
         URL.revokeObjectURL(url)
+        this.removeCache(file.name)
         return
     }
 
@@ -149,18 +150,6 @@ export default class LocalImpl implements IFunctionalityImpl {
             console.error('cache: Provide a valid action to cache the downloaded data')
         }
     } 
-
-    async checkVersionFile(fileName: string, blob: Blob): Promise<boolean | void> {
-        const db = new IndexedDB('localMapping', 'localMapping')
-        const storedVersion = await db.get(fileName, true, true)
-        if(storedVersion) {
-            const storedHex = storedVersion.file
-            const currentHex = await convertBlobToHexString(blob)
-    
-            if(storedHex !== currentHex) return true
-            else return false
-        } else return false
-    }
 
     async removeCache(fileName: string): Promise<void> {
         const db = new IndexedDB('localMapping', 'localMapping')

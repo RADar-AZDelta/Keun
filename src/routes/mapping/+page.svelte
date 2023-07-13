@@ -14,8 +14,6 @@
     CustomMappingEventDetail,
     AutoMapRowEventDetail,
     UpdateDetailsEventDetail,
-    IDataTypeFile,
-    FileUploadedEventDetail,
   } from '$lib/components/Types'
   import type {
     IColumnMetaData,
@@ -44,8 +42,7 @@
   let customConceptsFile: File | undefined = undefined
 
   let navTriggered: boolean = false,
-    downloaded: boolean = false,
-    customDownloaded: boolean = false
+    downloaded: boolean = false
 
   let tableOptions: ITableOptions = {
     id: `${$page.url.searchParams
@@ -478,6 +475,7 @@
   // METHODS
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
+  // A method to set the saveImpl & dataTypeImpl of the general DataTable & the DataTable for custom concepts
   async function setupDataTable() {
     if ($implementation == 'firebase') {
       await import('$lib/utilClasses/FirebaseSaveImpl').then(({ default: FirebaseStore }) => {
@@ -488,11 +486,6 @@
         customTableOptions.dataTypeImpl = new FirebaseDataType()
       })
     }
-  }
-
-  async function fileUploaded(e: CustomEvent<FileUploadedEventDetail>) {
-    if (dev) console.log('fileUploaded: New File uploaded')
-    file = e.detail.file
   }
 
   // A method to check if the translator exists, and if it doesn't exists, create one
@@ -962,10 +955,8 @@
 
   // A method to get the file from the Firebase file storage when loading the page
   async function readFileFirstTime() {
-    console.log("READ FILE FIRST TIME")
     if ($fileName) {
       const res = await $implementationClass.readFileFirstTime($fileName)
-      console.log("RESULT READ FILE FIRST TIME ", res)
       if (res && res?.file) file = res.file
       if (res && res?.customConceptsFile) customConceptsFile = res.customConceptsFile
     }
@@ -1083,24 +1074,13 @@
       cancel()
       if (dataTableMapping) {
         const blob = await dataTableMapping.getBlob()
-        const result = await $implementationClass.checkVersionFile($fileName, blob)
-        if (result == true) {
-          await $implementationClass?.syncFile({ fileName: $fileName, blob, action: 'update' })
-        } else {
-          if (downloaded == true) await $implementationClass?.removeCache($fileName)
-        }
+        await $implementationClass?.syncFile({ fileName: $fileName, blob, action: 'update' })
       }
       if (dataTableCustomConcepts) {
         const blob = await dataTableCustomConcepts.getBlob()
-        const result = await $implementationClass.checkVersionFile('customConcepts.csv', blob)
-        if (result == true) {
-          await $implementationClass?.syncFile({ fileName: 'customConcepts.csv', blob, action: 'update' })
-        } else {
-          if (downloaded == true) await $implementationClass?.removeCache('customConcepts.csv')
-        }
+        await $implementationClass?.syncFile({ fileName: 'customConcepts.csv', blob, action: 'update' })
       }
       navTriggered = true
-      console.log("TO ", to?.url)
       goto(to?.url!)
     }
   })
@@ -1113,19 +1093,6 @@
     content="Keun is a mapping tool to map concepts to OMOP concepts. It's a web based modern variant of Usagi."
   />
 </svelte:head>
-
-{#if $implementation == 'none' || !implementation}
-  <section data-name="download-upload-header">
-    <Download dataTable={dataTableMapping} title="Download CSV" bind:downloaded />
-    <Upload on:fileUploaded={fileUploaded} {file} />
-    <Download
-      dataTable={dataTableCustomConcepts}
-      title="Download custom concepts"
-      bind:downloaded={customDownloaded}
-      custom={true}
-    />
-  </section>
-{/if}
 
 {#if file}
   <DataTable
@@ -1176,7 +1143,6 @@
     />
   {/if}
 
-  <p>{customConceptsFile?.name}
   <div data-name="custom-concepts">
     <DataTable
       data={customConceptsFile}

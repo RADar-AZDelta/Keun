@@ -181,7 +181,6 @@ export interface IFunctionalityImpl {
   cancelLogIn(backupAuthor: string | null | undefined): Promise<void>
   syncFile(data: ISync): Promise<File | void>
   cache(data: ICache): Promise<File | void>
-  checkVersionFile(fileName: string, blob: Blob): Promise<boolean | void>
   removeCache(fileName: string): Promise<void>
   checkForCache(fileName: string): Promise<boolean | void>
   getCachedFiles(): Promise<string[] | void>
