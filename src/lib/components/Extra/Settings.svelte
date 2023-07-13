@@ -26,8 +26,8 @@
     if (settingsDialog.attributes.getNamedItem('open') == null) settingsDialog.showModal()
   }
 
-  // A method to set the settings in the localstorage
-  async function saveSettings(): Promise<void> {
+// A method to set the settings in the localstorage
+async function saveSettings(): Promise<void> {
     if (settingsDialog.attributes.getNamedItem('open') != null) {
       document.documentElement.style.setProperty('--font-size', `${$settings.fontsize}px`)
       document.documentElement.style.setProperty('--font-number', `${$settings.fontsize}`)
