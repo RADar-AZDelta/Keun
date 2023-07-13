@@ -288,8 +288,6 @@ export default class FirebaseImpl implements IFunctionalityImpl {
 
     async cache(data: ICache): Promise<void | File> {}
 
-    async checkVersionFile(fileName: string, blob: Blob): Promise<boolean | void> {}
-
     async removeCache(fileName: string): Promise<void> {}
 
     async checkForCache(fileName: string): Promise<boolean | void> {}
