@@ -213,8 +213,11 @@ export default class FirebaseImpl implements IFunctionalityImpl {
 
     async logIn(author: string | null | undefined): Promise<void> {
       const cred = await logIn('google')
+      let user: UserSession
+      userSessionStore.subscribe((u) => user = u)
       settings.update((settings) => {
-        settings.author = { name: cred.user.displayName, uid: cred.user.uid}
+        if(user) settings.author = { name: user.name, uid: user.uid, roles: user.roles }
+        else settings.author = { name: cred.user.displayName, uid: cred.user.uid }
         return settings
       })
     }

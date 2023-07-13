@@ -25,6 +25,30 @@ const implementation = writable<string>('none')
 
 const implementationClass = writable<IFunctionalityImpl>()
 
+async function loadImplementation() {
+  return new Promise(async (resolve, reject) => {
+    let implementationMethod: string = ""
+    implementation.subscribe((implementation) => implementationMethod = implementation)
+    implementationClass.subscribe(async (impl) => {
+      if(!impl) {
+        if(implementationMethod == "firebase") {
+          await import('$lib/utilClasses/FirebaseImpl').then(({ default: FirebaseImpl }) => {
+            implementationClass.set(new FirebaseImpl())
+            resolve(implementationClass)
+          })
+        } else {
+          import('$lib/utilClasses/LocalImpl').then(({ default: LocalImpl }) => {
+            implementationClass.set(new LocalImpl())
+            resolve(implementationClass)
+          })
+        }
+      } else resolve(undefined)
+    })
+  })
+}
+
 const fileName = writable<string>()
 
-export { customConcept, settings, triggerAutoMapping, implementation, implementationClass, fileName }
+loadImplementation()
+
+export { customConcept, settings, triggerAutoMapping, implementation, implementationClass, fileName}

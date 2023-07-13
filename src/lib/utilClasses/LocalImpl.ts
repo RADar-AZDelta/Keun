@@ -1,4 +1,5 @@
 import { dev } from '$app/environment';
+import { goto } from '$app/navigation';
 import type { ICache, IFunctionalityImpl, ISync } from '$lib/components/Types';
 import { settings } from '$lib/store';
 import { convertBlobToHexString, convertHexStringToBlob, fileToBlob, localStorageGetter, localStorageSetter } from '$lib/utils';
@@ -11,7 +12,11 @@ export default class LocalImpl implements IFunctionalityImpl {
 
     async editFile(fileName: string, authorizedAuthors: string[]): Promise<void> {}
 
-    async getFiles(): Promise<string[] | void> {}
+    async getFiles(): Promise<string[] | void> {
+        const db = new IndexedDB('localMapping', 'localMapping')
+        const files = await db.keys(true)
+        return files
+    }
 
     async getFilesAdmin(): Promise<string[] | void> {}
 
@@ -40,6 +45,7 @@ export default class LocalImpl implements IFunctionalityImpl {
         const blob = await fileToBlob(file)
         const hex = await convertBlobToHexString(blob)
         await db.set({ fileName: file.name, file: hex }, file.name, true)
+        goto('/mapping')
         return
     }
 
@@ -179,7 +185,7 @@ export default class LocalImpl implements IFunctionalityImpl {
     async checkCustomConcepts(): Promise<File | void> {
         return new Promise(async(resolve, reject) => {
             const db = new IndexedDB('localMapping', 'localMapping')
-            const res = await db.get('customConcepts', true)    
+            const res = await db.get('customConcepts.csv', true)    
             if(!res) {
                 const blob = new Blob(['concept_id,concept_code,concept_name,concept_class_id,domain_id,vocabulary_id,standard_concept,valid_start_date,valid_end_date,invalid_reason\n0,0,test,test,test,0,0,05/07/2023,31/12/2099,null'])
                 const file = new File([blob], 'customConcepts.csv', { type: 'text/csv' })

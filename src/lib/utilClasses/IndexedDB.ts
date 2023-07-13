@@ -115,6 +115,7 @@ export class IndexedDB {
         return new Promise(async (resolve, reject) => {
             const db = await this.db
             db.close()
+            resolve()
         })
     }
 }
