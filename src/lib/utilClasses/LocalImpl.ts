@@ -167,7 +167,6 @@ export default class LocalImpl implements IFunctionalityImpl {
     async getCachedFiles(): Promise<string[] | void> {
         const db = new IndexedDB('localMapping', 'localMapping')
         const files = await db.keys(true)
-        console.log("FILES ", files)
         return files
     }
 

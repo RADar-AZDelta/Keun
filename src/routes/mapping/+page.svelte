@@ -338,7 +338,6 @@
         updatingObj.mappingStatus = event.detail.action
       }
     }
-    console.log('UPDATE ROWS')
     await dataTableMapping.updateRows(new Map([[event.detail.index, updatingObj]]))
     // calculateProgress()
   }
@@ -977,7 +976,6 @@
   // A method to sync the file from the DataTable with the file storage & IndexedDB
   async function renewCustomFile() {
     // If there is no custom concepts file loaded
-    console.log('RENEW ', customConceptsFile)
     if (!customConceptsFile) {
       const resFile = await $implementationClass.syncFile({ fileName: $fileName })
       if (resFile) customConceptsFile = resFile

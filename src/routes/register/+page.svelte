@@ -1,5 +1,6 @@
 <script lang="ts">
   import { implementationClass } from '$lib/store'
+  import { onMount } from 'svelte'
 
   export let fileNames: string[] | undefined
   let email: string
@@ -12,7 +13,9 @@
   }
 
   // Get all the files to be able to give users access when registrating them
-  getFiles()
+  onMount(() => {
+    getFiles()
+  })
 </script>
 
 <section data-name="registration">
