@@ -1,5 +1,6 @@
 import { writable } from 'svelte/store'
 import type { IFunctionalityImpl, ISettings } from './components/Types'
+import { PUBLIC_CLOUD_IMPLEMENTATION } from '$env/static/public'
 
 const customConcept = writable<Record<string, string>>({
   domain_id: '',
@@ -21,7 +22,7 @@ const settings = writable<ISettings>({
 
 const triggerAutoMapping = writable<boolean>(false)
 
-const implementation = writable<string>('none')
+const implementation = writable<string>(PUBLIC_CLOUD_IMPLEMENTATION)
 
 const implementationClass = writable<IFunctionalityImpl>()
 
