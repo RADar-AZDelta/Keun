@@ -185,4 +185,5 @@ export interface IFunctionalityImpl {
   removeCache(fileName: string): Promise<void>
   checkForCache(fileName: string): Promise<boolean | void>
   getCachedFiles(): Promise<string[] | void>
+  checkCustomConcepts(): Promise<File | void>
 }

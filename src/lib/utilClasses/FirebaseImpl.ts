@@ -292,4 +292,6 @@ export default class FirebaseImpl implements IFunctionalityImpl {
     async checkForCache(fileName: string): Promise<boolean | void> {}
 
     async getCachedFiles(): Promise<void | string[]> {}
+
+    async checkCustomConcepts(): Promise<void> {}
 }
