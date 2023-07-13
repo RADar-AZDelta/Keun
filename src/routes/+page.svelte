@@ -400,7 +400,7 @@
             {/if}
           {:else}
             {#each files as file}
-              <button data-name="file-card" on:click={() => mapCachedFile(file)}>
+              <button data-name="file-card" disabled={file == "customConcepts.csv" ? true : false} on:click={() => mapCachedFile(file)}>
                 <div data-name="file-name">
                   <SvgIcon href="icons.svg" id="excel" width="40px" height="40px" />
                   <p>{file}</p>
