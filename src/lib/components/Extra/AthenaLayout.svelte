@@ -28,6 +28,7 @@
   import CustomConceptInputRow from '../Mapping/CustomConceptInputRow.svelte'
   import { customConcept, settings } from '$lib/store'
   import { AthenaDataTypeImpl } from '$lib/utilClasses/AthenaDataTypeImpl'
+  import { base } from '$app/paths'
 
   export let equivalenceMapping: string,
     selectedRow: Record<string, any>,
@@ -456,7 +457,7 @@
 <dialog bind:this={layoutDialog} data-name="athena-dialog">
   <div data-name="dialog-container" use:clickOutside on:outClick={closeDialog}>
     <button data-name="close-dialog" on:click={closeDialog}>
-      <SvgIcon href="icons.svg" id="x" width="16px" height="16px" />
+      <SvgIcon href="{base}/icons.svg" id="x" width="16px" height="16px" />
     </button>
     <div data-name="athena-layout">
       {#if sidesShowed.filters}
@@ -464,7 +465,7 @@
           <div data-name="filters-head">
             <h2>Filters</h2>
             <button on:click={() => sideVisibilityChange('filters', false)} id="filters">
-              <SvgIcon href="icons.svg" id="chevrons-left" width="16px" height="16px" />
+              <SvgIcon href="{base}/icons.svg" id="chevrons-left" width="16px" height="16px" />
             </button>
           </div>
           <div data-name="filters">
@@ -509,7 +510,7 @@
                     style={`background-color: ${filterColors[filterNames[filter]]}`}
                   >
                     <button on:click={() => removeFilter(filter, value)}>
-                      <SvgIcon href="icons.svg" id="x" width="16px" height="16px" />
+                      <SvgIcon href="{base}/icons.svg" id="x" width="16px" height="16px" />
                     </button>
                     <p>{value}</p>
                   </div>
@@ -521,7 +522,7 @@
       {:else}
         <div data-name="sidebar-right">
           <button data-name="closed-bar" on:click={() => sideVisibilityChange('filters', true)}>
-            <SvgIcon href="icons.svg" id="chevrons-right" width="16px" height="16px" />
+            <SvgIcon href="{base}/icons.svg" id="chevrons-right" width="16px" height="16px" />
             <p>F</p>
             <p>I</p>
             <p>L</p>
@@ -543,7 +544,7 @@
               }}
               disabled={selectedRowIndex == 0 ? true : false}
             >
-              <SvgIcon href="icons.svg" id="arrow-left" width="24px" height="24px" />
+              <SvgIcon href="{base}/icons.svg" id="arrow-left" width="24px" height="24px" />
             </button>
             <table>
               <tr>
@@ -560,7 +561,7 @@
               </tr>
             </table>
             <button title="Next row" id="right" on:click={() => onRowChange(true)} disabled={lastRow}>
-              <SvgIcon href="icons.svg" id="arrow-right" width="24px" height="24px" />
+              <SvgIcon href="{base}/icons.svg" id="arrow-right" width="24px" height="24px" />
             </button>
           </div>
         </div>
@@ -637,7 +638,7 @@
                 <button
                   on:click={() => {
                     errorMessage = ''
-                  }}><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
+                  }}><SvgIcon href="{base}/icons.svg" id="x" width="16px" height="16px" /></button
                 >
               </div>
             {/if}
@@ -657,7 +658,7 @@
                       if (renderedRow.conceptId && renderedRow.conceptName)
                         removeMapping(renderedRow.conceptId, renderedRow.conceptName)
                     }}
-                    ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" />
+                    ><SvgIcon href="{base}/icons.svg" id="x" width="16px" height="16px" />
                   </button>
                 {/if}
               </td>
@@ -674,7 +675,7 @@
         <section data-name="additional-information">
           <div data-name="additional-information-head">
             <button on:click={() => sideVisibilityChange('details', false)}>
-              <SvgIcon href="icons.svg" id="chevrons-right" width="16px" height="16px" />
+              <SvgIcon href="{base}/icons.svg" id="chevrons-right" width="16px" height="16px" />
             </button>
             <h2>Detail</h2>
           </div>
@@ -701,7 +702,7 @@
       {:else}
         <div data-name="sidebar-left">
           <button data-name="closed-bar" on:click={() => sideVisibilityChange('details', true)}>
-            <SvgIcon href="icons.svg" id="chevrons-left" width="16px" height="16px" />
+            <SvgIcon href="{base}/icons.svg" id="chevrons-left" width="16px" height="16px" />
             <p>D</p>
             <p>E</p>
             <p>T</p>

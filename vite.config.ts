@@ -18,14 +18,6 @@ export default defineConfig({
         {
           src: 'static/keun.svg',
           dest: '_app/immutable/assets'
-        },
-        {
-          src: 'static/icons.svg',
-          dest: '_app/immutable/assets'
-        },
-        {
-          src: 'static/keun_logo.jpg',
-          dest: '_app/immutable/assets'
         }
       ],
     }),

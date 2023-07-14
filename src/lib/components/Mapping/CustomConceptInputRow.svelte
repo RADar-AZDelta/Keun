@@ -5,6 +5,7 @@
   import SvgIcon from '../Extra/SvgIcon.svelte'
   import AutocompleteInput from '../Extra/AutocompleteInput.svelte'
   import { customConcept } from '$lib/store'
+  import { base } from '$app/paths'
 
   export let columns: IColumnMetaData[] | undefined,
     selectedRow: Record<string, any>,
@@ -50,7 +51,7 @@
 
 {#if index == 0}
   <td>
-    <button on:click={onClickMapping}><SvgIcon href="icons.svg" id="plus" width="16px" height="16px" /></button>
+    <button on:click={onClickMapping}><SvgIcon href="{base}/icons.svg" id="plus" width="16px" height="16px" /></button>
   </td>
 {:else}
   <td />

@@ -3,6 +3,7 @@
   import { clickOutside } from '$lib/actions/clickOutside'
   import { implementation, implementationClass, settings } from '$lib/store'
   import { onMount } from 'svelte'
+  import { base } from '$app/paths'
 
   let userDialog: HTMLDialogElement
   let author: string | undefined | null = undefined,
@@ -77,7 +78,7 @@
 
 <button title="Author" aria-label="User button" on:click={openDialog} data-name="header-button">
   <p>{$settings?.author?.name ? $settings?.author?.name : ''}</p>
-  <SvgIcon href="icons.svg" id="user" width="16px" height="16px" />
+  <SvgIcon href="{base}/icons.svg" id="user" width="16px" height="16px" />
 </button>
 
 <dialog bind:this={userDialog} data-name="user-dialog">
@@ -88,14 +89,14 @@
         on:click={closeDialog}
         disabled={$settings?.author?.uid == undefined ? true : false}
       >
-        <SvgIcon href="icons.svg" id="x" width="16px" height="16px" />
+        <SvgIcon href="{base}/icons.svg" id="x" width="16px" height="16px" />
       </button>
       <section data-name="author">
         <button on:click={login}>Google</button>
       </section>
     {:else}
       <button data-name="close-dialog" on:click={closeDialog} disabled={$settings.author == undefined ? true : false}>
-        <SvgIcon href="icons.svg" id="x" width="16px" height="16px" />
+        <SvgIcon href="{base}/icons.svg" id="x" width="16px" height="16px" />
       </button>
       <section data-name="author">
         <h2>Who is the author?</h2>

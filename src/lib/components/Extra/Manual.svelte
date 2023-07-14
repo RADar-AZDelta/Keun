@@ -2,6 +2,7 @@
   import { clickOutside } from '$lib/actions/clickOutside'
   import SvgIcon from './SvgIcon.svelte'
   import SvelteMarkDown from 'svelte-markdown'
+  import { base } from '$app/paths'
 
   let manualDialog: HTMLDialogElement,
     manualText: string = ''
@@ -22,13 +23,13 @@
 </script>
 
 <button title="Manual" aria-label="Manual button" on:click={openDialog} data-name="header-button">
-  <SvgIcon href="icons.svg" id="info" width="16px" height="16px" />
+  <SvgIcon href="{base}/icons.svg" id="info" width="16px" height="16px" />
 </button>
 
 <dialog bind:this={manualDialog} data-name="manual-dialog">
   <div data-name="manual-container" use:clickOutside on:outClick={closeDialog}>
     <button on:click={closeDialog} data-name="close-dialog"
-      ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" />
+      ><SvgIcon href="{base}/icons.svg" id="x" width="16px" height="16px" />
     </button>
     <SvelteMarkDown source={manualText} />
   </div>

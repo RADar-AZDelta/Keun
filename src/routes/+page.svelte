@@ -177,7 +177,7 @@
   }
 
   $: {
-    if(file) $fileName = file.name
+    if (file) $fileName = file.name
   }
 </script>
 
@@ -197,7 +197,7 @@
       }}
       data-name="close-dialog"
       disabled={$processing}
-      ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" />
+      ><SvgIcon href="{base}/icons.svg" id="x" width="16px" height="16px" />
     </button>
     <h2>Do you want to use this file or the cached version of this file?</h2>
     <div data-name="button-choices">
@@ -217,15 +217,15 @@
       }}
       data-name="close-dialog"
       disabled={$processing}
-      ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" />
+      ><SvgIcon href="{base}/icons.svg" id="x" width="16px" height="16px" />
     </button>
     <div data-name="drag-drop-container" on:drop={dropHandler} on:dragover|preventDefault>
       <label data-name="upload-file">
         {#if file}
-          <SvgIcon href="icons.svg" id="excel" width="40px" height="40px" />
+          <SvgIcon href="{base}/icons.svg" id="excel" width="40px" height="40px" />
           <p>{file.name}</p>
         {:else}
-          <SvgIcon href="icons.svg" id="upload" width="24px" height="24px" />
+          <SvgIcon href="{base}/icons.svg" id="upload" width="24px" height="24px" />
           <p>Drag or click to upload a file</p>
         {/if}
         <input type="file" name="file" id="file" accept=".csv" on:change={onFileInputChange} />
@@ -280,7 +280,7 @@
 <dialog bind:this={columnDialog} data-name="column-dialog">
   <div data-name="dialog-container">
     <button data-name="close-dialog" on:click={() => columnDialog.close()}>
-      <SvgIcon href="icons.svg" id="x" width="16px" height="16px" />
+      <SvgIcon href="{base}/icons.svg" id="x" width="16px" height="16px" />
     </button>
     <h1>Set columns</h1>
     {#each Object.entries(missingColumns) as [newColumn, oldColumn]}
@@ -314,7 +314,7 @@
       }}
       data-name="close-dialog"
       disabled={$processing}
-      ><SvgIcon href="icons.svg" id="x" width="16px" height="16px" />
+      ><SvgIcon href="{base}/icons.svg" id="x" width="16px" height="16px" />
     </button>
     <h1>Update the authorized authors</h1>
     <ul>
@@ -355,7 +355,7 @@
               {#each files as file}
                 <button data-name="file-card" on:click={() => openMappingTool(file)}>
                   <div data-name="file-name">
-                    <SvgIcon href="icons.svg" id="excel" width="40px" height="40px" />
+                    <SvgIcon href="{base}/icons.svg" id="excel" width="40px" height="40px" />
                     <p>{file}</p>
                   </div>
                   {#if $settings.author?.roles?.includes('Admin')}
@@ -367,7 +367,7 @@
                           await $implementationClass.downloadFile(file)
                         }}
                       >
-                        <SvgIcon href="icons.svg" id="download" width="16px" height="16px" />
+                        <SvgIcon href="{base}/icons.svg" id="download" width="16px" height="16px" />
                       </button>
                       <button
                         disabled={file === 'customConcepts.csv'}
@@ -380,7 +380,7 @@
                           }
                         }}
                       >
-                        <SvgIcon href="icons.svg" id="edit" width="16px" height="16px" />
+                        <SvgIcon href="{base}/icons.svg" id="edit" width="16px" height="16px" />
                       </button>
                       <button
                         disabled={file === 'customConcepts.csv'}
@@ -388,7 +388,7 @@
                         on:click={e => {
                           if (e && e.stopPropagation) e.stopPropagation()
                           if (file !== 'customConcepts.csv') deleteFile(file)
-                        }}><SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
+                        }}><SvgIcon href="{base}/icons.svg" id="x" width="16px" height="16px" /></button
                       >
                     </div>
                   {/if}
@@ -401,9 +401,13 @@
             {/if}
           {:else}
             {#each files as file}
-              <button data-name="file-card" disabled={file == "customConcepts.csv" ? true : false} on:click={() => mapCachedFile(file)}>
+              <button
+                data-name="file-card"
+                disabled={file == 'customConcepts.csv' ? true : false}
+                on:click={() => mapCachedFile(file)}
+              >
                 <div data-name="file-name">
-                  <SvgIcon href="icons.svg" id="excel" width="40px" height="40px" />
+                  <SvgIcon href="{base}/icons.svg" id="excel" width="40px" height="40px" />
                   <p>{file}</p>
                 </div>
                 <div>
@@ -414,14 +418,18 @@
                       await $implementationClass.downloadFile(file)
                     }}
                   >
-                    <SvgIcon href="icons.svg" id="download" width="16px" height="16px" />
+                    <SvgIcon href="{base}/icons.svg" id="download" width="16px" height="16px" />
                   </button>
-                  <button data-name="delete-file" disabled={file == "customConcepts.csv" ? true : false} on:click={async e => {
-                    if(e && e.stopPropagation) e.stopPropagation()
-                    await $implementationClass.removeCache(file)
-                    await getFiles()
-                  }}>
-                    <SvgIcon href="icons.svg" id="x" width="16px" height="16px" />
+                  <button
+                    data-name="delete-file"
+                    disabled={file == 'customConcepts.csv' ? true : false}
+                    on:click={async e => {
+                      if (e && e.stopPropagation) e.stopPropagation()
+                      await $implementationClass.removeCache(file)
+                      await getFiles()
+                    }}
+                  >
+                    <SvgIcon href="{base}/icons.svg" id="x" width="16px" height="16px" />
                   </button>
                 </div>
               </button>
