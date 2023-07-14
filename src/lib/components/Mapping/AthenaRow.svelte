@@ -4,6 +4,7 @@
   import SvgIcon from '../Extra/SvgIcon.svelte'
   import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
   import { settings } from '$lib/store'
+  import { base } from '$app/paths'
 
   export let renderedRow: Record<string, any>,
     columns: IColumnMetaData[] | undefined,
@@ -43,12 +44,12 @@
 <td data-name="actions">
   {#if mapped == true}
     <button title="Map to row" style="background-color: greenyellow;"
-      ><SvgIcon href="icons.svg" id="check" width="16px" height="16px" /></button
+      ><SvgIcon href="{base}/icons.svg" id="check" width="16px" height="16px" /></button
     >
   {:else}
-    <button on:click={onClickMapping}><SvgIcon href="icons.svg" id="plus" width="16px" height="16px" /></button>
+    <button on:click={onClickMapping}><SvgIcon href="{base}/icons.svg" id="plus" width="16px" height="16px" /></button>
   {/if}
-  <button on:click={referToAthena}><SvgIcon href="icons.svg" id="link" width="16px" height="16px" /></button>
+  <button on:click={referToAthena}><SvgIcon href="{base}/icons.svg" id="link" width="16px" height="16px" /></button>
 </td>
 {#if columns}
   {#each columns || [] as column (column.id)}

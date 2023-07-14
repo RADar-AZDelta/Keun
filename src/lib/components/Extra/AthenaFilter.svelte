@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { ICategories, IFilter } from '../Types'
   import SvgIcon from './SvgIcon.svelte'
+  import { base } from '$app/paths'
 
   export let filter: IFilter,
     openedFilter: string,
@@ -47,7 +48,7 @@
         <p>{filter.categories.altName}</p>
       {/if}
     </div>
-    <SvgIcon href="icons.svg" id="updown" width="16px" height="16px" />
+    <SvgIcon href="{base}/icons.svg" id="updown" width="16px" height="16px" />
   </button>
   {#if openedFilter == filter.name}
     <div data-name="filter-item">
@@ -62,7 +63,7 @@
             on:change={onChange}
           />
           <button title="Remove input filter" on:click={removeInputFromFilter}>
-            <SvgIcon href="icons.svg" id="x" height="16px" width="16px" />
+            <SvgIcon href="{base}/icons.svg" id="x" height="16px" width="16px" />
           </button>
         </div>
       {/if}

@@ -2,6 +2,7 @@
   import SvgIcon from './SvgIcon.svelte'
   import { clickOutside } from '$lib/actions/clickOutside'
   import { settings, triggerAutoMapping } from '$lib/store'
+  import { base } from '$app/paths'
 
   let savedAutomapping: boolean
 
@@ -26,8 +27,8 @@
     if (settingsDialog.attributes.getNamedItem('open') == null) settingsDialog.showModal()
   }
 
-// A method to set the settings in the localstorage
-async function saveSettings(): Promise<void> {
+  // A method to set the settings in the localstorage
+  async function saveSettings(): Promise<void> {
     if (settingsDialog.attributes.getNamedItem('open') != null) {
       document.documentElement.style.setProperty('--font-size', `${$settings.fontsize}px`)
       document.documentElement.style.setProperty('--font-number', `${$settings.fontsize}`)
@@ -39,7 +40,7 @@ async function saveSettings(): Promise<void> {
 </script>
 
 <button title="Settings-Keun" aria-label="Settings button" on:click={openDialog} data-name="header-button"
-  ><SvgIcon href="icons.svg" id="settings" width="16px" height="16px" />
+  ><SvgIcon href="{base}/icons.svg" id="settings" width="16px" height="16px" />
 </button>
 
 <dialog bind:this={settingsDialog} data-name="settings-dialog">
@@ -59,7 +60,7 @@ async function saveSettings(): Promise<void> {
           closeDialog()
         }}
       >
-        <SvgIcon href="icons.svg" id="x" width="16px" height="16px" /></button
+        <SvgIcon href="{base}/icons.svg" id="x" width="16px" height="16px" /></button
       >
       <section data-name="settings">
         <h2>Settings</h2>
