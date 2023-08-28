@@ -1004,11 +1004,14 @@
   }
 
   async function readFileLocally() {
-    const storedFile = await $implementationClass.readFileFirstTime($fileName)
-    if (!storedFile?.file) goto(`${base}/`)
+    if (!$fileName) goto(`${base}/`)
     else {
-      file = storedFile.file
-      customConceptsFile = storedFile.customConceptsFile
+      const storedFile = await $implementationClass.readFileFirstTime($fileName)
+      if (!storedFile?.file) goto(`${base}/`)
+      else {
+        file = storedFile.file
+        customConceptsFile = storedFile.customConceptsFile
+      }
     }
   }
 
