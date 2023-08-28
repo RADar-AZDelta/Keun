@@ -26,6 +26,7 @@ export class IndexedDB {
             transaction.onabort = transaction.onerror = () => {
                 reject(transaction.error)
             }
+            if(!key) return
             if(single) getReq = transaction.objectStore(this.storeName).get(key)
             else getReq = transaction.objectStore(this.storeName).getAll(key)
         })

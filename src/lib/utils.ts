@@ -112,7 +112,7 @@ export function convertHexStringToBlob(hex: string, mimeType: string): Blob {
   if (hex.startsWith("\\x"))
       hex = hex.slice("\\x".length)
   let previousValue = ""
-  const bytes = [...hex].reduce((acc, _, i) => { 
+  const bytes = [...hex].reduce((acc, _, i) => {
       if (i - 1 & 1) //even
           previousValue = _
       else //odd  
@@ -136,4 +136,15 @@ export async function urlToFile(url: string, fileName: string) {
     if(dev) console.log(e)
     return undefined
   }
+}
+export async function blobToString(blob: Blob): Promise<any> {
+  // TODO: fix issue that when reloading the mapping page, the pop-up with the question to leave the page while something is loading comes. When the user wants to leave, the mapped data won't be saved
+  const buffer = await blob.arrayBuffer()
+  const decoder = new TextDecoder()
+  const text = decoder.decode(buffer)
+  return text
+}
+
+export async function stringToBlob(str: string, type: string = "text/csv"): Promise<Blob> {
+  return new Blob([str], { type })
 }
