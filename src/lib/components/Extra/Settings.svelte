@@ -30,6 +30,8 @@
   // A method to set the settings in the localstorage
   async function saveSettings(): Promise<void> {
     if (settingsDialog.attributes.getNamedItem('open') != null) {
+      if($settings.fontsize > 16) $settings.fontsize = 16
+      else if ($settings.fontsize < 8) $settings.fontsize = 8
       document.documentElement.style.setProperty('--font-size', `${$settings.fontsize}px`)
       document.documentElement.style.setProperty('--font-number', `${$settings.fontsize}`)
       if ($settings.autoMap == true && savedAutomapping !== $settings.autoMap) {
@@ -72,7 +74,6 @@
                 id="MultipleConcepts"
                 type="checkbox"
                 bind:checked={$settings.mapToMultipleConcepts}
-                on:change={saveSettings}
               />
               <label for="MultipleConcepts" />
             </div>
@@ -86,7 +87,7 @@
           </div>
           <div data-name="option">
             <p>Language of source CSV</p>
-            <select name="language" id="language" bind:value={$settings.language} on:change={saveSettings}>
+            <select name="language" id="language" bind:value={$settings.language}>
               {#each Object.keys(languages) as lang}
                 <option value={lang} selected={lang == $settings.language ? true : false}>{languages[lang]}</option>
               {/each}
@@ -98,7 +99,7 @@
           </div>
           <div data-name="option">
             <p>Font size</p>
-            <input type="number" bind:value={$settings.fontsize} on:change={saveSettings} />
+            <input type="number" bind:value={$settings.fontsize} min=8 max=16/>
           </div>
         </div>
       </section>

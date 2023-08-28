@@ -1399,6 +1399,7 @@ div[data-component='svelte-datatable'] {
               grid-template-columns: repeat(4, 1fr);
               grid-template-rows: repeat(2, 1fr);
               height: max-content;
+              max-width: 100%;
             }
           }
 
