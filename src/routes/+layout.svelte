@@ -39,10 +39,10 @@
     <Header />
     <ul data-name="page-nav">
       {#if $page.url.pathname !== '/' && $page.url.pathname !== '/Keun'}
-        <li><a href="/{base}">{$implementation == 'firebase' ? 'File selection' : 'Drag & Drop'}</a></li>
+        <li><a href="{base}">{$implementation == 'firebase' ? 'File selection' : 'Drag & Drop'}</a></li>
       {/if}
       {#if $settings.author && $settings.author.roles?.includes('Admin') && $implementation == 'firebase'}
-        <li><a href="/${base}/register">Registration</a></li>
+        <li><a href="{base}/register">Registration</a></li>
       {/if}
     </ul>
     {#if $page.url.pathname.substring($page.url.pathname.lastIndexOf('/')) !== 'registration'}
