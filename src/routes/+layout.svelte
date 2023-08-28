@@ -24,7 +24,7 @@
           $implementationClass.syncSettings('read')
         })
       }
-    }
+    } else $implementationClass.syncSettings('read')
   }
 
   loadImplementation()
