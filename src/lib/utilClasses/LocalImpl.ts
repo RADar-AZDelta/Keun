@@ -2,7 +2,7 @@ import { dev } from '$app/environment';
 import { goto } from '$app/navigation';
 import type { ICache, IFunctionalityImpl, ISync } from '$lib/components/Types';
 import { settings } from '$lib/store';
-import { convertBlobToHexString, convertHexStringToBlob, fileToBlob, localStorageGetter, localStorageSetter } from '$lib/utils';
+import { convertBlobToHexString, convertHexStringToBlob, fileToBlob, localStorageGetter, localStorageSetter, blobToString, stringToBlob } from '$lib/utils';
 import { IndexedDB } from './IndexedDB';
 import { base } from '$app/paths'
 
@@ -28,7 +28,7 @@ export default class LocalImpl implements IFunctionalityImpl {
         const db = new IndexedDB('localMapping', 'localMapping')
         const fileData = await db.get(fileName, true, true)
         const hex = fileData.file
-        const blob = await convertHexStringToBlob(hex, 'text/csv')
+        const blob = fileData.type == "hex" ? await convertHexStringToBlob(hex, 'text/csv') : await stringToBlob(fileData.file)
         const file = new File([blob], `${fileName.split(".csv")[0]}_usagi.csv`, { type: 'text/csv' })
         const url = URL.createObjectURL(file)
         element.setAttribute('href', url)
@@ -45,8 +45,13 @@ export default class LocalImpl implements IFunctionalityImpl {
         if(dev) console.log('uploadFile: Uploading file to IndexedDB')
         const db = new IndexedDB('localMapping', 'localMapping')
         const blob = await fileToBlob(file)
-        const hex = await convertBlobToHexString(blob)
-        await db.set({ fileName: file.name, file: hex }, file.name, true)
+        if(blob.size > 1000000) {
+            const str = await blobToString(blob)
+            await db.set({ fileName: file.name, type: "text", file: str }, file.name, true)
+        } else {
+            const hex = await convertBlobToHexString(blob)
+            await db.set({ fileName: file.name, type: "hex", file: hex }, file.name, true)
+        }
         goto(`${base}/mapping`)
         return
     }
@@ -70,13 +75,24 @@ export default class LocalImpl implements IFunctionalityImpl {
         const storedFile = await db.get(fileName, true)
         const storedCustomConcepts = await db.get('customConcepts.csv', true, true)
         if(storedFile && storedCustomConcepts) {
-            const blob = await convertHexStringToBlob(storedFile.file, 'text/csv')
-            const file = new File([blob], storedFile.fileName, { type: 'text/csv' })
-            const customBlob = await convertHexStringToBlob(storedCustomConcepts.file, 'text/csv')
-            const customFile = new File([customBlob], 'customConcepts.csv', { type: 'text/csv' })
-            return {
-                file,
-                customConceptsFile: customFile
+            if(storedFile.type == "hex") {
+                const blob = await convertHexStringToBlob(storedFile.file, 'text/csv')
+                const file = new File([blob], storedFile.fileName, { type: 'text/csv' })
+                const customBlob = await convertHexStringToBlob(storedCustomConcepts.file, 'text/csv')
+                const customFile = new File([customBlob], 'customConcepts.csv', { type: 'text/csv' })
+                return {
+                    file,
+                    customConceptsFile: customFile
+                }
+            } else if(storedFile.type == "text") {
+                const blob = await stringToBlob(storedFile.file)
+                const file = new File([blob], storedFile.fileName, { type: 'text/csv' })
+                const customBlob = await convertHexStringToBlob(storedCustomConcepts.file, 'text/csv')
+                const customFile = new File([customBlob], 'customConcepts.csv', { type: 'text/csv' })
+                return {
+                    file,
+                    customConceptsFile: customFile
+                }
             }
         } else return
     }
@@ -117,14 +133,20 @@ export default class LocalImpl implements IFunctionalityImpl {
             const db = new IndexedDB('localMapping', 'localMapping')
             if(data.action == 'update' && data.blob) {
                 if(dev) console.log('syncFile: Updating the file in IndexedDB')
-                const hex = await convertBlobToHexString(data.blob)
-                await db.set({ fileName: data.fileName, file: hex }, data.fileName, true)
-                resolve()
+                if(data.blob.size > 1000000) {
+                    const str = await blobToString(data.blob)
+                    await db.set({ fileName: data.fileName, type: "text", file: str }, data.fileName, true)
+                    resolve()
+                } else {
+                    const hex = await convertBlobToHexString(data.blob)
+                    await db.set({ fileName: data.fileName, type: "hex", file: hex }, data.fileName, true)
+                    resolve()
+                }
             } else {
                 const res = await db.get(data.fileName, true, true)
                 if(res) {
                     if(dev) console.log('syncFile: Getting the file from IndexedDB')
-                    const blob = await convertHexStringToBlob(res.file, 'text/csv')
+                    const blob = res.type == "hex" ? await convertHexStringToBlob(res.file, 'text/csv') : await stringToBlob(res.file)
                     const file = new File([blob], data.fileName, { type: 'text/csv' })
                     resolve(file)
                 } else {
@@ -138,12 +160,17 @@ export default class LocalImpl implements IFunctionalityImpl {
     async cache(data: ICache): Promise<File | void> {
         const db = new IndexedDB('localMapping', 'localMapping')
         if(data.action == 'update') {
-            const hex = await convertBlobToHexString(data.blob)
-            await db.set({ fileName: data.fileName, file: hex }, data.fileName, true)
+            if(data.blob.size > 1000000) {
+                const str = await blobToString(data.blob)
+                await db.set({ fileName: data.fileName, type: "text", file: str }, data.fileName, true)
+            } else {
+                const hex = await convertBlobToHexString(data.blob)
+                await db.set({ fileName: data.fileName, type: "hex", file: hex }, data.fileName, true)
+            }
             return
         } else if (data.action == 'get') {
             const fileData = await db.get(data.fileName, true, true)
-            const blob = await convertHexStringToBlob(fileData.file, 'text/csv')
+            const blob = fileData.type == "hex" ? await convertHexStringToBlob(fileData.file, 'text/csv') : await stringToBlob(fileData.file)
             const file = new File([blob], data.fileName, { type: 'text/csv' })
             return file
         } else {

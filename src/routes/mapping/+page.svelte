@@ -1044,7 +1044,7 @@
   onMount(async () => {
     // Check if the file contains the file query parameter
     if (!$page.url.searchParams.get('fileName') && !$fileName) goto(`${base}/`)
-    await $implementationClass.checkCustomConcepts()
+    if ($implementationClass) await $implementationClass.checkCustomConcepts()
   })
 
   onDestroy(() => {

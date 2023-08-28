@@ -10,6 +10,7 @@
   import User from '$lib/components/Extra/User.svelte'
   import { implementation, implementationClass, settings } from '$lib/store'
   import { base } from '$app/paths'
+    import { beforeNavigate } from '$app/navigation'
 
   async function loadImplementation() {
     if (!$implementationClass) {
@@ -29,7 +30,7 @@
 
   loadImplementation()
 
-  window.addEventListener('beforeunload', async e => {
+  beforeNavigate(async ({ from, to, cancel }) => {
     await $implementationClass.syncSettings('write')
   })
 </script>
@@ -39,7 +40,7 @@
     <Header />
     <ul data-name="page-nav">
       {#if $page.url.pathname !== '/' && $page.url.pathname !== '/Keun'}
-        <li><a href="{base}">{$implementation == 'firebase' ? 'File selection' : 'Drag & Drop'}</a></li>
+        <li><a href="{base}/">{$implementation == 'firebase' ? 'File selection' : 'Drag & Drop'}</a></li>
       {/if}
       {#if $settings.author && $settings.author.roles?.includes('Admin') && $implementation == 'firebase'}
         <li><a href="{base}/register">Registration</a></li>
