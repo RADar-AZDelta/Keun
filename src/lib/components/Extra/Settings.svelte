@@ -30,7 +30,7 @@
   // A method to set the settings in the localstorage
   async function saveSettings(): Promise<void> {
     if (settingsDialog.attributes.getNamedItem('open') != null) {
-      if($settings.fontsize > 16) $settings.fontsize = 16
+      if ($settings.fontsize > 16) $settings.fontsize = 16
       else if ($settings.fontsize < 8) $settings.fontsize = 8
       document.documentElement.style.setProperty('--font-size', `${$settings.fontsize}px`)
       document.documentElement.style.setProperty('--font-number', `${$settings.fontsize}`)
@@ -70,11 +70,7 @@
           <div data-name="option">
             <p>Map to multiple concepts?</p>
             <div data-name="switch">
-              <input
-                id="MultipleConcepts"
-                type="checkbox"
-                bind:checked={$settings.mapToMultipleConcepts}
-              />
+              <input id="MultipleConcepts" type="checkbox" bind:checked={$settings.mapToMultipleConcepts} />
               <label for="MultipleConcepts" />
             </div>
           </div>
@@ -99,7 +95,7 @@
           </div>
           <div data-name="option">
             <p>Font size</p>
-            <input type="number" bind:value={$settings.fontsize} min=8 max=16/>
+            <input type="number" bind:value={$settings.fontsize} min="8" max="16" />
           </div>
         </div>
       </section>

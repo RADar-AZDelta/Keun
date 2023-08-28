@@ -29,12 +29,14 @@
   // @ts-ignore
   import { LatencyOptimisedTranslator } from '@browsermt/bergamot-translator/translator.js'
   import { page } from '$app/stores'
-  import { browser, dev } from '$app/environment'
+  import { browser } from '$app/environment'
   import DataTable from '@radar-azdelta/svelte-datatable'
   import type Query from 'arquero/dist/types/query/query'
   import { fileName, implementation, implementationClass, settings, triggerAutoMapping } from '$lib/store'
   import { beforeNavigate, goto } from '$app/navigation'
   import { base } from '$app/paths'
+
+  let dev = false
 
   // General variables
   let file: File | undefined = undefined
@@ -67,7 +69,7 @@
   let lastTypedFilter: string
   let apiFilters: string[] = ['&standardConcept=Standard']
   let equivalenceMapping: string = 'EQUAL'
-  let globalAthenaFilter = { column: 'all', filter: undefined }
+  let globalAthenaFilter: { column: string; filter: string | undefined } = { column: 'all', filter: undefined }
   let athenaFacets: Record<string, any> | undefined = undefined
 
   // Table related variables
@@ -75,6 +77,7 @@
   let currentVisibleRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>()
   let selectedRow: Record<string, any>
   let selectedRowIndex: number
+  let previousAthenaFilter: string
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // DATA
@@ -638,10 +641,15 @@
     sortedColumns: Map<string, SortDirection>,
     pagination: IPagination
   ): Promise<{ data: Record<string, any>[]; totalRows: number }> {
+    // TODO: fix bug that when the sourceName has no results when filled in as filter, the Athena results of the previous filter are showed
     // Get the filter
     let filter = filteredColumns.values().next().value
     // Check if there is a filter filled in
-    if (globalAthenaFilter.filter === undefined) {
+    if (globalAthenaFilter.filter && globalAthenaFilter.filter !== previousAthenaFilter && globalAthenaFilter.filter !== filter) {
+      previousAthenaFilter = globalAthenaFilter.filter
+      filter = globalAthenaFilter.filter
+    }
+    else if (globalAthenaFilter.filter === undefined) {
       if (selectedRow) {
         // If there is no filter, get the sourceName and translate it to English and use this as the filter
         filter = await translate(selectedRow.sourceName)
@@ -656,6 +664,7 @@
     const apiData = await response.json()
     // Save the facets to exclude filters later
     saveFacets(apiData.facets)
+    if (globalAthenaFilter.filter) previousAthenaFilter = globalAthenaFilter.filter
     return {
       data: apiData.content,
       totalRows: apiData.totalElements,
@@ -1004,17 +1013,15 @@
 
   async function readFileLocally() {
     if (!$fileName) {
-      console.log("RESTART 1")
+      console.log('RESTART 1')
       goto(`${base}/`)
-    }
-    else {
+    } else {
       console.log($fileName)
       const storedFile = await $implementationClass.readFileFirstTime($fileName)
       if (!storedFile?.file) {
-        console.log("RESTART 1") 
+        console.log('RESTART 1')
         goto(`${base}/`)
-      }
-      else {
+      } else {
         file = storedFile.file
         customConceptsFile = storedFile.customConceptsFile
       }
@@ -1051,7 +1058,6 @@
     // Check if the file contains the file query parameter
     navTriggered = false
     if (!$page.url.searchParams.get('fileName') && !$fileName) {
-      console.log("RESTART 3")
       goto(`${base}/`)
     }
     if ($implementationClass) await $implementationClass.checkCustomConcepts()
@@ -1077,7 +1083,6 @@
   })
 
   beforeNavigate(async ({ from, to, cancel }) => {
-    debugger;
     if (from?.url.href.includes('/mapping')) {
       // When reloading or navigating in the window tab in the browser, save the file to cache
       if (dev) console.log('beforeNavigate: Sync the file to IndexedDB')
