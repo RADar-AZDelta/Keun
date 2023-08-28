@@ -40,8 +40,7 @@
   let file: File | undefined = undefined
   let customConceptsFile: File | undefined = undefined
 
-  let navTriggered: boolean = false,
-    downloaded: boolean = false
+  let navTriggered: boolean = true
 
   let tableOptions: ITableOptions = {
     id: `${$page.url.searchParams
@@ -1004,10 +1003,17 @@
   }
 
   async function readFileLocally() {
-    if (!$fileName) goto(`${base}/`)
+    if (!$fileName) {
+      console.log("RESTART 1")
+      goto(`${base}/`)
+    }
     else {
+      console.log($fileName)
       const storedFile = await $implementationClass.readFileFirstTime($fileName)
-      if (!storedFile?.file) goto(`${base}/`)
+      if (!storedFile?.file) {
+        console.log("RESTART 1") 
+        goto(`${base}/`)
+      }
       else {
         file = storedFile.file
         customConceptsFile = storedFile.customConceptsFile
@@ -1043,7 +1049,11 @@
 
   onMount(async () => {
     // Check if the file contains the file query parameter
-    if (!$page.url.searchParams.get('fileName') && !$fileName) goto(`${base}/`)
+    navTriggered = false
+    if (!$page.url.searchParams.get('fileName') && !$fileName) {
+      console.log("RESTART 3")
+      goto(`${base}/`)
+    }
     if ($implementationClass) await $implementationClass.checkCustomConcepts()
   })
 
@@ -1067,21 +1077,24 @@
   })
 
   beforeNavigate(async ({ from, to, cancel }) => {
-    // When reloading or navigating in the window tab in the browser, save the file to cache
-    if (dev) console.log('beforeNavigate: Sync the file to IndexedDB')
-    // If downloaded, set the downloaded hex in IndexedDB & when leaving the application, compare the downloaded hex and the current hex to check if there were any changes
-    if (!navTriggered) {
-      cancel()
-      if (dataTableMapping) {
-        const blob = await dataTableMapping.getBlob()
-        await $implementationClass?.syncFile({ fileName: $fileName, blob, action: 'update' })
+    debugger;
+    if (from?.url.href.includes('/mapping')) {
+      // When reloading or navigating in the window tab in the browser, save the file to cache
+      if (dev) console.log('beforeNavigate: Sync the file to IndexedDB')
+      // If downloaded, set the downloaded hex in IndexedDB & when leaving the application, compare the downloaded hex and the current hex to check if there were any changes
+      if (!navTriggered) {
+        cancel()
+        if (dataTableMapping) {
+          const blob = await dataTableMapping.getBlob()
+          await $implementationClass?.syncFile({ fileName: $fileName, blob, action: 'update' })
+        }
+        if (dataTableCustomConcepts) {
+          const blob = await dataTableCustomConcepts.getBlob()
+          await $implementationClass?.syncFile({ fileName: 'customConcepts.csv', blob, action: 'update' })
+        }
+        navTriggered = true
+        goto(to?.url!)
       }
-      if (dataTableCustomConcepts) {
-        const blob = await dataTableCustomConcepts.getBlob()
-        await $implementationClass?.syncFile({ fileName: 'customConcepts.csv', blob, action: 'update' })
-      }
-      navTriggered = true
-      goto(to?.url!)
     }
   })
 </script>
