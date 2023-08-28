@@ -29,10 +29,10 @@ export default class LocalImpl implements IFunctionalityImpl {
         const fileData = await db.get(fileName, true, true)
         const hex = fileData.file
         const blob = await convertHexStringToBlob(hex, 'text/csv')
-        const file = new File([blob], fileName, { type: 'text/csv' })
+        const file = new File([blob], `${fileName.split(".csv")[0]}_usagi.csv`, { type: 'text/csv' })
         const url = URL.createObjectURL(file)
         element.setAttribute('href', url)
-        element.setAttribute('download', fileName)
+        element.setAttribute('download', `${fileName.split(".csv")[0]}_usagi.csv`)
         document.body.appendChild(element)
         element.click()
         document.body.removeChild(element)

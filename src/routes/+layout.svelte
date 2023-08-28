@@ -9,6 +9,7 @@
   import Settings from '$lib/components/Extra/Settings.svelte'
   import User from '$lib/components/Extra/User.svelte'
   import { implementation, implementationClass, settings } from '$lib/store'
+  import { base } from '$app/paths'
 
   async function loadImplementation() {
     if (!$implementationClass) {
@@ -37,9 +38,11 @@
   <header data-name="header">
     <Header />
     <ul data-name="page-nav">
-      <li><a href="/">{$implementation == 'firebase' ? 'File selection' : 'Drag & Drop'}</a></li>
+      {#if $page.url.pathname !== '/' && $page.url.pathname !== '/Keun'}
+        <li><a href="/{base}">{$implementation == 'firebase' ? 'File selection' : 'Drag & Drop'}</a></li>
+      {/if}
       {#if $settings.author && $settings.author.roles?.includes('Admin') && $implementation == 'firebase'}
-        <li><a href="/register">Registration</a></li>
+        <li><a href="/${base}/register">Registration</a></li>
       {/if}
     </ul>
     {#if $page.url.pathname.substring($page.url.pathname.lastIndexOf('/')) !== 'registration'}

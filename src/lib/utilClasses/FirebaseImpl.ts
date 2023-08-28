@@ -119,7 +119,7 @@ export default class FirebaseImpl implements IFunctionalityImpl {
         if (fileToDownload) {
           const url = URL.createObjectURL(fileToDownload)
           element.setAttribute('href', url)
-          element.setAttribute('download', fileName!)
+          element.setAttribute('download', `${fileName.split(".csv")[0]}_usagi.csv`)
           document.body.appendChild(element)
           element.click()
           document.body.removeChild(element)
