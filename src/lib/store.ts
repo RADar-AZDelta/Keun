@@ -22,6 +22,8 @@ const settings = writable<ISettings>({
 
 const triggerAutoMapping = writable<boolean>(false)
 
+const abortAutoMapping = writable<boolean>(false)
+
 const implementation = writable<string>(PUBLIC_CLOUD_IMPLEMENTATION)
 
 const implementationClass = writable<IFunctionalityImpl>()
@@ -52,4 +54,4 @@ const fileName = writable<string>()
 
 loadImplementation()
 
-export { customConcept, settings, triggerAutoMapping, implementation, implementationClass, fileName}
+export { customConcept, settings, triggerAutoMapping, implementation, implementationClass, fileName, abortAutoMapping}

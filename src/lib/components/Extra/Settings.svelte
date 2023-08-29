@@ -1,7 +1,7 @@
 <script lang="ts">
   import SvgIcon from './SvgIcon.svelte'
   import { clickOutside } from '$lib/actions/clickOutside'
-  import { settings, triggerAutoMapping } from '$lib/store'
+  import { abortAutoMapping, settings, triggerAutoMapping } from '$lib/store'
   import { base } from '$app/paths'
 
   let savedAutomapping: boolean
@@ -37,6 +37,12 @@
       if ($settings.autoMap == true && savedAutomapping !== $settings.autoMap) {
         triggerAutoMapping.set(true)
       }
+    }
+  }
+
+  async function abort(): Promise<void> {
+    if($settings.autoMap == false && savedAutomapping !== $settings.autoMap) {
+      abortAutoMapping.set(true)
     }
   }
 </script>
@@ -77,7 +83,11 @@
           <div data-name="option">
             <p>Automatic mapping?</p>
             <div data-name="switch">
-              <input id="Automap" type="checkbox" bind:checked={$settings.autoMap} on:change={saveSettings} />
+              <input id="Automap" type="checkbox" bind:checked={$settings.autoMap} on:change={() => {
+                savedAutomapping = !$settings.autoMap
+                abort()
+                saveSettings()
+              }} />
               <label for="Automap" />
             </div>
           </div>
