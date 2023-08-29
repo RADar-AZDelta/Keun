@@ -32,7 +32,14 @@
   import { browser } from '$app/environment'
   import DataTable from '@radar-azdelta/svelte-datatable'
   import type Query from 'arquero/dist/types/query/query'
-  import { fileName, implementation, implementationClass, settings, triggerAutoMapping } from '$lib/store'
+  import {
+    abortAutoMapping,
+    fileName,
+    implementation,
+    implementationClass,
+    settings,
+    triggerAutoMapping,
+  } from '$lib/store'
   import { beforeNavigate, goto } from '$app/navigation'
   import { base } from '$app/paths'
 
@@ -45,9 +52,7 @@
   let navTriggered: boolean = true
 
   let tableOptions: ITableOptions = {
-    id: `${$page.url.searchParams
-      .get('fileName')
-      ?.substring(0, $page.url.searchParams.get('fileName')?.indexOf('.'))}-usagi`,
+    id: $fileName,
     rowsPerPage: 15,
     rowsPerPageOptions: [5, 10, 15, 20, 50, 100],
     actionColumn: true,
@@ -78,6 +83,7 @@
   let selectedRow: Record<string, any>
   let selectedRowIndex: number
   let previousAthenaFilter: string
+  let previousPage: number
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // DATA
@@ -545,12 +551,14 @@
       if (selectedRowIndex % pagination.rowsPerPage! === 0) {
         if (dev) console.log('changePagination: change pagination to ', pagination.currentPage! + 1)
         dataTableMapping.changePagination({ currentPage: pagination.currentPage! + 1 })
+        previousPage = pagination.currentPage
       }
     } else if (!up && selectedRowIndex !== 0) {
       // If the selected row index + 1 divided is an even number & the direction is down, change pagination down
       if ((selectedRowIndex + 1) % pagination.rowsPerPage! === 0) {
         if (dev) console.log('changePagination: change pagination to ', pagination.currentPage! - 1)
         dataTableMapping.changePagination({ currentPage: pagination.currentPage! - 1 })
+        previousPage = pagination.currentPage
       }
     }
   }
@@ -645,11 +653,14 @@
     // Get the filter
     let filter = filteredColumns.values().next().value
     // Check if there is a filter filled in
-    if (globalAthenaFilter.filter && globalAthenaFilter.filter !== previousAthenaFilter && globalAthenaFilter.filter !== filter) {
+    if (
+      globalAthenaFilter.filter &&
+      globalAthenaFilter.filter !== previousAthenaFilter &&
+      globalAthenaFilter.filter !== filter
+    ) {
       previousAthenaFilter = globalAthenaFilter.filter
       filter = globalAthenaFilter.filter
-    }
-    else if (globalAthenaFilter.filter === undefined) {
+    } else if (globalAthenaFilter.filter === undefined) {
       if (selectedRow) {
         // If there is no filter, get the sourceName and translate it to English and use this as the filter
         filter = await translate(selectedRow.sourceName)
@@ -805,7 +816,10 @@
       autoMappingAbortController.abort()
       // calculateProgress()
     }
-    currentVisibleRows = new Map<number, Record<string, any>>()
+    $abortAutoMapping = false
+    // Check previous page and current page
+    const pag = dataTableMapping.getTablePagination()
+    if (previousPage !== pag.currentPage) currentVisibleRows = new Map<number, Record<string, any>>()
   }
 
   // A method to start the auto mapping
@@ -825,6 +839,7 @@
       autoMappingPromise = new Promise(async (resolve, reject): Promise<void> => {
         const pag = dataTableMapping.getTablePagination()
         // Get the rows that are visible for the user
+        previousPage = pag.currentPage!
         const q = query()
           .slice(pag.rowsPerPage! * (pag.currentPage! - 1), pag.rowsPerPage! * pag.currentPage!)
           .toObject()
@@ -1013,13 +1028,12 @@
 
   async function readFileLocally() {
     if (!$fileName) {
-      console.log('RESTART 1')
+      console.error('There was no filename specified')
       goto(`${base}/`)
     } else {
-      console.log($fileName)
       const storedFile = await $implementationClass.readFileFirstTime($fileName)
       if (!storedFile?.file) {
-        console.log('RESTART 1')
+        console.error('There was no file found')
         goto(`${base}/`)
       } else {
         file = storedFile.file
@@ -1036,9 +1050,8 @@
     }
   }
 
-  $: {
-    if ($page.url.searchParams.get('fileName') !== $fileName && $settings?.author?.name) {
-      // When the fileName changes
+  async function load() {
+    if ($settings?.author?.name) {
       if ($implementation == 'firebase') {
         const querystringFile = $page.url.searchParams.get('fileName')
         if (querystringFile) $fileName = querystringFile
@@ -1050,6 +1063,15 @@
         setupWatch(true)
       }
     }
+  }
+
+  $: {
+    $fileName
+    load()
+  }
+
+  $: {
+    if ($abortAutoMapping == true) abortAutoMap()
   }
 
   $: author = $settings?.author?.name

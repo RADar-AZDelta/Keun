@@ -160,7 +160,10 @@
 
   // A method to send the user to the mappingtool
   function openMappingTool(fileName: string) {
-    if (fileName !== 'customConcepts.csv') goto(`${base}/mapping?impl=firebase&fileName=${fileName}`)
+    if (fileName !== 'customConcepts.csv') {
+      $fileName = fileName
+      goto(`${base}/mapping?impl=firebase&fileName=${fileName}`)
+    }
   }
 
   // A method to get all the files to map
