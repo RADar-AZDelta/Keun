@@ -1,4 +1,4 @@
-{
+  {
   "matchScore": 0,
   "statusSetBy": null,
   "statusSetOn": 0,
@@ -10,9 +10,6 @@
   "equivalence": null,
   "ADD_INFO:approvedBy": null,
   "ADD_INFO:approvedOn": null,
-  "ADD_INFO:additionalInfo": null,
-  "ADD_INFO:prescriptionID": null,
-  "ADD_INFO:ATC": null,
   "ADD_INFO:numberOfConcepts": null,
   "ADD_INFO:customConcept": null,
   "mappingStatus": null
