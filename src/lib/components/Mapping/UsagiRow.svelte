@@ -119,7 +119,19 @@
 {#each columns || [] as column, i}
   <td on:dblclick={onClickMapping} style={`background-color: ${color}`} title={renderedRow[column.id]}>
     {#if ['statusSetOn', 'createdOn', 'ADD_INFO:approvedOn'].includes(column.id)}
-      <p>{renderedRow[column.id] ? new Date(parseInt(renderedRow[column.id])).toLocaleString() : 0}</p>
+      <p>
+        {renderedRow[column.id]
+          ? `${new Date(parseInt(renderedRow[column.id])).getFullYear()}/${
+              (new Date(parseInt(renderedRow[column.id])).getMonth() + 1).toString().length >= 2
+                ? new Date(parseInt(renderedRow[column.id])).getMonth() + 1
+                : `0${new Date(parseInt(renderedRow[column.id])).getMonth() + 1}`
+            }/${
+              new Date(parseInt(renderedRow[column.id])).getDate().toString().length >= 2
+                ? new Date(parseInt(renderedRow[column.id])).getDate()
+                : `0${new Date(parseInt(renderedRow[column.id])).getDate()}`
+            }`
+          : 0}
+      </p>
     {:else}
       <p>{renderedRow[column.id] ?? ''}</p>
     {/if}
