@@ -192,7 +192,7 @@
 
   // When a arrow button is clicked in the Athena pop-up to navigate between rows
   function onRowChange(up: boolean): void {
-    dispatch('rowChange', { up })
+    dispatch('rowChange', { up, currentRow: selectedRow })
   }
 
   // A method to get all the mapped concept ids for a certain row
