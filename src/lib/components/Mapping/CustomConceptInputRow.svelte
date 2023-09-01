@@ -41,7 +41,11 @@
         concept_id: selectedRow.sourceCode,
         concept_code: selectedRow.sourceCode,
         standard_concept: '',
-        valid_start_date: `${new Date().getFullYear()}-${new Date().getMonth()}-${new Date().getDate()}`,
+        valid_start_date: `${new Date().getFullYear()}-${
+          (new Date().getMonth() + 1).toString().length > 2
+            ? new Date().getMonth() + 1
+            : `0${new Date().getMonth() + 1}`
+        }-${new Date().getDate().toString().length > 2 ? new Date().getDate() : `0${new Date().getDate()}`}`,
         valid_end_date: '2099-12-31',
         invalid_reason: '',
       }
