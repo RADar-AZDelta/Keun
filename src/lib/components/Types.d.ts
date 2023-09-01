@@ -56,6 +56,7 @@ export interface DeleteRowInnerMappingEventDetail {
 
 export interface RowChangeEventDetail {
   up: boolean
+  currentRow: Record<string, any>
 }
 
 export interface ReviewerChangedEventDetail {
