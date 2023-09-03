@@ -29,7 +29,7 @@
 
   // A method to upload a file
   async function fileUploaded() {
-    await $implementationClass.checkCustomConcepts()
+    await $implementationClass.checkCustomConcepts(file.name)
     // Upload the file to the storage depending on the implementationmethod
     const allFiles = await $implementationClass.uploadFile(file, authorizedAuthors)
     if (allFiles) files = allFiles
@@ -40,7 +40,7 @@
   async function mapCachedFile(fileName: string) {
     if (dev) console.log(`mapCachedFile: Go to the route "/mapping" to map the file: ${fileName}`)
     $fileName = fileName
-    await $implementationClass.checkCustomConcepts()
+    await $implementationClass.checkCustomConcepts(fileName)
     goto(`${base}/mapping`)
   }
 
@@ -160,7 +160,7 @@
 
   // A method to send the user to the mappingtool
   function openMappingTool(fileName: string) {
-    if (fileName !== 'customConcepts.csv') {
+    if (!fileName.includes('_customConcepts.csv')) {
       $fileName = fileName
       goto(`${base}/mapping?impl=firebase&fileName=${fileName}`)
     }
@@ -367,17 +367,18 @@
                         data-name="download-file"
                         on:click={async e => {
                           if (e && e.stopPropagation) e.stopPropagation()
-                          await $implementationClass.downloadFile(file)
+                          await $implementationClass.downloadFile(file, true)
+                          await $implementationClass.downloadFile(`${file.split('.csv')[0]}_customConcept.csv`)
                         }}
                       >
                         <SvgIcon href="{base}/icons.svg" id="download" width="16px" height="16px" />
                       </button>
                       <button
-                        disabled={file === 'customConcepts.csv'}
+                        disabled={file.includes('_customConcept.csv')}
                         data-name="edit-file"
                         on:click={async e => {
                           if (e && e.stopPropagation) e.stopPropagation()
-                          if (file !== 'customConcepts.csv') {
+                          if (!file.includes('_customConcept.csv')) {
                             chosenFile = file
                             authorsDialog.showModal()
                           }
@@ -386,11 +387,12 @@
                         <SvgIcon href="{base}/icons.svg" id="edit" width="16px" height="16px" />
                       </button>
                       <button
-                        disabled={file === 'customConcepts.csv'}
+                        disabled={file.includes('_customConcept.csv')}
                         data-name="delete-file"
                         on:click={e => {
                           if (e && e.stopPropagation) e.stopPropagation()
-                          if (file !== 'customConcepts.csv') deleteFile(file)
+                          deleteFile(file)
+                          deleteFile(`${file.split('.csv')[0]}_customConcept.csv`)
                         }}><SvgIcon href="{base}/icons.svg" id="x" width="16px" height="16px" /></button
                       >
                     </div>
@@ -406,7 +408,7 @@
             {#each files as file}
               <button
                 data-name="file-card"
-                disabled={file == 'customConcepts.csv' ? true : false}
+                disabled={file.includes('_customConcept.csv') ? true : false}
                 on:click={() => mapCachedFile(file)}
               >
                 <div data-name="file-name">
@@ -418,14 +420,15 @@
                     data-name="download-file"
                     on:click={async e => {
                       if (e && e.stopPropagation) e.stopPropagation()
-                      await $implementationClass.downloadFile(file)
+                      await $implementationClass.downloadFile(file, true)
+                      await $implementationClass.downloadFile(`${file.split('.csv')[0]}_customConcept.csv`)
                     }}
                   >
                     <SvgIcon href="{base}/icons.svg" id="download" width="16px" height="16px" />
                   </button>
                   <button
                     data-name="delete-file"
-                    disabled={file == 'customConcepts.csv' ? true : false}
+                    disabled={file.includes('_customConcept.csv') ? true : false}
                     on:click={async e => {
                       if (e && e.stopPropagation) e.stopPropagation()
                       await $implementationClass.removeCache(file)

@@ -16,28 +16,30 @@ export default class LocalImpl implements IFunctionalityImpl {
     async getFiles(): Promise<string[] | void> {
         const db = new IndexedDB('localMapping', 'localMapping')
         const files = await db.keys(true)
-        return files
+        const filteredFiles = files.filter(f => !f.includes('_customConcept'))
+        return filteredFiles
     }
 
     async getFilesAdmin(): Promise<string[] | void> {}
 
     async getAllAuthors(): Promise<void | Record<string, { email: string; files: Record<string, string>; }>> {}
 
-    async downloadFile(fileName: string): Promise<void> {
+    async downloadFile(fileName: string, usagiString: boolean = false): Promise<void> {
+        const newFileName = usagiString ? `${fileName.split('.csv')[0]}_usagi.csv` : fileName
         let element = document.createElement('a')
         const db = new IndexedDB('localMapping', 'localMapping')
-        const fileData = await db.get(fileName, true, true)
+        const fileData = await db.get(fileName, true)
         const hex = fileData.file
         const blob = fileData.type == "hex" ? await convertHexStringToBlob(hex, 'text/csv') : await stringToBlob(fileData.file)
-        const file = new File([blob], `${fileName.split(".csv")[0]}_usagi.csv`, { type: 'text/csv' })
+        const file = new File([blob], newFileName, { type: 'text/csv' })
         const url = URL.createObjectURL(file)
         element.setAttribute('href', url)
-        element.setAttribute('download', `${fileName.split(".csv")[0]}_usagi.csv`)
+        element.setAttribute('download', newFileName)
         document.body.appendChild(element)
         element.click()
         document.body.removeChild(element)
         URL.revokeObjectURL(url)
-        this.removeCache(file.name)
+        this.removeCache(fileName)
         return
     }
 
@@ -47,10 +49,10 @@ export default class LocalImpl implements IFunctionalityImpl {
         const blob = await fileToBlob(file)
         if(blob.size > 1000000) {
             const str = await blobToString(blob)
-            await db.set({ fileName: file.name, type: "text", file: str }, file.name, true)
+            await db.set({ fileName: file.name, type: "text", file: str, fileType: 'concepts' }, file.name, true)
         } else {
             const hex = await convertBlobToHexString(blob)
-            await db.set({ fileName: file.name, type: "hex", file: hex }, file.name, true)
+            await db.set({ fileName: file.name, type: "hex", file: hex, fileType: 'concepts' }, file.name, true)
         }
         goto(`${base}/mapping`)
         return
@@ -73,13 +75,14 @@ export default class LocalImpl implements IFunctionalityImpl {
         const db = new IndexedDB('localMapping', 'localMapping')
         if(dev) console.log(`readFileFirstTime: Get the file (${fileName}) from IndexedDB for local mapping`)
         const storedFile = await db.get(fileName, true)
-        const storedCustomConcepts = await db.get('customConcepts.csv', true, true)
+        const customName = `${fileName.split('.csv')[0]}_customConcept.csv`
+        const storedCustomConcepts = await db.get(customName, true, true)
         if(storedFile && storedCustomConcepts) {
             if(storedFile.type == "hex") {
                 const blob = await convertHexStringToBlob(storedFile.file, 'text/csv')
                 const file = new File([blob], storedFile.fileName, { type: 'text/csv' })
                 const customBlob = await convertHexStringToBlob(storedCustomConcepts.file, 'text/csv')
-                const customFile = new File([customBlob], 'customConcepts.csv', { type: 'text/csv' })
+                const customFile = new File([customBlob], customName, { type: 'text/csv' })
                 return {
                     file,
                     customConceptsFile: customFile
@@ -88,7 +91,7 @@ export default class LocalImpl implements IFunctionalityImpl {
                 const blob = await stringToBlob(storedFile.file)
                 const file = new File([blob], storedFile.fileName, { type: 'text/csv' })
                 const customBlob = await convertHexStringToBlob(storedCustomConcepts.file, 'text/csv')
-                const customFile = new File([customBlob], 'customConcepts.csv', { type: 'text/csv' })
+                const customFile = new File([customBlob], customName, { type: 'text/csv' })
                 return {
                     file,
                     customConceptsFile: customFile
@@ -135,11 +138,11 @@ export default class LocalImpl implements IFunctionalityImpl {
                 if(dev) console.log('syncFile: Updating the file in IndexedDB')
                 if(data.blob.size > 1000000) {
                     const str = await blobToString(data.blob)
-                    await db.set({ fileName: data.fileName, type: "text", file: str }, data.fileName, true)
+                    await db.set({ fileName: data.fileName, type: "text", file: str, fileType: 'concepts' }, data.fileName, true)
                     resolve()
                 } else {
                     const hex = await convertBlobToHexString(data.blob)
-                    await db.set({ fileName: data.fileName, type: "hex", file: hex }, data.fileName, true)
+                    await db.set({ fileName: data.fileName, type: "hex", file: hex, fileType: 'concepts' }, data.fileName, true)
                     resolve()
                 }
             } else {
@@ -162,10 +165,10 @@ export default class LocalImpl implements IFunctionalityImpl {
         if(data.action == 'update') {
             if(data.blob.size > 1000000) {
                 const str = await blobToString(data.blob)
-                await db.set({ fileName: data.fileName, type: "text", file: str }, data.fileName, true)
+                await db.set({ fileName: data.fileName, type: "text", file: str, fileType: 'concepts' }, data.fileName, true)
             } else {
                 const hex = await convertBlobToHexString(data.blob)
-                await db.set({ fileName: data.fileName, type: "hex", file: hex }, data.fileName, true)
+                await db.set({ fileName: data.fileName, type: "hex", file: hex, fileType: 'concepts' }, data.fileName, true)
             }
             return
         } else if (data.action == 'get') {
@@ -198,21 +201,22 @@ export default class LocalImpl implements IFunctionalityImpl {
         return files
     }
 
-    async checkCustomConcepts(): Promise<File | void> {
+    async checkCustomConcepts(name: string): Promise<File | void> {
         return new Promise(async(resolve, reject) => {
             const db = new IndexedDB('localMapping', 'localMapping')
-            const res = await db.get('customConcepts.csv', true)    
+            const customName = `${name.split('.csv')[0]}_customConcept.csv`
+            const res = await db.get(customName, true)    
             if(!res) {
                 const blob = new Blob(['concept_id,concept_code,concept_name,concept_class_id,domain_id,vocabulary_id,standard_concept,valid_start_date,valid_end_date,invalid_reason\n0,0,test,test,test,0,0,05/07/2023,31/12/2099,null'])
-                const file = new File([blob], 'customConcepts.csv', { type: 'text/csv' })
+                const file = new File([blob], customName, { type: 'text/csv' })
                 const hex = await convertBlobToHexString(blob)
-                await db.set({ fileName: 'customConcepts.csv', file: hex}, 'customConcepts.csv', true)
+                await db.set({ fileName: customName, file: hex, fileType: 'custom'}, customName, true)
                 resolve(file)
             } else {
                 await db.close()
                 const hex = res.file
                 const blob = await convertHexStringToBlob(hex, "text/csv")
-                const file = new File([blob], 'customConcepts.csv', { type: 'text/csv' })
+                const file = new File([blob], customName, { type: 'text/csv' })
                 resolve(file)
             }
         })

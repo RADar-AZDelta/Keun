@@ -1134,7 +1134,7 @@
     if (!$page.url.searchParams.get('fileName') && !$fileName) {
       goto(`${base}/`)
     }
-    if ($implementationClass) await $implementationClass.checkCustomConcepts()
+    if ($implementationClass) await $implementationClass.checkCustomConcepts($fileName)
   })
 
   onDestroy(() => {
@@ -1169,7 +1169,7 @@
         }
         if (dataTableCustomConcepts) {
           const blob = await dataTableCustomConcepts.getBlob()
-          await $implementationClass?.syncFile({ fileName: 'customConcepts.csv', blob, action: 'update' })
+          await $implementationClass?.syncFile({ fileName: `${$fileName.split('.csv')[0]}_customConcept.csv`, blob, action: 'update' })
         }
         navTriggered = true
         goto(to?.url!)
