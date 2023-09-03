@@ -160,12 +160,12 @@
     // Create the custom concept object
     const customConcept = {
       concept_id: event.detail.customConcept.conceptId,
+      concept_code: event.detail.customConcept.conceptCode,
       concept_name: event.detail.customConcept.conceptName,
       domain_id: event.detail.customConcept.domainId,
       vocabulary_id: event.detail.customConcept.vocabularyId,
       concept_class_id: event.detail.customConcept.conceptClassId,
       standard_concept: event.detail.customConcept.standardConcept,
-      concept_code: event.detail.customConcept.conceptCode,
       valid_start_date: event.detail.customConcept.validStartDate,
       valid_end_date: event.detail.customConcept.validEndDate,
       invalid_reason: event.detail.customConcept.invalidReason,
@@ -174,7 +174,6 @@
     let existsAlready: boolean = false
 
     const q = (<Query>query().params({
-      concept_id: customConcept.concept_id,
       concept_name: customConcept.concept_name,
       domain_id: customConcept.domain_id,
       vocabulary_id: customConcept.vocabulary_id,
@@ -182,7 +181,6 @@
     }))
       .filter(
         (r: any, params: any) =>
-          r.concept_id == params.concept_id &&
           r.concept_name == params.concept_name &&
           r.domain_id == params.domain_id &&
           r.vocabulary_id == params.vocabulary_id &&

@@ -205,8 +205,9 @@ export default class LocalImpl implements IFunctionalityImpl {
         return new Promise(async(resolve, reject) => {
             const db = new IndexedDB('localMapping', 'localMapping')
             const customName = `${name.split('.csv')[0]}_customConcept.csv`
-            const res = await db.get(customName, true)    
+            const res = await db.get(customName, true)
             if(!res) {
+                // TODO: check to delete the first test row, this row is needed because Arquero expects the columns as well as one row
                 const blob = new Blob(['concept_id,concept_code,concept_name,concept_class_id,domain_id,vocabulary_id,standard_concept,valid_start_date,valid_end_date,invalid_reason\n0,0,test,test,test,0,0,05/07/2023,31/12/2099,null'])
                 const file = new File([blob], customName, { type: 'text/csv' })
                 const hex = await convertBlobToHexString(blob)
