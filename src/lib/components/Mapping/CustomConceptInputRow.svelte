@@ -22,13 +22,13 @@
 
   function onClickMapping() {
     dispatch('customMappingInput', {
+      conceptId: predefined.concept_id,
+      conceptName: $customConcept.concept_name,
       domainId: $customConcept.domain_id,
       vocabularyId: $customConcept.vocabulary_id,
       conceptClassId: $customConcept.concept_class_id,
-      conceptName: $customConcept.concept_name,
-      conceptId: predefined.concept_id,
-      conceptCode: predefined.concept_code,
       standardConcept: predefined.standard_concept,
+      conceptCode: predefined.concept_code,
       validStartDate: predefined.valid_start_date,
       validEndDate: predefined.valid_end_date,
       invalidReason: predefined.invalid_reason,
@@ -38,8 +38,8 @@
   $: {
     if (selectedRow) {
       predefined = {
-        concept_id: selectedRow.sourceCode,
-        concept_code: selectedRow.sourceCode,
+        concept_id: "0",
+        concept_code: "0",
         standard_concept: '',
         valid_start_date: `${new Date().getFullYear()}-${
           (new Date().getMonth() + 1).toString().length > 2
