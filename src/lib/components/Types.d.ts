@@ -169,7 +169,7 @@ export interface IFunctionalityImpl {
   getFiles(): Promise<string[] | void>
   getFilesAdmin(): Promise<string[] | void>
   getAllAuthors(): Promise<Record<string, { email: string; files: Record<string, string> }> | void>
-  downloadFile(fileName: string): Promise<void>
+  downloadFile(fileName: string, usagiString?: boolean): Promise<void>
   uploadFile(file: File, authorizedAuthors: string[]): Promise<string[] | void>
   syncSettings(action: 'read' | 'write'): Promise<void>
   readFileFirstTime(fileName: string): Promise<{
@@ -185,5 +185,5 @@ export interface IFunctionalityImpl {
   removeCache(fileName: string): Promise<void>
   checkForCache(fileName: string): Promise<boolean | void>
   getCachedFiles(): Promise<string[] | void>
-  checkCustomConcepts(): Promise<File | void>
+  checkCustomConcepts(name: string): Promise<File | void>
 }
