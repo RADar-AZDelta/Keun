@@ -39,7 +39,7 @@
     if (selectedRow) {
       predefined = {
         concept_id: "0",
-        concept_code: "0",
+        concept_code: selectedRow.sourceCode,
         standard_concept: '',
         valid_start_date: `${new Date().getFullYear()}-${
           (new Date().getMonth() + 1).toString().length > 2

@@ -16,7 +16,7 @@ export default class LocalImpl implements IFunctionalityImpl {
     async getFiles(): Promise<string[] | void> {
         const db = new IndexedDB('localMapping', 'localMapping')
         const files = await db.keys(true)
-        const filteredFiles = files.filter(f => !f.includes('_customConcept'))
+        const filteredFiles = files.filter(f => !f.includes('_concept'))
         return filteredFiles
     }
 
@@ -75,7 +75,7 @@ export default class LocalImpl implements IFunctionalityImpl {
         const db = new IndexedDB('localMapping', 'localMapping')
         if(dev) console.log(`readFileFirstTime: Get the file (${fileName}) from IndexedDB for local mapping`)
         const storedFile = await db.get(fileName, true)
-        const customName = `${fileName.split('.csv')[0]}_customConcept.csv`
+        const customName = `${fileName.split('.csv')[0]}_concept.csv`
         const storedCustomConcepts = await db.get(customName, true, true)
         if(storedFile && storedCustomConcepts) {
             if(storedFile.type == "hex") {
@@ -204,11 +204,11 @@ export default class LocalImpl implements IFunctionalityImpl {
     async checkCustomConcepts(name: string): Promise<File | void> {
         return new Promise(async(resolve, reject) => {
             const db = new IndexedDB('localMapping', 'localMapping')
-            const customName = `${name.split('.csv')[0]}_customConcept.csv`
+            const customName = `${name.split('.csv')[0]}_concept.csv`
             const res = await db.get(customName, true)
             if(!res) {
                 // TODO: check to delete the first test row, this row is needed because Arquero expects the columns as well as one row
-                const blob = new Blob(['concept_id,concept_code,concept_name,concept_class_id,domain_id,vocabulary_id,standard_concept,valid_start_date,valid_end_date,invalid_reason\n0,0,test,test,test,0,0,05/07/2023,31/12/2099,null'])
+                const blob = new Blob(['concept_id,concept_name,domain_id,vocabulary_id,concept_class_id,standard_concept,concept_code,valid_start_date,valid_end_date,invalid_reason\n0,test,test,test,test,S,123,2000-01-01,2099-01-01,U'])
                 const file = new File([blob], customName, { type: 'text/csv' })
                 const hex = await convertBlobToHexString(blob)
                 await db.set({ fileName: customName, file: hex, fileType: 'custom'}, customName, true)
