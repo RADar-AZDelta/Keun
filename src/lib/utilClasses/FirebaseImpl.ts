@@ -171,7 +171,7 @@ export default class FirebaseImpl implements IFunctionalityImpl {
       if (dev) console.log('readFileFirstTime: Get the file from storage for the setup')
       // Get the file for the page, but also the custom concepts file
       const blob = await readFileStorage(`/mapping-files/${fileName}`)
-      const customBlob = await readFileStorage(`/mapping-files/${fileName.split('.csv')[0]}_customConcept.csv`)
+      const customBlob = await readFileStorage(`/mapping-files/${fileName.split('.csv')[0]}_concept.csv`)
       this.dbVersion = await readDatabase(`/files/${fileName?.substring(0, fileName.indexOf('.'))}/version`)
       this.customDBVersion = await readDatabase(`/files/customConcepts/version`)
       if (blob) file = new File([blob], fileName!, { type: 'text/csv' })
@@ -180,7 +180,7 @@ export default class FirebaseImpl implements IFunctionalityImpl {
         goto(`${base}/`)
       }
   
-      if (customBlob) customConceptsFile = new File([customBlob], `${fileName.split('.csv')[0]}_customConcept.csv`, { type: 'text/csv' })
+      if (customBlob) customConceptsFile = new File([customBlob], `${fileName.split('.csv')[0]}_concept.csv`, { type: 'text/csv' })
   
       return {
         file,

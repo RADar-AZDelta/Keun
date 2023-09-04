@@ -160,12 +160,12 @@
     // Create the custom concept object
     const customConcept = {
       concept_id: event.detail.customConcept.conceptId,
-      concept_code: event.detail.customConcept.conceptCode,
       concept_name: event.detail.customConcept.conceptName,
       domain_id: event.detail.customConcept.domainId,
       vocabulary_id: event.detail.customConcept.vocabularyId,
       concept_class_id: event.detail.customConcept.conceptClassId,
       standard_concept: event.detail.customConcept.standardConcept,
+      concept_code: event.detail.customConcept.conceptCode,
       valid_start_date: event.detail.customConcept.validStartDate,
       valid_end_date: event.detail.customConcept.validEndDate,
       invalid_reason: event.detail.customConcept.invalidReason,
@@ -191,6 +191,16 @@
     // If there are no duplicates, add the row to the custom concepts DataTable
     if (customRes.queriedData.length === 0) {
       existsAlready = false
+      const firstRow = await dataTableCustomConcepts.getFullRow(0)
+      if (
+        firstRow.concept_id == 0 &&
+        firstRow.concept_name == 'test' &&
+        firstRow.domain_id == 'test' &&
+        firstRow.vocabulary_id == 'test' &&
+        firstRow.concept_class_id == 'test'
+      ) {
+        await dataTableCustomConcepts.deleteRows([0])
+      }
       await dataTableCustomConcepts.insertRows([customConcept])
     } else {
       if (dev) console.log('customMapping: The custom concept already exists in the custom concepts DataTable')
@@ -482,7 +492,7 @@
           visualizedIndex = value['']
         }
       } else if (!event.detail.up && selectedRowIndex - 1 >= 0) {
-        if (pag!.rowsPerPage! % index === 0 && index !== 1 || index === 0) {
+        if ((pag!.rowsPerPage! % index === 0 && index !== 1) || index === 0) {
           const q = (<Query>query().params({
             sourceCode: event.detail.currentRow.sourceCode,
             sourceName: event.detail.currentRow.sourceName,
@@ -1167,7 +1177,11 @@
         }
         if (dataTableCustomConcepts) {
           const blob = await dataTableCustomConcepts.getBlob()
-          await $implementationClass?.syncFile({ fileName: `${$fileName.split('.csv')[0]}_customConcept.csv`, blob, action: 'update' })
+          await $implementationClass?.syncFile({
+            fileName: `${$fileName.split('.csv')[0]}_concept.csv`,
+            blob,
+            action: 'update',
+          })
         }
         navTriggered = true
         goto(to?.url!)

@@ -160,7 +160,7 @@
 
   // A method to send the user to the mappingtool
   function openMappingTool(fileName: string) {
-    if (!fileName.includes('_customConcepts.csv')) {
+    if (!fileName.includes('_concept.csv')) {
       $fileName = fileName
       goto(`${base}/mapping?impl=firebase&fileName=${fileName}`)
     }
@@ -368,17 +368,17 @@
                         on:click={async e => {
                           if (e && e.stopPropagation) e.stopPropagation()
                           await $implementationClass.downloadFile(file, true)
-                          await $implementationClass.downloadFile(`${file.split('.csv')[0]}_customConcept.csv`)
+                          await $implementationClass.downloadFile(`${file.split('.csv')[0]}_concept.csv`)
                         }}
                       >
                         <SvgIcon href="{base}/icons.svg" id="download" width="16px" height="16px" />
                       </button>
                       <button
-                        disabled={file.includes('_customConcept.csv')}
+                        disabled={file.includes('_concept.csv')}
                         data-name="edit-file"
                         on:click={async e => {
                           if (e && e.stopPropagation) e.stopPropagation()
-                          if (!file.includes('_customConcept.csv')) {
+                          if (!file.includes('_concept.csv')) {
                             chosenFile = file
                             authorsDialog.showModal()
                           }
@@ -387,12 +387,12 @@
                         <SvgIcon href="{base}/icons.svg" id="edit" width="16px" height="16px" />
                       </button>
                       <button
-                        disabled={file.includes('_customConcept.csv')}
+                        disabled={file.includes('_concept.csv')}
                         data-name="delete-file"
                         on:click={e => {
                           if (e && e.stopPropagation) e.stopPropagation()
                           deleteFile(file)
-                          deleteFile(`${file.split('.csv')[0]}_customConcept.csv`)
+                          deleteFile(`${file.split('.csv')[0]}_concept.csv`)
                         }}><SvgIcon href="{base}/icons.svg" id="x" width="16px" height="16px" /></button
                       >
                     </div>
@@ -408,7 +408,7 @@
             {#each files as file}
               <button
                 data-name="file-card"
-                disabled={file.includes('_customConcept.csv') ? true : false}
+                disabled={file.includes('_concept.csv') ? true : false}
                 on:click={() => mapCachedFile(file)}
               >
                 <div data-name="file-name">
@@ -421,14 +421,14 @@
                     on:click={async e => {
                       if (e && e.stopPropagation) e.stopPropagation()
                       await $implementationClass.downloadFile(file, true)
-                      await $implementationClass.downloadFile(`${file.split('.csv')[0]}_customConcept.csv`)
+                      await $implementationClass.downloadFile(`${file.split('.csv')[0]}_concept.csv`)
                     }}
                   >
                     <SvgIcon href="{base}/icons.svg" id="download" width="16px" height="16px" />
                   </button>
                   <button
                     data-name="delete-file"
-                    disabled={file.includes('_customConcept.csv') ? true : false}
+                    disabled={file.includes('_concept.csv') ? true : false}
                     on:click={async e => {
                       if (e && e.stopPropagation) e.stopPropagation()
                       await $implementationClass.removeCache(file)

@@ -319,12 +319,12 @@
         if ($settings.mapToMultipleConcepts == true) {
           customConceptData.push({
             concept_id: e.detail.conceptId,
-            concept_code: e.detail.conceptCode,
             concept_name: e.detail.conceptName,
-            concept_class_id: e.detail.conceptClassId,
             domain_id: e.detail.domainId,
             vocabulary_id: e.detail.vocabularyId,
+            concept_class_id: e.detail.conceptClassId,
             standard_concept: e.detail.standardConcept,
+            concept_code: e.detail.conceptCode,
             valid_start_date: e.detail.validStartDate,
             valid_end_date: e.detail.validEndDate,
             invalid_reason: e.detail.invalidReason,
