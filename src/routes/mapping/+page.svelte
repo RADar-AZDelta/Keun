@@ -454,63 +454,35 @@
   async function selectRow(event: CustomEvent<RowChangeEventDetail>) {
     let tablePagination: Record<string, any>
     new Promise(async (resolve, reject) => {
-      visualizedIndex = selectedRowIndex
       tablePagination = await dataTableMapping.getTablePagination()
       // Check to wich direction the user is moving
-      if (event.detail.up && selectedRowIndex + 1 < tablePagination.totalRows!) {
-        selectedRowIndex += 1
+
+      const currentRow = event.detail.currentRow
+      const indexQ = (<Query>query().params({
+        sourceCode: currentRow.sourceCode,
+        sourceName: currentRow.sourceName,
+        conceptId: currentRow.conceptId == 0 ? undefined : currentRow.conceptId
+      }))
+        .filter(
+          (r: any, p: any) => r.sourceCode == p.sourceCode && r.sourceName == p.sourceName && r.conceptId == p.conceptId
+        )
+        .toObject()
+      const indexRes = await dataTableMapping.executeQueryAndReturnResults(indexQ)
+      const currentIndex = indexRes.indices[0]
+
+      const q = query().toObject()
+      const res = await dataTableMapping.executeQueryAndReturnResults(q)
+      if(res.indices.length == 0) console.error('selectRow: The query to get all the rows did not work!')
+      const arrayIndex = res.indices.indexOf(currentIndex)
+      // TODO: don't download custom concepts file if there are no custom concepts
+      if (event.detail.up && arrayIndex + 1 < tablePagination.totalRows!) {
+        selectedRowIndex = arrayIndex == res.indices.length - 1 ? res.indices[arrayIndex] : res.indices[arrayIndex + 1]
       }
-      if (!event.detail.up && selectedRowIndex - 1 >= 0) {
-        selectedRowIndex -= 1
+      if (!event.detail.up && arrayIndex - 1 >= 0) {
+        selectedRowIndex = arrayIndex == 0 ? res.indices[0] : res.indices[arrayIndex - 1]
       }
 
-      const values = Array.from(currentVisibleRows.values())
-      const index = values.findIndex(
-        value =>
-          value.sourceName == event.detail.currentRow.sourceName &&
-          value.sourceCode == event.detail.currentRow.sourceCode
-      )
-      const pag = await dataTableMapping.getTablePagination()
-      // TODO: test the pagination further
-      if (event.detail.up && selectedRowIndex + 1 < tablePagination.totalRows!) {
-        if ((index + 1) % pag!.rowsPerPage! === 0 || index + 1 == pag!.rowsPerPage!) {
-          const q = (<Query>query().params({
-            sourceCode: event.detail.currentRow.sourceCode,
-            sourceName: event.detail.currentRow.sourceName,
-            conceptId: event.detail.currentRow.conceptId,
-            conceptName: event.detail.currentRow.conceptName,
-          }))
-            .filter((r: any, params: any) => r.sourceCode == params.sourceCode && r.sourceName == params.sourceName)
-            .toObject()
-          const res = await dataTableMapping.executeQueryAndReturnResults(q)
-          if (res.queriedData.length > 0) {
-            console.log(res)
-            visualizedIndex = res.indices[0] + 1
-          }
-        } else {
-          const value = values[index + 1]
-          visualizedIndex = value['']
-        }
-      } else if (!event.detail.up && selectedRowIndex - 1 >= 0) {
-        if ((pag!.rowsPerPage! % index === 0 && index !== 1) || index === 0) {
-          const q = (<Query>query().params({
-            sourceCode: event.detail.currentRow.sourceCode,
-            sourceName: event.detail.currentRow.sourceName,
-            conceptId: event.detail.currentRow.conceptId,
-            conceptName: event.detail.currentRow.conceptName,
-          }))
-            .filter((r: any, params: any) => r.sourceCode == params.sourceCode && r.sourceName == params.sourceName)
-            .toObject()
-          const res = await dataTableMapping.executeQueryAndReturnResults(q)
-          if (res.queriedData.length > 0) {
-            console.log(res)
-            visualizedIndex = res.indices[0] - 1
-          }
-        } else {
-          const value = values[index - 1]
-          visualizedIndex = value['']
-        }
-      }
+      visualizedIndex = selectedRowIndex
 
       // Set the new filter with the translated source name
       selectedRow = await dataTableMapping.getFullRow(visualizedIndex)
