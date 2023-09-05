@@ -31,6 +31,12 @@ export default class LocalImpl implements IFunctionalityImpl {
         const fileData = await db.get(fileName, true)
         const hex = fileData.file
         const blob = fileData.type == "hex" ? await convertHexStringToBlob(hex, 'text/csv') : await stringToBlob(fileData.file)
+        if(newFileName.includes('_concept.csv')) {
+            // If the file is a custom concepts file, check if the test line is still in the blob
+            // If the test line is still in the blob, this means there are no custom concepts created so don't download the file
+            const text = await blob.text()
+            if(text.includes('0,test,test,test,test,S,123,2000-01-01,2099-01-01,U')) return
+        }
         const file = new File([blob], newFileName, { type: 'text/csv' })
         const url = URL.createObjectURL(file)
         element.setAttribute('href', url)
