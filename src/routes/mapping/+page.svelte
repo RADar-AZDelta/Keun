@@ -56,6 +56,7 @@
     rowsPerPage: 15,
     rowsPerPageOptions: [5, 10, 15, 20, 50, 100],
     actionColumn: true,
+    paginationOnTop: true
   }
 
   let customTableOptions: ITableOptions = {
@@ -474,7 +475,6 @@
       const res = await dataTableMapping.executeQueryAndReturnResults(q)
       if(res.indices.length == 0) console.error('selectRow: The query to get all the rows did not work!')
       const arrayIndex = res.indices.indexOf(currentIndex)
-      // TODO: don't download custom concepts file if there are no custom concepts
       if (event.detail.up && arrayIndex + 1 < tablePagination.totalRows!) {
         selectedRowIndex = arrayIndex == res.indices.length - 1 ? res.indices[arrayIndex] : res.indices[arrayIndex + 1]
       }
@@ -1229,6 +1229,7 @@
   </div>
 
   {#if tableInit == true}
-    <button on:click={approvePage}>Approve page</button>
+  <!-- TODO: double click on button to approve page -> show some sort of pop-up or something else to say that you need to confirm by clicking again -->
+    <button data-name="approve-page" on:click={approvePage}>Approve page</button>
   {/if}
 {/if}
