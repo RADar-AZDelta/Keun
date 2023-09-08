@@ -255,6 +255,16 @@ git clone git@github.com:RADar-AZDelta/Keun.git
 cd ./Keun/
 pnpm install
 ```
+
+To set environment variables, you need to create a file named ".env" in the root of the project.
+Set the following variables in that .env file:
+
+```bash
+VITE_MAPPINGDATA_PATH="https://athena.ohdsi.org/api/v1/concepts?"
+VITE_ATHENA_DETAIL="https://athena.ohdsi.org/search-terms/terms/"
+PUBLIC_CLOUD_IMPLEMENTATION='none'
+```
+
 Start dev server
 
 ```bash
