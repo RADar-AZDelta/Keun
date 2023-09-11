@@ -1,39 +1,98 @@
 <script lang="ts">
-  import Spinner from '$lib/components/Extra/Spinner.svelte'
-  import SvgIcon from '$lib/components/Extra/SvgIcon.svelte'
-  import { writable } from 'svelte/store'
   import { goto } from '$app/navigation'
   import { dev } from '$app/environment'
-  import { fileName, implementation, implementationClass, settings } from '$lib/store'
   import { base } from '$app/paths'
+  import { fileName, implementation, implementationClass, settings } from '$lib/store'
+  import Spinner from '$lib/components/Extra/Spinner.svelte'
+  import SvgIcon from '$lib/components/Extra/SvgIcon.svelte'
 
-  let files: string[] = []
-  let fileInputDialog: HTMLDialogElement, authorsDialog: HTMLDialogElement, columnDialog: HTMLDialogElement
-  let currentColumns: string[],
-    missingColumns: Record<string, string> = {}
-  let file: File
-  let userFilter: string
-  let authorizedAuthors: string[]
-  let processing = writable<boolean>(false)
-  let chosenFile: string
-  let locationDialog: HTMLDialogElement
+  let files: string[] = [],
+    file: File,
+    fileInputDialog: HTMLDialogElement,
+    authorsDialog: HTMLDialogElement,
+    columnDialog: HTMLDialogElement,
+    locationDialog: HTMLDialogElement,
+    currentColumns: string[],
+    missingColumns: Record<string, string> = {},
+    userFilter: string,
+    authorizedAuthors: string[],
+    processing: boolean = false,
+    chosenFile: string
 
-  // A method to check if there is cache of files
-  async function checkForCache() {
-    const cached = await $implementationClass.checkForCache(file.name)
-    // When the application is using Firebase, this function will always return void so the file will be uploaded
-    // Checking for cache is only for local mapping without a cloud implementation
-    if (cached) locationDialog.showModal()
-    else await fileUploaded()
+  /////////////////////////////// Events regarding file input ///////////////////////////////
+
+  // A method for when a file is dropped in the drag and drop area
+  function dropHandler(event: DragEvent): void {
+    if (dev) console.log('dropHandler: A file has been dropped in the drag and drop area')
+    event.preventDefault()
+    const allowedExtensions = ['csv']
+    var reader = new FileReader()
+    reader.onload = checkForMissingColumns
+    if (!event.dataTransfer?.items) return
+    if (event.dataTransfer.items.length > 1) return alert('Only drop one file')
+    const item = event.dataTransfer.items[0]
+    if (item.kind !== 'file') return alert('Drop an item of the kind file')
+    const f = item.getAsFile()
+    if (!f) return console.error('dropHandler: The file could not be processed.')
+    const extension = f.name.split('.').pop()
+    // Check if the extension is allowed, check the file for missing columns
+    if (!extension || !allowedExtensions.includes(extension) || !f) return alert('The file is not allowed')
+    file = f
+    reader.readAsText(f)
   }
 
+  // A method for when a new file has been put in the field
+  function onFileInputChange(e: Event) {
+    if (dev) console.log('onFileInputChange: A file has been upload via the input button')
+    const allowedExtensions = ['csv']
+    const inputFiles = (e.target as HTMLInputElement).files
+    if (!inputFiles) return
+    var reader = new FileReader()
+    reader.onload = checkForMissingColumns
+    // There will only be one file, split the name from the extension
+    const extension = inputFiles[0].name.split('.').pop()
+    // Check if the extension is allowed, check the file for missing columns
+    if (!extension || !allowedExtensions.includes(extension)) return
+    file = inputFiles[0]
+    reader.readAsText(file)
+  }
+
+  // Read the content of the file, seperate the columns from the rows and check if all columns are in the file
+  function checkForMissingColumns(this: FileReader, ev: ProgressEvent<FileReader>) {
+    if (dev) console.log('checkForMissingColumns: Checking if there are missing columns in the file')
+    if (!this.result) return
+    let content = this.result.toString()
+    let importantColumns: string[] = ['sourceCode', 'sourceName', 'sourceFrequency']
+    if (!content) return
+    // Check if all columns needed are available
+    if (content.includes('sourceName') && content.includes('sourceCode') && content.includes('sourceFrequency')) return
+    // Get all the columns from the document
+    currentColumns = content.split(/\n/)[0].split(',')
+    for (let i = 0; i < currentColumns.length; i++) {
+      // Sometimes a column ends with multiple instances of ";" so this needs to be removed
+      if (currentColumns[i].includes(';'))
+        currentColumns[i] = currentColumns[i].substring(0, currentColumns[i].indexOf(';'))
+    }
+    importantColumns.forEach(col => {
+      // If a important column is missing, add it to the missingColumns object, the corresponding column will be asigned to this object later
+      if (!currentColumns.includes(col)) missingColumns[col] = ''
+    })
+    // Show the pop up where the user can select the corresponding columns to the missing important columns
+    openColumnDialog()
+    if (dev) console.log('checkForMissingColumns: All missing columns were identified')
+  }
+
+  /////////////////////////////// Methods regarding file upload && mapping ///////////////////////////////
+
   // A method to upload a file
-  async function fileUploaded() {
+  async function uploadFile() {
+    if (dev) console.log('uploadFile: Uploading a file')
     await $implementationClass.checkCustomConcepts(file.name)
     // Upload the file to the storage depending on the implementationmethod
     const allFiles = await $implementationClass.uploadFile(file, authorizedAuthors)
     if (allFiles) files = allFiles
-    fileInputDialog.close()
+    closeFileInputDialog()
+    if (dev) console.log('uploadFile: The file has been uploaded')
   }
 
   // A method to go to the mapping route without updating the file in IndexedDB for local mapping (the cached version is still in IndexedDB)
@@ -44,139 +103,148 @@
     goto(`${base}/mapping`)
   }
 
-  function checkForMissingColumns(this: FileReader, ev: ProgressEvent<FileReader>) {
-    let content = this.result?.toString()
-    let importantColumns: string[] = ['sourceCode', 'sourceName', 'sourceFrequency']
-    if (content) {
-      // Check if all columns needed are available
-      if (!content.includes('sourceName') || !content.includes('sourceCode') || !content.includes('sourceFrequency')) {
-        // Get all the columns from the document
-        currentColumns = content.split(/\n/)[0].split(',')
-        for (let i = 0; i < currentColumns.length; i++) {
-          // Sometimes a column ends with multiple instances of ";" so this needs to be removed
-          if (currentColumns[i].includes(';'))
-            currentColumns[i] = currentColumns[i].substring(0, currentColumns[i].indexOf(';'))
-        }
-        importantColumns.forEach(col => {
-          // If a important column is missing, add it to the missingColumns object, the corresponding column will be asigned to this object later
-          if (!currentColumns.includes(col)) missingColumns[col] = ''
-        })
-        // Show the pop up where the user can select the corresponding columns to the missing important columns
-        columnDialog.showModal()
-      }
-    }
-    return
-  }
-
-  // A method for when a new file has been put in the field
-  function onFileInputChange(e: Event) {
-    if (dev) console.log('onFileInputChange: A file has been upload via the input button')
-    const allowedExtensions = ['csv']
-    const inputFiles = (e.target as HTMLInputElement).files
-    if (!inputFiles) return
-
-    var reader = new FileReader()
-
-    reader.onload = checkForMissingColumns
-
-    for (const f of inputFiles) {
-      // There will only be one file, split the name from the extension
-      const extension = f.name.split('.').pop()
-      // Check if the extension is allowed, check the file for missing columns
-      if (extension && allowedExtensions.includes(extension)) {
-        file = f
-        reader.readAsText(f)
-        break
-      }
-    }
-  }
-
-  // A method for when a file is dropped in the drag and drop area
-  function dropHandler(event: DragEvent): void {
-    if (dev) console.log('dropHandler: A file has been dropped in the drag and drop area')
-    event.preventDefault()
-    const allowedExtensions = ['csv']
-    var reader = new FileReader()
-
-    reader.onload = checkForMissingColumns
-
-    if (event.dataTransfer?.items) {
-      if (event.dataTransfer.items.length > 1) {
-        alert('Only drop one file')
-      }
-      for (let item of event.dataTransfer.items) {
-        if (item.kind === 'file') {
-          const f = item.getAsFile()
-          const extension = f?.name.split('.').pop()
-          // Check if the extension is allowed, check the file for missing columns
-          if (extension && allowedExtensions.includes(extension) && f) {
-            file = f
-            reader.readAsText(f)
-          }
-        }
-      }
-    }
-  }
-
   // A method to rename the columns to get a standardized version of the file
   function fileUploadWithColumnChanges() {
-    if (
-      (($implementation == 'firebase' && $settings?.author?.roles?.includes('Admin')) ||
-        $implementation == 'none' ||
-        !$implementation) &&
-      $settings?.author?.name
-    ) {
-      var reader = new FileReader()
-      reader.onload = evt => {
-        // Get the columns row of the file
-        const fileContent = evt.target!.result?.toString()!
-        let columns = fileContent.substring(0, fileContent.indexOf('\n'))
-        for (let [newColumn, oldColumn] of Object.entries(missingColumns)) {
-          // Replace the old columns with the standardized columns
-          columns = columns.replace(oldColumn, newColumn)
-        }
-        // Combine the columns and the rest of the file together
-        const updatedFileContent = columns + fileContent.slice(fileContent.indexOf('\n'))
-        const blob = new Blob([updatedFileContent], { type: 'text/csv' })
-        file = new File([blob], file.name, { type: 'text/csv' })
-        columnDialog.close()
-      }
-      reader.readAsText(file)
-    }
+    if (dev) console.log('fileUploadWithColumnChanges: The file is uploading and process the column changes')
+    if (!$settings?.author?.name) return console.error('fileUploadWithColumnChanges: There is no author name set.')
+    if (!($implementation === 'firebase' && $settings?.author?.roles?.includes('Admin')) && !$implementation) return
+    var reader = new FileReader()
+    reader.onload = processUpdatedColumns
+    reader.readAsText(file)
   }
+
+  // Read the file and update the columns
+  function processUpdatedColumns(this: FileReader, ev: ProgressEvent<FileReader>) {
+    if (dev) console.log('processUpdatedColumns: Update the given columns to the expected columns')
+    if (!ev.target?.result) return
+    // Get the columns row of the file
+    const fileContent = ev.target.result.toString()
+    let columns = fileContent.substring(0, fileContent.indexOf('\n'))
+    for (let [newColumn, oldColumn] of Object.entries(missingColumns)) {
+      // Replace the old columns with the standardized columns
+      columns = columns.replace(oldColumn, newColumn)
+    }
+    // Combine the columns and the rest of the file together
+    const updatedFileContent = columns + fileContent.slice(fileContent.indexOf('\n'))
+    const blob = new Blob([updatedFileContent], { type: 'text/csv' })
+    file = new File([blob], file.name, { type: 'text/csv' })
+    closeColumnDialog()
+  }
+
+  /////////////////////////////// Methods regarding deleting & editing a file ///////////////////////////////
 
   // A method to delete a file
   async function deleteFile(fileName: string) {
-    $processing = true
+    if (dev) console.log('deleteFile: Deleting a file')
+    processing = true
     await $implementationClass.deleteFile(fileName)
-    $processing = false
+    await getFiles()
+    processing = false
+    if (dev) console.log('deleteFile: File has been deleted')
   }
 
   // A method to edit the authors that have access to a file
   async function editFile(fileName: string) {
+    if (dev) console.log('editFile: The file is being edited')
     await $implementationClass.editFile(fileName, authorizedAuthors)
-    authorsDialog.close()
+    closeAuthorsDialog()
+    if (dev) console.log('editFile: The flie has been edited')
   }
 
-  // A method to send the user to the mappingtool
-  function openMappingTool(fileName: string) {
-    if (!fileName.includes('_concept.csv')) {
-      $fileName = fileName
-      goto(`${base}/mapping?impl=firebase&fileName=${fileName}`)
+  // A method to select a file and open the authors dialog
+  async function editRights(e: Event, file: string) {
+    if (e && e.stopPropagation) e.stopPropagation()
+    if (!file.includes('_concept.csv')) {
+      chosenFile = file
+      openAuthorsDialog()
     }
   }
 
+  /////////////////////////////// Methods regarding dialogs ///////////////////////////////
+
+  function openLocationDialog() {
+    if (locationDialog.attributes.getNamedItem('open') === null) locationDialog.showModal()
+  }
+
+  function closeLocationDialog() {
+    if (locationDialog.attributes.getNamedItem('open') !== null) locationDialog.close()
+  }
+
+  function openFileInputDialog() {
+    if (fileInputDialog.attributes.getNamedItem('open') === null) fileInputDialog.showModal()
+  }
+
+  function closeFileInputDialog() {
+    if (fileInputDialog.attributes.getNamedItem('open') === null) return
+    fileInputDialog.close()
+    authorizedAuthors = []
+  }
+
+  function openAuthorsDialog() {
+    if (authorsDialog.attributes.getNamedItem('open') === null) authorsDialog.showModal()
+  }
+
+  function closeAuthorsDialog() {
+    if (authorsDialog.attributes.getNamedItem('open') === null) return
+    authorsDialog.close()
+    authorizedAuthors = []
+  }
+
+  function openColumnDialog() {
+    if (columnDialog.attributes.getNamedItem('open') === null) columnDialog.showModal()
+  }
+
+  function closeColumnDialog() {
+    if (columnDialog.attributes.getNamedItem('open') !== null) columnDialog.close()
+  }
+
+  /////////////////////////////// General methods ///////////////////////////////
+
+  // A method to send the user to the mappingtool
+  function openMappingTool(fileName: string) {
+    if (dev) console.log('openMappingTool: Navigating to the mapping tool')
+    if (fileName.includes('_concept.csv')) return
+    $fileName = fileName
+    goto(`${base}/mapping?impl=firebase&fileName=${fileName}`)
+  }
+
+  // A method to check if there is cache of files
+  async function checkForCache() {
+    if (dev) console.log('checkForCache: Checking for cache')
+    const cached = await $implementationClass.checkForCache(file.name)
+    // When the application is using Firebase, this function will always return void so the file will be uploaded
+    // Checking for cache is only for local mapping without a cloud implementation
+    if (cached) openLocationDialog()
+    else await uploadFile()
+  }
+
+  /////////////////////////////// On click events ///////////////////////////////
+
   // A method to get all the files to map
   async function getFiles() {
+    if (dev) console.log('getFiles: Get all the files in the database')
     const getFilesRes = await $implementationClass?.getFiles()
     if (getFilesRes) files = getFilesRes
   }
 
+  // Download the file & eventual custom concepts file
+  async function downloadFiles(e: Event, file: string) {
+    if (e && e.stopPropagation) e.stopPropagation()
+    await $implementationClass.downloadFile(file, true, false)
+    await $implementationClass.downloadFile(`${file.split('.csv')[0]}_concept.csv`, false, true)
+    await getFiles()
+  }
+
+  // Delete the files regarding the file name
+  async function deleteFiles(e: Event, file: string) {
+    if (e && e.stopPropagation) e.stopPropagation()
+    deleteFile(file)
+    deleteFile(`${file.split('.csv')[0]}_concept.csv`)
+  }
+
   $: {
     // When the user changes, renew the files
-    if ($settings.author && $implementationClass) {
-      getFiles()
-    }
+    if ($settings.author && $implementationClass) getFiles()
   }
 
   $: {
@@ -194,17 +262,12 @@
 
 <dialog data-name="location-dialog" bind:this={locationDialog}>
   <div data-name="location-container">
-    <button
-      on:click={() => {
-        locationDialog.close()
-      }}
-      data-name="close-dialog"
-      disabled={$processing}
+    <button on:click={closeLocationDialog} data-name="close-dialog" disabled={processing}
       ><SvgIcon href="{base}/icons.svg" id="x" width="16px" height="16px" />
     </button>
     <h2>Do you want to use this file or the cached version of this file?</h2>
     <div data-name="button-choices">
-      <button on:click={fileUploaded}>File</button>
+      <button on:click={uploadFile}>File</button>
       <button on:click={() => mapCachedFile(file.name)}>Cached version</button>
     </div>
   </div>
@@ -213,13 +276,7 @@
 <dialog bind:this={fileInputDialog} data-name="file-dialog">
   <div data-name="file-input-container">
     <h1 data-name="file-input-title">Upload a new file</h1>
-    <button
-      on:click={() => {
-        fileInputDialog.close()
-        authorizedAuthors = []
-      }}
-      data-name="close-dialog"
-      disabled={$processing}
+    <button on:click={closeFileInputDialog} data-name="close-dialog" disabled={processing}
       ><SvgIcon href="{base}/icons.svg" id="x" width="16px" height="16px" />
     </button>
     <div data-name="drag-drop-container" on:drop={dropHandler} on:dragover|preventDefault>
@@ -273,8 +330,8 @@
         {/await}
       </ul>
     {/if}
-    <button on:click={checkForCache} disabled={file ? false : true || $processing}>Upload</button>
-    {#if $processing}
+    <button on:click={checkForCache} disabled={file ? false : true || processing}>Upload</button>
+    {#if processing}
       <Spinner />
     {/if}
   </div>
@@ -282,7 +339,7 @@
 
 <dialog bind:this={columnDialog} data-name="column-dialog">
   <div data-name="dialog-container">
-    <button data-name="close-dialog" on:click={() => columnDialog.close()}>
+    <button data-name="close-dialog" on:click={closeColumnDialog}>
       <SvgIcon href="{base}/icons.svg" id="x" width="16px" height="16px" />
     </button>
     <h1>Set columns</h1>
@@ -310,13 +367,7 @@
 
 <dialog bind:this={authorsDialog} data-name="authors-dialog">
   <div data-name="authors-container">
-    <button
-      on:click={() => {
-        authorsDialog.close()
-        authorizedAuthors = []
-      }}
-      data-name="close-dialog"
-      disabled={$processing}
+    <button on:click={closeAuthorsDialog} data-name="close-dialog" disabled={processing}
       ><SvgIcon href="{base}/icons.svg" id="x" width="16px" height="16px" />
     </button>
     <h1>Update the authorized authors</h1>
@@ -363,25 +414,14 @@
                   </div>
                   {#if $settings.author?.roles?.includes('Admin')}
                     <div>
-                      <button
-                        data-name="download-file"
-                        on:click={async e => {
-                          if (e && e.stopPropagation) e.stopPropagation()
-                          await $implementationClass.downloadFile(file, true, false)
-                          await $implementationClass.downloadFile(`${file.split('.csv')[0]}_concept.csv`, false, true)
-                        }}
-                      >
+                      <button data-name="download-file" on:click={e => downloadFiles(e, file)}>
                         <SvgIcon href="{base}/icons.svg" id="download" width="16px" height="16px" />
                       </button>
                       <button
                         disabled={file.includes('_concept.csv')}
                         data-name="edit-file"
-                        on:click={async e => {
-                          if (e && e.stopPropagation) e.stopPropagation()
-                          if (!file.includes('_concept.csv')) {
-                            chosenFile = file
-                            authorsDialog.showModal()
-                          }
+                        on:click={e => {
+                          editRights(e, file)
                         }}
                       >
                         <SvgIcon href="{base}/icons.svg" id="edit" width="16px" height="16px" />
@@ -389,11 +429,8 @@
                       <button
                         disabled={file.includes('_concept.csv')}
                         data-name="delete-file"
-                        on:click={e => {
-                          if (e && e.stopPropagation) e.stopPropagation()
-                          deleteFile(file)
-                          deleteFile(`${file.split('.csv')[0]}_concept.csv`)
-                        }}><SvgIcon href="{base}/icons.svg" id="x" width="16px" height="16px" /></button
+                        on:click={e => deleteFiles(e, file)}
+                        ><SvgIcon href="{base}/icons.svg" id="x" width="16px" height="16px" /></button
                       >
                     </div>
                   {/if}
@@ -416,23 +453,14 @@
                   <p>{file}</p>
                 </div>
                 <div>
-                  <button
-                    data-name="download-file"
-                    on:click={async e => {
-                      if (e && e.stopPropagation) e.stopPropagation()
-                      await $implementationClass.downloadFile(file, true, false)
-                      await $implementationClass.downloadFile(`${file.split('.csv')[0]}_concept.csv`, false, true)
-                    }}
-                  >
+                  <button data-name="download-file" on:click={e => downloadFiles(e, file)}>
                     <SvgIcon href="{base}/icons.svg" id="download" width="16px" height="16px" />
                   </button>
                   <button
                     data-name="delete-file"
                     disabled={file.includes('_concept.csv') ? true : false}
-                    on:click={async e => {
-                      if (e && e.stopPropagation) e.stopPropagation()
-                      await $implementationClass.removeCache(file)
-                      await getFiles()
+                    on:click={e => {
+                      deleteFiles(e, file)
                     }}
                   >
                     <SvgIcon href="{base}/icons.svg" id="x" width="16px" height="16px" />
@@ -442,14 +470,10 @@
             {/each}
           {/if}
         </div>
-        {#if $processing}
+        {#if processing}
           <Spinner />
         {/if}
-        {#if $implementation == 'firebase' && $settings?.author?.roles?.includes('Admin')}
-          <button on:click={() => fileInputDialog.showModal()} data-name="file-add">+ Add file</button>
-        {:else}
-          <button on:click={() => fileInputDialog.showModal()} data-name="file-add">+ Add file</button>
-        {/if}
+        <button on:click={openFileInputDialog} data-name="file-add">+ Add file</button>
       </div>
     </section>
   </section>
