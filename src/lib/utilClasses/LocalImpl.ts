@@ -11,7 +11,9 @@ export default class LocalImpl implements IFunctionalityImpl {
     
     constructor() {}
 
-    async deleteFile(fileName: string): Promise<string[] | void> {}
+    async deleteFile(fileName: string): Promise<string[] | void> {
+        await this.removeCache(fileName)
+    }
 
     async editFile(fileName: string, authorizedAuthors: string[]): Promise<void> {}
 

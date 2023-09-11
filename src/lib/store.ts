@@ -24,7 +24,7 @@ const triggerAutoMapping = writable<boolean>(false)
 
 const abortAutoMapping = writable<boolean>(false)
 
-const implementation = writable<string>(PUBLIC_CLOUD_IMPLEMENTATION)
+const implementation = writable<string>(PUBLIC_CLOUD_IMPLEMENTATION || "none")
 
 const implementationClass = writable<IFunctionalityImpl>()
 
