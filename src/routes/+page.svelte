@@ -367,8 +367,8 @@
                         data-name="download-file"
                         on:click={async e => {
                           if (e && e.stopPropagation) e.stopPropagation()
-                          await $implementationClass.downloadFile(file, true)
-                          await $implementationClass.downloadFile(`${file.split('.csv')[0]}_concept.csv`)
+                          await $implementationClass.downloadFile(file, true, false)
+                          await $implementationClass.downloadFile(`${file.split('.csv')[0]}_concept.csv`, false, true)
                         }}
                       >
                         <SvgIcon href="{base}/icons.svg" id="download" width="16px" height="16px" />
@@ -420,8 +420,8 @@
                     data-name="download-file"
                     on:click={async e => {
                       if (e && e.stopPropagation) e.stopPropagation()
-                      await $implementationClass.downloadFile(file, true)
-                      await $implementationClass.downloadFile(`${file.split('.csv')[0]}_concept.csv`)
+                      await $implementationClass.downloadFile(file, true, false)
+                      await $implementationClass.downloadFile(`${file.split('.csv')[0]}_concept.csv`, false, true)
                     }}
                   >
                     <SvgIcon href="{base}/icons.svg" id="download" width="16px" height="16px" />
