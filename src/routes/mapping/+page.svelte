@@ -56,7 +56,7 @@
     rowsPerPage: 15,
     rowsPerPageOptions: [5, 10, 15, 20, 50, 100],
     actionColumn: true,
-    paginationOnTop: true
+    paginationOnTop: true,
   }
 
   let customTableOptions: ITableOptions = {
@@ -462,7 +462,7 @@
       const indexQ = (<Query>query().params({
         sourceCode: currentRow.sourceCode,
         sourceName: currentRow.sourceName,
-        conceptId: currentRow.conceptId == 0 ? undefined : currentRow.conceptId
+        conceptId: currentRow.conceptId == 0 ? undefined : currentRow.conceptId,
       }))
         .filter(
           (r: any, p: any) => r.sourceCode == p.sourceCode && r.sourceName == p.sourceName && r.conceptId == p.conceptId
@@ -473,7 +473,7 @@
 
       const q = query().toObject()
       const res = await dataTableMapping.executeQueryAndReturnResults(q)
-      if(res.indices.length == 0) console.error('selectRow: The query to get all the rows did not work!')
+      if (res.indices.length == 0) console.error('selectRow: The query to get all the rows did not work!')
       const arrayIndex = res.indices.indexOf(currentIndex)
       if (event.detail.up && arrayIndex + 1 < tablePagination.totalRows!) {
         selectedRowIndex = arrayIndex == res.indices.length - 1 ? res.indices[arrayIndex] : res.indices[arrayIndex + 1]
@@ -699,6 +699,8 @@
       }
     } else if (globalAthenaFilter.filter && filter === undefined) {
       // If the user types his own filter & the filter is undefinedv, use the custom filter
+      filter = globalAthenaFilter.filter
+    } else if (globalAthenaFilter.filter == previousAthenaFilter) {
       filter = globalAthenaFilter.filter
     }
 
@@ -975,6 +977,12 @@
     // calculateProgress()
   }
 
+  async function downloadPage() {
+    await $implementationClass.downloadFile(file!.name, true, false)
+    await $implementationClass.downloadFile(`${file!.name.split('.csv')[0]}_concept.csv`, false, true)
+    goto('/')
+  }
+
   // async function calculateProgress() {
   //   if (dev) console.log('calculateProgress: Calculating progress')
   //   const qMapping = query().slice(0, 1).toObject()
@@ -1229,7 +1237,8 @@
   </div>
 
   {#if tableInit == true}
-  <!-- TODO: double click on button to approve page -> show some sort of pop-up or something else to say that you need to confirm by clicking again -->
+    <!-- TODO: double click on button to approve page -> show some sort of pop-up or something else to say that you need to confirm by clicking again -->
     <button data-name="approve-page" on:click={approvePage}>Approve page</button>
+    <button data-name="approve-page" on:click={downloadPage}>Download</button>
   {/if}
 {/if}
