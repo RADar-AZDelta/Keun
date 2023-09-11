@@ -13,7 +13,8 @@ let firebaseApp: FirebaseApp | undefined, firebaseAuth: Auth | undefined, fireba
 async function getFirebaseApp() {
 	const res = await fetch('/api/firebase');
 	const body = await res.json()
-	firebaseApp = body.app
+	if(body.app) firebaseApp = body.app
+	else console.error('There was no Firebase API key defined.')
 }
 
 // Providers
