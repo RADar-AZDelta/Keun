@@ -1,6 +1,5 @@
 import { json, type RequestHandler } from '@sveltejs/kit'
 import { initializeApp, type FirebaseOptions } from 'firebase/app'
-import { SECRET_FIREBASE_API_KEY } from '$env/static/private'
 import {
   PUBLIC_FIREBASE_APP_ID,
   PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -11,7 +10,7 @@ import {
 } from '$env/static/public'
 
 export const GET: RequestHandler = async () => {
-    const app = await import('$env/static/private').then(() => {
+    const app = await import('$env/static/private').then(({SECRET_FIREBASE_API_KEY}) => {
         if(SECRET_FIREBASE_API_KEY) {
             const firebaseConfig: FirebaseOptions = {
                 apiKey: SECRET_FIREBASE_API_KEY,
