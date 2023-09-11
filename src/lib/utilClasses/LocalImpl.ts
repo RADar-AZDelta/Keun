@@ -24,23 +24,26 @@ export default class LocalImpl implements IFunctionalityImpl {
 
     async getAllAuthors(): Promise<void | Record<string, { email: string; files: Record<string, string>; }>> {}
 
-    async downloadFile(fileName: string, usagiString: boolean = false): Promise<void> {
-        const newFileName = usagiString ? `${fileName.split('.csv')[0]}_usagi.csv` : fileName
+    async downloadFile(fileName: string, usagiString: boolean = false, customString: boolean = false): Promise<void> {
+        const extensionFiltered = fileName.includes('.csv') ? fileName.split('.csv')[0] : fileName
+        const filteredName = extensionFiltered.includes('_usagi') ? `${extensionFiltered.split('_usagi')[0]}` : extensionFiltered
+        const usagiFileName = usagiString ? `${filteredName.split('.csv')[0]}_usagi` : filteredName
+        const customFileName = customString ? `${usagiFileName.split('_usagi_concept')[0]}_concept` : usagiFileName
         let element = document.createElement('a')
         const db = new IndexedDB('localMapping', 'localMapping')
         const fileData = await db.get(fileName, true)
         const hex = fileData.file
         const blob = fileData.type == "hex" ? await convertHexStringToBlob(hex, 'text/csv') : await stringToBlob(fileData.file)
-        if(newFileName.includes('_concept.csv')) {
+        if(customFileName.includes('_concept')) {
             // If the file is a custom concepts file, check if the test line is still in the blob
             // If the test line is still in the blob, this means there are no custom concepts created so don't download the file
             const text = await blob.text()
             if(text.includes('0,test,test,test,test,S,123,2000-01-01,2099-01-01,U')) return
         }
-        const file = new File([blob], newFileName, { type: 'text/csv' })
+        const file = new File([blob], `${customFileName}.csv`, { type: 'text/csv' })
         const url = URL.createObjectURL(file)
         element.setAttribute('href', url)
-        element.setAttribute('download', newFileName)
+        element.setAttribute('download', `${customFileName}.csv`)
         document.body.appendChild(element)
         element.click()
         document.body.removeChild(element)
