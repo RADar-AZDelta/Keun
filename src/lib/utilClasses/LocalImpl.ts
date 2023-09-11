@@ -7,6 +7,8 @@ import { IndexedDB } from './IndexedDB';
 import { base } from '$app/paths'
 
 export default class LocalImpl implements IFunctionalityImpl {
+    db: IndexedDB | undefined
+    
     constructor() {}
 
     async deleteFile(fileName: string): Promise<string[] | void> {}
@@ -28,7 +30,8 @@ export default class LocalImpl implements IFunctionalityImpl {
         const extensionFiltered = fileName.includes('.csv') ? fileName.split('.csv')[0] : fileName
         const filteredName = extensionFiltered.includes('_usagi') ? `${extensionFiltered.split('_usagi')[0]}` : extensionFiltered
         const usagiFileName = usagiString ? `${filteredName.split('.csv')[0]}_usagi` : filteredName
-        const customFileName = customString ? `${usagiFileName.split('_usagi_concept')[0]}_concept` : usagiFileName
+        let customFileName = customString ? `${usagiFileName.split('_usagi_concept')[0]}_concept` : usagiFileName
+        if(customFileName.includes('_concept_concept')) customFileName = `${customFileName.split('_concept')[0]}_concept`
         let element = document.createElement('a')
         const db = new IndexedDB('localMapping', 'localMapping')
         const fileData = await db.get(fileName, true)
@@ -54,14 +57,14 @@ export default class LocalImpl implements IFunctionalityImpl {
 
     async uploadFile(file: File, authorizedAuthors: string[]): Promise<string[] | void> {
         if(dev) console.log('uploadFile: Uploading file to IndexedDB')
-        const db = new IndexedDB('localMapping', 'localMapping')
         const blob = await fileToBlob(file)
+        if(await this.isOpen() == false) await this.openDatabase()
         if(blob.size > 1000000) {
             const str = await blobToString(blob)
-            await db.set({ fileName: file.name, type: "text", file: str, fileType: 'concepts' }, file.name, true)
+            await this.db!.set({ fileName: file.name, type: "text", file: str, fileType: 'concepts' }, file.name, true)
         } else {
             const hex = await convertBlobToHexString(blob)
-            await db.set({ fileName: file.name, type: "hex", file: hex, fileType: 'concepts' }, file.name, true)
+            await this.db!.set({ fileName: file.name, type: "hex", file: hex, fileType: 'concepts' }, file.name, true)
         }
         goto(`${base}/mapping`)
         return
@@ -81,11 +84,11 @@ export default class LocalImpl implements IFunctionalityImpl {
     }
 
     async readFileFirstTime(fileName: string): Promise<{ file: File | undefined; customConceptsFile: File | undefined; } | void> {
-        const db = new IndexedDB('localMapping', 'localMapping')
         if(dev) console.log(`readFileFirstTime: Get the file (${fileName}) from IndexedDB for local mapping`)
-        const storedFile = await db.get(fileName, true)
+        if(await this.isOpen() == false) await this.openDatabase()
+        const storedFile = await this.db!.get(fileName, true)
         const customName = `${fileName.split('.csv')[0]}_concept.csv`
-        const storedCustomConcepts = await db.get(customName, true, true)
+        const storedCustomConcepts = await this.db!.get(customName, true, true)
         if(storedFile && storedCustomConcepts) {
             if(storedFile.type == "hex") {
                 const blob = await convertHexStringToBlob(storedFile.file, 'text/csv')
@@ -142,20 +145,20 @@ export default class LocalImpl implements IFunctionalityImpl {
 
     async syncFile(data: ISync): Promise<File | void> {
         return new Promise(async(resolve, reject) => {
-            const db = new IndexedDB('localMapping', 'localMapping')
+            if(await this.isOpen() == false) await this.openDatabase()
             if(data.action == 'update' && data.blob) {
                 if(dev) console.log('syncFile: Updating the file in IndexedDB')
                 if(data.blob.size > 1000000) {
                     const str = await blobToString(data.blob)
-                    await db.set({ fileName: data.fileName, type: "text", file: str, fileType: 'concepts' }, data.fileName, true)
+                    await this.db!.set({ fileName: data.fileName, type: "text", file: str, fileType: 'concepts' }, data.fileName, true)
                     resolve()
                 } else {
                     const hex = await convertBlobToHexString(data.blob)
-                    await db.set({ fileName: data.fileName, type: "hex", file: hex, fileType: 'concepts' }, data.fileName, true)
+                    await this.db!.set({ fileName: data.fileName, type: "hex", file: hex, fileType: 'concepts' }, data.fileName, true)
                     resolve()
                 }
             } else {
-                const res = await db.get(data.fileName, true, true)
+                const res = await this.db!.get(data.fileName, true, true)
                 if(res) {
                     if(dev) console.log('syncFile: Getting the file from IndexedDB')
                     const blob = res.type == "hex" ? await convertHexStringToBlob(res.file, 'text/csv') : await stringToBlob(res.file)
@@ -170,36 +173,35 @@ export default class LocalImpl implements IFunctionalityImpl {
     }
 
     async cache(data: ICache): Promise<File | void> {
-        const db = new IndexedDB('localMapping', 'localMapping')
+        if(await this.isOpen() == false) await this.openDatabase()
         if(data.action == 'update') {
             if(data.blob.size > 1000000) {
                 const str = await blobToString(data.blob)
-                await db.set({ fileName: data.fileName, type: "text", file: str, fileType: 'concepts' }, data.fileName, true)
+                await this.db!.set({ fileName: data.fileName, type: "text", file: str, fileType: 'concepts' }, data.fileName, true)
             } else {
                 const hex = await convertBlobToHexString(data.blob)
-                await db.set({ fileName: data.fileName, type: "hex", file: hex, fileType: 'concepts' }, data.fileName, true)
+                await this.db!.set({ fileName: data.fileName, type: "hex", file: hex, fileType: 'concepts' }, data.fileName, true)
             }
             return
         } else if (data.action == 'get') {
-            const fileData = await db.get(data.fileName, true, true)
+            const fileData = await this.db!.get(data.fileName, true, true)
             const blob = fileData.type == "hex" ? await convertHexStringToBlob(fileData.file, 'text/csv') : await stringToBlob(fileData.file)
             const file = new File([blob], data.fileName, { type: 'text/csv' })
             return file
         } else {
-            await db.close()
             console.error('cache: Provide a valid action to cache the downloaded data')
         }
     } 
 
     async removeCache(fileName: string): Promise<void> {
-        const db = new IndexedDB('localMapping', 'localMapping')
-        await db.remove(fileName, true)
+        if(await this.isOpen() == false) await this.openDatabase()
+        await this.db!.remove(fileName, true)
         return
     }
 
     async checkForCache(fileName: string): Promise<boolean | void> {
-        const db = new IndexedDB('localMapping', 'localMapping')
-        const res = await db.get(fileName, true, true)
+        if(await this.isOpen() == false) await this.openDatabase()
+        const res = await this.db!.get(fileName, true, true)
         if(res) return true
         else return false
     }
@@ -212,18 +214,17 @@ export default class LocalImpl implements IFunctionalityImpl {
 
     async checkCustomConcepts(name: string): Promise<File | void> {
         return new Promise(async(resolve, reject) => {
-            const db = new IndexedDB('localMapping', 'localMapping')
             const customName = `${name.split('.csv')[0]}_concept.csv`
-            const res = await db.get(customName, true)
+            if(await this.isOpen() == false) await this.openDatabase()
+            const res = await this.db!.get(customName, true)
             if(!res) {
                 // TODO: check to delete the first test row, this row is needed because Arquero expects the columns as well as one row
                 const blob = new Blob(['concept_id,concept_name,domain_id,vocabulary_id,concept_class_id,standard_concept,concept_code,valid_start_date,valid_end_date,invalid_reason\n0,test,test,test,test,S,123,2000-01-01,2099-01-01,U'])
                 const file = new File([blob], customName, { type: 'text/csv' })
                 const hex = await convertBlobToHexString(blob)
-                await db.set({ fileName: customName, file: hex, fileType: 'custom'}, customName, true)
+                await this.db!.set({ fileName: customName, file: hex, fileType: 'custom'}, customName, true)
                 resolve(file)
             } else {
-                await db.close()
                 const hex = res.file
                 const blob = await convertHexStringToBlob(hex, "text/csv")
                 const file = new File([blob], customName, { type: 'text/csv' })
@@ -231,4 +232,17 @@ export default class LocalImpl implements IFunctionalityImpl {
             }
         })
     }
+
+    async openDatabase(): Promise<void> {
+        if(await this.isOpen() == false) this.db = new IndexedDB('localMapping', 'localMapping')
+    }
+
+    async closeDatabase(): Promise<void> {
+        if(await this.isOpen()) this.db!.close()
+    }
+
+    async isOpen() {
+        return this.db instanceof IDBDatabase && !this.db.hasOwnProperty('_secret_did_close');
+      }
+      
 }
