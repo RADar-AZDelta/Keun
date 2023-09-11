@@ -1,55 +1,41 @@
-import {
-	PUBLIC_FIREBASE_API_KEY,
-	PUBLIC_FIREBASE_AUTH_DOMAIN,
-	PUBLIC_FIREBASE_PROJECT_ID,
-	PUBLIC_FIREBASE_STORAGE_BUCKET,
-	PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-	PUBLIC_FIREBASE_APP_ID,
-	PUBLIC_FIREBASE_DATABASE_URL
-} from '$env/static/public';
-import { getApp, type FirebaseApp, type FirebaseOptions, initializeApp } from "firebase/app";
-import { GithubAuthProvider, GoogleAuthProvider, getAuth, type AuthProvider, signInWithPopup, signOut, type User, type IdTokenResult, onAuthStateChanged } from 'firebase/auth';
-import { DataSnapshot, child, get, getDatabase, off, onValue, push, ref, remove, set, update } from 'firebase/database'
-import { deleteObject, getBlob, getStorage, ref as storageRef, uploadBytes } from 'firebase/storage'
+import type { FirebaseApp } from "firebase/app";
+import { GithubAuthProvider, GoogleAuthProvider, getAuth, type AuthProvider, signInWithPopup, signOut, type User, type IdTokenResult, onAuthStateChanged, type Auth } from 'firebase/auth';
+import { DataSnapshot, Database, child, get, getDatabase, off, onValue, push, ref, remove, set, update } from 'firebase/database'
+import { deleteObject, getBlob, getStorage, ref as storageRef, uploadBytes, type FirebaseStorage } from 'firebase/storage'
 import type { UserSession } from '../app';
 import { sleep } from './utils';
 import { writable } from 'svelte/store';
-import { dev } from '$app/environment';
-
-const firebaseConfig: FirebaseOptions = {
-    apiKey: PUBLIC_FIREBASE_API_KEY,
-	authDomain: PUBLIC_FIREBASE_AUTH_DOMAIN,
-	databaseURL: PUBLIC_FIREBASE_DATABASE_URL,
-	projectId: PUBLIC_FIREBASE_PROJECT_ID,
-	storageBucket: PUBLIC_FIREBASE_STORAGE_BUCKET,
-	messagingSenderId: PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-	appId: PUBLIC_FIREBASE_APP_ID
-}
+import { browser, dev } from '$app/environment';
 
 // Initialize Firebase
-let firebaseApp: FirebaseApp;
-try {
-	firebaseApp = getApp('POC');
-} catch (e) {
-	firebaseApp = initializeApp(firebaseConfig, 'POC');
+let firebaseApp: FirebaseApp | undefined, firebaseAuth: Auth | undefined, firebaseDatabase: Database | undefined, firebaseStorage: FirebaseStorage | undefined
+
+async function getFirebaseApp() {
+	const res = await fetch('/api/firebase');
+	const body = await res.json()
+	firebaseApp = body.app
 }
-
-// Auth
-const firebaseAuth = getAuth(firebaseApp);
-// Realtime Database
-const firebaseDatabase = getDatabase(firebaseApp);
-
-const firebaseDatabaseListeners: Record<string, any> = {}
-
-// Storage
-const firebaseStorage = getStorage(firebaseApp)
-
-// Analytics
-//const firebaseAnalytics = getAnalytics(firebaseApp)
 
 // Providers
 const googleAuthProvider = new GoogleAuthProvider();
 const githubAuthProvider = new GithubAuthProvider();
+
+// Auth
+async function setAuth() {
+	if(!firebaseApp) await getFirebaseApp()
+	firebaseAuth = getAuth(firebaseApp);
+	return firebaseAuth
+}
+// Realtime Database
+async function setDatabase() {{
+	if(!firebaseApp) await getFirebaseApp()
+	firebaseDatabase = getDatabase(firebaseApp);
+}}
+// Storage
+async function setStorage() {
+	if(!firebaseApp) await getFirebaseApp()
+	firebaseStorage = getStorage(firebaseApp);
+}
 
 // Methods
 async function logIn(provider: string) {
@@ -64,11 +50,11 @@ async function logIn(provider: string) {
 				authProvider = githubAuthProvider;
 				break;
 		}
-
-		const userCred = await signInWithPopup(firebaseAuth, authProvider!);
+		if(!firebaseAuth) await setAuth()
+		const userCred = await signInWithPopup(firebaseAuth!, authProvider!);
 		const token = await userCred.user.getIdTokenResult(true);
 		await setToken(token.token);
-        return userCred
+		return userCred
 	} catch (error: any) {
 		throw {
 			code: error.code,
@@ -79,7 +65,8 @@ async function logIn(provider: string) {
 }
 
 async function logOut() {
-	await signOut(firebaseAuth);
+	if(!firebaseAuth) await setAuth()
+	await signOut(firebaseAuth!);
 	await setToken();
 }
 
@@ -144,37 +131,42 @@ const userSessionStore = writable<UserSession>({});
 let _resolve: any;
 const userSessionInitialized = new Promise((resolve) => (_resolve = resolve));
 
-onAuthStateChanged(firebaseAuth, async (user) => {
-	if (user) {
-		const token = await user.getIdTokenResult(false);
-		refreshTokenTrigger(user, token, userSessionStore.set);
-		if (dev) console.log(token.claims);
-		userSessionStore.set(decodeToken(user, token));
-		await setToken(token.token);
-	} else {
-		userSessionStore.set({ uid: undefined, name: undefined, email: undefined, roles: undefined });
-	}
-	_resolve();
-});
+if(browser && firebaseAuth) {
+	onAuthStateChanged(firebaseAuth, async (user) => {
+		if (user) {
+			const token = await user.getIdTokenResult(false);
+			refreshTokenTrigger(user, token, userSessionStore.set);
+			if (dev) console.log(token.claims);
+			userSessionStore.set(decodeToken(user, token));
+			await setToken(token.token);
+		} else {
+			userSessionStore.set({ uid: undefined, name: undefined, email: undefined, roles: undefined });
+		}
+		_resolve();
+	});
+}
 
 const onlyReadableUserSessionStore = { subscribe: userSessionStore.subscribe };
 
 async function writeToDatabase(path: string, data: Object) {
 	if (dev) console.log("writeToDatabase: Write data to the path ", path)
-	const reference = ref(firebaseDatabase, path);
+	if(!firebaseDatabase) await setDatabase()
+	const reference = ref(firebaseDatabase!, path);
 	await set(reference, data)
 }
 
 async function pushToDatabase(path: string, data: any) {
 	if (dev) console.log("writeToDatabase: Push data to the path ", path)
-    const reference = ref(firebaseDatabase, path)
+	if(!firebaseDatabase) await setDatabase()
+    const reference = ref(firebaseDatabase!, path)
     await push(reference, data)
 }
 
 async function readDatabase(path: string) {
 	if (dev) console.log('readDatabase: Read data from the path ', path)
 	let receivedData: any;
-	const reference = ref(firebaseDatabase);
+	if(!firebaseDatabase) await setDatabase()
+	const reference = ref(firebaseDatabase!);
 	await get(child(reference, path))
 		.then((snapshot: DataSnapshot) => {
 			receivedData = snapshot.val();
@@ -186,7 +178,8 @@ async function readDatabase(path: string) {
 }
 
 async function watchValueDatabase(path: string, callback: (snapshot: DataSnapshot) => unknown, remove: boolean = false) {
-	const reference = ref(firebaseDatabase, path)
+	if(!firebaseDatabase) await setDatabase()
+	const reference = ref(firebaseDatabase!, path)
 	if (dev) console.log('watchValueDatabase: Watching the value at path ', path)
 	const valueCheck = onValue(reference, callback)
 	if(remove) {
@@ -197,19 +190,22 @@ async function watchValueDatabase(path: string, callback: (snapshot: DataSnapsho
 }
 async function deleteDatabase(path: string) {
 	if (dev) console.log('deleteDatabase: Delete the data at the path ', path)
-	remove(ref(firebaseDatabase, path))
+	if(!firebaseDatabase) await setDatabase()
+	remove(ref(firebaseDatabase!, path))
 }
 
 async function updateDatabase(path: string, data: Object) {
 	if (dev) console.log('updateDatabase: Update the database with data at the path ', path)
-	const reference = ref(firebaseDatabase, path)
+	if(!firebaseDatabase) await setDatabase()
+	const reference = ref(firebaseDatabase!, path)
 	await update(reference, data)
 }
 
 async function uploadFileToStorage(reference: string, file: File): Promise<string | void> {
 	return new Promise(async (resolve, reject) => {
 		if (dev) console.log('uploadFileToStorage: Upload the file to the storage at reference ', reference)
-		const storageReference = storageRef(firebaseStorage, reference)
+		if(!firebaseStorage) await setStorage()
+		const storageReference = storageRef(firebaseStorage!, reference)
 		await uploadBytes(storageReference, file).catch((e) => {resolve(e.message)}).finally(() => resolve())
 	})
 }
@@ -217,15 +213,17 @@ async function uploadFileToStorage(reference: string, file: File): Promise<strin
 async function readFileStorage(reference: string): Promise<Blob | undefined> {
 	return new Promise(async(resolve, reject) => {
 		if (dev) console.log('readFileStorage: Read the file from storage at reference ', reference)
-	const storageReference = storageRef(firebaseStorage, reference)
+		if(!firebaseStorage) await setStorage()
+	const storageReference = storageRef(firebaseStorage!, reference)
 		await getBlob(storageReference).then((blob: Blob) => resolve(blob)).catch(() => resolve(undefined))
 	})
 }
 
 async function deleteFileStorage(reference: string): Promise<string | void> {
-	return new Promise((resolve, reject) => {
+	return new Promise(async(resolve, reject) => {
 		if (dev) console.log('deleteFileStorage: Delete the file at reference ', reference)
-		const storageReference = storageRef(firebaseStorage, reference)
+		if(!firebaseStorage) await setStorage()
+		const storageReference = storageRef(firebaseStorage!, reference)
 		deleteObject(storageReference).catch((e: Error) => resolve(e.message)).finally(() => resolve())
 	})
 }
