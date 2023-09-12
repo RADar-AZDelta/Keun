@@ -1,5 +1,5 @@
 import type { FirebaseApp } from "firebase/app";
-import { GithubAuthProvider, GoogleAuthProvider, getAuth, type AuthProvider, signInWithPopup, signOut, type User, type IdTokenResult, onAuthStateChanged, type Auth } from 'firebase/auth';
+import { GithubAuthProvider, GoogleAuthProvider, getAuth, type AuthProvider, signInWithPopup, signOut, type User, type IdTokenResult, onAuthStateChanged, type Auth, type UserCredential } from 'firebase/auth';
 import { DataSnapshot, Database, child, get, getDatabase, off, onValue, push, ref, remove, set, update } from 'firebase/database'
 import { deleteObject, getBlob, getStorage, ref as storageRef, uploadBytes, type FirebaseStorage } from 'firebase/storage'
 import type { UserSession } from '../app';
@@ -10,7 +10,7 @@ import { browser, dev } from '$app/environment';
 // Initialize Firebase
 let firebaseApp: FirebaseApp | undefined, firebaseAuth: Auth | undefined, firebaseDatabase: Database | undefined, firebaseStorage: FirebaseStorage | undefined
 
-async function getFirebaseApp() {
+async function getFirebaseApp(): Promise<void> {
 	const res = await fetch('/api/firebase');
 	const body = await res.json()
 	if(body.app) firebaseApp = body.app
@@ -22,24 +22,24 @@ const googleAuthProvider = new GoogleAuthProvider();
 const githubAuthProvider = new GithubAuthProvider();
 
 // Auth
-async function setAuth() {
+async function setAuth(): Promise<Auth> {
 	if(!firebaseApp) await getFirebaseApp()
 	firebaseAuth = getAuth(firebaseApp);
 	return firebaseAuth
 }
 // Realtime Database
-async function setDatabase() {{
+async function setDatabase(): Promise<void> {{
 	if(!firebaseApp) await getFirebaseApp()
 	firebaseDatabase = getDatabase(firebaseApp);
 }}
 // Storage
-async function setStorage() {
+async function setStorage(): Promise<void> {
 	if(!firebaseApp) await getFirebaseApp()
 	firebaseStorage = getStorage(firebaseApp);
 }
 
 // Methods
-async function logIn(provider: string) {
+async function logIn(provider: string): Promise<UserCredential> {
 	try {
 		let authProvider: AuthProvider;
 
@@ -65,14 +65,14 @@ async function logIn(provider: string) {
 	}
 }
 
-async function logOut() {
+async function logOut(): Promise<void> {
 	if(!firebaseAuth) await setAuth()
 	await signOut(firebaseAuth!);
 	await setToken();
 }
 
 // Set the token in the cookies
-async function setToken(token?: string) {
+async function setToken(token?: string): Promise<void> {
 	const options = {
 		method: 'POST',
 		headers: {
@@ -98,7 +98,7 @@ const refreshTokenTrigger = (
 	user: User,
 	token: IdTokenResult,
 	set: (value: UserSession) => void
-) => {
+): void => {
 	let callback = null;
 	let metadataRef = null;
 	// Remove previous listener.
@@ -149,21 +149,21 @@ if(browser && firebaseAuth) {
 
 const onlyReadableUserSessionStore = { subscribe: userSessionStore.subscribe };
 
-async function writeToDatabase(path: string, data: Object) {
+async function writeToDatabase(path: string, data: Object): Promise<void> {
 	if (dev) console.log("writeToDatabase: Write data to the path ", path)
 	if(!firebaseDatabase) await setDatabase()
 	const reference = ref(firebaseDatabase!, path);
 	await set(reference, data)
 }
 
-async function pushToDatabase(path: string, data: any) {
+async function pushToDatabase(path: string, data: any): Promise<void> {
 	if (dev) console.log("writeToDatabase: Push data to the path ", path)
 	if(!firebaseDatabase) await setDatabase()
     const reference = ref(firebaseDatabase!, path)
     await push(reference, data)
 }
 
-async function readDatabase(path: string) {
+async function readDatabase(path: string): Promise<any> {
 	if (dev) console.log('readDatabase: Read data from the path ', path)
 	let receivedData: any;
 	if(!firebaseDatabase) await setDatabase()
@@ -178,7 +178,7 @@ async function readDatabase(path: string) {
 	return receivedData;
 }
 
-async function watchValueDatabase(path: string, callback: (snapshot: DataSnapshot) => unknown, remove: boolean = false) {
+async function watchValueDatabase(path: string, callback: (snapshot: DataSnapshot) => unknown, remove: boolean = false): Promise<void> {
 	if(!firebaseDatabase) await setDatabase()
 	const reference = ref(firebaseDatabase!, path)
 	if (dev) console.log('watchValueDatabase: Watching the value at path ', path)
@@ -189,13 +189,13 @@ async function watchValueDatabase(path: string, callback: (snapshot: DataSnapsho
 		valueCheck()
 	}
 }
-async function deleteDatabase(path: string) {
+async function deleteDatabase(path: string): Promise<void> {
 	if (dev) console.log('deleteDatabase: Delete the data at the path ', path)
 	if(!firebaseDatabase) await setDatabase()
 	remove(ref(firebaseDatabase!, path))
 }
 
-async function updateDatabase(path: string, data: Object) {
+async function updateDatabase(path: string, data: Object): Promise<void> {
 	if (dev) console.log('updateDatabase: Update the database with data at the path ', path)
 	if(!firebaseDatabase) await setDatabase()
 	const reference = ref(firebaseDatabase!, path)

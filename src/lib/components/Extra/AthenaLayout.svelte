@@ -1,5 +1,12 @@
 <script lang="ts">
+  //////////////////////////////////////////////// Framework imports
   import { createEventDispatcher, onMount } from 'svelte'
+  import { base } from '$app/paths'
+  //////////////////////////////////////////////// Package imports
+  import { query } from 'arquero'
+  import debounce from 'lodash.debounce'
+  import DataTable, { type FetchDataFunc, type IColumnMetaData } from '@radar-azdelta/svelte-datatable'
+  //////////////////////////////////////////////// Component & type imports
   import Equivalence from '../Mapping/Equivalence.svelte'
   import AthenaFilter from './AthenaFilter.svelte'
   import filtersJSON from '$lib/data/filters.json'
@@ -11,24 +18,20 @@
     CustomMappingInputEventDetail,
     CustomOptionsEvents,
     ICategories,
+    ISides,
     MappingEventDetail,
     ReviewerChangedEventDetail,
     UpdateUniqueConceptIdsEventDetail,
   } from '../Types'
   import SvgIcon from './SvgIcon.svelte'
-  import DataTable, { type FetchDataFunc, type IColumnMetaData } from '@radar-azdelta/svelte-datatable'
-  import { query } from 'arquero'
   import AthenaRow from '../Mapping/AthenaRow.svelte'
   import customConceptInfo from '$lib/data/customConceptInfo.json'
-  import debounce from 'lodash.debounce'
   import type Query from 'arquero/dist/types/query/query'
   import AutocompleteInputSettings from './AutocompleteInputSettings.svelte'
   import { clickOutside } from '$lib/actions/clickOutside'
-  import { dev } from '$app/environment'
   import CustomConceptInputRow from '../Mapping/CustomConceptInputRow.svelte'
   import { customConcept, settings } from '$lib/store'
   import { AthenaDataTypeImpl } from '$lib/utilClasses/AthenaDataTypeImpl'
-  import { base } from '$app/paths'
 
   export let equivalenceMapping: string,
     selectedRow: Record<string, any>,
@@ -41,54 +44,50 @@
 
   // General variables
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
-  let layoutDialog: HTMLDialogElement
-  let openedFilter: string
-  let lastRow: boolean = false
-  let sidesShowed: Record<string, boolean> = {
-    filters: true,
-    details: true,
-  }
-  let conceptSelection: string = 'athena'
-  let errorMessage: string = ''
-  let sidesSet: boolean = false
+  let layoutDialog: HTMLDialogElement,
+    openedFilter: string,
+    lastRow: boolean = false,
+    sidesShowed: ISides = {
+      filters: true,
+      details: true,
+    },
+    conceptSelection: string = 'athena',
+    errorMessage: string = '',
+    sidesSet: boolean = false
 
   // Table variables
-  let reviewer: string = ''
-  let comment: string = ''
+  let reviewer: string = '',
+    comment: string = ''
 
   // Data variables
-  let JSONFilters = new Map<string, ICategories>([])
-  let activatedAthenaFilters = new Map<string, string[]>([['standardConcept', ['Standard']]])
-  let filterColors: Record<string, string> = {
-    domain: '#ec3d31',
-    concept: '#50a5ba',
-    class: '#6967d2',
-    vocab: '#ffa200',
-    validity: '#ad007c',
-  }
-  let filterNames: Record<string, string> = {
-    domain: 'domain',
-    standardConcept: 'concept',
-    conceptClass: 'class',
-    Vocabulary: 'vocab',
-    invalidReason: 'validity',
-  }
+  let JSONFilters = new Map<string, ICategories>([]),
+    activatedAthenaFilters = new Map<string, string[]>([['standardConcept', ['Standard']]]),
+    filterColors: Record<string, string> = {
+      domain: '#ec3d31',
+      concept: '#50a5ba',
+      class: '#6967d2',
+      vocab: '#ffa200',
+      validity: '#ad007c',
+    },
+    filterNames: Record<string, string> = {
+      domain: 'domain',
+      standardConcept: 'concept',
+      conceptClass: 'class',
+      Vocabulary: 'vocab',
+      invalidReason: 'validity',
+    }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // DATA
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
-  const athenaColumns: IColumnMetaData[] = columnsAthena
+  const athenaColumns: IColumnMetaData[] = columnsAthena,
+    alreadyMappedColumns: IColumnMetaData[] = columnsAlreadyMapped
 
-  const alreadyMappedColumns: IColumnMetaData[] = columnsAlreadyMapped
-
-  let alreadyMappedData: Record<string, any>[] = [{}]
-
-  let dataTableAthena: DataTable
-
-  let alreadyMapped: Record<string, Record<string, any>> = {}
-
-  let customConceptData: Record<string, any>[] = [{}]
+  let alreadyMappedData: Record<string, any>[] = [{}],
+    dataTableAthena: DataTable,
+    alreadyMapped: Record<string, Record<string, any>> = {},
+    customConceptData: Record<string, any>[] = [{}]
 
   for (let filter of filtersJSON) {
     JSONFilters.set(filter.name, {
@@ -115,31 +114,32 @@
   }
 
   // A method to update the already mapped concepts (used to see the already mapped concepts for a certain row)
-  function updateUniqueConceptIds(event: CustomEvent<UpdateUniqueConceptIdsEventDetail>): void {
+  function updateUniqueConceptIds(event: CustomEvent<UpdateUniqueConceptIdsEventDetail>): void | Record<string, any>[] {
     let alreadyMappedRow = alreadyMapped[selectedRow.sourceCode]
     // Check if there is multiple mapping
-    if (event.detail.multiple == true) {
-      // If it is the first concept mapped to the row
-      if (!alreadyMappedRow) {
-        alreadyMappedRow = {
-          conceptId: [event.detail.conceptId],
-          conceptName: [event.detail.conceptName],
-          custom: [false],
-        }
-      } else {
-        alreadyMappedRow.conceptId.push(event.detail.conceptId)
-        alreadyMappedRow.conceptName.push(event.detail.conceptName)
-        alreadyMappedRow.custom.push(false)
-      }
-    } else {
+    if (!event.detail.multiple) {
       alreadyMappedRow = {
         conceptId: [event.detail.conceptId],
         conceptName: [event.detail.conceptName],
         custom: [false],
       }
+      alreadyMapped[selectedRow.sourceCode] = alreadyMappedRow
+      return fillMappedTable()
+    }
+    // If it is the first concept mapped to the row
+    if (!alreadyMappedRow) {
+      alreadyMappedRow = {
+        conceptId: [event.detail.conceptId],
+        conceptName: [event.detail.conceptName],
+        custom: [false],
+      }
+    } else {
+      alreadyMappedRow.conceptId.push(event.detail.conceptId)
+      alreadyMappedRow.conceptName.push(event.detail.conceptName)
+      alreadyMappedRow.custom.push(false)
     }
     alreadyMapped[selectedRow.sourceCode] = alreadyMappedRow
-    fillMappedTable()
+    return fillMappedTable()
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -152,16 +152,12 @@
     const inputValue = (event.target as HTMLInputElement).checked
     // If the filter is checked, add it
     if (chosenFilter && inputValue == true) chosenFilter.push(option)
-    // If the filter is unchecked and was already in the list, remove it
-    else if (chosenFilter && inputValue == false) {
-      if (chosenFilter.includes(option) == true) {
-        chosenFilter.splice(chosenFilter.indexOf(option), 1)
-        if (chosenFilter.length == 0) activatedAthenaFilters.delete(filter)
-        else activatedAthenaFilters.set(filter, chosenFilter)
-      }
-    } else {
-      activatedAthenaFilters.set(filter, [option])
-    }
+    else if (chosenFilter && !inputValue && chosenFilter?.includes(option)) {
+      // If the filter is unchecked and was already in the list, remove it
+      chosenFilter.splice(chosenFilter.indexOf(option), 1)
+      if (chosenFilter.length == 0) activatedAthenaFilters.delete(filter)
+      else activatedAthenaFilters.set(filter, chosenFilter)
+    } else activatedAthenaFilters.set(filter, [option])
     localStorageSetter('AthenaFilters', activatedAthenaFilters)
     activatedAthenaFilters = activatedAthenaFilters
     dispatch('filterOptionsChanged', { filters: activatedAthenaFilters })
@@ -170,16 +166,13 @@
   // A method to check if the filter is already applied to the API call
   const checkIfFilterExists = (filter: string, altName: string | undefined, option: string): boolean => {
     let allFilters: Map<string, string[]> = activatedAthenaFilters
-    const chosenFilter =
-      allFilters.get(filter) == undefined
-        ? altName != undefined
-          ? allFilters.get(altName)
-          : undefined
-        : allFilters.get(filter)
+    const chosenFilter = !allFilters.get(filter)
+      ? altName
+        ? allFilters.get(altName)
+        : undefined
+      : allFilters.get(filter)
 
-    if (chosenFilter == undefined || chosenFilter.length == 0) return false
-    else if (chosenFilter.includes(option)) return true
-    else return false
+    return chosenFilter && chosenFilter?.includes(option) ? true : false
   }
 
   // A method to delete a filter when a filter for the Athena API call is removed in the section "Activated filters"
@@ -195,69 +188,61 @@
     dispatch('rowChange', { up, currentRow: selectedRow })
   }
 
+  async function fillUniqueConceptIds(row: Record<string, any>): Promise<void> {
+    if (!row.conceptId) return
+    let mappedRow = alreadyMapped[row.sourceCode]
+    if (!mappedRow) {
+      mappedRow = {
+        conceptId: [row.conceptId],
+        conceptName: [row.conceptName],
+        custom: [row['ADD_INFO:customConcept'] ? true : false],
+      }
+      alreadyMapped[row.sourceCode] = mappedRow
+      return
+    }
+    if (!mappedRow.conceptId.includes(row.conceptId) || !mappedRow.conceptName.includes(row.conceptName)) {
+      mappedRow.conceptId.push(row.conceptId)
+      mappedRow.conceptName.push(row.conceptName)
+    }
+    mappedRow.custom.push(row['ADD_INFO:customConcept'] ? true : false)
+    alreadyMapped[row.sourceCode] = mappedRow
+  }
+
   // A method to get all the mapped concept ids for a certain row
   async function getUniqueConceptIds(): Promise<void> {
     alreadyMapped = {}
-    if (selectedRow) {
-      // Create a query that finds all rows with the same sourceCode as the selected row
-      const q = (<Query>query().params({ source: selectedRow.sourceCode }))
-        .filter((d: any, params: any) => d.sourceCode == params.source)
-        .toObject()
-      const res = await mainTable.executeQueryAndReturnResults(q)
-      for (let row of res.queriedData) {
-        if (row.conceptId) {
-          let alreadyMappedRow = alreadyMapped[row.sourceCode]
-          if (alreadyMappedRow) {
-            if (
-              !alreadyMappedRow.conceptId.includes(row.conceptId) ||
-              !alreadyMappedRow.conceptName.includes(row.conceptName)
-            ) {
-              alreadyMappedRow.conceptId.push(row.conceptId)
-              alreadyMappedRow.conceptName.push(row.conceptName)
-            }
-            if (row['ADD_INFO:customConcept'] == true) alreadyMappedRow.custom.push(true)
-            else alreadyMappedRow.custom.push(false)
-          } else {
-            alreadyMappedRow = {
-              conceptId: [row.conceptId],
-              conceptName: [row.conceptName],
-              custom: [row['ADD_INFO:customConcept'] == true ? true : false],
-            }
-          }
-          alreadyMapped[row.sourceCode] = alreadyMappedRow
-        }
-      }
-
-      fillMappedTable()
-    }
+    if (!selectedRow) return
+    // Create a query that finds all rows with the same sourceCode as the selected row
+    const rowsQuery = (<Query>query().params({ source: selectedRow.sourceCode }))
+      .filter((d: any, params: any) => d.sourceCode == params.source)
+      .toObject()
+    const rows = await mainTable.executeQueryAndReturnResults(rowsQuery)
+    for (let row of rows.queriedData) await fillUniqueConceptIds(row)
+    fillMappedTable()
   }
 
   // A method for when the assigned reviewer has changed
-  function reviewerChanged(e: CustomEvent<ReviewerChangedEventDetail>): void {
-    if (e.detail.reviewer) {
-      reviewer = e.detail.reviewer
-      dispatch('updateDetails', { index: selectedRowIndex, assignedReviewer: reviewer, comment })
-    } else reviewer = ''
+  function reviewerChanged(e: CustomEvent<ReviewerChangedEventDetail>): void | string {
+    if (!e.detail.reviewer) return (reviewer = '')
+    reviewer = e.detail.reviewer
+    dispatch('updateDetails', { index: selectedRowIndex, assignedReviewer: reviewer, comment })
   }
 
   // A method to close the dialog if it was opened
   function closeDialog(): void {
-    if (layoutDialog.attributes.getNamedItem('open') != null) {
-      layoutDialog.close()
-      dispatch('generalVisibilityChanged', { visibility: false })
-    }
+    if (!layoutDialog.attributes.getNamedItem('open')) return
+    layoutDialog.close()
+    dispatch('generalVisibilityChanged', { visibility: false })
   }
 
   // A method to open the dialog if it was closed
   function openDialog(): void {
-    if (layoutDialog)
-      if (layoutDialog.attributes.getNamedItem('open') == null) {
-        comment = ''
-        reviewer = ''
-        layoutDialog.showModal()
-      }
     fetchData = fetchData
     setVocabularyId()
+    if (layoutDialog?.attributes.getNamedItem('open')) return
+    comment = ''
+    reviewer = ''
+    layoutDialog.showModal()
   }
 
   // A method to delete the mapping in the pop-up
@@ -286,93 +271,81 @@
       return a
     }, [])
     const index = conceptIdIndexes.filter(i => conceptNameIndexes.includes(i))[0]
-    if (alreadyMapped[selectedRow.sourceCode].conceptId.length > 1) {
+    if (alreadyMapped[selectedRow.sourceCode].conceptId.length) {
       alreadyMapped[selectedRow.sourceCode].conceptId.splice(index, 1)
       alreadyMapped[selectedRow.sourceCode].conceptName.splice(index, 1)
       alreadyMapped[selectedRow.sourceCode].custom.splice(index, 1)
-    } else {
-      delete alreadyMapped[selectedRow.sourceCode]
-    }
+    } else delete alreadyMapped[selectedRow.sourceCode]
     alreadyMapped = alreadyMapped
   }
 
   // A method for custom mapping
-  function customMapping(e: CustomEvent<CustomMappingInputEventDetail>): void {
+  function customMapping(e: CustomEvent<CustomMappingInputEventDetail>): void | string {
     errorMessage = ''
+    const domainKeys = Object.keys(customConceptInfo.domain_id)
+    const domainValues = Object.values(customConceptInfo.domain_id)
     // Check if the domain id and the concept class id are predefined values
-    if (
-      Object.keys(customConceptInfo.domain_id).includes(e.detail.domainId) ||
-      Object.values(customConceptInfo.domain_id).includes(e.detail.domainId)
-    ) {
-      if (
-        Object.keys(customConceptInfo.concept_class_id).includes(e.detail.conceptClassId) ||
-        Object.values(customConceptInfo.concept_class_id).includes(e.detail.conceptClassId)
-      ) {
-        dispatch('customMapping', {
-          customConcept: e.detail,
-          extra: {
-            comment,
-            reviewer,
-          },
-        })
+    if (!domainKeys.includes(e.detail.domainId) || !domainValues.includes(e.detail.domainId))
+      return (errorMessage = 'The domain id is not valid')
+    const classKeys = Object.keys(customConceptInfo.concept_class_id)
+    const classValues = Object.values(customConceptInfo.concept_class_id)
+    if (!classKeys.includes(e.detail.conceptClassId) || !classValues.includes(e.detail.conceptClassId))
+      return (errorMessage = 'The concept class id is not valid')
 
-        if ($settings.mapToMultipleConcepts == true) {
-          customConceptData.push({
-            concept_id: e.detail.conceptId,
-            concept_name: e.detail.conceptName,
-            domain_id: e.detail.domainId,
-            vocabulary_id: e.detail.vocabularyId,
-            concept_class_id: e.detail.conceptClassId,
-            standard_concept: e.detail.standardConcept,
-            concept_code: e.detail.conceptCode,
-            valid_start_date: e.detail.validStartDate,
-            valid_end_date: e.detail.validEndDate,
-            invalid_reason: e.detail.invalidReason,
-          })
-          customConceptData = customConceptData
-        }
+    dispatch('customMapping', {
+      customConcept: e.detail,
+      extra: {
+        comment,
+        reviewer,
+      },
+    })
 
-        let alreadyMappedSelected = alreadyMapped[selectedRow.sourceCode]
-        if (alreadyMappedSelected) {
-          if (alreadyMappedSelected.conceptId.length > 0) alreadyMappedSelected.conceptId.push(selectedRow.sourceCode)
-          else alreadyMappedSelected.conceptId = [selectedRow.sourceCode]
-          if (alreadyMappedSelected.conceptName.length > 0)
-            alreadyMappedSelected.conceptName.push($customConcept.concept_name)
-          else alreadyMappedSelected.conceptName = [$customConcept.concept_name]
-          if (alreadyMappedSelected.custom.length > 0) alreadyMappedSelected.custom.push(true)
-          else alreadyMappedSelected.custom = [true]
-        } else {
-          alreadyMappedSelected = {
-            conceptId: [selectedRow.sourceCode],
-            conceptName: [$customConcept.concept_name],
-            custom: [true],
-          }
-        }
-        alreadyMapped[selectedRow.sourceCode] = alreadyMappedSelected
-        fillMappedTable()
-      } else {
-        errorMessage = 'The concept class id is not valid'
-        if (dev) console.log(`customMapping: The concept class id: ${$customConcept.conceptClassId}, is not valid`)
-      }
-    } else {
-      errorMessage = 'The domain id is not valid'
-      if (dev) console.log(`customMapping: the domain id: ${$customConcept.domainId}, is not valid`)
+    if ($settings.mapToMultipleConcepts) {
+      customConceptData.push({
+        concept_id: e.detail.conceptId,
+        concept_name: e.detail.conceptName,
+        domain_id: e.detail.domainId,
+        vocabulary_id: e.detail.vocabularyId,
+        concept_class_id: e.detail.conceptClassId,
+        standard_concept: e.detail.standardConcept,
+        concept_code: e.detail.conceptCode,
+        valid_start_date: e.detail.validStartDate,
+        valid_end_date: e.detail.validEndDate,
+        invalid_reason: e.detail.invalidReason,
+      })
+      customConceptData = customConceptData
     }
+
+    let alreadyMappedSelected = alreadyMapped[selectedRow.sourceCode]
+    if (alreadyMappedSelected) {
+      if (alreadyMappedSelected.conceptId.length > 0) alreadyMappedSelected.conceptId.push(selectedRow.sourceCode)
+      else alreadyMappedSelected.conceptId = [selectedRow.sourceCode]
+      if (alreadyMappedSelected.conceptName.length > 0)
+        alreadyMappedSelected.conceptName.push($customConcept.concept_name)
+      else alreadyMappedSelected.conceptName = [$customConcept.concept_name]
+      if (alreadyMappedSelected.custom.length > 0) alreadyMappedSelected.custom.push(true)
+      else alreadyMappedSelected.custom = [true]
+    } else {
+      alreadyMappedSelected = {
+        conceptId: [selectedRow.sourceCode],
+        conceptName: [$customConcept.concept_name],
+        custom: [true],
+      }
+    }
+    alreadyMapped[selectedRow.sourceCode] = alreadyMappedSelected
+    fillMappedTable()
   }
 
   // A method to set the custom concept vocabulary id from the settings
   function setVocabularyId(): void {
-    if ($settings) {
-      if ($settings.hasOwnProperty('vocabularyIdCustomConcept'))
-        $customConcept.vocabulary_id = $settings.vocabularyIdCustomConcept
-    }
+    if (!$settings?.hasOwnProperty('vocabularyIdCustomConcept')) return
+    $customConcept.vocabulary_id = $settings.vocabularyIdCustomConcept
   }
 
   // A method to set the visibility of the sides in the pop-up
-  function sideVisibilityChange(side: string, value: boolean): void {
+  function sideVisibilityChange(side: 'details' | 'filters', value: boolean): void {
     sidesShowed[side] = value
-    if (side == 'filters') $settings.popupSidesShowed.filters = value
-    else if (side == 'detail') $settings.popupSidesShowed.details = value
+    $settings.popupSidesShowed = sidesShowed
   }
 
   // A method for when the user fills in the comment
@@ -382,32 +355,27 @@
 
   // A method to sync the sidesShowed object with the settings
   function setSidesShowed(): void {
-    if ($settings) {
-      if ($settings.popupSidesShowed) {
-        sidesShowed = $settings.popupSidesShowed
-      }
-    }
+    if (!$settings?.hasOwnProperty('vocabularyIdCustomConcept')) return
+    sidesShowed = $settings.popupSidesShowed
   }
 
   // A method to fill the table with the already mapped concepts
-  function fillMappedTable(): void {
+  function fillMappedTable(): void | Record<string, any>[] {
     alreadyMappedData = []
-    for (let code of Object.keys(alreadyMapped)) {
-      if (selectedRow.sourceCode == code) {
-        for (let i = 0; i < alreadyMapped[code].conceptId.length; i++) {
-          alreadyMappedData.push({
-            sourceCode: selectedRow.sourceCode,
-            sourceName: selectedRow.sourceName,
-            conceptId: alreadyMapped[code].conceptId[i],
-            conceptName: alreadyMapped[code].conceptName[i],
-            customConcept: alreadyMapped[code].custom[i],
-          })
-        }
-      }
-    }
+    const code = selectedRow.sourceCode
     // If there are no concepts mapped yet, fill the array with an empty object
     // This empty object is needed because the DataTable component uses it to determine the data type
-    if (alreadyMappedData.length == 0) alreadyMappedData = [{}]
+    if (!Object.keys(alreadyMapped).includes(code)) return (alreadyMappedData = [{}])
+    if (!alreadyMapped[code].conceptId.length) return (alreadyMappedData = [{}])
+    for (let i = 0; i < alreadyMapped[code].conceptId.length; i++) {
+      alreadyMappedData.push({
+        sourceCode: code,
+        sourceName: selectedRow.sourceName,
+        conceptId: alreadyMapped[code].conceptId[i],
+        conceptName: alreadyMapped[code].conceptName[i],
+        customConcept: alreadyMapped[code].custom[i],
+      })
+    }
     alreadyMappedData = alreadyMappedData
   }
 

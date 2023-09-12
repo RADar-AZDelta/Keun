@@ -15,9 +15,7 @@
   // A method for when the input needs to be saved
   function save(): void {
     value = inputValue
-    if (!$settings.savedAuthors) {
-      $settings.savedAuthors = []
-    }
+    if (!$settings.savedAuthors) $settings.savedAuthors = []
     if (!$settings.savedAuthors.includes(inputValue)) {
       $settings.savedAuthors.push(inputValue)
       localStorageSetter('settings', $settings)
@@ -34,19 +32,10 @@
   }
 
   // A method to search for suggestions to apply to the input field
-  function filterNames(): void {
-    let filteredNames = []
-    if (inputValue) {
-      if ($settings.savedAuthors) {
-        for (let name of $settings.savedAuthors) {
-          if (name) {
-            if (name.toLowerCase().startsWith(inputValue.toLowerCase())) {
-              if (name.toLowerCase() != inputValue.toLowerCase()) filteredNames.push(name)
-            }
-          }
-        }
-      }
-    }
+  function filterNames(): void | string[] {
+    let filteredNames: string[] = []
+    if (!inputValue || !$settings.savedAuthors) return (filteredValues = filteredNames)
+    filteredNames = [...filteredNames, ...$settings.savedAuthors.filter(name => name.toLowerCase().startsWith(inputValue.toLowerCase()) && name.toLowerCase() !== inputValue.toLowerCase())]
     filteredValues = filteredNames
   }
 

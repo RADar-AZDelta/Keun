@@ -74,18 +74,7 @@ export interface CustomMappingEventDetail {
   extra: IExtra
 }
 
-export interface CustomMappingInputEventDetail {
-  domainId: string
-  vocabularyId: string
-  conceptClassId: string
-  conceptName: string
-  conceptId: string
-  standardConcept: string
-  conceptCode: string
-  validStartDate: string
-  validEndDate: string
-  invalidReason: string
-}
+export interface CustomMappingInputEventDetail extends ICustomConcept {}
 
 export interface AutoMapRowEventDetail {
   index: number
@@ -114,6 +103,11 @@ export interface ICategories {
   options: string[]
 }
 
+export interface ISides {
+  filters: boolean; 
+  details: boolean
+}
+
 export interface ISettings {
   mapToMultipleConcepts: boolean
   autoMap: boolean
@@ -122,7 +116,7 @@ export interface ISettings {
   savedAuthors: string[]
   vocabularyIdCustomConcept: string
   fontsize: number
-  popupSidesShowed: { filters: boolean; details: boolean }
+  popupSidesShowed: ISides
 }
 
 export interface IAuthor {
@@ -161,6 +155,25 @@ export interface ICache {
   blob: Blob
   fileName: string
   action?: "get" | "update"
+}
+
+export interface ITablePagination {
+  currentPage: number | undefined;
+  rowsPerPage: number | undefined;
+  totalRows: number | undefined;
+}
+
+export interface ICustomConcept {
+  conceptId: string
+  conceptName: string
+  domainId: string
+  vocabularyId: string
+  conceptClassId: string
+  standardConcept: string
+  conceptCode: string
+  validStartDate: string
+  validEndDate: string
+  invalidReason: string
 }
 
 export interface IFunctionalityImpl {

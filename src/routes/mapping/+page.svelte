@@ -1,4 +1,33 @@
 <script lang="ts">
+  //////////////////////////////////////////////// Framework imports
+  import { onDestroy, onMount } from 'svelte'
+  import { page } from '$app/stores'
+  import { base } from '$app/paths'
+  import { beforeNavigate, goto } from '$app/navigation'
+  import { browser, dev } from '$app/environment'
+  //////////////////////////////////////////////// Packages imports
+  import { query } from 'arquero'
+  import type Query from 'arquero/dist/types/query/query'
+  import {
+    abortAutoMapping,
+    fileName,
+    implementation,
+    implementationClass,
+    settings,
+    translator,
+    triggerAutoMapping,
+  } from '$lib/store'
+  import type {
+    IColumnMetaData,
+    IPagination,
+    ITableOptions,
+    SortDirection,
+    TFilter,
+  } from '@radar-azdelta/svelte-datatable'
+  import DataTable from '@radar-azdelta/svelte-datatable'
+  // @ts-ignore
+  import { LatencyOptimisedTranslator } from '@browsermt/bergamot-translator/translator.js'
+  //////////////////////////////////////////////// Component & type imports
   import columnsUsagi from '$lib/data/columnsUsagi.json'
   import columnNamesAthena from '$lib/data/columnNamesAthena.json'
   import additionalColumns from '$lib/data/additionalColumns.json'
@@ -14,133 +43,97 @@
     CustomMappingEventDetail,
     AutoMapRowEventDetail,
     UpdateDetailsEventDetail,
+    ITablePagination,
   } from '$lib/components/Types'
-  import type {
-    IColumnMetaData,
-    IPagination,
-    ITableOptions,
-    SortDirection,
-    TFilter,
-  } from '@radar-azdelta/svelte-datatable'
   import AthenaLayout from '$lib/components/Extra/AthenaLayout.svelte'
   import UsagiRow from '$lib/components/Mapping/UsagiRow.svelte'
-  import { onDestroy, onMount } from 'svelte'
-  import { query } from 'arquero'
-  // @ts-ignore
-  import { LatencyOptimisedTranslator } from '@browsermt/bergamot-translator/translator.js'
-  import { page } from '$app/stores'
-  import { browser } from '$app/environment'
-  import DataTable from '@radar-azdelta/svelte-datatable'
-  import type Query from 'arquero/dist/types/query/query'
-  import {
-    abortAutoMapping,
-    fileName,
-    implementation,
-    implementationClass,
-    settings,
-    triggerAutoMapping,
-  } from '$lib/store'
-  import { beforeNavigate, goto } from '$app/navigation'
-  import { base } from '$app/paths'
-
-  let dev = false
 
   // General variables
-  let file: File | undefined = undefined
-  let customConceptsFile: File | undefined = undefined
-
-  let navTriggered: boolean = true
-
-  let tableOptions: ITableOptions = {
-    id: $fileName,
-    rowsPerPage: 15,
-    rowsPerPageOptions: [5, 10, 15, 20, 50, 100],
-    actionColumn: true,
-    paginationOnTop: true,
-  }
-
-  let customTableOptions: ITableOptions = {
-    id: 'customConceptsTable',
-    saveOptions: false,
-  }
+  let file: File | undefined = undefined,
+    customConceptsFile: File | undefined = undefined,
+    navTriggered: boolean = true,
+    tableOptions: ITableOptions = {
+      id: $fileName,
+      rowsPerPage: 15,
+      rowsPerPageOptions: [5, 10, 15, 20, 50, 100],
+      actionColumn: true,
+      paginationOnTop: true,
+    },
+    customTableOptions: ITableOptions = {
+      id: 'customConceptsTable',
+      saveOptions: false,
+    },
+    disableInteraction: boolean = false
 
   setupDataTable()
 
-  let disableInteraction: boolean = false
-  let translator: LatencyOptimisedTranslator
-
   // Athena related variables
-  let mappingVisibility: boolean = false
-  let mappingUrl: string = import.meta.env.VITE_MAPPINGDATA_PATH
-  let lastTypedFilter: string
-  let apiFilters: string[] = ['&standardConcept=Standard']
-  let equivalenceMapping: string = 'EQUAL'
-  let globalAthenaFilter: { column: string; filter: string | undefined } = { column: 'all', filter: undefined }
-  let athenaFacets: Record<string, any> | undefined = undefined
+  let mappingVisibility: boolean = false,
+    mappingUrl: string = import.meta.env.VITE_MAPPINGDATA_PATH,
+    lastTypedFilter: string,
+    apiFilters: string[] = ['&standardConcept=Standard'],
+    equivalenceMapping: string = 'EQUAL',
+    globalAthenaFilter: { column: string; filter: string | undefined } = { column: 'all', filter: undefined },
+    athenaFacets: Record<string, any> | undefined = undefined
 
   // Table related variables
-  let tableInit: boolean = false
-  let currentVisibleRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>()
-  let selectedRow: Record<string, any>
-  let selectedRowIndex: number
-  let previousAthenaFilter: string
-  let previousPage: number
-  let visualizedIndex: number
+  let tableInit: boolean = false,
+    currentVisibleRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>(),
+    selectedRow: Record<string, any>,
+    selectedRowIndex: number,
+    previousAthenaFilter: string,
+    previousPage: number
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // DATA
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
-  let dataTableMapping: DataTable
-  let dataTableCustomConcepts: DataTable
-
-  let importantAthenaColumns = new Map<string, string>([
-    ['id', 'conceptId'],
-    ['name', 'conceptName'],
-    ['domain', 'domainId'],
-  ])
-  let additionalFields: Record<string, any> = additionalColumns
-
-  let autoMappingAbortController: AbortController
-  let autoMappingPromise: Promise<void> | undefined
+  let dataTableMapping: DataTable,
+    dataTableCustomConcepts: DataTable,
+    importantAthenaColumns = new Map<string, string>([
+      ['id', 'conceptId'],
+      ['name', 'conceptName'],
+      ['domain', 'domainId'],
+    ]),
+    additionalFields: Record<string, any> = additionalColumns,
+    autoMappingAbortController: AbortController,
+    autoMappingPromise: Promise<void> | undefined
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // EVENTS
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
   // When the visibility of the mapping pop-up changes
-  async function mappingVisibilityChanged(event: CustomEvent<VisibilityChangedEventDetail>) {
+  async function mappingVisibilityChanged(event: CustomEvent<VisibilityChangedEventDetail>): Promise<void> {
     if (dev)
       console.log('mappingVisibilityChanged: Visibility of the mapping pop-up changed to ', event.detail.visibility)
     // Check if the automapping proces is running and if this is happening, abort the promise because it could give unexpected results.
     if (autoMappingPromise) autoMappingAbortController.abort()
     // Change the visiblity and update the selected row and index if there is a new row selected
-    if (event.detail.visibility == true && event.detail.data) {
-      selectedRow = event.detail.data.row
-      selectedRowIndex = event.detail.data.index
-      const translation = await translate(event.detail.data.row.sourceName)
-      globalAthenaFilter.filter = typeof translation == 'string' ? translation : event.detail.data.row.sourceName
-    }
     mappingVisibility = event.detail.visibility
+    if (!event.detail.visibility || !event.detail.data) return
+    selectedRow = event.detail.data.row
+    selectedRowIndex = event.detail.data.index
+    const translation = await translate(event.detail.data.row.sourceName)
+    globalAthenaFilter.filter = typeof translation == 'string' ? translation : event.detail.data.row.sourceName
   }
 
   // When the filters in the Athena pop-up change (filters on the left-side for the query)
-  function filterOptionsChanged(event: CustomEvent<FilterOptionsChangedEventDetail>) {
+  function filterOptionsChanged(event: CustomEvent<FilterOptionsChangedEventDetail>): void {
     if (dev) console.log('filterOptionsChanged: Filters in the Athena pop-up changed to ', event.detail.filters)
-    if (event.detail.filters) {
-      apiFilters = []
-      // Transform the filters to a string that can be used in the query for Athena
-      for (let [filter, options] of event.detail.filters) {
-        const substring = options.map(option => `&${filter}=${option}`).join()
-        if (!apiFilters.includes(substring)) apiFilters.push(substring.replaceAll(',', '&'))
-      }
-      // Update the update fetch function so the table will be initialized again
-      fetchDataFunc = fetchData
+    if (!event.detail.filters) return
+    apiFilters = []
+    // Transform the filters to a string that can be used in the query for Athena
+    for (let [filter, options] of event.detail.filters) {
+      const substring = options.map(option => `&${filter}=${option}`).join()
+      if (!apiFilters.includes(substring)) apiFilters.push(substring.replaceAll(',', '&'))
     }
+    // Update the update fetch function so the table will be initialized again
+    fetchDataFunc = fetchData
   }
 
   // When the mapping button in the Athena pop-up is clicked and the settins "Map to multiple concepts" is disabled
-  async function singleMapping(event: CustomEvent<MappingEventDetail>) {
+  async function singleMapping(event: CustomEvent<MappingEventDetail>): Promise<void> {
     if (dev) console.log('singleMapping: Single mapping for the row with sourceCode ', selectedRow.sourceCode)
     // Map the selected row with the selected concept
     const { mappedIndex, mappedRow } = await rowMapping(event.detail.originalRow!, event.detail.row)
@@ -151,13 +144,17 @@
     mappedRow['assignedReviewer'] = event.detail.extra.reviewer
     // Update the selected row to the updated row
     await dataTableMapping.updateRows(new Map([[mappedIndex, mappedRow]]))
-    // calculateProgress()
+  }
+
+  async function removeFirstRow(): Promise<void> {
+    const firstRow = await dataTableCustomConcepts.getFullRow(0)
+    // The domain_id can't ever be test so this means it's the placeholder first row
+    if (firstRow.domain_id == 'test') await dataTableCustomConcepts.deleteRows([0])
   }
 
   // When the user custom maps a concept to a row
-  async function customMapping(event: CustomEvent<CustomMappingEventDetail>) {
+  async function customMapping(event: CustomEvent<CustomMappingEventDetail>): Promise<void> {
     if (dev) console.log('customMapping: Custom mapping for the row with sourceCode ', selectedRow.sourceCode)
-
     // Create the custom concept object
     const customConcept = {
       concept_id: event.detail.customConcept.conceptId,
@@ -172,9 +169,7 @@
       invalid_reason: event.detail.customConcept.invalidReason,
     }
     // Check if the custom concepts already exists in the custom concepts DataTable (avoid duplicates)
-    let existsAlready: boolean = false
-
-    const q = (<Query>query().params({
+    const checkExistanceQuery = (<Query>query().params({
       concept_name: customConcept.concept_name,
       domain_id: customConcept.domain_id,
       vocabulary_id: customConcept.vocabulary_id,
@@ -188,24 +183,13 @@
           r.concept_class_id == params.concept_class_id
       )
       .toObject()
-    const customRes = await dataTableCustomConcepts.executeQueryAndReturnResults(q)
+    const customConceptExists = await dataTableCustomConcepts.executeQueryAndReturnResults(checkExistanceQuery)
     // If there are no duplicates, add the row to the custom concepts DataTable
-    if (customRes.queriedData.length === 0) {
-      existsAlready = false
-      const firstRow = await dataTableCustomConcepts.getFullRow(0)
-      if (
-        firstRow.concept_id == 0 &&
-        firstRow.concept_name == 'test' &&
-        firstRow.domain_id == 'test' &&
-        firstRow.vocabulary_id == 'test' &&
-        firstRow.concept_class_id == 'test'
-      ) {
-        await dataTableCustomConcepts.deleteRows([0])
-      }
+    if (customConceptExists.queriedData.length === 0) {
+      await removeFirstRow()
       await dataTableCustomConcepts.insertRows([customConcept])
     } else {
       if (dev) console.log('customMapping: The custom concept already exists in the custom concepts DataTable')
-      existsAlready = true
     }
 
     // Map the selected row with the custom concept
@@ -213,84 +197,69 @@
     if (!mappedRow['ADD_INFO:numberOfConcepts']) mappedRow['ADD_INFO:numberOfConcepts'] = 1
     mappedRow['comment'] = event.detail.extra.comment
     mappedRow['assignedReviewer'] = event.detail.extra.reviewer
-    if ($settings) {
-      // If multiplemapping is enabled, update the previous rows and add the new one
-      if ($settings.mapToMultipleConcepts && $fileName) {
-        // Get previous mapped concepts
-        const q = (<Query>query().params({ sourceCode: mappedRow.sourceCode }))
-          .filter((r: any, params: any) => r.sourceCode == params.sourceCode)
-          .toObject()
-        const res = await dataTableMapping.executeQueryAndReturnResults(q)
-        // Add extra information like the number of concepts mapped for this row, comments & the assigned reviewer to the row
-        if (res.queriedData.length === 1 && !res.queriedData[0].conceptId) {
-          mappedRow['ADD_INFO:numberOfConcepts'] = 1
-          mappedRow['comment'] = event.detail.extra.comment
-          mappedRow['assignedReviewer'] = event.detail.extra.reviewer
-          await dataTableMapping.updateRows(new Map([[mappedIndex, mappedRow]]))
-        } else {
-          // If the custom concept didn't exist yet
-          if (!existsAlready) {
-            mappedRow['ADD_INFO:numberOfConcepts'] = res.queriedData.length + 1
-            mappedRow['comment'] = event.detail.extra.comment
-            mappedRow['assignedReviewer'] = event.detail.extra.reviewer
-            const rowsToUpdate = new Map()
-            // Update the number of concepts in the already mapped rows
-            for (let index of res.indices) {
-              rowsToUpdate.set(index, { 'ADD_INFO:numberOfConcepts': res.queriedData.length + 1 })
-            }
-            await dataTableMapping.updateRows(rowsToUpdate)
-            await dataTableMapping.insertRows([mappedRow])
-          }
-        }
-      } else await dataTableMapping.updateRows(new Map([[mappedIndex, mappedRow]]))
-    } else await dataTableMapping.updateRows(new Map([[mappedIndex, mappedRow]]))
+    // If it is single mapping (not to multiple concepts), update the row
+    if (!$settings || !$settings.mapToMultipleConcepts || !$fileName)
+      return await dataTableMapping.updateRows(new Map([[mappedIndex, mappedRow]]))
 
-    // calculateProgress()
+    // Get previous mapped concepts
+    const prevQuery = (<Query>query().params({ sourceCode: mappedRow.sourceCode }))
+      .filter((r: any, params: any) => r.sourceCode == params.sourceCode)
+      .toObject()
+    const res = await dataTableMapping.executeQueryAndReturnResults(prevQuery)
+    // If the sourceCode was found, but the conceptId was undefined, update the row
+    if (res.queriedData.length === 1 && !res.queriedData[0].conceptId)
+      return await dataTableMapping.updateRows(new Map([[mappedIndex, mappedRow]]))
+
+    if (customConceptExists.queriedData.length > 0) return
+    mappedRow['ADD_INFO:numberOfConcepts'] = res.queriedData.length + 1
+    const rowsToUpdate = new Map()
+    // Update the number of concepts in the already mapped rows
+    for (let index of res.indices) {
+      rowsToUpdate.set(index, { 'ADD_INFO:numberOfConcepts': res.queriedData.length + 1 })
+    }
+    await dataTableMapping.updateRows(rowsToUpdate)
+    await dataTableMapping.insertRows([mappedRow])
   }
 
   // When the mapping button in the Athena pop-up is clicked and the settins "Map to multiple concepts" is enabled
-  async function multipleMapping(event: CustomEvent<MappingEventDetail>) {
+  async function multipleMapping(event: CustomEvent<MappingEventDetail>): Promise<void> {
     if (dev) console.log('multipleMapping: Multiple mapping for the row with sourceCode ', selectedRow.sourceCode)
     // Map the selected row with the selected concept
     const { mappedRow } = await rowMapping(event.detail.originalRow!, event.detail.row)
 
     // Create a query and execute it to get all the rows that are already mapped and got the same sourceCode
-    const q = (<Query>query().params({ value: mappedRow.sourceCode }))
+    const alreadyMappedRowsQuery = (<Query>query().params({ value: mappedRow.sourceCode }))
       .filter((r: any, params: any) => r.sourceCode == params.value)
       .toObject()
-    const res = await dataTableMapping.executeQueryAndReturnResults(q)
+    const alreadyMapped = await dataTableMapping.executeQueryAndReturnResults(alreadyMappedRowsQuery)
 
     // Add extra information like the number of concepts mapped for this row, comments & the assigned reviewer to the row
     mappedRow.mappingStatus = 'SEMI-APPROVED'
     mappedRow.statusSetBy = author
-
     mappedRow['ADD_INFO:lastAthenaFilter'] = lastTypedFilter
+    mappedRow['ADD_INFO:numberOfConcepts'] = 1
+    mappedRow['comment'] = event.detail.extra.comment
+    mappedRow['assignedReviewer'] = event.detail.extra.reviewer
 
     // Check if it's the first concept that will be mapped to this row
-    if (res.queriedData.length === 1 && !res.queriedData[0].conceptId) {
+    if (alreadyMapped.queriedData.length === 1 && !alreadyMapped.queriedData[0].conceptId) {
       // This is the first concepts mapped to the row and the current row wil be updated
-      mappedRow['ADD_INFO:numberOfConcepts'] = 1
-      mappedRow['comment'] = event.detail.extra.comment
-      mappedRow['assignedReviewer'] = event.detail.extra.reviewer
-      await dataTableMapping.updateRows(new Map([[res.indices[0], mappedRow]]))
+      await dataTableMapping.updateRows(new Map([[alreadyMapped.indices[0], mappedRow]]))
     } else {
       // This is not the first concept mapped to the row and the current row will be added to the table and the others will be updated
-      mappedRow['ADD_INFO:numberOfConcepts'] = res.queriedData.length + 1
-      mappedRow['comment'] = event.detail.extra.comment
-      mappedRow['assignedReviewer'] = event.detail.extra.reviewer
+      mappedRow['ADD_INFO:numberOfConcepts'] = alreadyMapped.queriedData.length + 1
       const rowsToUpdate = new Map()
       // Update the number of concepts in the already mapped rows
-      for (let index of res.indices) {
-        rowsToUpdate.set(index, { 'ADD_INFO:numberOfConcepts': res.queriedData.length + 1 })
+      for (let index of alreadyMapped.indices) {
+        rowsToUpdate.set(index, { 'ADD_INFO:numberOfConcepts': alreadyMapped.queriedData.length + 1 })
       }
       await dataTableMapping.updateRows(rowsToUpdate)
       await dataTableMapping.insertRows([mappedRow])
     }
-    // calculateProgress()
   }
 
   // When the comments or assingedReviewer are filled in, update these fields in a row
-  async function updateDetailsRow(event: CustomEvent<UpdateDetailsEventDetail>) {
+  async function updateDetailsRow(event: CustomEvent<UpdateDetailsEventDetail>): Promise<void> {
     if (dev) console.log(`updateDetailsRow: Update details for the row on index ${event.detail.index}`)
     await dataTableMapping.updateRows(
       new Map([
@@ -299,121 +268,134 @@
     )
   }
 
+  async function removeAction(row: Record<string, any>): Promise<Record<string, any>> {
+    // Reset previous action
+    row.mappingStatus = null
+    row['ADD_INFO:approvedBy'] = null
+    row['ADD_INFO:approvedOn'] = 0
+    row.statusSetBy = null
+    row.statusSetOn = 0
+    return row
+  }
+
+  async function setNormalAction(row: Record<string, any>, action: string): Promise<Record<string, any>> {
+    // If the action clicked is UNAPPROVED or FLAGGED
+    row.statusSetBy = author
+    row.statusSetOn = Date.now()
+    row.mappingStatus = action
+    return row
+  }
+
+  async function setSemi(row: Record<string, any>, id: number | undefined, auto: number): Promise<Record<string, any>> {
+    // Set the row to semi approved
+    row.statusSetBy = author
+    row.statusSetOn = Date.now()
+    row.mappingStatus = 'SEMI-APPROVED'
+    if (!id) row.conceptId = auto
+    else row.conceptId = id
+    return row
+  }
+
+  async function setApproved(row: Record<string, any>): Promise<Record<string, any>> {
+    // StatusSetBy is not empty and it's not the current author so it means it's the second reviewer
+    row['ADD_INFO:approvedBy'] = author
+    row['ADD_INFO:approvedOn'] = Date.now()
+    row.mappingStatus = 'APPROVED'
+    return row
+  }
+
   // When a action (approve, flag, unapprove) button is clicked (left-side of the table in the action column)
-  async function actionPerformed(event: CustomEvent<ActionPerformedEventDetail>) {
+  async function actionPerformed(event: CustomEvent<ActionPerformedEventDetail>): Promise<void> {
     if (dev)
       console.log(
         `actionPerformed: Action performed (${event.detail.action}) for the row with sourceCode ${event.detail.row.sourceCode}`
       )
+    const action = event.detail.action
+    const row = event.detail.row
     // Check if the automapping proces is running and if this is happening, abort the promise because it could give unexpected results.
     if (autoMappingPromise) autoMappingAbortController.abort()
-    const updatingObj: { [key: string]: any } = {}
+    let updatingObj: { [key: string]: any } = {}
 
-    // Check if the action is already set for the row and if so, remove it
-    if (event.detail.action === event.detail.row.mappingStatus && event.detail.action !== 'APPROVED') {
-      updatingObj.mappingStatus = null
-      if (event.detail.row['ADD_INFO:approvedBy']) {
-        updatingObj['ADD_INFO:approvedBy'] = null
-        updatingObj['ADD_INFO:approvedOn'] = 0
-      }
-      if (event.detail.row.statusSetBy) {
-        updatingObj.statusSetBy = null
-        updatingObj.statusSetOn = 0
-      }
-    } else {
-      // Check if there is a conceptId or a sourceAutoAssignedConceptIds (this is the conceptId that is assigned by the automapping proces)
-      if (event.detail.action == 'APPROVED') {
-        if (event.detail.row.statusSetBy == undefined || event.detail.row.statusSetBy == author) {
-          // If statusSetBy is empty, it means the author is the first reviewer of this row
-          updatingObj.statusSetBy = author
-          updatingObj.statusSetOn = Date.now()
-          updatingObj.mappingStatus = 'SEMI-APPROVED'
-          if (event.detail.row.conceptId == 0 || !event.detail.row.conceptId) {
-            updatingObj.conceptId = event.detail.row.sourceAutoAssignedConceptIds
-          } else updatingObj.conceptId = event.detail.row.conceptId
-        } else if (
-          event.detail.row.statusSetBy &&
-          event.detail.row.statusSetBy != author &&
-          event.detail.row.mappingStatus == 'SEMI-APPROVED'
-        ) {
-          // StatusSetBy is not empty and it's not the current author so it means it's the second reviewer
-          updatingObj['ADD_INFO:approvedBy'] = author
-          updatingObj['ADD_INFO:approvedOn'] = Date.now()
-          updatingObj.mappingStatus = 'APPROVED'
-        } else if (event.detail.row.statusSetBy && event.detail.row.statusSetBy != author) {
-          // If the mappingStatus is APPROVED & the statusSetBy is an other author
-          updatingObj.statusSetBy = author
-          updatingObj.statusSetOn = Date.now()
-          updatingObj.mappingStatus = 'SEMI-APPROVED'
-          if (event.detail.row.conceptId == 0 || !event.detail.row.conceptId) {
-            // If the conceptId is not filled in, fill in the sourceAutoAssignedConceptIds
-            updatingObj.conceptId = event.detail.row.sourceAutoAssignedConceptIds
-          } else updatingObj.conceptId = event.detail.row.conceptId
-        }
-      } else {
-        // If the action clicked is UNAPPROVED or FLAGGED
-        updatingObj.statusSetBy = author
-        updatingObj.statusSetOn = Date.now()
-        updatingObj.mappingStatus = event.detail.action
-      }
+    console.log(row, action)
+
+    if (action === row.mappingStatus && action !== 'APPROVED') updatingObj = await removeAction(updatingObj)
+    else if (action !== 'APPROVED' && row.mappingStatus !== action)
+      updatingObj = await setNormalAction(updatingObj, event.detail.action)
+    else if ((action == 'APPROVED' && !row.statusSetBy) || row.statusSetBy == author)
+      updatingObj = await setSemi(updatingObj, row.conceptId, row.sourceAutoAssignedConceptIds)
+    else if (
+      action == 'APPROVED' &&
+      row.statusSetBy &&
+      row.statusSetBy !== author &&
+      row.mappingStatus == 'SEMI-APPROVED'
+    )
+      updatingObj = await setApproved(updatingObj)
+    else if (
+      action == 'APPROVED' &&
+      row.statusSetBy &&
+      row.statusSetBy != author &&
+      row.mappingStatus !== 'SEMI-APPROVED' &&
+      row.mappingStatus !== 'APPROVED'
+    )
+      updatingObj = await setSemi(updatingObj, row.conceptId, row.sourceAutoAssignedConceptIds)
+    else {
+      if (dev) console.log('actionPerformed: Something went wrong while performing an action on a row.')
     }
     await dataTableMapping.updateRows(new Map([[event.detail.index, updatingObj]]))
-    // calculateProgress()
+  }
+
+  async function resetRow() {
+    const reset = additionalFields
+    reset.conceptId = null
+    reset.domainId = null
+    reset.conceptName = null
+    delete reset.sourceAutoAssignedConceptIds
+    return reset
   }
 
   // When the delete button is clicked (left-side of the table in the action column)
-  async function deleteRow(event: CustomEvent<DeleteRowEventDetail>) {
+  async function deleteRow(event: CustomEvent<DeleteRowEventDetail>): Promise<void> {
     if (dev) console.log(`deleteRow: Delete row with sourceCode ${event.detail.sourceCode}`)
     // Check if the automapping proces is running and if this is happening, abort the promise because it could give unexpected results.
     if (autoMappingPromise) autoMappingAbortController.abort()
 
     // If it not the only concept that is mapped for that row (multiple mapping), erase the row
-    if (event.detail.erase == true) {
+    if (event.detail.erase) {
       // Create a query to get all the rows that has the same sourceCode (row mapped to multiple concepts)
-      const q = (<Query>query().params({ source: event.detail.sourceCode }))
+      const existanceQuery = (<Query>query().params({ source: event.detail.sourceCode }))
         .filter((r: any, params: any) => r.sourceCode == params.source)
         .toObject()
-      const res = await dataTableMapping.executeQueryAndReturnResults(q)
-      if (res.queriedData.length >= 1) {
+      const existance = await dataTableMapping.executeQueryAndReturnResults(existanceQuery)
+      if (existance.queriedData.length) {
         const rowsToUpdate = new Map()
         // Update the all the rows and set the number of concepts - 1
-        for (let index of res.indices) {
-          rowsToUpdate.set(index, { 'ADD_INFO:numberOfConcepts': res.queriedData.length - 1 })
+        for (let index of existance.indices) {
+          rowsToUpdate.set(index, { 'ADD_INFO:numberOfConcepts': existance.queriedData.length - 1 })
         }
         await dataTableMapping.updateRows(rowsToUpdate)
       }
-      // Delete the selected row
       await dataTableMapping.deleteRows(event.detail.indexes)
-    } else {
-      // When the mapping is one on one, erase the mapping from that row
-      const updatedFields = additionalFields
-      updatedFields.conceptId = null
-      updatedFields.domainId = null
-      updatedFields.conceptName = null
-      delete updatedFields.sourceAutoAssignedConceptIds
-      await dataTableMapping.updateRows(new Map([[event.detail.indexes[0], updatedFields]]))
-      // calculateProgress()
-    }
+    } else await dataTableMapping.updateRows(new Map([[event.detail.indexes[0], await resetRow()]]))
   }
 
   // When the delete button in the table of mapped concepts is clicked, delete the row
-  async function deleteRowInnerMapping(event: CustomEvent<DeleteRowInnerMappingEventDetail>) {
+  async function deleteRowInnerMapping(event: CustomEvent<DeleteRowInnerMappingEventDetail>): Promise<void> {
     if (dev) console.log('deleteRowInnerMapping: Delete mapping with conceptId ', event.detail.conceptId)
     // If the row is a custom concept, delete it from the custom concepts table
     if (event.detail.custom) {
       // Find a row with the same concept_id & concept_name
-      const q = (<Query>query().params({ concept_id: event.detail.conceptId, concept_name: event.detail.conceptName }))
+      const existanceQuery = (<Query>(
+        query().params({ concept_id: event.detail.conceptId, concept_name: event.detail.conceptName })
+      ))
         .filter((r: any, params: any) => r.concept_id == params.concept_id && r.concept_name == params.concept_name)
         .toObject()
-      const res = await dataTableCustomConcepts.executeQueryAndReturnResults(q)
-      if (res.indices.length > 0) {
-        // If a row exists with the same concept_id & concept_name, delete it
-        await dataTableCustomConcepts.deleteRows(res.indices)
-      }
+      const existance = await dataTableCustomConcepts.executeQueryAndReturnResults(existanceQuery)
+      // If a row exists with the same concept_id & concept_name, delete it
+      if (existance.indices.length) await dataTableCustomConcepts.deleteRows(existance.indices)
     }
 
     // Create a query to find the index of the row that needs to be removed, can be an index that is not visualised and therefor we use the query
-    const q = (<Query>query().params({
+    const existanceQuery = (<Query>query().params({
       conceptId: event.detail.conceptId,
       sourceCode: selectedRow.sourceCode,
       conceptName: event.detail.conceptName,
@@ -423,80 +405,76 @@
           r.conceptId == params.conceptId && r.sourceCode == params.sourceCode && r.conceptName == params.conceptName
       )
       .toObject()
-    const res = await dataTableMapping.executeQueryAndReturnResults(q)
+    const existance = await dataTableMapping.executeQueryAndReturnResults(existanceQuery)
 
     // If the row needs to be erased, in the case of multiple mapping
     if (event.detail.erase) {
       // A query to find all the rows that are multiple mapped with the same sourceCode
-      const q = (<Query>query().params({ sourceCode: selectedRow.sourceCode }))
+      const allIndexesQuery = (<Query>query().params({ sourceCode: selectedRow.sourceCode }))
         .filter((r: any, params: any) => r.sourceCode == params.sourceCode)
         .toObject()
-      const res2 = await dataTableMapping.executeQueryAndReturnResults(q)
+      const allIndexes = await dataTableMapping.executeQueryAndReturnResults(allIndexesQuery)
       const updatedRows = new Map<number, Record<string, any>>()
       // Update the number of concepts of all the found rows
-      res2.indices.forEach((index: number) => {
-        updatedRows.set(index, { 'ADD_INFO:numberOfConcepts': res2.indices.length - 1 })
+      allIndexes.indices.forEach((index: number) => {
+        updatedRows.set(index, { 'ADD_INFO:numberOfConcepts': allIndexes.indices.length - 1 })
       })
       await dataTableMapping.updateRows(updatedRows)
-      await dataTableMapping.deleteRows(res.indices)
+      await dataTableMapping.deleteRows(existance.indices)
     } else {
       // Reset the row with the original values
-      const updatedFields = additionalFields
-      updatedFields.conceptId = null
-      updatedFields.conceptName = null
-      updatedFields.domainId = null
-      updatedFields['ADD_INFO:numberOfConcepts'] = 1
-      delete updatedFields.sourceAutoAssignedConceptIds
-      await dataTableMapping.updateRows(new Map([[res.indices[0], updatedFields]]))
+      const reset = await resetRow()
+      reset['ADD_INFO:numberOfConcepts'] = 1
+      await dataTableMapping.updateRows(new Map([[existance.indices[0], reset]]))
     }
   }
 
   // When the arrow button in the Athena pop-up is clicked to navigate to a different row
-  async function selectRow(event: CustomEvent<RowChangeEventDetail>) {
-    let tablePagination: Record<string, any>
+  async function selectRow(event: CustomEvent<RowChangeEventDetail>): Promise<void> {
+    let pag: ITablePagination = await dataTableMapping.getTablePagination()
+    if (!pag.currentPage || !pag.rowsPerPage) return
     new Promise(async (resolve, reject) => {
-      tablePagination = await dataTableMapping.getTablePagination()
-      // Check to wich direction the user is moving
-
       const currentRow = event.detail.currentRow
-      const indexQ = (<Query>query().params({
+      const indexQuery = (<Query>query().params({
         sourceCode: currentRow.sourceCode,
         sourceName: currentRow.sourceName,
-        conceptId: currentRow.conceptId == 0 ? undefined : currentRow.conceptId,
+        conceptName: currentRow.conceptName == 'Unmapped' ? undefined : currentRow.conceptName,
       }))
         .filter(
-          (r: any, p: any) => r.sourceCode == p.sourceCode && r.sourceName == p.sourceName && r.conceptId == p.conceptId
+          (r: any, p: any) =>
+            r.sourceCode == p.sourceCode && r.sourceName == p.sourceName && r.conceptName == p.conceptName
         )
         .toObject()
-      const indexRes = await dataTableMapping.executeQueryAndReturnResults(indexQ)
+      const indexRes = await dataTableMapping.executeQueryAndReturnResults(indexQuery)
       const currentIndex = indexRes.indices[0]
+
+      // TODO: optimize this, with big files this could slow the application down
+      // Slice did not work, does not filter the table correctly before slicing
 
       const q = query().toObject()
       const res = await dataTableMapping.executeQueryAndReturnResults(q)
-      if (res.indices.length == 0) console.error('selectRow: The query to get all the rows did not work!')
-      const arrayIndex = res.indices.indexOf(currentIndex)
-      if (event.detail.up && arrayIndex + 1 < tablePagination.totalRows!) {
-        selectedRowIndex = arrayIndex == res.indices.length - 1 ? res.indices[arrayIndex] : res.indices[arrayIndex + 1]
+      if (res.indices.length == 0) {
+        console.error('selectRow: The query to get all the rows did not work!')
+        resolve(null)
       }
-      if (!event.detail.up && arrayIndex - 1 >= 0) {
-        selectedRowIndex = arrayIndex == 0 ? res.indices[0] : res.indices[arrayIndex - 1]
-      }
-
-      visualizedIndex = selectedRowIndex
+      const i = res.indices.indexOf(currentIndex)
+      if (event.detail.up && i + 1 < pag.totalRows!)
+        selectedRowIndex = i == res.indices.length - 1 ? res.indices[i] : res.indices[i + 1]
+      else if (!event.detail.up && i - 1 >= 0) selectedRowIndex = i == 0 ? res.indices[0] : res.indices[i - 1]
 
       // Set the new filter with the translated source name
-      selectedRow = await dataTableMapping.getFullRow(visualizedIndex)
+      selectedRow = await dataTableMapping.getFullRow(selectedRowIndex)
       const translation = await translate(selectedRow.sourceName)
       globalAthenaFilter.filter = typeof translation == 'string' ? translation : selectedRow.sourceName
       resolve(null)
     }).then(() => {
       // Check if the pagination needs to change, and do so if needed
-      changePagination(event.detail.up, visualizedIndex, tablePagination)
+      changePagination(event.detail.up, selectedRowIndex, pag)
     })
   }
 
   // When the button to automap a single row is clicked, automap the row
-  async function autoMapSingleRow(event: CustomEvent<AutoMapRowEventDetail>) {
+  async function autoMapSingleRow(event: CustomEvent<AutoMapRowEventDetail>): Promise<void> {
     if (dev) console.log('autoMapSingleRow: automap the row with index ', event.detail.index)
     // Automap a row manually
     if (autoMappingPromise) autoMappingAbortController.abort()
@@ -514,35 +492,32 @@
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
   // A method to set the saveImpl & dataTypeImpl of the general DataTable & the DataTable for custom concepts
-  async function setupDataTable() {
-    if ($implementation == 'firebase') {
-      await import('$lib/utilClasses/FirebaseSaveImpl').then(({ default: FirebaseStore }) => {
-        tableOptions.saveImpl = new FirebaseStore()
-      })
-      await import('$lib/utilClasses/FileDataTypeImpl').then(({ default: FirebaseDataType }) => {
-        tableOptions.dataTypeImpl = new FirebaseDataType()
-        customTableOptions.dataTypeImpl = new FirebaseDataType()
-      })
-    }
+  async function setupDataTable(): Promise<void> {
+    if ($implementation !== 'firebase') return
+    await import('$lib/utilClasses/FirebaseSaveImpl').then(({ default: FirebaseStore }) => {
+      tableOptions.saveImpl = new FirebaseStore()
+    })
+    await import('$lib/utilClasses/FileDataTypeImpl').then(({ default: FirebaseDataType }) => {
+      tableOptions.dataTypeImpl = new FirebaseDataType()
+      customTableOptions.dataTypeImpl = new FirebaseDataType()
+    })
   }
 
   // A method to check if the translator exists, and if it doesn't exists, create one
-  function createTranslator(): Promise<any> {
+  function createTranslator(): Promise<LatencyOptimisedTranslator> {
     return new Promise((resolve, reject) => {
       // Recreate a translator if it's a browser because the previous instance is still pending and can't be used
-      if (!translator) {
-        translator = new LatencyOptimisedTranslator(
-          {
-            workers: 1,
-            batchSize: 1,
-            registryUrl: 'bergamot/registry.json',
-            html: true,
-          },
-          undefined
-        )
-      }
-      if (translator) resolve(translator)
-      else resolve(false)
+      if ($translator) return resolve($translator)
+      $translator = new LatencyOptimisedTranslator(
+        {
+          workers: 1,
+          batchSize: 1,
+          registryUrl: 'bergamot/registry.json',
+          html: true,
+        },
+        undefined
+      )
+      resolve($translator)
     })
   }
 
@@ -550,48 +525,33 @@
   async function translate(text: string): Promise<string | undefined> {
     if (!browser) return undefined
     // Check the settings and if the language set is not english, translate the text
-    if ($settings) {
-      if ($settings.language && $settings.language !== 'en') {
-        // Check for translator
-        const translator = await createTranslator()
-        // Translate the text to English
-        let translation = await translator.translate({
-          from: $settings!.language,
-          to: 'en',
-          text: text,
-          html: true,
-        })
-        return translation.target.text
-      }
-      {
-        return text
-      }
-    } else {
-      return text
-    }
+    if (!$settings || !$settings.language || $settings.language === 'en') return text
+    const translator = await createTranslator()
+    let translation = await translator.translate({
+      from: $settings!.language,
+      to: 'en',
+      text: text,
+      html: true,
+    })
+    return translation.target.text
   }
 
   // A method to change the pagination of the table based on the index and the rows per page
-  async function changePagination(
-    up: boolean,
-    selectedRowIndex: number,
-    pagination: Record<string, any>
-  ): Promise<void> {
+  async function changePagination(up: boolean, index: number, pagination: ITablePagination): Promise<void> {
     // When the index exceeds the number of rows per page, go to the next page or go to the previous page
-    if (up && selectedRowIndex !== 0) {
+    if (!index || !pagination.currentPage || !pagination.rowsPerPage) return
+    if (up) {
       // If the selected row index divided is an even number & the direction is up, change pagination up
-      if (selectedRowIndex % pagination.rowsPerPage! === 0) {
-        if (dev) console.log('changePagination: change pagination to ', pagination.currentPage! + 1)
-        dataTableMapping.changePagination({ currentPage: pagination.currentPage! + 1 })
-        previousPage = pagination.currentPage
-      }
-    } else if (!up && selectedRowIndex !== 0) {
+      if (index % pagination.rowsPerPage !== 0) return
+      if (dev) console.log('changePagination: change pagination to ', pagination.currentPage! + 1)
+      dataTableMapping.changePagination({ currentPage: pagination.currentPage! + 1 })
+      previousPage = pagination.currentPage
+    } else {
       // If the selected row index + 1 divided is an even number & the direction is down, change pagination down
-      if ((selectedRowIndex + 1) % pagination.rowsPerPage! === 0) {
-        if (dev) console.log('changePagination: change pagination to ', pagination.currentPage! - 1)
-        dataTableMapping.changePagination({ currentPage: pagination.currentPage! - 1 })
-        previousPage = pagination.currentPage
-      }
+      if ((index + 1) % pagination.rowsPerPage !== 0) return
+      if (dev) console.log('changePagination: change pagination to ', pagination.currentPage! - 1)
+      dataTableMapping.changePagination({ currentPage: pagination.currentPage! - 1 })
+      previousPage = pagination.currentPage
     }
   }
 
@@ -615,17 +575,17 @@
     const url = await assembleAthenaURL(filter, undefined, undefined, true)
     if (signal.aborted) return
     // Get the first result of the Athena API call
-    const res = await fetch(url)
-    const resData = await res.json()
-    if (resData.content && resData.content.length !== 0) {
-      const numberOfConcepts = row['ADD_INFO:numberOfConcepts']
-      // Map the row with the first result
-      const { mappedIndex, mappedRow } = await rowMapping(row, resData.content[0], true, index)
-      mappedRow['ADD_INFO:numberOfConcepts'] = numberOfConcepts
-      mappedRow['ADD_INFO:lastAthenaFilter'] = filter
-      if (signal.aborted) return
-      await dataTableMapping.updateRows(new Map([[mappedIndex, mappedRow]]))
-    }
+    const conceptsResult = await fetch(url)
+    const conceptsData = await conceptsResult.json()
+    if (!conceptsData.content || !conceptsData.content.length)
+      return console.error('autoMapRow: Could not get the concepts from the API')
+    // Map the row with the first result
+    const numberOfConcepts = row['ADD_INFO:numberOfConcepts']
+    const { mappedIndex, mappedRow } = await rowMapping(row, conceptsData.content[0], true, index)
+    mappedRow['ADD_INFO:numberOfConcepts'] = numberOfConcepts
+    mappedRow['ADD_INFO:lastAthenaFilter'] = filter
+    if (signal.aborted) return
+    await dataTableMapping.updateRows(new Map([[mappedIndex, mappedRow]]))
     if (dev) {
       end = performance.now()
       console.log('autoMapRow: Finished automapping row with index ', index, ' in ', Math.round(end - start!), ' ms')
@@ -633,44 +593,33 @@
   }
 
   // A method to create the Athena URL
-  const assembleAthenaURL = async (
-    filter?: string,
-    sorting?: string[],
-    pagination?: IPagination,
-    autoMap?: boolean
-  ): Promise<string> => {
+  const assembleAthenaURL = async (flt?: string, srt?: string[], pg?: IPagination, auto?: boolean): Promise<string> => {
     if (dev) console.log('assembleAthenaURL: Assemble Athena URL')
-
     let assembledAthenaUrl = mappingUrl
-
     // Apply the api filters
     if (apiFilters) {
       for (let filter of apiFilters) {
         assembledAthenaUrl += filter
       }
     }
-
     // Add sorting to URL if there is sorting
-    if (sorting) {
-      const sortingName = columnNamesAthena[sorting[0] as keyof Object]
-      assembledAthenaUrl += `&sort=${sortingName}&order=${sorting[1]}`
+    if (srt) {
+      const sortingName = columnNamesAthena[srt[0] as keyof Object]
+      assembledAthenaUrl += `&sort=${sortingName}&order=${srt[1]}`
     }
-
     // Add filter to URL if there is a filter
-    if (filter) {
-      lastTypedFilter = filter
-      assembledAthenaUrl += `&query=${filter}`
+    if (flt) {
+      lastTypedFilter = flt
+      assembledAthenaUrl += `&query=${flt}`
     }
-
     // Add pagination to URL if there is pagination
-    if (autoMap) {
+    if (auto) {
       assembledAthenaUrl += `&page=1`
       assembledAthenaUrl += `&pageSize=1`
-    } else if (pagination && !autoMap) {
-      assembledAthenaUrl += `&page=${pagination.currentPage}`
-      assembledAthenaUrl += `&pageSize=${pagination.rowsPerPage}`
+    } else if (pg && !auto) {
+      assembledAthenaUrl += `&page=${pg.currentPage}`
+      assembledAthenaUrl += `&pageSize=${pg.rowsPerPage}`
     }
-
     if (dev) console.log('assembleAthenaURL: Assembled Athena URL: ', encodeURI(assembledAthenaUrl))
     return encodeURI(assembledAthenaUrl)
   }
@@ -681,28 +630,15 @@
     sortedColumns: Map<string, SortDirection>,
     pagination: IPagination
   ): Promise<{ data: Record<string, any>[]; totalRows: number }> {
-    // TODO: fix bug that when the sourceName has no results when filled in as filter, the Athena results of the previous filter are showed
     // Get the filter
     let filter = filteredColumns.values().next().value
+    const athenaFilter = globalAthenaFilter.filter
     // Check if there is a filter filled in
-    if (
-      globalAthenaFilter.filter &&
-      globalAthenaFilter.filter !== previousAthenaFilter &&
-      globalAthenaFilter.filter !== filter
-    ) {
-      previousAthenaFilter = globalAthenaFilter.filter
-      filter = globalAthenaFilter.filter
-    } else if (globalAthenaFilter.filter === undefined) {
-      if (selectedRow) {
-        // If there is no filter, get the sourceName and translate it to English and use this as the filter
-        filter = await translate(selectedRow.sourceName)
-      }
-    } else if (globalAthenaFilter.filter && filter === undefined) {
-      // If the user types his own filter & the filter is undefinedv, use the custom filter
-      filter = globalAthenaFilter.filter
-    } else if (globalAthenaFilter.filter == previousAthenaFilter) {
-      filter = globalAthenaFilter.filter
-    }
+    if (athenaFilter && athenaFilter !== previousAthenaFilter && athenaFilter !== filter)
+      previousAthenaFilter = filter = athenaFilter
+    else if (!athenaFilter && selectedRow) filter = await translate(selectedRow.sourceName)
+    else if (athenaFilter && !filter) filter = athenaFilter
+    else if (athenaFilter == previousAthenaFilter) filter = athenaFilter
 
     const url = await assembleAthenaURL(filter, sortedColumns.entries().next().value, pagination, false)
     const response = await fetch(url)
@@ -775,17 +711,14 @@
       console.log('rowMapping: Start mapping row with index ', rowIndex)
     }
     let mappedUsagiRow: Record<string, any> = usagiRow
-
-    if (mappedUsagiRow != undefined) {
-      // Map the import columns that are given from Athena
-      for (let [name, alt] of importantAthenaColumns) {
-        if (name === 'id' && autoMap) {
-          mappedUsagiRow['sourceAutoAssignedConceptIds'] = athenaRow[name]
-        } else mappedUsagiRow[alt] = athenaRow[name]
-      }
-      // Map the extra columns that are not from Athena
-      mappedUsagiRow = await fillInAdditionalFields(mappedUsagiRow, usagiRow, autoMap)
+    if (!mappedUsagiRow) return { mappedIndex: rowIndex, mappedRow: mappedUsagiRow }
+    // Map the import columns that are given from Athena
+    for (let [name, alt] of importantAthenaColumns) {
+      if (name === 'id' && autoMap) mappedUsagiRow['sourceAutoAssignedConceptIds'] = athenaRow[name]
+      else mappedUsagiRow[alt] = athenaRow[name]
     }
+    // Map the extra columns that are not from Athena
+    mappedUsagiRow = await fillInAdditionalFields(mappedUsagiRow, usagiRow, autoMap)
 
     if (dev) {
       end = performance.now()
@@ -846,10 +779,7 @@
     // Enable the interaction with the DataTable
     disableInteraction = false
     dataTableMapping.setDisabled(false)
-    if (autoMappingPromise) {
-      autoMappingAbortController.abort()
-      // calculateProgress()
-    }
+    if (autoMappingPromise) autoMappingAbortController.abort()
     $abortAutoMapping = false
     // Check previous page and current page
     const pag = dataTableMapping.getTablePagination()
@@ -859,49 +789,44 @@
   // A method to start the auto mapping
   async function autoMapPage(): Promise<void> {
     let start: number, end: number
-    if ($settings!.autoMap) {
-      if (dev) {
-        start = performance.now()
-        console.log('autoMapPage: Starting auto mapping')
-      }
-      // Abort any automapping that is happening at the moment
-      if (autoMappingPromise) autoMappingAbortController.abort()
-      // Create a abortcontroller to abort the auto mapping in the future if needed
-      autoMappingAbortController = new AbortController()
-      const signal = autoMappingAbortController.signal
-
-      autoMappingPromise = new Promise(async (resolve, reject): Promise<void> => {
-        const pag = dataTableMapping.getTablePagination()
-        // Get the rows that are visible for the user
-        previousPage = pag.currentPage!
-        const q = query()
-          .slice(pag.rowsPerPage! * (pag.currentPage! - 1), pag.rowsPerPage! * pag.currentPage!)
-          .toObject()
-        const res = await dataTableMapping.executeQueryAndReturnResults(q)
-        if (res.queriedData.length > 0) {
-          disableInteraction = true
-          dataTableMapping.setDisabled(true)
-        }
-        for (let i = 0; i < res.queriedData.length; i++) {
-          if (signal.aborted) return Promise.resolve()
-          const row = res.queriedData[i]
-          // If the conceptId is empty & sourceAutoassignedConceptIds is not filled in. The sourceAutoAssignedConceptIds is filled in by automapping so if it was already filled in, it was automapped already
-          if (!row.conceptId && !row.sourceAutoAssignedConceptIds) await autoMapRow(signal, row, res.indices[i])
-        }
-        if (dev) {
-          end = performance.now()
-          console.log('autoMapPage: Finished auto mapping in ', Math.round(end - start!), ' ms')
-        }
-        resolve(null)
-      }).then(() => {
-        // Enable interaction with the DataTable for the user
-        disableInteraction = false
-        dataTableMapping.setDisabled(false)
-        // calculateProgress()
-      })
-    } else {
-      // calculateProgress()
+    if (!$settings?.autoMap) return
+    if (dev) {
+      start = performance.now()
+      console.log('autoMapPage: Starting auto mapping')
     }
+    // Abort any automapping that is happening at the moment
+    if (autoMappingPromise) autoMappingAbortController.abort()
+    // Create a abortcontroller to abort the auto mapping in the future if needed
+    autoMappingAbortController = new AbortController()
+    const signal = autoMappingAbortController.signal
+
+    autoMappingPromise = new Promise(async (resolve, reject): Promise<void> => {
+      const pag = dataTableMapping.getTablePagination()
+      if (!pag.currentPage) return
+      // Get the rows that are visible for the user
+      previousPage = pag.currentPage
+      const q = query()
+        .slice(pag.rowsPerPage! * (pag.currentPage! - 1), pag.rowsPerPage! * pag.currentPage!)
+        .toObject()
+      const res = await dataTableMapping.executeQueryAndReturnResults(q)
+      if (res.queriedData.length > 0) {
+        disableInteraction = true
+      }
+      for (let i = 0; i < res.queriedData.length; i++) {
+        if (signal.aborted) return Promise.resolve()
+        const row = res.queriedData[i]
+        // If the conceptId is empty & sourceAutoassignedConceptIds is not filled in. The sourceAutoAssignedConceptIds is filled in by automapping so if it was already filled in, it was automapped already
+        if (!row.conceptId && !row.sourceAutoAssignedConceptIds) await autoMapRow(signal, row, res.indices[i])
+      }
+      if (dev) {
+        end = performance.now()
+        console.log('autoMapPage: Finished auto mapping in ', Math.round(end - start!), ' ms')
+      }
+      resolve(null)
+    }).then(() => {
+      // Enable interaction with the DataTable for the user
+      disableInteraction = false
+    })
   }
 
   // A method to create the meta data per column
@@ -947,7 +872,7 @@
   }
 
   // A method to approve a whole page
-  async function approvePage() {
+  async function approvePage(): Promise<void> {
     if (dev) console.log('approvePage: Approving page')
     let approveRows = new Map<number, Record<string, any>>()
     for (let [index, row] of currentVisibleRows) {
@@ -974,111 +899,84 @@
       approveRows.set(index, row)
     }
     await dataTableMapping.updateRows(approveRows)
-    // calculateProgress()
   }
 
-  async function downloadPage() {
+  async function downloadPage(): Promise<void> {
+    if (dataTableMapping) {
+      const blob = await dataTableMapping.getBlob()
+      await $implementationClass?.syncFile({ fileName: $fileName, blob, action: 'update' })
+    }
+    if (dataTableCustomConcepts) {
+      const blob = await dataTableCustomConcepts.getBlob()
+      await $implementationClass?.syncFile({
+        fileName: `${$fileName.split('.csv')[0]}_concept.csv`,
+        blob,
+        action: 'update',
+      })
+    }
     await $implementationClass.downloadFile(file!.name, true, false)
     await $implementationClass.downloadFile(`${file!.name.split('.csv')[0]}_concept.csv`, false, true)
     goto('/')
   }
 
-  // async function calculateProgress() {
-  //   if (dev) console.log('calculateProgress: Calculating progress')
-  //   const qMapping = query().slice(0, 1).toObject()
-  //   const qMappingResult = await dataTableMapping.executeQueryAndReturnResults(qMapping)
-  //   if (qMappingResult[0]) {
-  //     if (qMappingResult[0].mappingStatus) {
-  //       const expressions = {
-  //         total: 'd => op.count()',
-  //         valid: 'd => op.valid(d.mappingStatus)',
-  //       }
-  //       const expressionResults = await dataTableMapping.executeExpressionsAndReturnResults(expressions)
-  //       const qAppr = query()
-  //         .filter((r: any) => r.mappingStatus == 'APPROVED')
-  //         .toObject()
-  //       const resAppr = await dataTableMapping.executeQueryAndReturnResults(qAppr)
-  //       tableInformation = {
-  //         totalRows: expressionResults.expressionData[0].total,
-  //         mappedRows: expressionResults.expressionData[1].valid,
-  //         approvedRows: resAppr.queriedData.length,
-  //       }
-  //     }
-  //   }
-  // }
-
   // A method to save the facets
-  function saveFacets(facets: Record<string, any>) {
+  function saveFacets(facets: Record<string, any>): void {
     athenaFacets = facets
   }
 
-  let fetchDataFunc = fetchData
-
   // A method to get the file from the Firebase file storage when loading the page
-  async function readFileFirstTime() {
-    if ($fileName) {
-      const res = await $implementationClass.readFileFirstTime($fileName)
-      if (res && res?.file) file = res.file
-      if (res && res?.customConceptsFile) customConceptsFile = res.customConceptsFile
-    }
+  async function readFileFirstTime(): Promise<void> {
+    if (!$fileName) return
+    const res = await $implementationClass.readFileFirstTime($fileName)
+    if (res && res?.file) file = res.file
+    if (res && res?.customConceptsFile) customConceptsFile = res.customConceptsFile
   }
 
   // A method to sync the file from the DataTable with the file storage & IndexedDB
-  async function renewFile() {
-    // If there is no file loaded
-    if (!file) {
-      const resFile = await $implementationClass.syncFile({ fileName: $fileName })
-      if (resFile) file = resFile
-      else console.error('renewFile: Syncfile did not return a file, does the file exist?')
-    } else {
-      // If a file is already loaded
-      const syncedFile = await $implementationClass.syncFile({ fileName: $fileName })
-      if (syncedFile) file = syncedFile
-    }
+  async function renewFile(): Promise<void> {
+    const resFile = await $implementationClass.syncFile({ fileName: $fileName })
+    if (resFile) file = resFile
   }
 
   // A method to sync the file from the DataTable with the file storage & IndexedDB
-  async function renewCustomFile() {
-    // If there is no custom concepts file loaded
-    if (!customConceptsFile) {
-      const resFile = await $implementationClass.syncFile({ fileName: $fileName })
-      if (resFile) customConceptsFile = resFile
-      else console.error('renewCustomFile: Syncfile did not return a file')
-    } else {
-      // If a custom concepts file is already loaded
-      const syncedFile = await $implementationClass.syncFile({ fileName: $fileName })
-      if (syncedFile) customConceptsFile = syncedFile
-    }
+  async function renewCustomFile(): Promise<void> {
+    const resFile = await $implementationClass.syncFile({ fileName: $fileName })
+    if (resFile) customConceptsFile = resFile
   }
 
-  async function setupWatch(onlyCustom: boolean = false) {
-    if (onlyCustom == false) {
+  async function setupWatch(onlyCustom: boolean = false): Promise<void> {
+    if (onlyCustom == false)
       await $implementationClass.watchValueFromDatabase(
         `/files/${$fileName?.substring(0, $fileName.indexOf('.'))}`,
         () => {
           renewFile()
         }
       )
-    }
+
     // Watch the version & author of the custom concepts
     await $implementationClass.watchValueFromDatabase('/files/customConcepts', () => {
       renewCustomFile()
     })
   }
 
-  async function readFileLocally() {
-    if (!$fileName) {
-      console.error('There was no filename specified')
-      goto(`${base}/`)
+  async function readFileLocally(): Promise<void> {
+    if (!$fileName) return goto(`${base}/`)
+    const storedFile = await $implementationClass.readFileFirstTime($fileName)
+    if (!storedFile?.file) return goto(`${base}/`)
+    file = storedFile.file
+    customConceptsFile = storedFile.customConceptsFile
+  }
+
+  async function load(): Promise<void> {
+    if (!$settings?.author?.name) return
+    if ($implementation == 'firebase') {
+      const querystringFile = $page.url.searchParams.get('fileName')
+      if (querystringFile) $fileName = querystringFile
+      readFileFirstTime()
+      setupWatch(false)
     } else {
-      const storedFile = await $implementationClass.readFileFirstTime($fileName)
-      if (!storedFile?.file) {
-        console.error('There was no file found')
-        goto(`${base}/`)
-      } else {
-        file = storedFile.file
-        customConceptsFile = storedFile.customConceptsFile
-      }
+      readFileLocally()
+      setupWatch(true)
     }
   }
 
@@ -1087,21 +985,6 @@
       // Trigger the automapping
       autoMapPage()
       $triggerAutoMapping = false
-    }
-  }
-
-  async function load() {
-    if ($settings?.author?.name) {
-      if ($implementation == 'firebase') {
-        const querystringFile = $page.url.searchParams.get('fileName')
-        if (querystringFile) $fileName = querystringFile
-        readFileFirstTime()
-
-        setupWatch(false)
-      } else {
-        readFileLocally()
-        setupWatch(true)
-      }
     }
   }
 
@@ -1119,55 +1002,53 @@
   onMount(async () => {
     // Check if the file contains the file query parameter
     navTriggered = false
-    if (!$page.url.searchParams.get('fileName') && !$fileName) {
-      goto(`${base}/`)
-    }
+    if (!$page.url.searchParams.get('fileName') && !$fileName) goto(`${base}/`)
     if ($implementationClass) await $implementationClass.checkCustomConcepts($fileName)
   })
 
   onDestroy(() => {
-    if ($implementationClass) {
-      $implementationClass.watchValueFromDatabase(
-        `/files/${$fileName?.substring(0, $fileName.indexOf('.'))}`,
-        () => {
-          renewFile()
-        },
-        true
-      )
-      $implementationClass.watchValueFromDatabase(
-        '/files/customConcepts',
-        () => {
-          renewCustomFile()
-        },
-        true
-      )
-    }
+    console.log($implementationClass)
+    if (!$implementationClass) return
+    $implementationClass.watchValueFromDatabase(
+      `/files/${$fileName?.substring(0, $fileName.indexOf('.'))}`,
+      () => {
+        renewFile()
+      },
+      true
+    )
+    $implementationClass.watchValueFromDatabase(
+      '/files/customConcepts',
+      () => {
+        renewCustomFile()
+      },
+      true
+    )
   })
 
   beforeNavigate(async ({ from, to, cancel }) => {
-    if (from?.url.href.includes('/mapping')) {
-      // When reloading or navigating in the window tab in the browser, save the file to cache
-      if (dev) console.log('beforeNavigate: Sync the file to IndexedDB')
-      // If downloaded, set the downloaded hex in IndexedDB & when leaving the application, compare the downloaded hex and the current hex to check if there were any changes
-      if (!navTriggered) {
-        cancel()
-        if (dataTableMapping) {
-          const blob = await dataTableMapping.getBlob()
-          await $implementationClass?.syncFile({ fileName: $fileName, blob, action: 'update' })
-        }
-        if (dataTableCustomConcepts) {
-          const blob = await dataTableCustomConcepts.getBlob()
-          await $implementationClass?.syncFile({
-            fileName: `${$fileName.split('.csv')[0]}_concept.csv`,
-            blob,
-            action: 'update',
-          })
-        }
-        navTriggered = true
-        goto(to?.url!)
-      }
+    if (!from?.url.href.includes('/mapping')) return
+    // When reloading or navigating in the window tab in the browser, save the file to cache
+    if (dev) console.log('beforeNavigate: Sync the file to IndexedDB')
+    // If downloaded, set the downloaded hex in IndexedDB & when leaving the application, compare the downloaded hex and the current hex to check if there were any changes
+    if (navTriggered) return
+    cancel()
+    if (dataTableMapping) {
+      const blob = await dataTableMapping.getBlob()
+      await $implementationClass?.syncFile({ fileName: $fileName, blob, action: 'update' })
     }
+    if (dataTableCustomConcepts) {
+      const blob = await dataTableCustomConcepts.getBlob()
+      await $implementationClass?.syncFile({
+        fileName: `${$fileName.split('.csv')[0]}_concept.csv`,
+        blob,
+        action: 'update',
+      })
+    }
+    navTriggered = true
+    goto(to?.url!)
   })
+
+  let fetchDataFunc = fetchData
 </script>
 
 <svelte:head>

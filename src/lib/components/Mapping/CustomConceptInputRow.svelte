@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
   import { createEventDispatcher } from 'svelte'
-  import type { AutoCompleteEventDetail, CustomOptionsEvents } from '../Types'
+  import type { AutoCompleteEventDetail, CustomOptionsEvents, ICustomConcept } from '../Types'
   import SvgIcon from '../Extra/SvgIcon.svelte'
   import AutocompleteInput from '../Extra/AutocompleteInput.svelte'
   import { customConcept } from '$lib/store'
@@ -14,14 +14,16 @@
     renderedRow: Record<string, any>
 
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
-  let predefined: Record<string, string>
+  let predefined: Record<string, string>,
+    mapped: ICustomConcept | undefined,
+    mappedButton: boolean = false
 
-  function autoComplete(e: CustomEvent<AutoCompleteEventDetail>) {
+  function autoComplete(e: CustomEvent<AutoCompleteEventDetail>): void {
     $customConcept[e.detail.id] = e.detail.value
   }
 
-  function onClickMapping() {
-    dispatch('customMappingInput', {
+  function onClickMapping(): void {
+    mapped = {
       conceptId: predefined.concept_id,
       conceptName: $customConcept.concept_name,
       domainId: $customConcept.domain_id,
@@ -32,20 +34,33 @@
       validStartDate: predefined.valid_start_date,
       validEndDate: predefined.valid_end_date,
       invalidReason: predefined.invalid_reason,
-    })
+    }
+    dispatch('customMappingInput', mapped)
+    mappedButton = true
+  }
+
+  function checkRow() {
+    if (
+      mapped?.conceptName !== $customConcept.concept_name ||
+      mapped?.domainId !== $customConcept.domain_id ||
+      mapped?.vocabularyId !== $customConcept.vocabulary_id ||
+      mapped?.conceptClassId !== $customConcept.concept_class_id
+    )
+      mappedButton = false
+    else mappedButton = true
   }
 
   $: {
     if (selectedRow) {
       predefined = {
-        concept_id: "0",
+        concept_id: '0',
         concept_code: selectedRow.sourceCode,
         standard_concept: '',
         valid_start_date: `${new Date().getFullYear()}-${
-          (new Date().getMonth() + 1).toString().length > 2
+          (new Date().getMonth() + 1).toString().length === 2
             ? new Date().getMonth() + 1
             : `0${new Date().getMonth() + 1}`
-        }-${new Date().getDate().toString().length > 2 ? new Date().getDate() : `0${new Date().getDate()}`}`,
+        }-${new Date().getDate().toString().length === 2 ? new Date().getDate() : `0${new Date().getDate()}`}`,
         valid_end_date: '2099-12-31',
         invalid_reason: '',
       }
@@ -55,7 +70,14 @@
 
 {#if index == 0}
   <td>
-    <button on:click={onClickMapping}><SvgIcon href="{base}/icons.svg" id="plus" width="16px" height="16px" /></button>
+    {#if mappedButton}
+      <button on:click={onClickMapping}><SvgIcon href="{base}/icons.svg" id="plus" width="16px" height="16px" /></button
+      >
+    {:else}
+      <button style="background-color: greenyellow;"
+        ><SvgIcon href="{base}/icons.svg" id="check" width="16px" height="16px" /></button
+      >
+    {/if}
   </td>
 {:else}
   <td />
@@ -74,7 +96,7 @@
                 on:autoComplete={autoComplete}
               />
             {:else}
-              <input type="text" bind:value={$customConcept[column.id]} />
+              <input type="text" bind:value={$customConcept[column.id]} on:change={checkRow} />
             {/if}
           {:else}
             <p>{predefined[column.id]}</p>
