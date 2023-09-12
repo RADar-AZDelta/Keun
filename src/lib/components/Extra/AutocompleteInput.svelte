@@ -39,16 +39,16 @@
   // A method to search for suggestions to apply to the input field
   function filter(): void {
     filteredValues = new Map<string, any>()
-    if (inputValue) {
-      for (let key of Object.keys(list)) {
-        if (
-          key.toLowerCase().includes(inputValue.toLowerCase()) ||
-          list[key].toLowerCase().includes(inputValue.toLowerCase())
-        ) {
-          if (key !== inputValue || list[key] !== inputValue) filteredValues.set(key, list[key])
-        }
-      }
-    }
+    if (!inputValue) return
+    const pairs = Object.entries(list).filter(
+      ([key, value]) =>
+        (key.toLowerCase().includes(inputValue!.toLowerCase()) ||
+          value.toLowerCase().includes(inputValue!.toLowerCase())) &&
+        key.toLowerCase() !== inputValue?.toLowerCase() &&
+        value.toLowerCase() !== inputValue?.toLowerCase()
+    )
+    if (!pairs.length) return
+    for (let [key, value] of pairs) filteredValues.set(key, value)
   }
 
   const onInput = debounce(async (e: any): Promise<void> => {

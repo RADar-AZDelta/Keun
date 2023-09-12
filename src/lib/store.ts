@@ -1,6 +1,8 @@
 import { writable } from 'svelte/store'
 import type { IFunctionalityImpl, ISettings } from './components/Types'
 import { PUBLIC_CLOUD_IMPLEMENTATION } from '$env/static/public'
+  // @ts-ignore
+  import { LatencyOptimisedTranslator } from '@browsermt/bergamot-translator/translator.js'
 
 const customConcept = writable<Record<string, string>>({
   domain_id: '',
@@ -28,7 +30,7 @@ const implementation = writable<string>(PUBLIC_CLOUD_IMPLEMENTATION || "none")
 
 const implementationClass = writable<IFunctionalityImpl>()
 
-async function loadImplementation() {
+async function loadImplementation(): Promise<unknown> {
   return new Promise(async (resolve, reject) => {
     let implementationMethod: string = ""
     implementation.subscribe((implementation) => implementationMethod = implementation)
@@ -52,6 +54,8 @@ async function loadImplementation() {
 
 const fileName = writable<string>()
 
+const translator = writable<LatencyOptimisedTranslator>()
+
 loadImplementation()
 
-export { customConcept, settings, triggerAutoMapping, implementation, implementationClass, fileName, abortAutoMapping}
+export { customConcept, settings, triggerAutoMapping, implementation, implementationClass, fileName, abortAutoMapping, translator }

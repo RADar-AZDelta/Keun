@@ -42,7 +42,7 @@
   }
 
   // A method for when a new file has been put in the field
-  function onFileInputChange(e: Event) {
+  function onFileInputChange(e: Event): void {
     if (dev) console.log('onFileInputChange: A file has been upload via the input button')
     const allowedExtensions = ['csv']
     const inputFiles = (e.target as HTMLInputElement).files
@@ -58,7 +58,7 @@
   }
 
   // Read the content of the file, seperate the columns from the rows and check if all columns are in the file
-  function checkForMissingColumns(this: FileReader, ev: ProgressEvent<FileReader>) {
+  function checkForMissingColumns(this: FileReader, ev: ProgressEvent<FileReader>): void {
     if (dev) console.log('checkForMissingColumns: Checking if there are missing columns in the file')
     if (!this.result) return
     let content = this.result.toString()
@@ -85,7 +85,7 @@
   /////////////////////////////// Methods regarding file upload && mapping ///////////////////////////////
 
   // A method to upload a file
-  async function uploadFile() {
+  async function uploadFile(): Promise<void> {
     if (dev) console.log('uploadFile: Uploading a file')
     await $implementationClass.checkCustomConcepts(file.name)
     // Upload the file to the storage depending on the implementationmethod
@@ -96,7 +96,7 @@
   }
 
   // A method to go to the mapping route without updating the file in IndexedDB for local mapping (the cached version is still in IndexedDB)
-  async function mapCachedFile(fileName: string) {
+  async function mapCachedFile(fileName: string): Promise<void> {
     if (dev) console.log(`mapCachedFile: Go to the route "/mapping" to map the file: ${fileName}`)
     $fileName = fileName
     await $implementationClass.checkCustomConcepts(fileName)
@@ -104,7 +104,7 @@
   }
 
   // A method to rename the columns to get a standardized version of the file
-  function fileUploadWithColumnChanges() {
+  function fileUploadWithColumnChanges(): void {
     if (dev) console.log('fileUploadWithColumnChanges: The file is uploading and process the column changes')
     if (!$settings?.author?.name) return console.error('fileUploadWithColumnChanges: There is no author name set.')
     if (!($implementation === 'firebase' && $settings?.author?.roles?.includes('Admin')) && !$implementation) return
@@ -114,7 +114,7 @@
   }
 
   // Read the file and update the columns
-  function processUpdatedColumns(this: FileReader, ev: ProgressEvent<FileReader>) {
+  function processUpdatedColumns(this: FileReader, ev: ProgressEvent<FileReader>): void {
     if (dev) console.log('processUpdatedColumns: Update the given columns to the expected columns')
     if (!ev.target?.result) return
     // Get the columns row of the file
@@ -134,7 +134,7 @@
   /////////////////////////////// Methods regarding deleting & editing a file ///////////////////////////////
 
   // A method to delete a file
-  async function deleteFile(fileName: string) {
+  async function deleteFile(fileName: string): Promise<void> {
     if (dev) console.log('deleteFile: Deleting a file')
     processing = true
     await $implementationClass.deleteFile(fileName)
@@ -144,7 +144,7 @@
   }
 
   // A method to edit the authors that have access to a file
-  async function editFile(fileName: string) {
+  async function editFile(fileName: string): Promise<void> {
     if (dev) console.log('editFile: The file is being edited')
     await $implementationClass.editFile(fileName, authorizedAuthors)
     closeAuthorsDialog()
@@ -152,7 +152,7 @@
   }
 
   // A method to select a file and open the authors dialog
-  async function editRights(e: Event, file: string) {
+  async function editRights(e: Event, file: string): Promise<void> {
     if (e && e.stopPropagation) e.stopPropagation()
     if (!file.includes('_concept.csv')) {
       chosenFile = file
@@ -162,46 +162,46 @@
 
   /////////////////////////////// Methods regarding dialogs ///////////////////////////////
 
-  function openLocationDialog() {
+  function openLocationDialog(): void {
     if (locationDialog.attributes.getNamedItem('open') === null) locationDialog.showModal()
   }
 
-  function closeLocationDialog() {
+  function closeLocationDialog(): void {
     if (locationDialog.attributes.getNamedItem('open') !== null) locationDialog.close()
   }
 
-  function openFileInputDialog() {
+  function openFileInputDialog(): void {
     if (fileInputDialog.attributes.getNamedItem('open') === null) fileInputDialog.showModal()
   }
 
-  function closeFileInputDialog() {
+  function closeFileInputDialog(): void {
     if (fileInputDialog.attributes.getNamedItem('open') === null) return
     fileInputDialog.close()
     authorizedAuthors = []
   }
 
-  function openAuthorsDialog() {
+  function openAuthorsDialog(): void {
     if (authorsDialog.attributes.getNamedItem('open') === null) authorsDialog.showModal()
   }
 
-  function closeAuthorsDialog() {
+  function closeAuthorsDialog(): void {
     if (authorsDialog.attributes.getNamedItem('open') === null) return
     authorsDialog.close()
     authorizedAuthors = []
   }
 
-  function openColumnDialog() {
+  function openColumnDialog(): void {
     if (columnDialog.attributes.getNamedItem('open') === null) columnDialog.showModal()
   }
 
-  function closeColumnDialog() {
+  function closeColumnDialog(): void {
     if (columnDialog.attributes.getNamedItem('open') !== null) columnDialog.close()
   }
 
   /////////////////////////////// General methods ///////////////////////////////
 
   // A method to send the user to the mappingtool
-  function openMappingTool(fileName: string) {
+  function openMappingTool(fileName: string): void {
     if (dev) console.log('openMappingTool: Navigating to the mapping tool')
     if (fileName.includes('_concept.csv')) return
     $fileName = fileName
@@ -209,7 +209,7 @@
   }
 
   // A method to check if there is cache of files
-  async function checkForCache() {
+  async function checkForCache(): Promise<void> {
     if (dev) console.log('checkForCache: Checking for cache')
     const cached = await $implementationClass.checkForCache(file.name)
     // When the application is using Firebase, this function will always return void so the file will be uploaded
@@ -221,14 +221,15 @@
   /////////////////////////////// On click events ///////////////////////////////
 
   // A method to get all the files to map
-  async function getFiles() {
+  async function getFiles(): Promise<void> {
     if (dev) console.log('getFiles: Get all the files in the database')
+    if(!$implementationClass) return
     const getFilesRes = await $implementationClass?.getFiles()
     if (getFilesRes) files = getFilesRes
   }
 
   // Download the file & eventual custom concepts file
-  async function downloadFiles(e: Event, file: string) {
+  async function downloadFiles(e: Event, file: string): Promise<void> {
     if (e && e.stopPropagation) e.stopPropagation()
     await $implementationClass.downloadFile(file, true, false)
     await $implementationClass.downloadFile(`${file.split('.csv')[0]}_concept.csv`, false, true)
@@ -236,7 +237,7 @@
   }
 
   // Delete the files regarding the file name
-  async function deleteFiles(e: Event, file: string) {
+  async function deleteFiles(e: Event, file: string): Promise<void> {
     if (e && e.stopPropagation) e.stopPropagation()
     deleteFile(file)
     deleteFile(`${file.split('.csv')[0]}_concept.csv`)

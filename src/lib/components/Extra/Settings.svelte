@@ -4,46 +4,39 @@
   import { abortAutoMapping, settings, triggerAutoMapping } from '$lib/store'
   import { base } from '$app/paths'
 
-  let savedAutomapping: boolean
-
-  let settingsDialog: HTMLDialogElement
-  let languages: Record<string, string> = {
-    nl: 'Dutch',
-    en: 'English',
-    de: 'German',
-    fr: 'French',
-    it: 'Italian',
-    es: 'Spanish',
-  }
+  let savedAutomapping: boolean,
+    settingsDialog: HTMLDialogElement,
+    languages: Record<string, string> = {
+      nl: 'Dutch',
+      en: 'English',
+      de: 'German',
+      fr: 'French',
+      it: 'Italian',
+      es: 'Spanish',
+    }
 
   // A method to close the dialog if it was opened
   function closeDialog(): void {
-    if (settingsDialog.attributes.getNamedItem('open') != null) settingsDialog.close()
+    if (settingsDialog.attributes.getNamedItem('open') !== null) settingsDialog.close()
   }
 
   // A method to open the dialog if it was closed
   function openDialog(): void {
     savedAutomapping = $settings.autoMap
-    if (settingsDialog.attributes.getNamedItem('open') == null) settingsDialog.showModal()
+    if (settingsDialog.attributes.getNamedItem('open') === null) settingsDialog.showModal()
   }
 
   // A method to set the settings in the localstorage
   async function saveSettings(): Promise<void> {
-    if (settingsDialog.attributes.getNamedItem('open') != null) {
-      if ($settings.fontsize > 16) $settings.fontsize = 16
-      else if ($settings.fontsize < 8) $settings.fontsize = 8
-      document.documentElement.style.setProperty('--font-size', `${$settings.fontsize}px`)
-      document.documentElement.style.setProperty('--font-number', `${$settings.fontsize}`)
-      if ($settings.autoMap == true && savedAutomapping !== $settings.autoMap) {
-        triggerAutoMapping.set(true)
-      }
-    }
+    if (settingsDialog.attributes.getNamedItem('open')) return
+    $settings.fontsize = $settings.fontsize > 16 ? 16 : $settings.fontsize < 8 ? 8 : $settings.fontsize
+    document.documentElement.style.setProperty('--font-size', `${$settings.fontsize}px`)
+    document.documentElement.style.setProperty('--font-number', `${$settings.fontsize}`)
+    if ($settings.autoMap && savedAutomapping !== $settings.autoMap) triggerAutoMapping.set(true)
   }
 
   async function abort(): Promise<void> {
-    if($settings.autoMap == false && savedAutomapping !== $settings.autoMap) {
-      abortAutoMapping.set(true)
-    }
+    if (!$settings.autoMap && savedAutomapping !== $settings.autoMap) abortAutoMapping.set(true)
   }
 </script>
 
@@ -83,11 +76,16 @@
           <div data-name="option">
             <p>Automatic mapping?</p>
             <div data-name="switch">
-              <input id="Automap" type="checkbox" bind:checked={$settings.autoMap} on:change={() => {
-                savedAutomapping = !$settings.autoMap
-                abort()
-                saveSettings()
-              }} />
+              <input
+                id="Automap"
+                type="checkbox"
+                bind:checked={$settings.autoMap}
+                on:change={() => {
+                  savedAutomapping = !$settings.autoMap
+                  abort()
+                  saveSettings()
+                }}
+              />
               <label for="Automap" />
             </div>
           </div>

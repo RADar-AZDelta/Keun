@@ -114,6 +114,11 @@ export interface ICategories {
   options: string[]
 }
 
+export interface ISides {
+  filters: boolean; 
+  details: boolean
+}
+
 export interface ISettings {
   mapToMultipleConcepts: boolean
   autoMap: boolean
@@ -122,7 +127,7 @@ export interface ISettings {
   savedAuthors: string[]
   vocabularyIdCustomConcept: string
   fontsize: number
-  popupSidesShowed: { filters: boolean; details: boolean }
+  popupSidesShowed: ISides
 }
 
 export interface IAuthor {
@@ -161,6 +166,12 @@ export interface ICache {
   blob: Blob
   fileName: string
   action?: "get" | "update"
+}
+
+export interface ITablePagination {
+  currentPage: number | undefined;
+  rowsPerPage: number | undefined;
+  totalRows: number | undefined;
 }
 
 export interface IFunctionalityImpl {

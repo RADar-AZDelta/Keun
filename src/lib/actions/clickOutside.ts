@@ -1,5 +1,5 @@
 // A method to check if the user clicks outside of the element
-export function clickOutside(node: Node) {
+export function clickOutside(node: Node): {destroy(): void} {
 	const handleClick = (event: MouseEvent) => {
 	  if (!node.contains(event.target as Node)) {
 		node.dispatchEvent(new CustomEvent('outClick'))

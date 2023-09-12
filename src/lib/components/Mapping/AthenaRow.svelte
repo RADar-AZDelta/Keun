@@ -18,8 +18,8 @@
   else multipleConcepts = $settings.mapToMultipleConcepts
 
   // A method to map a certain concept to a certain row (can be single mapping or multiple mapping depending on the settings)
-  async function onClickMapping() {
-    if (multipleConcepts == true) {
+  async function onClickMapping(): Promise<void> {
+    if (multipleConcepts) {
       dispatch('multipleMapping', { row: renderedRow, extra: { comment: '', reviewer: '' } })
       dispatch('updateUniqueConceptIds', { conceptId: renderedRow.id, conceptName: renderedRow.name, multiple: true })
     } else {
@@ -28,16 +28,18 @@
     }
   }
 
-  function referToAthena() {
+  function referToAthena(): void {
     const referUrl = import.meta.env.VITE_ATHENA_DETAIL + renderedRow.id
     window.open(encodeURI(referUrl), '_blank')?.focus()
   }
 
   $: {
-    if (Object.keys(alreadyMapped).length > 0) {
-      if (alreadyMapped[Object.keys(alreadyMapped)[0]].conceptId.includes(renderedRow.id)) mapped = true
-      else mapped = false
-    } else mapped = false
+    if (
+      Object.keys(alreadyMapped).length &&
+      alreadyMapped[Object.keys(alreadyMapped)[0]].conceptId.includes(renderedRow.id)
+    )
+      mapped = true
+    else mapped = false
   }
 </script>
 

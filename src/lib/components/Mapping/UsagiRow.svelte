@@ -19,41 +19,41 @@
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
   // A method to open the Athena pop-up to map a row
-  function onClickMapping() {
+  function onClickMapping(): void {
     if (dev) console.log(`onClickMapping: ${index}`)
     dispatch('generalVisibilityChanged', { visibility: true, data: { row: renderedRow, index } })
   }
 
   // A method to throw an event to the parent to approve a row
-  async function onClickApproving() {
+  async function onClickApproving(): Promise<void> {
     dispatch('actionPerformed', { action: 'APPROVED', index: index, row: renderedRow })
   }
 
   // A method to throw an event to the parent to flag a row
-  async function onClickFlagging() {
+  async function onClickFlagging(): Promise<void> {
     dispatch('actionPerformed', { action: 'FLAGGED', index: index, row: renderedRow })
   }
 
   // A method to throw an event to the parent to unapprove a row
-  async function onClickUnapproving() {
+  async function onClickUnapproving(): Promise<void> {
     dispatch('actionPerformed', { action: 'UNAPPROVED', index: index, row: renderedRow })
   }
 
   // A method to throw an event to the parent to delete a row
-  function onClickDeletion() {
+  function onClickDeletion(): void {
     const conceptId = renderedRow['conceptId']
     const sourceCode = renderedRow['sourceCode']
     const multiple = renderedRow['ADD_INFO:numberOfConcepts'] > 1
     dispatch('deleteRow', { indexes: [index], sourceCode: sourceCode, conceptId: conceptId, erase: multiple })
   }
 
-  function onClickAutoMap() {
+  function onClickAutoMap(): void {
     const sourceName = renderedRow['sourceName']
     dispatch('autoMapRow', { index, sourceName })
   }
 
   // A method to get the color for the cell depending on the status of the row
-  function getColors() {
+  function getColors(): string {
     switch (renderedRow['mappingStatus']) {
       case 'APPROVED':
         if (renderedRow['ADD_INFO:approvedBy']) return 'hsl(156, 100%, 35%)'
