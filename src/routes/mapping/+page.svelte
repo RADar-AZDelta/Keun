@@ -441,13 +441,16 @@
         conceptName: currentRow.conceptName == 'Unmapped' ? undefined : currentRow.conceptName,
       }))
         .filter(
-          (r: any, p: any) => r.sourceCode == p.sourceCode && r.sourceName == p.sourceName && r.conceptName == p.conceptName
+          (r: any, p: any) =>
+            r.sourceCode == p.sourceCode && r.sourceName == p.sourceName && r.conceptName == p.conceptName
         )
         .toObject()
       const indexRes = await dataTableMapping.executeQueryAndReturnResults(indexQuery)
       const currentIndex = indexRes.indices[0]
 
       // TODO: optimize this, with big files this could slow the application down
+      // Slice did not work, does not filter the table correctly before slicing
+
       const q = query().toObject()
       const res = await dataTableMapping.executeQueryAndReturnResults(q)
       if (res.indices.length == 0) {
@@ -524,7 +527,6 @@
     // Check the settings and if the language set is not english, translate the text
     if (!$settings || !$settings.language || $settings.language === 'en') return text
     const translator = await createTranslator()
-    console.log($settings?.language, " AND ", text)
     let translation = await translator.translate({
       from: $settings!.language,
       to: 'en',
@@ -809,7 +811,6 @@
       const res = await dataTableMapping.executeQueryAndReturnResults(q)
       if (res.queriedData.length > 0) {
         disableInteraction = true
-        dataTableMapping.setDisabled(true)
       }
       for (let i = 0; i < res.queriedData.length; i++) {
         if (signal.aborted) return Promise.resolve()
@@ -825,7 +826,6 @@
     }).then(() => {
       // Enable interaction with the DataTable for the user
       disableInteraction = false
-      dataTableMapping.setDisabled(false)
     })
   }
 
@@ -902,6 +902,18 @@
   }
 
   async function downloadPage(): Promise<void> {
+    if (dataTableMapping) {
+      const blob = await dataTableMapping.getBlob()
+      await $implementationClass?.syncFile({ fileName: $fileName, blob, action: 'update' })
+    }
+    if (dataTableCustomConcepts) {
+      const blob = await dataTableCustomConcepts.getBlob()
+      await $implementationClass?.syncFile({
+        fileName: `${$fileName.split('.csv')[0]}_concept.csv`,
+        blob,
+        action: 'update',
+      })
+    }
     await $implementationClass.downloadFile(file!.name, true, false)
     await $implementationClass.downloadFile(`${file!.name.split('.csv')[0]}_concept.csv`, false, true)
     goto('/')

@@ -138,7 +138,6 @@ export async function urlToFile(url: string, fileName: string) {
   }
 }
 export async function blobToString(blob: Blob): Promise<any> {
-  // TODO: fix issue that when reloading the mapping page, the pop-up with the question to leave the page while something is loading comes. When the user wants to leave, the mapped data won't be saved
   const buffer = await blob.arrayBuffer()
   const decoder = new TextDecoder()
   const text = decoder.decode(buffer)

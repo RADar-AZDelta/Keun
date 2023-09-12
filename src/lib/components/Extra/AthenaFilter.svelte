@@ -2,6 +2,7 @@
   import type { ICategories, IFilter } from '../Types'
   import SvgIcon from './SvgIcon.svelte'
   import { base } from '$app/paths'
+  import debounce from 'lodash.debounce'
 
   export let filter: IFilter,
     openedFilter: string,
@@ -11,10 +12,10 @@
   let filterInput: string,
     filteredFilterOptions: ICategories = filter.categories
 
-  // A method for when the input (search for a filter) has changed
-  function onChange(event: Event & { currentTarget: EventTarget & HTMLInputElement }): void {
-    updateOptionsFromFilter((event.target as HTMLInputElement).value)
-  }
+// A method for when the input (search for a filter) has changed
+  const onChange = debounce(async (e: any): Promise<void> => {
+    updateOptionsFromFilter((e.target as HTMLInputElement).value)
+  }, 500)
 
   // A method to change the section that needs to be opened
   const showCategories = async (): Promise<void> => {
@@ -60,7 +61,7 @@
             placeholder="Filter"
             data-name={filter.name}
             bind:value={filterInput}
-            on:change={onChange}
+            on:input={onChange}
           />
           <button title="Remove input filter" on:click={removeInputFromFilter}>
             <SvgIcon href="{base}/icons.svg" id="x" height="16px" width="16px" />

@@ -43,7 +43,7 @@ export default class LocalImpl implements IFunctionalityImpl {
             // If the file is a custom concepts file, check if the test line is still in the blob
             // If the test line is still in the blob, this means there are no custom concepts created so don't download the file
             const text = await blob.text()
-            if(text.includes('0,test,test,test,test,S,123,2000-01-01,2099-01-01,U')) return
+            if(text.includes('0,test,test,test,test,S,123')) return
         }
         const file = new File([blob], `${customFileName}.csv`, { type: 'text/csv' })
         const url = URL.createObjectURL(file)
