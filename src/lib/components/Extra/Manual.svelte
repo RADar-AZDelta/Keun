@@ -7,18 +7,22 @@
   let manualDialog: HTMLDialogElement,
     manualText: string = ''
 
+  async function getManual(): Promise<void> {
+    if (manualText) return
+    const onlineManual = await fetch('https://raw.githubusercontent.com/RADar-AZDelta/Keun/master/README.md')
+    manualText = await onlineManual.text()
+  }
+
   // A method to open the dialog if it was closed and where the README from the Github repo is fetched
   async function openDialog(): Promise<void> {
-    if (manualDialog.attributes.getNamedItem('open') == null) manualDialog.showModal()
-    if (manualText === '') {
-      const onlineManual = await fetch('https://raw.githubusercontent.com/RADar-AZDelta/Keun/master/README.md')
-      manualText = await onlineManual.text()
-    }
+    if (manualDialog.attributes.getNamedItem('open')) return
+    await getManual()
+    manualDialog.showModal()
   }
 
   // A method to close the dialog if it was opened
   function closeDialog(): void {
-    if (manualDialog.attributes.getNamedItem('open') != null) manualDialog.close()
+    if (manualDialog.attributes.getNamedItem('open') !== null) manualDialog.close()
   }
 </script>
 

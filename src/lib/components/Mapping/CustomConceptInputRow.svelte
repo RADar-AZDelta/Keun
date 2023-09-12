@@ -16,11 +16,11 @@
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
   let predefined: Record<string, string>
 
-  function autoComplete(e: CustomEvent<AutoCompleteEventDetail>) {
+  function autoComplete(e: CustomEvent<AutoCompleteEventDetail>): void {
     $customConcept[e.detail.id] = e.detail.value
   }
 
-  function onClickMapping() {
+  function onClickMapping(): void {
     dispatch('customMappingInput', {
       conceptId: predefined.concept_id,
       conceptName: $customConcept.concept_name,

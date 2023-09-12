@@ -12,7 +12,7 @@
     filteredFilterOptions: ICategories = filter.categories
 
   // A method for when the input (search for a filter) has changed
-  function onChange(event: Event & { currentTarget: EventTarget & HTMLInputElement }) {
+  function onChange(event: Event & { currentTarget: EventTarget & HTMLInputElement }): void {
     updateOptionsFromFilter((event.target as HTMLInputElement).value)
   }
 

@@ -7,7 +7,7 @@
   let authorizedFiles: any[]
 
   // A method to get all the files that are under "/admin" in Firebase
-  async function getFiles() {
+  async function getFiles(): Promise<void> {
     const fileNamesFound = await $implementationClass.getFilesAdmin()
     if (fileNamesFound) fileNames = fileNamesFound
   }
