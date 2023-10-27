@@ -25,7 +25,7 @@ const config = {
   },
 
   kit: {
-    adapter: process.env.PUBLIC_CLOUD_IMPLEMENTATION == "firebase" ? autoAdapter() : staticAdapter({ fallback: 'index.html' }),
+    adapter: process.env.PUBLIC_CLOUD_IMPLEMENTATION === "none" ? staticAdapter({ fallback: 'index.html' }) : autoAdapter(),
     paths: {
       base: dev ? '' : '/Keun',
     }

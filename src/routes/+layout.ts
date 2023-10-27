@@ -5,10 +5,7 @@ export const prerender=false
 export const ssr=false
 
 export const load = async () => {
-    if(String(PUBLIC_CLOUD_IMPLEMENTATION).toLowerCase() == 'firebase') {
-        implementation.set('firebase')
-    } else if (!PUBLIC_CLOUD_IMPLEMENTATION || String(PUBLIC_CLOUD_IMPLEMENTATION).toLowerCase() == 'none') {
-        implementation.set('none')
-    } else implementation.set('none')
+    if(PUBLIC_CLOUD_IMPLEMENTATION) implementation.set(PUBLIC_CLOUD_IMPLEMENTATION.toLowerCase())
+    else implementation.set('none')
     return
 }
