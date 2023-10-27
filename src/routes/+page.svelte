@@ -22,7 +22,7 @@
   /////////////////////////////// Events regarding file input ///////////////////////////////
 
   // A method for when a file is dropped in the drag and drop area
-  function dropHandler(event: DragEvent): void {
+  async function dropHandler(event: DragEvent): Promise<void> {
     if (dev) console.log('dropHandler: A file has been dropped in the drag and drop area')
     event.preventDefault()
     const allowedExtensions = ['csv']
@@ -62,7 +62,6 @@
     if (dev) console.log('checkForMissingColumns: Checking if there are missing columns in the file')
     if (!this.result) return
     let content = this.result.toString()
-    let importantColumns: string[] = ['sourceCode', 'sourceName', 'sourceFrequency']
     if (!content) return
     // Check if all columns needed are available
     if (content.includes('sourceName') && content.includes('sourceCode') && content.includes('sourceFrequency')) return
@@ -73,7 +72,7 @@
       if (currentColumns[i].includes(';'))
         currentColumns[i] = currentColumns[i].substring(0, currentColumns[i].indexOf(';'))
     }
-    importantColumns.forEach(col => {
+    ;['sourceCode', 'sourceName', 'sourceFrequency'].forEach(col => {
       // If a important column is missing, add it to the missingColumns object, the corresponding column will be asigned to this object later
       if (!currentColumns.includes(col)) missingColumns[col] = ''
     })
@@ -223,7 +222,7 @@
   // A method to get all the files to map
   async function getFiles(): Promise<void> {
     if (dev) console.log('getFiles: Get all the files in the database')
-    if(!$implementationClass) return
+    if (!$implementationClass) return
     const getFilesRes = await $implementationClass?.getFiles()
     if (getFilesRes) files = getFilesRes
   }

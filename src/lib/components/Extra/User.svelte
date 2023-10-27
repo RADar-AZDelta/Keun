@@ -14,12 +14,12 @@
     return new Promise(async (resolve, reject) => {
       if ($implementationClass) return resolve($implementationClass)
       if ($implementation === 'firebase') {
-        await import('$lib/utilClasses/FirebaseImpl').then(({ default: FirebaseImpl }) => {
+        await import('$lib/databaseImpl/FirebaseImpl').then(({ default: FirebaseImpl }) => {
           $implementationClass = new FirebaseImpl()
           resolve($implementationClass)
         })
       } else {
-        import('$lib/utilClasses/LocalImpl').then(({ default: LocalImpl }) => {
+        import('$lib/databaseImpl/LocalImpl').then(({ default: LocalImpl }) => {
           $implementationClass = new LocalImpl()
           resolve($implementationClass)
         })

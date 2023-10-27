@@ -3,13 +3,11 @@ import { goto } from '$app/navigation';
 import type { ICache, IFunctionalityImpl, ISync } from '$lib/components/Types';
 import { settings } from '$lib/store';
 import { convertBlobToHexString, convertHexStringToBlob, fileToBlob, localStorageGetter, localStorageSetter, blobToString, stringToBlob } from '$lib/utils';
-import { IndexedDB } from './IndexedDB';
+import { IndexedDB } from '../helperClasses/IndexedDB';
 import { base } from '$app/paths'
 
 export default class LocalImpl implements IFunctionalityImpl {
     db: IndexedDB | undefined
-    
-    constructor() {}
 
     async deleteFile(fileName: string): Promise<string[] | void> {
         await this.removeCache(fileName)

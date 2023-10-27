@@ -176,11 +176,25 @@ export interface ICustomConcept {
   invalidReason: string
 }
 
+export interface IMessage {
+  result: string
+  message: string
+  details: any
+}
+
+export interface IFile {
+  id: string
+  name: string
+  authors: string[] | string
+  version: string
+  content: string
+}
+
 export interface IFunctionalityImpl {
-  deleteFile(fileName: string): Promise<string[] | void>
-  editFile(fileName: string, authorizedAuthors: string[]): Promise<void>
   getFiles(): Promise<string[] | void>
   getFilesAdmin(): Promise<string[] | void>
+  editFile(fileName: string, authorizedAuthors: string[]): Promise<void>
+  deleteFile(fileName: string): Promise<string[] | void>
   getAllAuthors(): Promise<Record<string, { email: string; files: Record<string, string> }> | void>
   downloadFile(fileName: string, usagiString?: boolean, customString?: boolean): Promise<void>
   uploadFile(file: File, authorizedAuthors: string[]): Promise<string[] | void>
@@ -199,4 +213,10 @@ export interface IFunctionalityImpl {
   checkForCache(fileName: string): Promise<boolean | void>
   getCachedFiles(): Promise<string[] | void>
   checkCustomConcepts(name: string): Promise<File | void>
+}
+
+export interface IUpdatedFunctionalityImpl {
+  getFile(id: string): Promise<any>
+  getFiles(): Promise<any>
+
 }

@@ -12,7 +12,7 @@ import type {
   import DataTableWorker from '@radar-azdelta/svelte-datatable/workers/DataTable.worker?worker'
   import { DataTypeCommonBase } from '@radar-azdelta/svelte-datatable/components/datatable/data/DataTypeCommonBase'
   import { readDatabase, readFileStorage, uploadFileToStorage, userSessionStore, writeToDatabase } from '$lib/firebase'
-  import { IndexedDB } from './IndexedDB'
+  import { IndexedDB } from '../helperClasses/IndexedDB'
   import { convertBlobToHexString, convertHexStringToBlob } from '$lib/utils'
   import type { IDataTypeFile } from '$lib/components/Types'
   

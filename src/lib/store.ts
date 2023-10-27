@@ -37,12 +37,12 @@ async function loadImplementation(): Promise<unknown> {
     implementationClass.subscribe(async (impl) => {
       if(!impl) {
         if(implementationMethod == "firebase") {
-          await import('$lib/utilClasses/FirebaseImpl').then(({ default: FirebaseImpl }) => {
+          await import('$lib/databaseImpl/FirebaseImpl').then(({ default: FirebaseImpl }) => {
             implementationClass.set(new FirebaseImpl())
             resolve(implementationClass)
           })
         } else {
-          import('$lib/utilClasses/LocalImpl').then(({ default: LocalImpl }) => {
+          import('$lib/databaseImpl/LocalImpl').then(({ default: LocalImpl }) => {
             implementationClass.set(new LocalImpl())
             resolve(implementationClass)
           })
