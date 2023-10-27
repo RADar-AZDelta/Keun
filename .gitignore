@@ -12,3 +12,4 @@ vite.config.ts.timestamp-*
 /static/log.txt
 /static/testing-images/upload.png
 /static/testing-images/download.png
+files.db

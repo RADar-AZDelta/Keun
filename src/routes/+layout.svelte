@@ -12,6 +12,9 @@
   import Settings from '$lib/components/Extra/Settings.svelte'
   import User from '$lib/components/Extra/User.svelte'
 
+  // TODO: set up Firebase project for internal use in AZD (Firebase impl)
+  // TODO: set up SQLite impl for reference for other hospitals
+
   async function loadImplementation(): Promise<void> {
     if ($implementationClass) return $implementationClass.syncSettings('read')
     if ($implementation == 'firebase')
