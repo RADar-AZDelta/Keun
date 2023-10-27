@@ -4,7 +4,7 @@ import { goto } from '$app/navigation';
 import type { UserSession } from '../../app';
 import { dev } from '$app/environment';
 import type { ICache, IFunctionalityImpl, ISync } from '$lib/components/Types';
-import { IndexedDB } from './IndexedDB';
+import { IndexedDB } from '../helperClasses/IndexedDB';
 import { convertBlobToHexString, convertHexStringToBlob } from '$lib/utils';
 import { base } from '$app/paths'
 

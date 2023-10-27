@@ -18,12 +18,12 @@
   async function loadImplementation(): Promise<void> {
     if ($implementationClass) return $implementationClass.syncSettings('read')
     if ($implementation == 'firebase')
-      await import('$lib/utilClasses/FirebaseImpl').then(({ default: FirebaseImpl }) => {
+      await import('$lib/databaseImpl/FirebaseImpl').then(({ default: FirebaseImpl }) => {
         $implementationClass = new FirebaseImpl()
         $implementationClass.syncSettings('read')
       })
     else
-      import('$lib/utilClasses/LocalImpl').then(({ default: LocalImpl }) => {
+      import('$lib/databaseImpl/LocalImpl').then(({ default: LocalImpl }) => {
         $implementationClass = new LocalImpl()
         $implementationClass.syncSettings('read')
       })

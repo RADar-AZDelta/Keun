@@ -31,7 +31,7 @@
   import { clickOutside } from '$lib/actions/clickOutside'
   import CustomConceptInputRow from '../Mapping/CustomConceptInputRow.svelte'
   import { customConcept, settings } from '$lib/store'
-  import { AthenaDataTypeImpl } from '$lib/utilClasses/AthenaDataTypeImpl'
+  import { AthenaDataTypeImpl } from '$lib/dataTypes/AthenaDataTypeImpl'
 
   export let equivalenceMapping: string,
     selectedRow: Record<string, any>,

@@ -494,10 +494,10 @@
   // A method to set the saveImpl & dataTypeImpl of the general DataTable & the DataTable for custom concepts
   async function setupDataTable(): Promise<void> {
     if ($implementation !== 'firebase') return
-    await import('$lib/utilClasses/FirebaseSaveImpl').then(({ default: FirebaseStore }) => {
+    await import('$lib/saveImplementations/FirebaseSaveImpl').then(({ default: FirebaseStore }) => {
       tableOptions.saveImpl = new FirebaseStore()
     })
-    await import('$lib/utilClasses/FileDataTypeImpl').then(({ default: FirebaseDataType }) => {
+    await import('$lib/dataTypes/FileDataTypeImpl').then(({ default: FirebaseDataType }) => {
       tableOptions.dataTypeImpl = new FirebaseDataType()
       customTableOptions.dataTypeImpl = new FirebaseDataType()
     })
