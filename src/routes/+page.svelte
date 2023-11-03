@@ -2,22 +2,41 @@
   import { goto } from '$app/navigation'
   import { dev } from '$app/environment'
   import { base } from '$app/paths'
-  import { fileName, implementation, implementationClass, settings } from '$lib/store'
+  import { selectedFileId, databaseImplementation, databaseImpl, user, authImpl } from '$lib/store'
   import Spinner from '$lib/components/Extra/Spinner.svelte'
   import SvgIcon from '$lib/components/Extra/SvgIcon.svelte'
+  import type { IFile, IUpdatedFunctionalityImpl } from '$lib/components/Types'
 
-  let files: string[] = [],
+  let files: IFile[] = [],
     file: File,
-    fileInputDialog: HTMLDialogElement,
-    authorsDialog: HTMLDialogElement,
-    columnDialog: HTMLDialogElement,
-    locationDialog: HTMLDialogElement,
     currentColumns: string[],
     missingColumns: Record<string, string> = {},
     userFilter: string,
     authorizedAuthors: string[],
     processing: boolean = false,
     chosenFile: string
+
+  let fileInputDialog: HTMLDialogElement,
+    authorsDialog: HTMLDialogElement,
+    columnDialog: HTMLDialogElement,
+    locationDialog: HTMLDialogElement
+
+  async function loadImplementation(): Promise<IUpdatedFunctionalityImpl> {
+    return new Promise(async (resolve, reject) => {
+      if ($databaseImpl) return resolve($databaseImpl)
+      if (databaseImplementation === 'firebase') {
+        // await import('$lib/databaseImpl/FirebaseImpl').then(({ default: FirebaseImpl }) => {
+        //   $databaseImpl = new FirebaseImpl()
+        //   resolve($databaseImpl)
+        // })
+      } else {
+        import('$lib/databaseImpl/LocalImpl').then(({ default: LocalImpl }) => {
+          $databaseImpl = new LocalImpl()
+          resolve($databaseImpl)
+        })
+      }
+    })
+  }
 
   /////////////////////////////// Events regarding file input ///////////////////////////////
 
@@ -86,27 +105,27 @@
   // A method to upload a file
   async function uploadFile(): Promise<void> {
     if (dev) console.log('uploadFile: Uploading a file')
-    await $implementationClass.checkCustomConcepts(file.name)
     // Upload the file to the storage depending on the implementationmethod
-    const allFiles = await $implementationClass.uploadFile(file, authorizedAuthors)
-    if (allFiles) files = allFiles
+    if (!$databaseImpl) await loadImplementation()
+    await $databaseImpl!.uploadFile(file, authorizedAuthors)
+    const filesFound = await $databaseImpl!.getFiles()
+    if (filesFound) files = filesFound
     closeFileInputDialog()
     if (dev) console.log('uploadFile: The file has been uploaded')
   }
 
   // A method to go to the mapping route without updating the file in IndexedDB for local mapping (the cached version is still in IndexedDB)
-  async function mapCachedFile(fileName: string): Promise<void> {
-    if (dev) console.log(`mapCachedFile: Go to the route "/mapping" to map the file: ${fileName}`)
-    $fileName = fileName
-    await $implementationClass.checkCustomConcepts(fileName)
-    goto(`${base}/mapping`)
+  async function mapCachedFile(id: string): Promise<void> {
+    if (dev) console.log(`mapCachedFile: Go to the route "/mapping" to map the file: ${id}`)
+    $selectedFileId = id
+    goto(`${base}/mapping?id=${id}`)
   }
 
   // A method to rename the columns to get a standardized version of the file
   function fileUploadWithColumnChanges(): void {
     if (dev) console.log('fileUploadWithColumnChanges: The file is uploading and process the column changes')
-    if (!$settings?.author?.name) return console.error('fileUploadWithColumnChanges: There is no author name set.')
-    if (!($implementation === 'firebase' && $settings?.author?.roles?.includes('Admin')) && !$implementation) return
+    if (!$user) return console.error('fileUploadWithColumnChanges: There is no author name set.')
+    // if (!($implementation === 'firebase' && $settings?.author?.roles?.includes('Admin')) && $databaseImpl) return
     var reader = new FileReader()
     reader.onload = processUpdatedColumns
     reader.readAsText(file)
@@ -133,30 +152,30 @@
   /////////////////////////////// Methods regarding deleting & editing a file ///////////////////////////////
 
   // A method to delete a file
-  async function deleteFile(fileName: string): Promise<void> {
+  async function deleteFile(id: string): Promise<void> {
     if (dev) console.log('deleteFile: Deleting a file')
     processing = true
-    await $implementationClass.deleteFile(fileName)
+    if (!$databaseImpl) await loadImplementation()
+    await $databaseImpl!.deleteFile(id)
     await getFiles()
     processing = false
     if (dev) console.log('deleteFile: File has been deleted')
   }
 
   // A method to edit the authors that have access to a file
-  async function editFile(fileName: string): Promise<void> {
-    if (dev) console.log('editFile: The file is being edited')
-    await $implementationClass.editFile(fileName, authorizedAuthors)
+  async function editFile(id: string): Promise<void> {
+    if (dev) console.log('editFile: The file authors are being updated')
+    if (!$databaseImpl) await loadImplementation()
+    await $databaseImpl!.editFileAuthors(id, authorizedAuthors)
     closeAuthorsDialog()
-    if (dev) console.log('editFile: The flie has been edited')
+    if (dev) console.log('editFile: The file authors were updated')
   }
 
   // A method to select a file and open the authors dialog
-  async function editRights(e: Event, file: string): Promise<void> {
+  async function editRights(e: Event, id: string): Promise<void> {
     if (e && e.stopPropagation) e.stopPropagation()
-    if (!file.includes('_concept.csv')) {
-      chosenFile = file
-      openAuthorsDialog()
-    }
+    chosenFile = id
+    openAuthorsDialog()
   }
 
   /////////////////////////////// Methods regarding dialogs ///////////////////////////////
@@ -200,17 +219,17 @@
   /////////////////////////////// General methods ///////////////////////////////
 
   // A method to send the user to the mappingtool
-  function openMappingTool(fileName: string): void {
+  function openMappingTool(fileId: string): void {
     if (dev) console.log('openMappingTool: Navigating to the mapping tool')
-    if (fileName.includes('_concept.csv')) return
-    $fileName = fileName
-    goto(`${base}/mapping?impl=firebase&fileName=${fileName}`)
+    $selectedFileId = fileId
+    goto(`${base}/mapping?impl=firebase&id=${fileId}`)
   }
 
   // A method to check if there is cache of files
   async function checkForCache(): Promise<void> {
     if (dev) console.log('checkForCache: Checking for cache')
-    const cached = await $implementationClass.checkForCache(file.name)
+    if (!$databaseImpl) await loadImplementation()
+    const cached = await $databaseImpl!.checkFileExistance(file.name)
     // When the application is using Firebase, this function will always return void so the file will be uploaded
     // Checking for cache is only for local mapping without a cloud implementation
     if (cached) openLocationDialog()
@@ -222,16 +241,17 @@
   // A method to get all the files to map
   async function getFiles(): Promise<void> {
     if (dev) console.log('getFiles: Get all the files in the database')
-    if (!$implementationClass) return
-    const getFilesRes = await $implementationClass?.getFiles()
+    if (!$databaseImpl) return
+    const getFilesRes = await $databaseImpl?.getFiles()
+    console.log('FILES ', getFilesRes)
     if (getFilesRes) files = getFilesRes
   }
 
   // Download the file & eventual custom concepts file
-  async function downloadFiles(e: Event, file: string): Promise<void> {
+  async function downloadFiles(e: Event, id: string): Promise<void> {
     if (e && e.stopPropagation) e.stopPropagation()
-    await $implementationClass.downloadFile(file, true, false)
-    await $implementationClass.downloadFile(`${file.split('.csv')[0]}_concept.csv`, false, true)
+    if (!$databaseImpl) await loadImplementation()
+    await $databaseImpl!.downloadFile(id)
     await getFiles()
   }
 
@@ -244,11 +264,7 @@
 
   $: {
     // When the user changes, renew the files
-    if ($settings.author && $implementationClass) getFiles()
-  }
-
-  $: {
-    if (file) $fileName = file.name
+    if ($user && $databaseImpl) getFiles()
   }
 </script>
 
@@ -291,11 +307,11 @@
         <input type="file" name="file" id="file" accept=".csv" on:change={onFileInputChange} />
       </label>
     </div>
-    {#if $implementation == 'firebase'}
+    {#if databaseImplementation === 'firebase'}
       <h2>Select the authors that have permission to this file:</h2>
       <input type="text" placeholder="search for an user" bind:value={userFilter} />
       <ul data-name="authors-list">
-        {#await $implementationClass?.getAllAuthors() then users}
+        {#await $authImpl?.getAllAuthors() then users}
           {#if users}
             {#each Object.entries(users) as [uid, info]}
               {#if userFilter && info.email?.toLowerCase().includes(userFilter?.toLowerCase())}
@@ -372,7 +388,7 @@
     </button>
     <h1>Update the authorized authors</h1>
     <ul>
-      {#await $implementationClass?.getAllAuthors() then users}
+      {#await $authImpl?.getAllAuthors() then users}
         {#if users}
           {#each Object.entries(users) as [uid, info]}
             {#if info.email}
@@ -404,32 +420,28 @@
       <div data-name="file-menu">
         <h1>Files to map</h1>
         <div data-name="file-list">
-          {#if $implementation == 'firebase'}
-            {#if $settings?.author?.name}
+          {#if databaseImplementation === 'firebase'}
+            {#if $user}
               {#each files as file}
-                <button data-name="file-card" on:click={() => openMappingTool(file)}>
+                <button data-name="file-card" on:click={() => openMappingTool(file.id)}>
                   <div data-name="file-name">
                     <SvgIcon href="{base}/icons.svg" id="excel" width="40px" height="40px" />
                     <p>{file}</p>
                   </div>
-                  {#if $settings.author?.roles?.includes('Admin')}
+                  {#if $user.roles?.includes('Admin')}
                     <div>
-                      <button data-name="download-file" on:click={e => downloadFiles(e, file)}>
+                      <button data-name="download-file" on:click={e => downloadFiles(e, file.id)}>
                         <SvgIcon href="{base}/icons.svg" id="download" width="16px" height="16px" />
                       </button>
                       <button
-                        disabled={file.includes('_concept.csv')}
                         data-name="edit-file"
                         on:click={e => {
-                          editRights(e, file)
+                          editRights(e, file.id)
                         }}
                       >
                         <SvgIcon href="{base}/icons.svg" id="edit" width="16px" height="16px" />
                       </button>
-                      <button
-                        disabled={file.includes('_concept.csv')}
-                        data-name="delete-file"
-                        on:click={e => deleteFiles(e, file)}
+                      <button data-name="delete-file" on:click={e => deleteFiles(e, file.id)}
                         ><SvgIcon href="{base}/icons.svg" id="x" width="16px" height="16px" /></button
                       >
                     </div>
@@ -443,24 +455,19 @@
             {/if}
           {:else}
             {#each files as file}
-              <button
-                data-name="file-card"
-                disabled={file.includes('_concept.csv') ? true : false}
-                on:click={() => mapCachedFile(file)}
-              >
+              <button data-name="file-card" on:click={() => mapCachedFile(file.id)}>
                 <div data-name="file-name">
                   <SvgIcon href="{base}/icons.svg" id="excel" width="40px" height="40px" />
-                  <p>{file}</p>
+                  <p>{file.name}</p>
                 </div>
                 <div>
-                  <button data-name="download-file" on:click={e => downloadFiles(e, file)}>
+                  <button data-name="download-file" on:click={e => downloadFiles(e, file.id)}>
                     <SvgIcon href="{base}/icons.svg" id="download" width="16px" height="16px" />
                   </button>
                   <button
                     data-name="delete-file"
-                    disabled={file.includes('_concept.csv') ? true : false}
                     on:click={e => {
-                      deleteFiles(e, file)
+                      deleteFiles(e, file.id)
                     }}
                   >
                     <SvgIcon href="{base}/icons.svg" id="x" width="16px" height="16px" />

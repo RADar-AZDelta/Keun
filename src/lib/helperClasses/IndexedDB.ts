@@ -32,6 +32,22 @@ export class IndexedDB {
         })
     }
 
+    async getAll(autoClose?: boolean): Promise<any> {
+        return new Promise(async (resolve, reject) => {
+            const db = await this.db
+            let getReq: IDBRequest<any>
+            const transaction = db.transaction(this.storeName, 'readonly')
+            transaction.oncomplete = () => {
+                if(autoClose) db.close()
+                resolve(getReq ? getReq.result : undefined)
+            }
+            transaction.onabort = transaction.onerror = () => {
+                reject(transaction.error)
+            }
+            getReq = transaction.objectStore(this.storeName).getAll()
+        })
+    }
+
     async set (value: any, key: IDBValidKey, autoClose?: boolean): Promise<void> {
         return new Promise(async (resolve, reject) => {
             const db = await this.db

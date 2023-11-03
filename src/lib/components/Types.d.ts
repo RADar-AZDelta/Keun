@@ -1,3 +1,4 @@
+import type { deleteFileStorage } from '$lib/firebase'
 import { IDataTypeFunctionalities, type ICustomStoreOptions } from '@radar-azdelta/svelte-datatable/components/DataTable'
 
 export interface CustomOptionsEvents {
@@ -111,7 +112,6 @@ export interface ISides {
 export interface ISettings {
   mapToMultipleConcepts: boolean
   autoMap: boolean
-  author?: IAuthor
   language: string
   savedAuthors: string[]
   vocabularyIdCustomConcept: string
@@ -119,7 +119,7 @@ export interface ISettings {
   popupSidesShowed: ISides
 }
 
-export interface IAuthor {
+export interface IUser {
   uid?: string | null
   name?: string | null
   roles?: [string]
@@ -146,6 +146,7 @@ export interface IDataTypeFile extends IDataTypeFunctionalities {
 }
 
 export interface ISync {
+  id: string
   fileName: string
   blob?: Blob
   action?: "get" | "update"
@@ -182,28 +183,39 @@ export interface IMessage {
   details: any
 }
 
+export interface IConceptFiles {
+  file: IFile
+  customFile?: IFile
+}
+
 export interface IFile {
   id: string
   name: string
   authors: string[] | string
-  version: string
+  version: number
   content: string
 }
 
+export interface IUserRestriction {
+  id: string
+  fileIds: string[]
+}
+
 export interface IFunctionalityImpl {
-  getFiles(): Promise<string[] | void>
-  getFilesAdmin(): Promise<string[] | void>
-  editFile(fileName: string, authorizedAuthors: string[]): Promise<void>
-  deleteFile(fileName: string): Promise<string[] | void>
-  getAllAuthors(): Promise<Record<string, { email: string; files: Record<string, string> }> | void>
-  downloadFile(fileName: string, usagiString?: boolean, customString?: boolean): Promise<void>
-  uploadFile(file: File, authorizedAuthors: string[]): Promise<string[] | void>
-  syncSettings(action: 'read' | 'write'): Promise<void>
   readFileFirstTime(fileName: string): Promise<{
     file: File | undefined;
     customConceptsFile: File | undefined;
 } | void>
+  getFiles(): Promise<string[] | void>
+  getFilesAdmin(): Promise<string[] | void>
+  uploadFile(file: File, authorizedAuthors: string[]): Promise<string[] | void>
+  editFile(fileName: string, authorizedAuthors: string[]): Promise<void>
+  deleteFile(fileName: string): Promise<string[] | void>
+  downloadFile(fileName: string, usagiString?: boolean, customString?: boolean): Promise<void>
+  getAllAuthors(): Promise<Record<string, { email: string; files: Record<string, string> }> | void>
   watchValueFromDatabase(path: string, subCallback: () => unknown, remove?: boolean): Promise<void>
+
+  syncSettings(action: 'read' | 'write'): Promise<void>
   getSavedAuthor(): Promise<void>
   logIn(author: string | null | undefined): Promise<void>
   cancelLogIn(backupAuthor: string | null | undefined): Promise<void>
@@ -216,7 +228,26 @@ export interface IFunctionalityImpl {
 }
 
 export interface IUpdatedFunctionalityImpl {
-  getFile(id: string): Promise<any>
-  getFiles(): Promise<any>
+  getFile(id: string): Promise<IConceptFiles | void>
+  checkFileExistance(name: string): Promise<boolean | void>
+  getFiles(): Promise<IFile[] | void>
+  getFilesAdmin(): Promise<IFile[] | void>
+  uploadFile(file: File, authors: string[]): Promise<string[] | void>
+  editFile(id: string, blob: Blob, customBlob?: Blob): Promise<void>
+  editFileAuthors(id: string, authors: string[]): Promise<void>
+  deleteFile(id: string): Promise<void>
+  downloadFile(id: string): Promise<void>
+  watchValueFromDatabase(path: string, subCallback: () => unknown, remove?: boolean): Promise<void>
+}
 
+export interface IAuthImpl {
+  logIn(name?: string): Promise<void>
+  logOut(): Promise<void>
+  getAuthor(): Promise<string | null | void>
+  getAllAuthors(): Promise<void | IUserRestriction>
+}
+
+export interface ISettingsImpl {
+  getSettings(): Promise<ISettings>
+  updateSettings(settings: ISettings): Promise<ISettings>
 }
