@@ -1,61 +1,73 @@
 import { writable } from 'svelte/store'
-import type { IFunctionalityImpl, ISettings } from './components/Types'
-import { PUBLIC_CLOUD_IMPLEMENTATION } from '$env/static/public'
-  // @ts-ignore
-  import { LatencyOptimisedTranslator } from '@browsermt/bergamot-translator/translator.js'
+import { PUBLIC_CLOUD_DATABASE_IMPLEMENTATION, PUBLIC_CLOUD_AUTH_IMPLEMENTATION } from '$env/static/public'
+// @ts-ignore
+import { LatencyOptimisedTranslator } from '@browsermt/bergamot-translator/translator.js'
+import type { IAuthImpl, ISettings, IUpdatedFunctionalityImpl, IUser } from '$lib/components/Types'
 
-const customConcept = writable<Record<string, string>>({
+export const customConcept = writable<Record<string, string>>({
   domain_id: '',
   vocabulary_id: '',
   concept_class_id: '',
   concept_name: '',
 })
 
-const settings = writable<ISettings>({
+export const settings = writable<ISettings>({
   mapToMultipleConcepts: false,
   autoMap: false,
   language: 'en',
-  author: {},
   savedAuthors: [],
   vocabularyIdCustomConcept: '',
   fontsize: 10,
   popupSidesShowed: { filters: true, details: true },
 })
 
-const triggerAutoMapping = writable<boolean>(false)
+export const user = writable<IUser>()
 
-const abortAutoMapping = writable<boolean>(false)
+export const triggerAutoMapping = writable<boolean>(false)
 
-const implementation = writable<string>(PUBLIC_CLOUD_IMPLEMENTATION || "none")
+export const abortAutoMapping = writable<boolean>(false)
 
-const implementationClass = writable<IFunctionalityImpl>()
+export const databaseImplementation = PUBLIC_CLOUD_DATABASE_IMPLEMENTATION || 'none'
+export const authImplementation = PUBLIC_CLOUD_AUTH_IMPLEMENTATION || 'none'
 
-async function loadImplementation(): Promise<unknown> {
+export const databaseImpl = writable<IUpdatedFunctionalityImpl | undefined>(undefined)
+
+export const authImpl = writable<IAuthImpl | undefined>(undefined)
+
+async function loadDatabaseImpl(): Promise<unknown> {
   return new Promise(async (resolve, reject) => {
-    let implementationMethod: string = ""
-    implementation.subscribe((implementation) => implementationMethod = implementation)
-    implementationClass.subscribe(async (impl) => {
-      if(!impl) {
-        if(implementationMethod == "firebase") {
-          await import('$lib/databaseImpl/FirebaseImpl').then(({ default: FirebaseImpl }) => {
-            implementationClass.set(new FirebaseImpl())
-            resolve(implementationClass)
-          })
-        } else {
-          import('$lib/databaseImpl/LocalImpl').then(({ default: LocalImpl }) => {
-            implementationClass.set(new LocalImpl())
-            resolve(implementationClass)
-          })
-        }
-      } else resolve(undefined)
+    databaseImpl.subscribe(async impl => {
+      if (impl) return resolve(impl)
+      if (databaseImplementation === 'firebase')
+        await import('$lib/databaseImpl/FirebaseImpl').then(({ default: FirebaseImpl }) => {
+          // databaseImpl.set(new FirebaseImpl())
+          resolve(databaseImpl)
+        })
+      else
+        import('$lib/databaseImpl/LocalImpl').then(({ default: LocalImpl }) => {
+          databaseImpl.set(new LocalImpl())
+          resolve(databaseImpl)
+        })
     })
   })
 }
 
-const fileName = writable<string>()
+async function loadAuthImpl(): Promise<unknown> {
+  return new Promise(async (resolve, reject) => {
+    authImpl.subscribe(async impl => {
+      if(impl) return resolve(impl)
+      if(authImplementation === 'firebase') {}
+      else await import('$lib/authImpl/LocalImpl').then(({ default: LocalImpl }) => {
+        authImpl.set(new LocalImpl())
+        resolve(authImpl)
+      })
+    })
+  })
+}
 
-const translator = writable<LatencyOptimisedTranslator>()
+export const selectedFileId = writable<string>()
 
-loadImplementation()
+export const translator = writable<LatencyOptimisedTranslator>()
 
-export { customConcept, settings, triggerAutoMapping, implementation, implementationClass, fileName, abortAutoMapping, translator }
+loadDatabaseImpl()
+loadAuthImpl()

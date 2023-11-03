@@ -6,7 +6,7 @@
   import '$lib/styles/table.scss'
   import '$lib/styles/files.scss'
   import '$lib/styles/layout.scss'
-  import { implementation, implementationClass, settings } from '$lib/store'
+  import { authImplementation, settings, user } from '$lib/store'
   import Header from '$lib/components/Extra/Header.svelte'
   import Manual from '$lib/components/Extra/Manual.svelte'
   import Settings from '$lib/components/Extra/Settings.svelte'
@@ -15,24 +15,9 @@
   // TODO: set up Firebase project for internal use in AZD (Firebase impl)
   // TODO: set up SQLite impl for reference for other hospitals
 
-  async function loadImplementation(): Promise<void> {
-    if ($implementationClass) return $implementationClass.syncSettings('read')
-    if ($implementation == 'firebase')
-      await import('$lib/databaseImpl/FirebaseImpl').then(({ default: FirebaseImpl }) => {
-        $implementationClass = new FirebaseImpl()
-        $implementationClass.syncSettings('read')
-      })
-    else
-      import('$lib/databaseImpl/LocalImpl').then(({ default: LocalImpl }) => {
-        $implementationClass = new LocalImpl()
-        $implementationClass.syncSettings('read')
-      })
-  }
-
-  loadImplementation()
-
   beforeNavigate(async ({ from, to, cancel }): Promise<void> => {
-    await $implementationClass.syncSettings('write')
+    // TODO: check this to sync the settings on navigation
+    // await $implementationClass.syncSettings('write')
   })
 </script>
 
@@ -43,7 +28,7 @@
       {#if $page.url.pathname !== '/' && $page.url.pathname !== '/Keun'}
         <li><a href="{base}/">File selection</a></li>
       {/if}
-      {#if $settings.author && $settings.author.roles?.includes('Admin') && $implementation == 'firebase'}
+      {#if $user && $user.roles?.includes('Admin') && authImplementation == 'firebase'}
         <li><a href="{base}/register">Registration</a></li>
       {/if}
     </ul>

@@ -18,6 +18,7 @@ export const GET: RequestHandler = async ({ url }) => {
 }
 
 export const POST: RequestHandler = async ({ request }) => {
+  // Implement authentication & check if the person has the corresponding role to use this action
   if (!tableExistance) await createTable()
   const body = await request.json()
   if (!body || !body.file)
@@ -29,6 +30,7 @@ export const POST: RequestHandler = async ({ request }) => {
 }
 
 export const PUT: RequestHandler = async ({ url, request }) => {
+  // Implement authentication & check if the person has the corresponding role to use this action
   const authors = url.searchParams.get('authors')
   if (!tableExistance) await createTable()
   const body = await request.json()
@@ -36,10 +38,9 @@ export const PUT: RequestHandler = async ({ url, request }) => {
   if (authors === null) {
     if (!body || !body.file)
       return await writeLog('PUT: Provide a body with a file object with the correct properties', body)
-    const file = body.file
-    const missingMessage = await checkForMissingValues(required, file)
-    if (missingMessage) return missingMessage
-    return await updateFileById(file, file.id)
+    const content = body.content
+    const id = body.id
+    return await updateFileContent(content, id)
   } else {
     if (!body || !body.id || !body.authors)
       return await writeLog('PUT: Provide a body with an id and a list of authors', body)
@@ -48,13 +49,12 @@ export const PUT: RequestHandler = async ({ url, request }) => {
   }
 }
 
-// Delete a project
 export const DELETE: RequestHandler = async ({ request }) => {
+  // Implement authentication & check if the person has the corresponding role to use this action
   if (!tableExistance) await createTable()
   const body = await request.json()
   if (!body || !body.id) return await writeLog(`DELETE: Provide the id of the file to delete in the body.`, body)
-  const id = body.id
-  return await deleteFileById(id)
+  return await deleteFileById(body.id)
 }
 
 ///////////////////////////////////////////////////////////// Helper functions /////////////////////////////////////////////////////////////
@@ -163,13 +163,12 @@ async function insertFile(file: IFile) {
   }
 }
 
-async function updateFileById(file: IFile, id: string) {
+async function updateFileContent(content: string, id: string) {
   try {
-    file.authors = JSON.stringify(file.authors)
     const query =
-      'UPDATE file SET name = $name, version = $version, authors = $authors, content = $content WHERE id = $id;'
+      'UPDATE file SET content = $content WHERE id = $id;'
     const stmnt = db.prepare(query)
-    const res = stmnt.run({ ...file })
+    const res = stmnt.run({ content, id })
     await saveToDatabase()
     return messageReturn(`Updated the record with id ${id}`, res)
   } catch (e) {

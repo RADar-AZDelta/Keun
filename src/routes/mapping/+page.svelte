@@ -10,12 +10,13 @@
   import type Query from 'arquero/dist/types/query/query'
   import {
     abortAutoMapping,
-    fileName,
-    implementation,
-    implementationClass,
+    databaseImpl,
+    databaseImplementation,
+    selectedFileId,
     settings,
     translator,
     triggerAutoMapping,
+    user,
   } from '$lib/store'
   import type {
     IColumnMetaData,
@@ -44,16 +45,18 @@
     AutoMapRowEventDetail,
     UpdateDetailsEventDetail,
     ITablePagination,
+    IUpdatedFunctionalityImpl,
   } from '$lib/components/Types'
   import AthenaLayout from '$lib/components/Extra/AthenaLayout.svelte'
   import UsagiRow from '$lib/components/Mapping/UsagiRow.svelte'
+  import { stringToFile } from '$lib/utils'
 
   // General variables
   let file: File | undefined = undefined,
     customConceptsFile: File | undefined = undefined,
     navTriggered: boolean = true,
     tableOptions: ITableOptions = {
-      id: $fileName,
+      id: $selectedFileId,
       rowsPerPage: 15,
       rowsPerPageOptions: [5, 10, 15, 20, 50, 100],
       actionColumn: true,
@@ -198,7 +201,7 @@
     mappedRow['comment'] = event.detail.extra.comment
     mappedRow['assignedReviewer'] = event.detail.extra.reviewer
     // If it is single mapping (not to multiple concepts), update the row
-    if (!$settings || !$settings.mapToMultipleConcepts || !$fileName)
+    if (!$settings || !$settings.mapToMultipleConcepts || !$selectedFileId)
       return await dataTableMapping.updateRows(new Map([[mappedIndex, mappedRow]]))
 
     // Get previous mapped concepts
@@ -493,7 +496,7 @@
 
   // A method to set the saveImpl & dataTypeImpl of the general DataTable & the DataTable for custom concepts
   async function setupDataTable(): Promise<void> {
-    if ($implementation !== 'firebase') return
+    if (databaseImplementation !== 'firebase') return
     await import('$lib/saveImplementations/FirebaseSaveImpl').then(({ default: FirebaseStore }) => {
       tableOptions.saveImpl = new FirebaseStore()
     })
@@ -902,20 +905,12 @@
   }
 
   async function downloadPage(): Promise<void> {
-    if (dataTableMapping) {
-      const blob = await dataTableMapping.getBlob()
-      await $implementationClass?.syncFile({ fileName: $fileName, blob, action: 'update' })
-    }
-    if (dataTableCustomConcepts) {
-      const blob = await dataTableCustomConcepts.getBlob()
-      await $implementationClass?.syncFile({
-        fileName: `${$fileName.split('.csv')[0]}_concept.csv`,
-        blob,
-        action: 'update',
-      })
-    }
-    await $implementationClass.downloadFile(file!.name, true, false)
-    await $implementationClass.downloadFile(`${file!.name.split('.csv')[0]}_concept.csv`, false, true)
+    const blob = await dataTableMapping.getBlob()
+    const customBlob = dataTableCustomConcepts ? await dataTableCustomConcepts.getBlob() : undefined
+    if (!$databaseImpl) await loadImplementation()
+    await $databaseImpl!.editFile($selectedFileId, blob, customBlob)
+    await $databaseImpl!.downloadFile($selectedFileId)
+    console.log('GOTO FROM DOWNLOAD')
     goto('/')
   }
 
@@ -925,59 +920,68 @@
   }
 
   // A method to get the file from the Firebase file storage when loading the page
-  async function readFileFirstTime(): Promise<void> {
-    if (!$fileName) return
-    const res = await $implementationClass.readFileFirstTime($fileName)
-    if (res && res?.file) file = res.file
-    if (res && res?.customConceptsFile) customConceptsFile = res.customConceptsFile
-  }
-
-  // A method to sync the file from the DataTable with the file storage & IndexedDB
-  async function renewFile(): Promise<void> {
-    const resFile = await $implementationClass.syncFile({ fileName: $fileName })
-    if (resFile) file = resFile
-  }
-
-  // A method to sync the file from the DataTable with the file storage & IndexedDB
-  async function renewCustomFile(): Promise<void> {
-    const resFile = await $implementationClass.syncFile({ fileName: $fileName })
-    if (resFile) customConceptsFile = resFile
+  async function readFile(): Promise<void> {
+    if (!$selectedFileId) return
+    if (!$databaseImpl) await loadImplementation()
+    const res = await $databaseImpl!.getFile($selectedFileId)
+    if (res && res?.file) file = await stringToFile(res.file.content, res.file.name)
+    if (res && res?.customFile) customConceptsFile = await stringToFile(res.customFile.content, res.customFile.name)
   }
 
   async function setupWatch(onlyCustom: boolean = false): Promise<void> {
+    if (!$databaseImpl) await loadImplementation()
     if (onlyCustom == false)
-      await $implementationClass.watchValueFromDatabase(
-        `/files/${$fileName?.substring(0, $fileName.indexOf('.'))}`,
-        () => {
-          renewFile()
-        }
-      )
+      await $databaseImpl!.watchValueFromDatabase(`/files/${$selectedFileId}`, () => {
+        readFile()
+      })
 
     // Watch the version & author of the custom concepts
-    await $implementationClass.watchValueFromDatabase('/files/customConcepts', () => {
-      renewCustomFile()
+    await $databaseImpl!.watchValueFromDatabase('/files/customConcepts', () => {
+      readFile()
     })
   }
 
   async function readFileLocally(): Promise<void> {
-    if (!$fileName) return goto(`${base}/`)
-    const storedFile = await $implementationClass.readFileFirstTime($fileName)
-    if (!storedFile?.file) return goto(`${base}/`)
-    file = storedFile.file
-    customConceptsFile = storedFile.customConceptsFile
+    if (!$selectedFileId) {
+      console.log('GOTO FROM READ FLIE LOCALLY FIRST')
+      return goto(`${base}/`)
+    }
+    if (!$databaseImpl) await loadImplementation()
+    await readFile()
+    if (!file) {
+      console.log('GOTO FROM READ FILE LOCALLY SECOND')
+      return goto(`${base}/`)
+    }
   }
 
   async function load(): Promise<void> {
-    if (!$settings?.author?.name) return
-    if ($implementation == 'firebase') {
-      const querystringFile = $page.url.searchParams.get('fileName')
-      if (querystringFile) $fileName = querystringFile
-      readFileFirstTime()
+    if (!$user) return
+    if (databaseImplementation === 'firebase') {
+      const urlId = $page.url.searchParams.get('id')
+      if (urlId) $selectedFileId = urlId
+      readFile()
       setupWatch(false)
     } else {
       readFileLocally()
       setupWatch(true)
     }
+  }
+
+  async function loadImplementation(): Promise<IUpdatedFunctionalityImpl> {
+    return new Promise(async (resolve, reject) => {
+      if ($databaseImpl) return resolve($databaseImpl)
+      if (databaseImplementation === 'firebase') {
+        // await import('$lib/databaseImpl/FirebaseImpl').then(({ default: FirebaseImpl }) => {
+        //   $databaseImpl = new FirebaseImpl()
+        //   resolve($databaseImpl)
+        // })
+      } else {
+        import('$lib/databaseImpl/LocalImpl').then(({ default: LocalImpl }) => {
+          $databaseImpl = new LocalImpl()
+          resolve($databaseImpl)
+        })
+      }
+    })
   }
 
   $: {
@@ -989,7 +993,7 @@
   }
 
   $: {
-    $fileName
+    $selectedFileId
     load()
   }
 
@@ -997,29 +1001,30 @@
     if ($abortAutoMapping == true) abortAutoMap()
   }
 
-  $: author = $settings?.author?.name
+  $: author = $user.name
 
   onMount(async () => {
     // Check if the file contains the file query parameter
     navTriggered = false
-    if (!$page.url.searchParams.get('fileName') && !$fileName) goto(`${base}/`)
-    if ($implementationClass) await $implementationClass.checkCustomConcepts($fileName)
+    if (!$page.url.searchParams.get('id')) {
+      console.log('GOTO FROM ONMOUNT MAPPING')
+      goto(`${base}/`)
+    }
   })
 
   onDestroy(() => {
-    console.log($implementationClass)
-    if (!$implementationClass) return
-    $implementationClass.watchValueFromDatabase(
-      `/files/${$fileName?.substring(0, $fileName.indexOf('.'))}`,
+    if (!$databaseImpl) return
+    $databaseImpl.watchValueFromDatabase(
+      `/files/${$selectedFileId}`,
       () => {
-        renewFile()
+        readFile()
       },
       true
     )
-    $implementationClass.watchValueFromDatabase(
+    $databaseImpl.watchValueFromDatabase(
       '/files/customConcepts',
       () => {
-        renewCustomFile()
+        readFile()
       },
       true
     )
@@ -1032,18 +1037,12 @@
     // If downloaded, set the downloaded hex in IndexedDB & when leaving the application, compare the downloaded hex and the current hex to check if there were any changes
     if (navTriggered) return
     cancel()
-    if (dataTableMapping) {
-      const blob = await dataTableMapping.getBlob()
-      await $implementationClass?.syncFile({ fileName: $fileName, blob, action: 'update' })
-    }
-    if (dataTableCustomConcepts) {
-      const blob = await dataTableCustomConcepts.getBlob()
-      await $implementationClass?.syncFile({
-        fileName: `${$fileName.split('.csv')[0]}_concept.csv`,
-        blob,
-        action: 'update',
-      })
-    }
+    const blob = await dataTableMapping.getBlob()
+    console.log('GET BLOB ', blob)
+    const customBlob = dataTableCustomConcepts ? await dataTableCustomConcepts.getBlob() : undefined
+    if (!$databaseImpl) await loadImplementation()
+    console.log('HERE')
+    await $databaseImpl?.editFile($selectedFileId, blob, customBlob)
     navTriggered = true
     goto(to?.url!)
   })
