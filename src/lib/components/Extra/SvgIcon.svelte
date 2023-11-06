@@ -1,8 +1,8 @@
 <script lang="ts">
   export let href: string
   export let id: string
-  export let width: string
-  export let height: string
+  export let width: string = '16px'
+  export let height: string = '16px'
 
   // A component to access the icons from a certain svg file
 </script>

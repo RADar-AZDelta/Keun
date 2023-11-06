@@ -47,9 +47,9 @@
     ITablePagination,
     IUpdatedFunctionalityImpl,
   } from '$lib/components/Types'
-  import AthenaLayout from '$lib/components/Extra/AthenaLayout.svelte'
   import UsagiRow from '$lib/components/Mapping/UsagiRow.svelte'
   import { stringToFile } from '$lib/utils'
+  import AthenaSearch from '$lib/components/Mapping/AthenaSearch.svelte'
 
   // General variables
   let file: File | undefined = undefined,
@@ -67,6 +67,8 @@
       saveOptions: false,
     },
     disableInteraction: boolean = false
+
+  let layout: boolean = true
 
   setupDataTable()
 
@@ -266,7 +268,7 @@
     if (dev) console.log(`updateDetailsRow: Update details for the row on index ${event.detail.index}`)
     await dataTableMapping.updateRows(
       new Map([
-        [event.detail.index, { comment: event.detail.comment, assignedReviewer: event.detail.assignedReviewer }],
+        [event.detail.index, { comment: event.detail.comments, assignedReviewer: event.detail.reviewer }],
       ])
     )
   }
@@ -1001,7 +1003,7 @@
     if ($abortAutoMapping == true) abortAutoMap()
   }
 
-  $: author = $user.name
+  $: author = $user ? $user.name : null
 
   onMount(async () => {
     // Check if the file contains the file query parameter
@@ -1087,15 +1089,11 @@
   </DataTable>
 
   {#if $settings}
-    <AthenaLayout
-      bind:equivalenceMapping
+    <AthenaSearch
       {selectedRow}
       {selectedRowIndex}
       mainTable={dataTableMapping}
-      fetchData={fetchDataFunc}
-      bind:globalFilter={globalAthenaFilter}
       showModal={mappingVisibility}
-      bind:facets={athenaFacets}
       on:rowChange={selectRow}
       on:singleMapping={singleMapping}
       on:multipleMapping={multipleMapping}
