@@ -18,6 +18,9 @@ export interface CustomOptionsEvents {
   autoComplete: AutoCompleteEventDetail
   updateDetails: UpdateDetailsEventDetail
   fileUploaded: FileUploadedEventDetail
+  equivalenceChange: EquivalenceChangeEventDetail
+  updateError: UpdateErrorEventDetail
+  removeMapping: RemoveMappingEventDetail
 }
 
 export interface VisibilityChangedEventDetail {
@@ -71,11 +74,13 @@ export interface UpdateUniqueConceptIdsEventDetail {
 }
 
 export interface CustomMappingEventDetail {
-  customConcept: CustomMappingInputEventDetail
+  row: ICustomConcept | Record<string, string>
   extra: IExtra
 }
 
-export interface CustomMappingInputEventDetail extends ICustomConcept {}
+export interface CustomMappingInputEventDetail {
+  row: ICustomConcept | Record<string, string>
+}
 
 export interface AutoMapRowEventDetail {
   index: number
@@ -90,12 +95,26 @@ export interface AutoCompleteEventDetail {
 
 export interface UpdateDetailsEventDetail {
   index: number
-  comment: string
-  assignedReviewer: string
+  equivalence: string
+  comments: string
+  reviewer: string
 }
 
 export interface FileUploadedEventDetail {
   file: File
+}
+
+export interface EquivalenceChangeEventDetail {
+  equivalence: string
+}
+
+export interface UpdateErrorEventDetail {
+  error: string
+}
+
+export interface RemoveMappingEventDetail {
+  conceptId: string
+  conceptName: string
 }
 
 export interface ICategories {

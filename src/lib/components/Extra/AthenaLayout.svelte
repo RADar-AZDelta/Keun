@@ -1,4 +1,4 @@
-<script lang="ts">
+<!-- <script lang="ts">
   //////////////////////////////////////////////// Framework imports
   import { createEventDispatcher, onMount } from 'svelte'
   import { base } from '$app/paths'
@@ -682,4 +682,4 @@
       {/if}
     </div>
   </div>
-</dialog>
+</dialog> -->

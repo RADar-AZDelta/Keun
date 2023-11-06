@@ -125,3 +125,11 @@ export async function stringToFile(str: string, name: string, type: string = "te
   const blob = new Blob([str], { type })
   return new File([blob], name, { type })
 }
+
+export function reformatDate(date: Date = new Date()) {
+  return `${date.getFullYear()}-${
+      (date.getMonth() + 1).toString().length === 2
+        ? date.getMonth() + 1
+        : `0${date.getMonth() + 1}`
+    }-${date.getDate().toString().length === 2 ? date.getDate() : `0${date.getDate()}`}`
+}
