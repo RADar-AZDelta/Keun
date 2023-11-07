@@ -1,6 +1,4 @@
-import { base } from '$app/paths'
 import { dev } from '$app/environment'
-import { goto } from '$app/navigation'
 import { IndexedDB } from '$lib/helperClasses/IndexedDB'
 import { fileToBlob, blobToString, stringToBlob } from '$lib/utils'
 import type { IConceptFiles, IFile, IUpdatedFunctionalityImpl, IUserRestriction } from '$lib/components/Types'
@@ -19,12 +17,12 @@ export default class LocalImpl implements IUpdatedFunctionalityImpl {
     return { file: fileInfo, customFile: customFileInfo }
   }
 
-  async checkFileExistance(fileName: string): Promise<boolean | void> {
+  async checkFileExistance(fileName: string): Promise<boolean | string | void> {
     if(dev) console.log(`checkFileExistence: Check if the file with name ${fileName} exists`)
     await this.openDatabase()
     const files = await this.getFiles()
     if(!files) return false
-    for(let file of files) if(file.name === fileName) return true
+    for(let file of files) if(file.name === fileName) return file.id
   }
 
   async getFiles(): Promise<IFile[]> {
@@ -40,6 +38,7 @@ export default class LocalImpl implements IUpdatedFunctionalityImpl {
   async uploadFile(file: File, authors: string[]): Promise<string[] | void> {
     if (dev) console.log('uploadFile: Uploading file to IndexedDB')
     await this.openDatabase()
+  console.log("UPLOAD FILE ", file)
     const blob = await fileToBlob(file)
     const fileString = await blobToString(blob)
     const fileId = crypto.randomUUID()

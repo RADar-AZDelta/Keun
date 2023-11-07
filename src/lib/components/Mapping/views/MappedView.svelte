@@ -3,7 +3,7 @@
   import columns from '$lib/data/columnsAlreadyMapped.json'
   import SvgIcon from '$lib/components/Extra/SvgIcon.svelte'
   import { createEventDispatcher } from 'svelte'
-  import type { CustomOptionsEvents } from '../Types'
+  import type { CustomOptionsEvents } from '../../Types'
 
   export let mappedData: Record<string, any>[]
 

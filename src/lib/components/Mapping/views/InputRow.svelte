@@ -4,8 +4,8 @@
   import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
   import AutocompleteInput from '$lib/components/Extra/AutocompleteInput.svelte'
   import { createEventDispatcher } from 'svelte'
-  import type { CustomOptionsEvents } from '../Types'
-  import SvgIcon from '../Extra/SvgIcon.svelte'
+  import type { CustomOptionsEvents } from '../../Types'
+  import SvgIcon from '../../Extra/SvgIcon.svelte'
   import { reformatDate } from '$lib/utils'
   import customConceptInfo from '$lib/data/customConceptInfo.json'
 

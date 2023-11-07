@@ -77,7 +77,6 @@
     mappingUrl: string = import.meta.env.VITE_MAPPINGDATA_PATH,
     lastTypedFilter: string,
     apiFilters: string[] = ['&standardConcept=Standard'],
-    equivalenceMapping: string = 'EQUAL',
     globalAthenaFilter: { column: string; filter: string | undefined } = { column: 'all', filter: undefined },
     athenaFacets: Record<string, any> | undefined = undefined
 
@@ -267,9 +266,7 @@
   async function updateDetailsRow(event: CustomEvent<UpdateDetailsEventDetail>): Promise<void> {
     if (dev) console.log(`updateDetailsRow: Update details for the row on index ${event.detail.index}`)
     await dataTableMapping.updateRows(
-      new Map([
-        [event.detail.index, { comment: event.detail.comments, assignedReviewer: event.detail.reviewer }],
-      ])
+      new Map([[event.detail.index, { comment: event.detail.comments, assignedReviewer: event.detail.reviewer }]])
     )
   }
 
@@ -665,10 +662,6 @@
   ): Promise<Record<string, any>> {
     for (let col of Object.keys(additionalFields)) {
       switch (col) {
-        case 'equivalence':
-          row.equivalence = equivalenceMapping
-          break
-
         case 'statusSetBy':
         case 'statusSetOn':
           row.statusSetBy = author
@@ -695,7 +688,7 @@
           break
         default:
           // Fill in the additionalFields, but skip the conceptName & conceptId
-          if (col !== 'conceptName' && col !== 'conceptId') row[col] = additionalFields[col]
+          if (col !== 'conceptName' && col !== 'conceptId' && col !== 'equivalence') row[col] = additionalFields[col]
           break
       }
     }
@@ -957,7 +950,6 @@
   }
 
   async function load(): Promise<void> {
-    if (!$user) return
     if (databaseImplementation === 'firebase') {
       const urlId = $page.url.searchParams.get('id')
       if (urlId) $selectedFileId = urlId
@@ -996,6 +988,7 @@
 
   $: {
     $selectedFileId
+    console.log('LOADING ', $selectedFileId)
     load()
   }
 
@@ -1008,10 +1001,7 @@
   onMount(async () => {
     // Check if the file contains the file query parameter
     navTriggered = false
-    if (!$page.url.searchParams.get('id')) {
-      console.log('GOTO FROM ONMOUNT MAPPING')
-      goto(`${base}/`)
-    }
+    if (!$page.url.searchParams.get('id')) goto(`${base}/`)
   })
 
   onDestroy(() => {
@@ -1032,21 +1022,17 @@
     )
   })
 
-  beforeNavigate(async ({ from, to, cancel }) => {
-    if (!from?.url.href.includes('/mapping')) return
-    // When reloading or navigating in the window tab in the browser, save the file to cache
-    if (dev) console.log('beforeNavigate: Sync the file to IndexedDB')
-    // If downloaded, set the downloaded hex in IndexedDB & when leaving the application, compare the downloaded hex and the current hex to check if there were any changes
-    if (navTriggered) return
-    cancel()
+  async function editFile() {
+    if (!dataTableMapping) return
     const blob = await dataTableMapping.getBlob()
-    console.log('GET BLOB ', blob)
     const customBlob = dataTableCustomConcepts ? await dataTableCustomConcepts.getBlob() : undefined
     if (!$databaseImpl) await loadImplementation()
-    console.log('HERE')
-    await $databaseImpl?.editFile($selectedFileId, blob, customBlob)
-    navTriggered = true
-    goto(to?.url!)
+    await $databaseImpl!.editFile($selectedFileId, blob, customBlob)
+  }
+
+  beforeNavigate(async ({ from, to, cancel }) => {
+    if (dev) console.log('beforeNavigate: Sync the file to IndexedDB')
+    editFile()
   })
 
   let fetchDataFunc = fetchData

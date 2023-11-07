@@ -1,63 +1,58 @@
-import { redirect, type Handle } from '@sveltejs/kit';
-import { sequence } from '@sveltejs/kit/hooks';
-import type { DecodedIdToken } from 'firebase-admin/auth';
-import { PUBLIC_CLOUD_IMPLEMENTATION } from '$env/static/public'
+// import { decodeToken } from '$lib/firebase/firebaseAdmin.server'
+// import { redirect, type Handle } from '@sveltejs/kit'
+import type { Handle } from '@sveltejs/kit'
+import { sequence } from '@sveltejs/kit/hooks'
+// import authorizedPages from '$lib/config/authorizedPages.json'
+import { user } from './lib/store'
+// import type { IdTokenResult } from '@firebase/auth'
 
 const securityHeaders = {
-    'Cross-Origin-Embedder-Policy': 'require-corp',
-    'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
-    'X-XSS-Protection': '0',
-}
-
-const authorizedPages = ["/register"]
-
-const setHeaders: Handle = async ({ event, resolve }) => {
-	const response = await resolve(event)
-	// Object.entries(securityHeaders).forEach(([header, value]) => {
-	// 	response.headers.set(header, value)
-	// })
-	return response
+  'Cross-Origin-Embedder-Policy': 'require-corp',
+  'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+  'X-XSS-Protection': '0',
 }
 
 const sessionHandle: Handle = async ({ event, resolve }) => {
-	const token = event.cookies.get('token') || '';
-	await import('$lib/firebaseAdmin.server').then(async({ decodeToken }) => {
-		const decodedToken = await decodeToken(token);
-		if (decodedToken) {
-			const { uid, name, email } = decodedToken;
-			const roles: [string] = [decodedToken['role']];
-			event.locals.userSession = { uid, name, email, roles };
-		}
-	})
+  // const token = event.cookies.get('token') || ''
+  // user.subscribe(async user => {
+  //   const currentToken = await user?.getIdTokenResult()
+  //   if (token !== currentToken?.token) return
+  //   if (currentToken && user) {
+  //     const { uid, displayName, email } = user
+  //     const roles = currentToken.claims
+  //     event.locals.userSession = { uid, name: displayName, email: email ? email : '', roles: <[string]>roles.role }
+  //   }
+  // })
 
-	const response = await resolve(event);
-	return response;
-};
+  const response = await resolve(event)
+  // Object.entries(securityHeaders).forEach(([header, value]) => {
+  // 	response.headers.set(header, value)
+  // })
 
-const authorizationHandle: Handle = async({ event, resolve}) => {
-	if(authorizedPages.includes(event.url.pathname)){
-		const token = event.cookies.get('token') || ''
-		let decodedToken: DecodedIdToken | null = null
-		await import('$lib/firebaseAdmin.server').then(async({ decodeToken }) => {
-			decodedToken = await decodeToken(token)
-			if(decodedToken) {
-				const { email } = decodedToken
-				if (!decodedToken['role'].includes('Admin')) {
-					console.error(
-						`'${email}' tried to perform an unauthorized action in the page ${event.url.pathname}!`
-					);
-					throw redirect(302, '/');
-				}
-			}
-		})
-	}
-	
-	const response = await resolve(event)
-	return response
+  return response
 }
 
-let handlers: Handle[] = []
-if(PUBLIC_CLOUD_IMPLEMENTATION == "firebase") handlers = [sessionHandle, authorizationHandle, setHeaders]
-else handlers = [setHeaders]
+// async function checkForPermissions(
+//   page: { path: string; permission: string },
+//   pathName: string,
+//   token: IdTokenResult | undefined
+// ) {
+//   if (!new RegExp(page.path).test(pathName)) return
+//   if (page.permission.toLowerCase() === 'admin' && (!token || !(<[string]>token.claims.role).includes('admin'))) {
+//     throw redirect(302, '/login')
+//   } else if (page.permission.toLowerCase() === 'user' && !token) {
+//     throw redirect(302, '/login')
+//   }
+// }
 
-export const handle = sequence(...handlers)
+const authorizationHandle: Handle = async ({ event, resolve }) => {
+  // user.subscribe(async user => {
+  //   const currentToken = await user?.getIdTokenResult()
+  //   for (let authorizedPage of authorizedPages)
+  //     await checkForPermissions(authorizedPage, event.url.pathname, currentToken)
+  // })
+  const response = await resolve(event)
+  return response
+}
+
+export const handle = sequence(sessionHandle, authorizationHandle)

@@ -9,6 +9,7 @@
   import type {
     CustomMappingInputEventDetail,
     CustomOptionsEvents,
+    EquivalenceChangeEventDetail,
     ICustomConcept,
     RemoveMappingEventDetail,
     RowChangeEventDetail,
@@ -23,9 +24,9 @@
   import type DataTable from '@radar-azdelta/svelte-datatable'
   import type { IView } from '@radar-azdelta/svelte-athena-search/dist/Types'
   import SearchHead from './SearchHead.svelte'
-  import CustomView from './CustomView.svelte'
-  import Details from './Details.svelte'
-  import MappedView from './MappedView.svelte'
+  import CustomView from './views/CustomView.svelte'
+  import Details from './details/Details.svelte'
+  import MappedView from './views/MappedView.svelte'
 
   export let selectedRow: Record<string, any>,
     selectedRowIndex: number,
@@ -39,7 +40,8 @@
     errorMessage: string = ''
   // Table variables
   let reviewer: string = '',
-    comment: string = ''
+    comment: string = '',
+    equivalence: string = 'EQUAL'
 
   const views: IView[] = [
     { name: 'custom concept', value: 'custom', viewSlot: 'slotView1' },
@@ -63,11 +65,14 @@
 
   // A method that catches the event for single mapping and throws an event to the parent
   function singleMapping(row: Record<string, any>): void {
+    row.equivalence = equivalence
+    console.log("MAPPIGN ROW ", row)
     dispatch('singleMapping', { originalRow: selectedRow, row, extra: { comment, reviewer } })
   }
 
   // A method that catches the event for multiple mapping and throws an event to the parent
   function multipleMapping(row: Record<string, any>): void {
+    row.equivalence = equivalence
     dispatch('multipleMapping', { originalRow: selectedRow, row, extra: { comment, reviewer } })
   }
 
@@ -203,8 +208,13 @@
   ///////////////////////////// DETAILS METHODS /////////////////////////////
 
   async function onUpdateDetails(e: CustomEvent<UpdateDetailsEventDetail>) {
+    // Don't change the equivalence here --> the comment & reviewer can be assigned after the mapping but the equivalence not
     const rows = new Map([[e.detail.index, { comment: e.detail.comments, assignedReviewer: e.detail.reviewer }]])
     await mainTable.updateRows(rows)
+  }
+
+  async function equivalenceChange(e: CustomEvent<EquivalenceChangeEventDetail>) {
+    equivalence = e.detail.equivalence
   }
 
   ///////////////////////////// ATHENA ROW METHODS /////////////////////////////
@@ -345,7 +355,11 @@
           <MappedView {mappedData} on:removeMapping={removeMapping} />
         </div>
         <div slot="rightSlot">
-          <Details selectedIndex={selectedRowIndex} on:updateDetails={onUpdateDetails} />
+          <Details
+            selectedIndex={selectedRowIndex}
+            on:updateDetails={onUpdateDetails}
+            on:equivalenceChange={equivalenceChange}
+          />
         </div>
       </Search>
     </section>

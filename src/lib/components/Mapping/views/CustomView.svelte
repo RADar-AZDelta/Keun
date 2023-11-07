@@ -1,14 +1,14 @@
 <!-- Copyright 2023 RADar-AZDelta -->
 <!-- SPDX-License-Identifier: gpl3+ -->
 <script lang="ts">
+  import { createEventDispatcher } from 'svelte'
   import DataTable from '@radar-azdelta/svelte-datatable'
   import customColumns from '$lib/data/columnsCustomConcept.json'
   import suggestions from '$lib/data/customConceptInfo.json'
   import SvgIcon from '$lib/components/Extra/SvgIcon.svelte'
-  import InputRow from '$lib/components/Mapping/InputRow.svelte'
   import { reformatDate } from '$lib/utils'
   import type { CustomMappingInputEventDetail, CustomOptionsEvents } from '$lib/components/Types'
-  import { createEventDispatcher } from 'svelte'
+  import InputRow from '$lib/components/Mapping/views/InputRow.svelte'
 
   export let customConceptData: Record<string, any>[], selectedRow: Record<string, any>
 

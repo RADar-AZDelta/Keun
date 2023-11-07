@@ -1,6 +1,33 @@
 import type { deleteFileStorage } from '$lib/firebase'
 import { IDataTypeFunctionalities, type ICustomStoreOptions } from '@radar-azdelta/svelte-datatable/components/DataTable'
 
+export interface IFileTemplate {
+  file: File
+}
+
+export interface IFileIdTemplate {
+  id: string
+}
+
+export interface PageEvents {
+  fileDrop: FileDropEventDetail
+  fileUpload: FileUploadEventDetail
+  columnsDialogShow: void
+  checkForCache: CheckForCacheEventDetail
+  fileUpdateColumns: FileUpdatedColumnsEventDetail
+  downloadFiles: DownloadFilesEventDetail
+  deleteFiles: DeleteFilesEventDetail
+  editRights: EditRightsEventDetail
+}
+
+export type FileDropEventDetail = IFileTemplate
+export type FileUploadEventDetail = IFileIdTemplate
+export type CheckForCacheEventDetail = IFileTemplate
+export type FileUpdatedColumnsEventDetail = IFileTemplate
+export type DownloadFilesEventDetail = IFileIdTemplate
+export type DeleteFilesEventDetail = IFileIdTemplate
+export type EditRightsEventDetail = IFileIdTemplate
+
 export interface CustomOptionsEvents {
   generalVisibilityChanged: VisibilityChangedEventDetail
   filterOptionsChanged: FilterOptionsChangedEventDetail
@@ -248,7 +275,7 @@ export interface IFunctionalityImpl {
 
 export interface IUpdatedFunctionalityImpl {
   getFile(id: string): Promise<IConceptFiles | void>
-  checkFileExistance(name: string): Promise<boolean | void>
+  checkFileExistance(name: string): Promise<boolean | string | void>
   getFiles(): Promise<IFile[] | void>
   getFilesAdmin(): Promise<IFile[] | void>
   uploadFile(file: File, authors: string[]): Promise<string[] | void>
