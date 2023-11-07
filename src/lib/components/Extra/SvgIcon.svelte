@@ -1,5 +1,7 @@
 <script lang="ts">
-  export let href: string
+  import { base } from '$app/paths'
+
+  export let href: string = `${base}/icons.svg`
   export let id: string
   export let width: string = '16px'
   export let height: string = '16px'

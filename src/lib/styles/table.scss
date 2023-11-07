@@ -1209,60 +1209,6 @@ dialog[data-name='athena-dialog'] {
   }
 }
 
-dialog[data-name='column-dialog'] {
-  width: max-content;
-  height: max-content;
-  padding: 1rem;
-  button[data-name='close-dialog'] {
-    position: absolute;
-    right: 1rem;
-    top: 1rem;
-    border: none;
-    background-color: inherit;
-    color: $darkgray;
-  }
-
-  button[data-name='close-dialog']:hover {
-    color: $darkgray-xx-dark;
-  }
-
-  button[data-name='close-dialog']:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px $neutral;
-  }
-
-  div[data-name='column-selection'] {
-    display: flex;
-    gap: 1rem;
-    align-items: center;
-
-    select {
-      padding: 0.5rem 1rem;
-    }
-  }
-
-  div[data-name='button-container'] {
-    width: 100%;
-    padding: 2rem 0 1rem 0;
-    display: flex;
-    justify-content: center;
-
-    button[data-name='save'] {
-      background-color: $blue;
-      color: black;
-    }
-
-    button[data-name='save']:hover {
-      background-color: $blue-x-dark;
-    }
-
-    button[data-name='save']:focus {
-      outline: none;
-      box-shadow: 0 0 0 2px $blue-xx-dark;
-    }
-  }
-}
-
 div[data-name='drag-drop'] {
   width: 100%;
   height: auto;

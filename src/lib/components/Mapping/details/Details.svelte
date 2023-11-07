@@ -1,7 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
   import debounce from 'lodash.debounce'
-  import Equivalence from '$lib/components/Mapping/Equivalence.svelte'
+  import Equivalence from '$lib/components/Mapping/details/Equivalence.svelte'
   import SvgIcon from '$lib/components/Extra/SvgIcon.svelte'
   import AutocompleteInputSettings from '$lib/components/Extra/AutocompleteInputSettings.svelte'
   import type {
@@ -23,14 +23,14 @@
     show = value
   }
 
+  async function onEquivalenceChange(e: CustomEvent<EquivalenceChangeEventDetail>) {
+    equivalence = e.detail.equivalence
+    dispatch('equivalenceChange', { equivalence })
+  }
+
   const onInputComment = debounce(async (e: any): Promise<void> => {
     updateDetails()
   }, 500)
-
-  async function onEquivalenceChange(e: CustomEvent<EquivalenceChangeEventDetail>) {
-    equivalence = e.detail.equivalence
-    updateDetails()
-  }
 
   async function onReviewerChanged(e: CustomEvent<ReviewerChangedEventDetail>) {
     reviewer = e.detail.reviewer

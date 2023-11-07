@@ -28,127 +28,6 @@ $lightgreen-x-dark: #7feb7f;
 
 $font-size: 10px;
 
-dialog[data-name='file-dialog'] {
-  width: 80%;
-  height: 80%;
-  border-radius: 10px;
-  border: none;
-
-  div[data-name='file-input-container'] {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    padding: 0;
-
-    h1 {
-      font-size: 1.5rem;
-      text-align: center;
-    }
-
-    div[data-name="drag-drop-container"] {
-      height: 30%;
-      width: 100%;
-      border-radius: 5px;
-      padding: 1rem 0 0.5rem 0;
-      border: 1px solid $neutral;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-
-      label[data-name="upload-file"] {
-        width: 100%;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-
-        input {
-          display: none;
-        }
-      }
-    }
-
-    h2 {
-      font-size: 1.25rem;
-      font-weight: 500;
-    }
-
-    input {
-      padding: 0.5rem;
-      font-size: 1rem;
-    }
-
-    ul[data-name="authors-list"] {
-      list-style: none;
-      flex: 1 1 auto;
-      overflow-y: auto;
-
-      li {
-        display: flex;
-        gap: 1rem;
-
-        label {
-          display: flex;
-          align-items: center;
-          gap: 1rem;
-        }
-      }
-    }
-
-    button[data-name="upload"] {
-      width: 100%;
-    }
-  }
-
-  button[data-name='close-dialog'] {
-    position: absolute;
-    right: 1rem;
-    top: 1rem;
-    border: none;
-    background-color: inherit;
-    color: $darkgray;
-  }
-}
-
-dialog[data-name="location-dialog"] {
-  width: 40%;
-  border-radius: 10px;
-  border: none;
-
-  button[data-name='close-dialog'] {
-    position: absolute;
-    right: 1rem;
-    top: 1rem;
-    border: none;
-    background-color: inherit;
-    color: $darkgray;
-  }
-
-  div[data-name="location-container"] {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    height: 100%;
-    margin: 0;
-    padding: 0;
-
-    h2 {
-      font-size: 1.5rem;
-      text-align: center;
-    }
-
-    div[data-name="button-choices"] {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-  }
-}
-
 dialog[data-name="authors-dialog"] {
   width: 80%;
   height: 80%;
@@ -176,8 +55,8 @@ dialog[data-name="authors-dialog"] {
       li {
         label {
           display: flex;
-        align-items: center;
-        gap: 1rem;
+          align-items: center;
+          gap: 1rem;
         }
       }
     }
