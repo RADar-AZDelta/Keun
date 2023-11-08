@@ -1,59 +1,97 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte'
-  import type { CustomOptionsEvents } from '../Types'
-  import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
-  import SvgIcon from '../Extra/SvgIcon.svelte'
   import { dev } from '$app/environment'
-  import { base } from '$app/paths'
+  import { createEventDispatcher } from 'svelte'
+  import { query } from 'arquero'
+  import { user } from '$lib/store'
+  import { reformatDate } from '$lib/utils'
+  import { resetRow } from '$lib/mappingUtils/utils'
+  import SvgIcon from '$lib/components/Extra/SvgIcon.svelte'
+  import type DataTable from '@radar-azdelta/svelte-datatable'
+  import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
+  import type Query from 'arquero/dist/types/query/query'
+  import type { MappingEvents } from '$lib/components/Types'
 
   export let renderedRow: Record<string, any>,
     columns: IColumnMetaData[] | undefined,
     index: number,
-    settings: Record<string, any> | undefined,
     currentVisibleRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>([]),
-    disable: boolean
+    disabled: boolean,
+    table: DataTable
+
+  const dispatch = createEventDispatcher<MappingEvents>()
 
   let color: string = 'inherit'
-  let fontSize: string = '10px'
-  currentVisibleRows.set(index, renderedRow)
-  const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
-  // A method to open the Athena pop-up to map a row
-  function onClickMapping(): void {
-    if (dev) console.log(`onClickMapping: ${index}`)
-    dispatch('generalVisibilityChanged', { visibility: true, data: { row: renderedRow, index } })
+  currentVisibleRows.set(index, renderedRow)
+
+  // Send a request to the parent that a row is selected to map
+  async function mapRow(): Promise<void> {
+    if (dev) console.log(`mapRow: ${index}`)
+    dispatch('rowSelection', { row: renderedRow, index })
   }
 
   // A method to throw an event to the parent to approve a row
-  async function onClickApproving(): Promise<void> {
-    dispatch('actionPerformed', { action: 'APPROVED', index: index, row: renderedRow })
+  async function approveRow(): Promise<void> {
+    if (!$user) return
+    if ($user.name === renderedRow.statusSetBy) return
+    const currentState = renderedRow.mappingStatus
+    let update: Record<string, any> = {}
+    if (currentState === 'SEMI-APPROVED')
+      update = { 'ADD_INFO:approvedBy': $user.name, 'ADD_INFO:approvedOn': Date.now(), mappingStatus: 'APPROVED' }
+    else if (currentState !== 'SEMI-APPROVED' || currentState !== 'APPROVED')
+      update = {
+        statusSetBy: $user.name,
+        statusSetOn: Date.now(),
+        mappingStatus: 'SEMI-APPROVED',
+        conceptId: renderedRow.conceptId ? renderedRow.conceptId : renderedRow.sourceAutoAssignedConceptIds,
+      }
+    await table.updateRows(new Map([[index, update]]))
   }
 
   // A method to throw an event to the parent to flag a row
-  async function onClickFlagging(): Promise<void> {
-    dispatch('actionPerformed', { action: 'FLAGGED', index: index, row: renderedRow })
+  async function flagRow(): Promise<void> {
+    if (renderedRow.mappingStatus === 'FLAGGED') return
+    const update = {
+      statusSetBy: $user.name,
+      statusSetOn: new Date(),
+      mappingStatus: 'FLAGGED',
+    }
+    await table.updateRows(new Map([[index, update]]))
   }
 
   // A method to throw an event to the parent to unapprove a row
-  async function onClickUnapproving(): Promise<void> {
-    dispatch('actionPerformed', { action: 'UNAPPROVED', index: index, row: renderedRow })
+  async function unapproveRow(): Promise<void> {
+    if (renderedRow.mappingStatus === 'UNAPPROVED') return
+    const update = {
+      statusSetBy: $user.name,
+      statusSetOn: new Date(),
+      mappingStatus: 'UNAPPROVED',
+    }
+    await table.updateRows(new Map([[index, update]]))
   }
 
   // A method to throw an event to the parent to delete a row
-  function onClickDeletion(): void {
-    const conceptId = renderedRow['conceptId']
-    const sourceCode = renderedRow['sourceCode']
-    const multiple = renderedRow['ADD_INFO:numberOfConcepts'] > 1
-    dispatch('deleteRow', { indexes: [index], sourceCode: sourceCode, conceptId: conceptId, erase: multiple })
+  async function deleteRow(): Promise<void> {
+    // If there are not multiple concepts mapped to this row, reset the row, otherwise you can delete the row
+    if (renderedRow['ADD_INFO:numberOfConcepts'] <= 1) await table.updateRows(new Map([[index, await resetRow()]]))
+    const existanceQuery = (<Query>query().params({ source: renderedRow.soruceCode }))
+      .filter((r: any, params: any) => r.sourceCode === params.source)
+      .toObject()
+    await table.deleteRows([index])
+    const existance = await table.executeQueryAndReturnResults(existanceQuery)
+    if (!existance.queriedData.length) return
+    const rowsToUpdate = new Map()
+    for (let i of existance.indices)
+      rowsToUpdate.set(i, { 'ADD_INFO:numberOfConcepts': existance.queriedData.length - 1 })
+    await table.updateRows(rowsToUpdate)
   }
 
-  function onClickAutoMap(): void {
+  async function onClickAutoMap(): Promise<void> {
     const sourceName = renderedRow['sourceName']
     dispatch('autoMapRow', { index, sourceName })
   }
 
-  // A method to get the color for the cell depending on the status of the row
-  function getColors(): string {
+  async function getColors(): Promise<string> {
     switch (renderedRow['mappingStatus']) {
       case 'APPROVED':
         if (renderedRow['ADD_INFO:approvedBy']) return 'hsl(156, 100%, 35%)'
@@ -69,71 +107,66 @@
     }
   }
 
-  $: {
-    renderedRow, index
+  async function setPreset(): Promise<void> {
     if (!renderedRow.matchScore) renderedRow.matchScore = 0
     if (!renderedRow.mappingStatus) renderedRow.mappingStatus = 'UNCHECKED'
     if (!renderedRow.conceptName) renderedRow.conceptName = 'Unmapped'
     if (!renderedRow.conceptId) renderedRow.conceptId = 0
     if (renderedRow.mappingStatus == 'APPROVED' && !renderedRow['ADD_INFO:approvedBy'])
       renderedRow.mappingStatus = 'SEMI-APPROVED'
-    color = getColors()
+    color = await getColors()
   }
 
   $: {
-    settings
-    if (settings)
-      if (settings.fontsize) {
-        fontSize = `${settings.fontsize}px`
-      }
+    renderedRow, index
+    setPreset()
   }
 </script>
 
-<td data-name="actions-cell" style={`background-color: ${color}`}>
-  <div data-name="actions-grid">
-    <button on:click={onClickMapping} title="Map" disabled={disable}>
-      <SvgIcon href="{base}/icons.svg" id="search" width={fontSize} height={fontSize} />
-    </button>
-    <button on:click={onClickDeletion} title="Delete" disabled={disable}>
-      <SvgIcon href="{base}/icons.svg" id="eraser" width={fontSize} height={fontSize} />
-    </button>
-    <button on:click={onClickAutoMap} title="Automap" disabled={disable}>AUTO</button>
-    {#if renderedRow['ADD_INFO:numberOfConcepts'] && renderedRow['ADD_INFO:numberOfConcepts'] > 1}
-      <div data-name="numberOfConceptIds">
-        <p>{renderedRow['ADD_INFO:numberOfConcepts']}</p>
-      </div>
-    {:else}
-      <div />
-    {/if}
-    <button on:click={onClickApproving} title="Approve" disabled={disable}>
-      <SvgIcon href="{base}/icons.svg" id="check" width={fontSize} height={fontSize} />
-    </button>
-    <button on:click={onClickFlagging} title="Flag" disabled={disable}>
-      <SvgIcon href="{base}/icons.svg" id="flag" width={fontSize} height={fontSize} />
-    </button>
-    <button on:click={onClickUnapproving} title="Unapprove" disabled={disable}>
-      <SvgIcon href="{base}/icons.svg" id="x" width={fontSize} height={fontSize} />
-    </button>
+<td class="actions-cell" style={`background-color: ${color}`}>
+  <div class="actions-grid">
+    <button on:click={mapRow} title="Map" {disabled}><SvgIcon id="search" width="10px" height="10px" /></button>
+    <button on:click={deleteRow} title="Delete" {disabled}><SvgIcon id="eraser" width="10px" height="10px" /></button>
+    <button on:click={onClickAutoMap} title="Automap" {disabled}>AUTO</button>
+    <p>{renderedRow['ADD_INFO:numberOfConcepts'] > 1 ? renderedRow['ADD_INFO:numberOfConcepts'] : ''}</p>
+    <button on:click={approveRow} title="Approve" {disabled}><SvgIcon id="check" width="10px" height="10px" /></button>
+    <button on:click={flagRow} title="Flag" {disabled}><SvgIcon id="flag" width="10px" height="10px" /></button>
+    <button on:click={unapproveRow} title="Unapprove" {disabled}><SvgIcon id="x" width="10px" height="10px" /></button>
   </div>
 </td>
-{#each columns || [] as column, i}
-  <td on:dblclick={onClickMapping} style={`background-color: ${color}`} title={renderedRow[column.id]}>
+{#each columns || [] as column, _}
+  <td on:dblclick={mapRow} style={`background-color: ${color}`} title={renderedRow[column.id]}>
     {#if ['statusSetOn', 'createdOn', 'ADD_INFO:approvedOn'].includes(column.id)}
-      <p>
-        {renderedRow[column.id]
-          ? `${new Date(parseInt(renderedRow[column.id])).getFullYear()}/${
-              (new Date(parseInt(renderedRow[column.id])).getMonth() + 1).toString().length >= 2
-                ? new Date(parseInt(renderedRow[column.id])).getMonth() + 1
-                : `0${new Date(parseInt(renderedRow[column.id])).getMonth() + 1}`
-            }/${
-              new Date(parseInt(renderedRow[column.id])).getDate().toString().length >= 2
-                ? new Date(parseInt(renderedRow[column.id])).getDate()
-                : `0${new Date(parseInt(renderedRow[column.id])).getDate()}`
-            }`
-          : 0}
-      </p>
+      <p>{reformatDate(renderedRow[column.id])}</p>
     {:else}
       <p>{renderedRow[column.id] ?? ''}</p>
     {/if}
   </td>
 {/each}
+
+<style>
+  .actions-cell {
+    height: 100%;
+  }
+
+  .actions-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    height: max-content;
+    max-width: 100%;
+  }
+
+  button {
+    padding: 0 5px;
+    font-size: 10px;
+  }
+
+  p {
+    white-space: normal;
+    font-size: 10px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+</style>

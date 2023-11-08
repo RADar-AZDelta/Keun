@@ -5,7 +5,7 @@ import type { User } from "firebase/auth";
 export default class LocalImpl implements IAuthImpl {
     user: User | undefined
 
-    async logIn(name?: string): Promise<void | string> {
+    async logIn(name?: string): Promise<void> {
         if(dev) console.log('logIn: Logging in via Firebase')
     }
     async logOut(): Promise<void> {

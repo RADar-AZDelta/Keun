@@ -17,11 +17,11 @@
   }
 </script>
 
-<div data-name="alreadymapped-table">
+<div class="table">
   <DataTable data={mappedData} {columns} {options} let:renderedRow>
     <td>
       {#if renderedRow.conceptId && renderedRow.conceptName}
-        <button on:click={() => removeMapping(renderedRow)}><SvgIcon href="/icons.svg" id="x" /></button>
+        <button on:click={() => removeMapping(renderedRow)}><SvgIcon id="x" /></button>
       {/if}
     </td>
     {#each Object.keys(renderedRow) as key}
@@ -31,3 +31,11 @@
     {/each}
   </DataTable>
 </div>
+
+<style>
+  .table {
+    padding: 0 1rem;
+    flex: 1 1 auto;
+    overflow: auto;
+  }
+</style>

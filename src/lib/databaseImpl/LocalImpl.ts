@@ -18,11 +18,11 @@ export default class LocalImpl implements IUpdatedFunctionalityImpl {
   }
 
   async checkFileExistance(fileName: string): Promise<boolean | string | void> {
-    if(dev) console.log(`checkFileExistence: Check if the file with name ${fileName} exists`)
+    if (dev) console.log(`checkFileExistence: Check if the file with name ${fileName} exists`)
     await this.openDatabase()
     const files = await this.getFiles()
-    if(!files) return false
-    for(let file of files) if(file.name === fileName) return file.id
+    if (!files) return false
+    for (let file of files) if (file.name === fileName) return file.id
   }
 
   async getFiles(): Promise<IFile[]> {
@@ -33,12 +33,11 @@ export default class LocalImpl implements IUpdatedFunctionalityImpl {
     return files
   }
 
-  async getFilesAdmin(): Promise<IFile[] | void> {}
+  async getFilesAdmin(): Promise<IFile[] | void> { }
 
   async uploadFile(file: File, authors: string[]): Promise<string[] | void> {
     if (dev) console.log('uploadFile: Uploading file to IndexedDB')
     await this.openDatabase()
-  console.log("UPLOAD FILE ", file)
     const blob = await fileToBlob(file)
     const fileString = await blobToString(blob)
     const fileId = crypto.randomUUID()
@@ -48,33 +47,33 @@ export default class LocalImpl implements IUpdatedFunctionalityImpl {
       'concept_id,concept_name,domain_id,vocabulary_id,concept_class_id,standard_concept,concept_code,valid_start_date,valid_end_date,invalid_reason\n0,test,test,test,test,S,123,2000-01-01,2099-01-01,U',
     ])
     const customFileString = await blobToString(customBlob)
-    const customFileContent: IFile = { id: fileId, name: `${file.name.split('.')[0]}_concepts.csv`, authors: [], version: 1, content: customFileString}
+    const customFileContent: IFile = { id: fileId, name: `${file.name.split('.')[0]}_concepts.csv`, authors: [], version: 1, content: customFileString }
     await this.openCustomDatabase()
     await this.customDb!.set(customFileContent, fileId, true)
     // goto(`${base}/mapping&id=${fileId}`)
   }
 
   async editFile(id: string, blob: Blob, customBlob?: Blob): Promise<void> {
-    if(dev) console.log(`editFile: Editing the file with id ${id}`)
+    if (dev) console.log(`editFile: Editing the file with id ${id}`)
     await this.openDatabase()
     const fileInfo: IFile | undefined = await this.db?.get(id, true)
-    if(!fileInfo) return console.error(`editFile: No file found with id ${id}`)
+    if (!fileInfo) return console.error(`editFile: No file found with id ${id}`)
     const fileString = await blobToString(blob)
     const fileContent: IFile = { id, name: fileInfo.name, authors: [], version: fileInfo.version++, content: fileString }
     await this.db?.set(fileContent, id, true)
-    if(!customBlob) return
+    if (!customBlob) return
     await this.openCustomDatabase()
     const customFileInfo: IFile | undefined = await this.customDb?.get(id, true)
-    if(!customFileInfo) return console.error(`editFile: No custom file foun with id ${id}`)
+    if (!customFileInfo) return console.error(`editFile: No custom file foun with id ${id}`)
     const customFileString = await blobToString(customBlob)
     const customFileContent: IFile = { id, name: fileInfo.name, authors: [], version: customFileInfo.version++, content: customFileString }
     await this.customDb?.set(customFileContent, id, true)
   }
 
-  async editFileAuthors(id: string, authors: string[]): Promise<void> {}
+  async editFileAuthors(id: string, authors: string[]): Promise<void> { }
 
   async deleteFile(id: string): Promise<void> {
-    if(dev) console.log(`deleteFile: Delete the file with id ${id} in IndexedDB`)
+    if (dev) console.log(`deleteFile: Delete the file with id ${id} in IndexedDB`)
     await this.openDatabase()
     await this.db!.remove(id, true)
     await this.openCustomDatabase()
@@ -90,6 +89,11 @@ export default class LocalImpl implements IUpdatedFunctionalityImpl {
     const blob = await stringToBlob(fileInfo.content)
     const file = new File([blob], fileInfo.name, { type: 'text/csv' })
     await this.download(fileInfo.name, file)
+    await this.downloadCustomFile(fileId)
+    await this.deleteFile(id)
+  }
+
+  private async downloadCustomFile(fileId: string) {
     await this.openCustomDatabase()
     const customFileInfo: IFile | undefined = await this.customDb?.get(fileId, true, true)
     if (!customFileInfo || !customFileInfo.content) return
@@ -99,9 +103,9 @@ export default class LocalImpl implements IUpdatedFunctionalityImpl {
     await this.download(customFile.name, customFile)
   }
 
-  async getAllAuthors(): Promise<void | IUserRestriction> {}
+  async getAllAuthors(): Promise<void | IUserRestriction> { }
 
-  async watchValueFromDatabase(path: string, subCallback: () => unknown): Promise<void> {}
+  async watchValueFromDatabase(path: string, subCallback: () => unknown): Promise<void> { }
 
   private async openDatabase(): Promise<void> {
     if ((await this.isOpen(this.db)) == false) this.db = new IndexedDB('localMapping', 'localMapping')

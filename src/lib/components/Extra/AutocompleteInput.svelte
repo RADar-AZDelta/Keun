@@ -63,7 +63,7 @@
   }
 </script>
 
-<div data-name="autocomplete-input">
+<div>
   <input
     title={id}
     type="text"
@@ -87,3 +87,50 @@
     </ul>
   {/if}
 </div>
+
+<style>
+  input {
+    min-width: 140px;
+    width: 140px;
+    padding: 0;
+    border: 1px solid #d8d8d8;
+  }
+
+  input:hover {
+    border: 1px solid #bbbbbb;
+  }
+
+  input:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px #c5c5c5;
+  }
+
+  ul {
+    list-style-type: none;
+    padding: 0.5rem 0 2rem 0;
+    margin: 0;
+    position: absolute;
+  }
+
+  li {
+    border-top: 1px solid #cecece;
+    border-left: 1px solid #cecece;
+    border-right: 1px solid #cecece;
+    padding: 0.5rem 1rem;
+    background-color: white;
+    cursor: pointer;
+  }
+
+  li:last-child {
+    border: 1px solid #cecece;
+  }
+
+  li:hover {
+    background-color: #e2e2e2;
+  }
+
+  li:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px #c5c5c5;
+  }
+</style>

@@ -1,13 +1,11 @@
-<!-- Copyright 2023 RADar-AZDelta -->
-<!-- SPDX-License-Identifier: gpl3+ -->
 <script lang="ts">
-  import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
-  import AutocompleteInput from '$lib/components/Extra/AutocompleteInput.svelte'
   import { createEventDispatcher } from 'svelte'
-  import type { CustomOptionsEvents } from '../../Types'
-  import SvgIcon from '../../Extra/SvgIcon.svelte'
   import { reformatDate } from '$lib/utils'
+  import AutocompleteInput from '$lib/components/Extra/AutocompleteInput.svelte'
+  import SvgIcon from '$lib/components/Extra/SvgIcon.svelte'
   import customConceptInfo from '$lib/data/customConceptInfo.json'
+  import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
+  import type { CustomOptionsEvents } from '$lib/components/Types'
 
   export let columns: IColumnMetaData[] | undefined,
     data: Record<string, any>,
@@ -70,11 +68,9 @@
   {#if originalIndex == 0}
     <td>
       {#if mappedButton}
-        <button on:click={onClickMapping}><SvgIcon href="/icons.svg" id="plus" width="16px" height="16px" /></button>
+        <button on:click={onClickMapping}><SvgIcon id="plus" /></button>
       {:else}
-        <button style="background-color: greenyellow;"
-          ><SvgIcon href="/icons.svg" id="check" width="16px" height="16px" /></button
-        >
+        <button style="background-color: greenyellow;"><SvgIcon id="check" /></button>
       {/if}
     </td>
   {:else}
@@ -82,7 +78,7 @@
   {/if}
   {#each columns || [] as column (column.id)}
     <td>
-      <div data-name="cell-container">
+      <div class="cell-container">
         {#if inputRow[column.id].inputAvailable}
           {#if inputRow[column.id].suggestions}
             <AutocompleteInput
@@ -101,3 +97,13 @@
     </td>
   {/each}
 {/if}
+
+<style>
+  td {
+    overflow: hidden;
+  }
+
+  .cell-container {
+    width: 140px;
+  }
+</style>

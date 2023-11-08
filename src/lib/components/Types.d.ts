@@ -9,6 +9,8 @@ export interface IFileIdTemplate {
   id: string
 }
 
+////////////////////////////// Events for the menu page //////////////////////////////
+
 export interface PageEvents {
   fileDrop: FileDropEventDetail
   fileUpload: FileUploadEventDetail
@@ -32,6 +34,44 @@ export type FileUpdatedColumnsEventDetail = IFileTemplate
 export type DownloadFilesEventDetail = IFileIdTemplate
 export type DeleteFilesEventDetail = IFileIdTemplate
 export type EditRightsEventDetail = IFileIdTemplate
+
+////////////////////////////// Events for the mapping page //////////////////////////////
+
+export interface MappingEvents {
+  rowSelection: RowSelectionEventDetail
+  actionPerformed: ActionPerformedEventDetail
+  updateRow: UpdateRowEventDetail
+  autoMapRow: AutoMapRowEventDetail
+  deleteRow: DeleteRowEventDetail
+}
+
+export interface RowSelectionEventDetail {
+  row: Record<string, any>
+  index: number
+}
+
+export interface ActionPerformedEventDetail {
+  action: 'APPROVED' | 'FLAGGED' | 'UNAPPROVED'
+  index: number
+}
+
+export interface UpdateRowEventDetail {
+  index: number
+  row: Record<string, any>
+}
+
+export interface AutoMapRowEventDetail {
+  index: number
+  sourceName: string
+}
+
+export interface DeleteRowEventDetail {
+  index: number
+  sourceCode: string
+  erase: boolean
+}
+
+////////////////////////////// Events for the actual mapping //////////////////////////////
 
 export interface CustomOptionsEvents {
   generalVisibilityChanged: VisibilityChangedEventDetail
@@ -68,12 +108,6 @@ export interface MappingEventDetail {
   originalRow?: Record<string, any>
   row: Record<string, any>
   extra: IExtra
-}
-
-export interface ActionPerformedEventDetail {
-  action: string
-  index: number
-  row: Record<string, any>
 }
 
 export interface DeleteRowEventDetail {
@@ -156,7 +190,7 @@ export interface ICategories {
 }
 
 export interface ISides {
-  filters: boolean; 
+  filters: boolean;
   details: boolean
 }
 
@@ -252,11 +286,16 @@ export interface IUserRestriction {
   fileIds: string[]
 }
 
+export interface IMapRow {
+  mappedIndex: number
+  mappedRow: Record<string, any>
+}
+
 export interface IFunctionalityImpl {
   readFileFirstTime(fileName: string): Promise<{
     file: File | undefined;
     customConceptsFile: File | undefined;
-} | void>
+  } | void>
   getFiles(): Promise<string[] | void>
   getFilesAdmin(): Promise<string[] | void>
   uploadFile(file: File, authorizedAuthors: string[]): Promise<string[] | void>
@@ -295,7 +334,7 @@ export interface IAuthImpl {
   logIn(name?: string): Promise<void>
   logOut(): Promise<void>
   getAuthor(): Promise<string | null | void>
-  
+
   getAllAuthors(): Promise<void | IUserRestriction>
 }
 

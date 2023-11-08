@@ -29,6 +29,7 @@
   async function uploadFile(): Promise<void> {
     if (dev) console.log(`uploadFile: Upload the file instead of using the cached version.`)
     dispatch('fileUpload', { id: $selectedFileId })
+    closeDialog()
   }
 </script>
 

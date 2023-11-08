@@ -1,208 +1,169 @@
 <script lang="ts">
-  //////////////////////////////////////////////// Framework imports
   import { createEventDispatcher, onMount } from 'svelte'
-  import { base } from '$app/paths'
-  //////////////////////////////////////////////// Package imports
   import { query } from 'arquero'
-  //////////////////////////////////////////////// Component & type imports
   import { localStorageGetter } from '$lib/utils'
+  import SvgIcon from '$lib/components/Extra/SvgIcon.svelte'
+  import type Query from 'arquero/dist/types/query/query'
+  // @ts-ignore
+  import { Search } from '@radar-azdelta/svelte-athena-search'
+  import { customConcept, settings } from '$lib/store'
+  import { fillInAdditionalFields, resetRow } from '$lib/mappingUtils/utils'
+  import { clickOutside } from '$lib/actions/clickOutside'
+  import SearchHead from '$lib/components/Mapping/SearchHead.svelte'
+  import CustomView from '$lib/components/Mapping/views/CustomView.svelte'
+  import Details from '$lib/components/Mapping/details/Details.svelte'
+  import MappedView from '$lib/components/Mapping/views/MappedView.svelte'
+  import type DataTable from '@radar-azdelta/svelte-datatable'
+  import type { IView } from '@radar-azdelta/svelte-athena-search/dist/Types'
+  import type { ICustomConcept } from '$lib/components/Types'
   import type {
     CustomMappingInputEventDetail,
     CustomOptionsEvents,
     EquivalenceChangeEventDetail,
-    ICustomConcept,
     RemoveMappingEventDetail,
     RowChangeEventDetail,
     UpdateDetailsEventDetail,
-  } from '../Types'
-  import SvgIcon from '../Extra/SvgIcon.svelte'
-  import type Query from 'arquero/dist/types/query/query'
-  import { clickOutside } from '$lib/actions/clickOutside'
-  import { customConcept, settings } from '$lib/store'
-  // @ts-ignore
-  import { Search } from '@radar-azdelta/svelte-athena-search'
-  import type DataTable from '@radar-azdelta/svelte-datatable'
-  import type { IView } from '@radar-azdelta/svelte-athena-search/dist/Types'
-  import SearchHead from './SearchHead.svelte'
-  import CustomView from './views/CustomView.svelte'
-  import Details from './details/Details.svelte'
-  import MappedView from './views/MappedView.svelte'
+  } from '$lib/components/Types'
 
-  export let selectedRow: Record<string, any>,
-    selectedRowIndex: number,
-    mainTable: DataTable,
-    showModal: boolean = false
+  export let selectedRow: Record<string, any>, selectedRowIndex: number, mainTable: DataTable, customTable: DataTable
 
-  // General variables
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
-  let layoutDialog: HTMLDialogElement,
-    lastRow: boolean = false,
-    errorMessage: string = ''
-  // Table variables
-  let reviewer: string = '',
-    comment: string = '',
-    equivalence: string = 'EQUAL'
-
   const views: IView[] = [
     { name: 'custom concept', value: 'custom', viewSlot: 'slotView1' },
     { name: 'mapped concepts', value: 'mapped', viewSlot: 'slotView2' },
   ]
 
-  // Data variables
-  let activatedAthenaFilters = new Map<string, string[]>([['standardConcept', ['Standard']]])
-
-  ///////////////////////////////////////////////////////////////////////////////////////////////
-  // DATA
-  ///////////////////////////////////////////////////////////////////////////////////////////////
-
+  let dialog: HTMLDialogElement
   let mappedData: Record<string, any>[] = [{}],
-    alreadyMapped: Record<string, Record<string, any>> = {},
     customConceptData: Record<string, any>[] = [{}]
+  let reviewer: string = '',
+    comment: string = '',
+    equivalence: string = 'EQUAL'
+  let activatedAthenaFilters = new Map<string, string[]>([['standardConcept', ['Standard']]])
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // EVENTS
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
   // A method that catches the event for single mapping and throws an event to the parent
-  function singleMapping(row: Record<string, any>): void {
+  async function singleMapping(row: Record<string, any>): Promise<void> {
     row.equivalence = equivalence
-    console.log("MAPPIGN ROW ", row)
     dispatch('singleMapping', { originalRow: selectedRow, row, extra: { comment, reviewer } })
   }
 
   // A method that catches the event for multiple mapping and throws an event to the parent
-  function multipleMapping(row: Record<string, any>): void {
+  async function multipleMapping(row: Record<string, any>): Promise<void> {
     row.equivalence = equivalence
     dispatch('multipleMapping', { originalRow: selectedRow, row, extra: { comment, reviewer } })
-  }
-
-  // A method to update the already mapped concepts (used to see the already mapped concepts for a certain row)
-  function updateUniqueConceptIds(id: string, name: string, multiple: boolean): void | Record<string, any>[] {
-    let alreadyMappedRow = alreadyMapped[selectedRow.sourceCode]
-    // Check if there is multiple mapping
-    if (multiple) {
-      alreadyMappedRow = { conceptId: [id], conceptName: [name], custom: [false] }
-      alreadyMapped[selectedRow.sourceCode] = alreadyMappedRow
-      return fillMappedTable()
-    }
-    // If it is the first concept mapped to the row
-    if (!alreadyMappedRow) alreadyMappedRow = { conceptId: [id], conceptName: [name], custom: [false] }
-    else {
-      alreadyMappedRow.conceptId.push(id)
-      alreadyMappedRow.conceptName.push(name)
-      alreadyMappedRow.custom.push(false)
-    }
-    alreadyMapped[selectedRow.sourceCode] = alreadyMappedRow
-    return fillMappedTable()
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // METHODS
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
-  async function fillUniqueConceptIds(row: Record<string, any>): Promise<void> {
-    if (!row.conceptId) return
-    let mappedRow = alreadyMapped[row.sourceCode]
-    if (!mappedRow) {
-      mappedRow = {
-        conceptId: [row.conceptId],
-        conceptName: [row.conceptName],
-        custom: [row['ADD_INFO:customConcept'] ? true : false],
-      }
-      alreadyMapped[row.sourceCode] = mappedRow
-      return
-    }
-    if (!mappedRow.conceptId.includes(row.conceptId) || !mappedRow.conceptName.includes(row.conceptName)) {
-      mappedRow.conceptId.push(row.conceptId)
-      mappedRow.conceptName.push(row.conceptName)
-    }
-    mappedRow.custom.push(row['ADD_INFO:customConcept'] ? true : false)
-    alreadyMapped[row.sourceCode] = mappedRow
-  }
-
-  // A method to get all the mapped concept ids for a certain row
-  async function getUniqueConceptIds(): Promise<void> {
-    alreadyMapped = {}
-    if (!selectedRow) return
-    // Create a query that finds all rows with the same sourceCode as the selected row
-    const rowsQuery = (<Query>query().params({ source: selectedRow.sourceCode }))
-      .filter((d: any, params: any) => d.sourceCode == params.source)
+  // Delete a custom concept from the custom concept table
+  async function removeFromCustomTable(conceptId: string, conceptName: string) {
+    const params = <Query>query().params({ id: conceptId, name: conceptName })
+    const existanceQuery = params
+      .filter((r: any, p: any) => r.concept_id === p.id && r.concept_name === p.name)
       .toObject()
-    const rows = await mainTable.executeQueryAndReturnResults(rowsQuery)
-    for (let row of rows.queriedData) await fillUniqueConceptIds(row)
-    fillMappedTable()
+    const concepts = await customTable.executeQueryAndReturnResults(existanceQuery)
+    if (concepts.indices.length) await customTable.deleteRows(concepts.indices)
   }
 
-  // A method to delete the mapping in the pop-up
-  function removeMapping(e: CustomEvent<RemoveMappingEventDetail>): void {
+  // Delete the mapping in the table & update the other rows if it has multiple concepts that are mapped to the row
+  async function removeMapping(e: CustomEvent<RemoveMappingEventDetail>): Promise<void> {
     const { conceptId, conceptName } = e.detail
-    // Check if the value needs to be erased, if there are multiple mappings for the same sourceCode it needs to be erased
-    let erase = alreadyMapped[selectedRow.sourceCode].conceptId.length > 1
-    const index = customConceptData.findIndex((r: any) => r.concept_id == conceptId && r.concept_name == conceptName)
-    if (customConceptData.length > 1) customConceptData.splice(index, 1)
-
-    dispatch('deleteRowInnerMapping', { conceptId, conceptName, erase, custom: true })
-    removeUniqueConcept(conceptId, conceptName)
+    if (conceptId === '0') removeFromCustomTable(conceptId, conceptName)
+    const params = <Query>query().params({ code: selectedRow.sourceCode })
+    const conceptsQuery = params.filter((r: any, p: any) => r.sourceCode === p.code).toObject()
+    const concepts = await mainTable.executeQueryAndReturnResults(conceptsQuery)
+    if (!concepts.indices.length) return
+    if (concepts.indices.length > 1) {
+      const rowListIndex = concepts.queriedData.find(
+        (r: any) => r.conceptId === conceptId && r.conceptName === conceptName
+      )
+      const originalIndex = concepts.indices[rowListIndex]
+      const extraIndices = concepts.indices.filter((i: number) => i !== originalIndex)
+      const updatedRows = new Map<number, Record<string, any>>()
+      extraIndices.forEach((i: number) => updatedRows.set(i, { 'ADD_INFO:numberOfConcepts': extraIndices.length }))
+      await mainTable.updateRows(updatedRows)
+      await mainTable.deleteRows(originalIndex)
+    } else {
+      const reset = await resetRow()
+      await mainTable.updateRows(new Map([concepts.indices[0], reset]))
+    }
     fillMappedTable()
   }
 
-  // A method to remove the concept from the alreadyMapped object
-  function removeUniqueConcept(conceptId: string, conceptName: string): void {
-    // Find the index of the conceptId and conceptName in the alreadyMapped object
-    // There could be more instances with the same conceptId but other conceptName and vice versa so we need to check both
-    const alreadyMappedRow = alreadyMapped[selectedRow.sourceCode]
-    const conceptIdIndexes: number[] = alreadyMappedRow.conceptId.reduce(function (a: any, e: any, i: number) {
-      if (e === conceptId) a.push(i)
-      return a
-    }, [])
-    const conceptNameIndexes: number[] = alreadyMappedRow.conceptName.reduce(function (a: any, e: any, i: number) {
-      if (e === conceptName) a.push(i)
-      return a
-    }, [])
-    const index = conceptIdIndexes.filter(i => conceptNameIndexes.includes(i))[0]
-    if (alreadyMapped[selectedRow.sourceCode].conceptId.length) {
-      alreadyMapped[selectedRow.sourceCode].conceptId.splice(index, 1)
-      alreadyMapped[selectedRow.sourceCode].conceptName.splice(index, 1)
-      alreadyMapped[selectedRow.sourceCode].custom.splice(index, 1)
-    } else delete alreadyMapped[selectedRow.sourceCode]
-    alreadyMapped = alreadyMapped
+  // Map the new custom concept to the selected row
+  async function mapCustomRow(customConcept: Record<string, any>) {
+    let mappedRow = selectedRow
+    mappedRow.conceptId = customConcept['concept_id']
+    mappedRow.conceptName = customConcept['concept_name']
+    mappedRow = await fillInAdditionalFields(mappedRow, selectedRow, false)
+    mappedRow['ADD_INFO:customConcept'] = true
+    if (!mappedRow['ADD_INFO:numberOfConcepts']) mappedRow['ADD_INFO:numberOfConcepts'] = 1
+    mappedRow.comment = comment
+    mappedRow.assignedReviewer = reviewer
+    if (!$settings || !$settings.mapToMultipleConcepts)
+      return await mainTable.updateRows(new Map([[selectedRowIndex, mappedRow]]))
+
+    const conceptsParams = <Query>query().params({ code: mappedRow.sourceCode })
+    const conceptsQuery = conceptsParams.filter((r: any, p: any) => r.sourceCode === p.code).toObject()
+    const concepts = await mainTable.executeQueryAndReturnResults(conceptsQuery)
+    if (concepts.queriedData.length === 1 && !concepts.queriedData[0].conceptId)
+      return await mainTable.updateRows(new Map([[selectedRowIndex, mappedRow]]))
+
+    mappedRow['ADD_INFO:numberOfConcepts'] = concepts.indices.length + 1
+    const rowsToUpdate = new Map()
+    concepts.indices.forEach((i: number) =>
+      rowsToUpdate.set(i, { 'ADD_INFO:numberOfConcepts': concepts.indices.length + 1 })
+    )
+    await mainTable.updateRows(rowsToUpdate)
+    await mainTable.insertRows([mappedRow])
   }
 
-  // A method for custom mapping
-  function customMapping(e: CustomEvent<CustomMappingInputEventDetail>) {
-    errorMessage = ''
+  // Add a new custom concept to the table with all custom concepts
+  async function addCustomConcept(row: Record<string, any>) {
+    const conceptRow = {
+      concept_id: row.conceptId,
+      concept_name: row.conceptName,
+      domain_id: row.domainId,
+      vocabulary_id: row.vocabularyId,
+      concept_class_id: row.conceptClassId,
+      standard_concept: row.standardConcept,
+      concept_code: row.conceptCode,
+      valid_start_date: row.validStartDate,
+      valid_end_date: row.validEndDate,
+      invalid_reason: row.invalidReason,
+    }
+    customConceptData = [conceptRow, ...customConceptData]
+    const params = { name: row.conceptName, domain: row.domainId, vocab: row.vocabularyId, class: row.conceptClassId }
+    const existanceParams = <Query>query().params(params)
+    const existanceQuery = existanceParams
+      .filter(
+        (r: any, p: any) =>
+          r.concept_name === p.name &&
+          r.domain_id === p.domain &&
+          r.vocabulary_id === p.vocab &&
+          r.concept_class_id === p.class
+      )
+      .toObject()
+    const existance = await customTable.executeQueryAndReturnResults(existanceQuery)
+    if (!existance.indices.length) {
+      const testRow = await customTable.getFullRow(0)
+      if (testRow.domain_id === 'test') await customTable.deleteRows([0])
+      await customTable.insertRows([customConcept])
+    }
+    return conceptRow
+  }
+
+  // Map a new custom concept to a row
+  async function customMapping(e: CustomEvent<CustomMappingInputEventDetail>) {
     const row = <ICustomConcept>e.detail.row
-    dispatch('customMapping', { row, extra: { comment, reviewer } })
-
-    if ($settings.mapToMultipleConcepts) {
-      const conceptRow = {
-        concept_id: row.conceptId,
-        concept_name: row.conceptName,
-        domain_id: row.domainId,
-        vocabulary_id: row.vocabularyId,
-        concept_class_id: row.conceptClassId,
-        standard_concept: row.standardConcept,
-        concept_code: row.conceptCode,
-        valid_start_date: row.validStartDate,
-        valid_end_date: row.validEndDate,
-        invalid_reason: row.invalidReason,
-      }
-      customConceptData = [conceptRow, ...customConceptData]
-    }
-
-    let mappedRow = alreadyMapped[selectedRow.sourceCode]
-    if (!mappedRow) {
-      mappedRow = { conceptId: [selectedRow.sourceCode], conceptName: [row.conceptName], custom: [true] }
-      return fillMappedTable()
-    }
-    if (!mappedRow.conceptId.length || !mappedRow.conceptName.length || !mappedRow.custom.length) {
-      mappedRow = { conceptId: [selectedRow.sourceCode], conceptName: [row.conceptName], custom: [true] }
-      return fillMappedTable()
-    }
-    mappedRow.conceptId.push(selectedRow.sourceCode)
-    mappedRow.conceptName.push(row.conceptName)
-    mappedRow.custom.push(true)
-    fillMappedTable()
+    const customConcept = await addCustomConcept(row)
+    await mapCustomRow(customConcept)
   }
 
   ///////////////////////////// DETAILS METHODS /////////////////////////////
@@ -225,13 +186,9 @@
   }
 
   async function onClickMapping(renderedRow: Record<string, any>) {
-    if ($settings.mapToMultipleConcepts) {
-      multipleMapping(renderedRow)
-      updateUniqueConceptIds(renderedRow.id, renderedRow.name, true)
-    } else {
-      singleMapping(renderedRow)
-      updateUniqueConceptIds(renderedRow.id, renderedRow.name, false)
-    }
+    if ($settings.mapToMultipleConcepts) multipleMapping(renderedRow)
+    else singleMapping(renderedRow)
+    setVocabularyId()
   }
 
   ///////////////////////////// CUSTOM INPUT ROW METHODS /////////////////////////////
@@ -245,23 +202,22 @@
   ///////////////////////////// MAPPED TABLE METHODS /////////////////////////////
 
   // A method to fill the table with the already mapped concepts
-  function fillMappedTable(): void | Record<string, any>[] {
+  async function fillMappedTable() {
     mappedData = []
     const code = selectedRow.sourceCode
-    // If there are no concepts mapped yet, fill the array with an empty object
-    // This empty object is needed because the DataTable component uses it to determine the data type
-    if (!Object.keys(alreadyMapped).includes(code)) return (mappedData = [{}])
-    if (!alreadyMapped[code].conceptId.length) return (mappedData = [{}])
-    for (let i = 0; i < alreadyMapped[code].conceptId.length; i++) {
+    const queryParams = <Query>query().params({ source: code })
+    const conceptsQuery = queryParams.filter((d: any, p: any) => d.sourceCode === p.code).toObject()
+    const concepts = await mainTable.executeQueryAndReturnResults(conceptsQuery)
+    if (!concepts.queriedData.length) return (mappedData = [{}])
+    for (let concept of concepts.queriedData)
       mappedData.push({
-        sourceCode: code,
-        sourceName: selectedRow.sourceName,
-        conceptId: alreadyMapped[code].conceptId[i],
-        conceptName: alreadyMapped[code].conceptName[i],
-        customConcept: alreadyMapped[code].custom[i],
+        sourceCode: concept.sourceCode,
+        sourceName: concept.sourceName,
+        conceptId: concept.conceptId,
+        conceptName: concept.conceptName,
+        customConcept: concept.conceptId === '0' ? true : false,
       })
-    }
-    mappedData = mappedData
+    mappedData
   }
 
   ///////////////////////////// HEAD METHODS /////////////////////////////
@@ -273,20 +229,15 @@
 
   ///////////////////////////// DIALOG METHODS /////////////////////////////
 
-  // A method to close the dialog if it was opened
-  function closeDialog(): void {
-    if (!layoutDialog.attributes.getNamedItem('open')) return
-    layoutDialog.close()
-    dispatch('generalVisibilityChanged', { visibility: false })
+  async function closeDialog(): Promise<void> {
+    dialog.close()
   }
 
-  // A method to open the dialog if it was closed
-  function openDialog(): void {
-    setVocabularyId()
-    if (layoutDialog?.attributes.getNamedItem('open')) return
+  export async function showDialog(): Promise<void> {
+    dialog.showModal()
     comment = ''
     reviewer = ''
-    layoutDialog.showModal()
+    setVocabularyId()
   }
 
   onMount(() => {
@@ -294,56 +245,28 @@
     activatedAthenaFilters = savedFilters
       ? savedFilters
       : new Map<string, string[]>([['standardConcept', ['Standard']]])
-    dispatch('filterOptionsChanged', { filters: activatedAthenaFilters })
   })
 
   $: {
-    selectedRowIndex
-    if (mainTable) {
-      const pagination = mainTable.getTablePagination()
-      if (pagination.totalRows == selectedRowIndex) lastRow = true
-      else lastRow = false
-    }
-  }
-
-  $: {
-    if (layoutDialog)
-      layoutDialog.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') dispatch('generalVisibilityChanged', { visibility: false })
+    if (dialog)
+      dialog.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeDialog()
       })
-  }
-
-  $: {
-    if (showModal == true) openDialog()
-    else if (layoutDialog) closeDialog()
-  }
-
-  $: {
-    selectedRow
-    getUniqueConceptIds()
   }
 </script>
 
-<dialog bind:this={layoutDialog} data-name="athena-dialog">
-  <div data-name="dialog-container" use:clickOutside on:outClick={closeDialog}>
-    <button data-name="close-dialog" on:click={closeDialog}>
-      <SvgIcon href="{base}/icons.svg" id="x" width="16px" height="16px" />
-    </button>
+<dialog bind:this={dialog} class="athena-dialog">
+  <div class="dialog-container" use:clickOutside on:outClick={closeDialog}>
+    <button class="close-dialog" on:click={closeDialog}><SvgIcon id="x" /></button>
     <section class="search-container">
       <Search {views}>
         <div slot="action-athena" let:renderedRow>
-          {#if Object.keys(alreadyMapped).length && alreadyMapped[Object.keys(alreadyMapped)[0]].conceptId.includes(renderedRow.id)}
-            <button title="Map to row" style="background-color: greenyellow;">
-              <SvgIcon href="{base}/icons.svg" id="check" width="16px" height="16px" />
-            </button>
+          {#if mappedData.find(con => con.conceptId === renderedRow.conceptId)}
+            <button title="Map to row" style="background-color: greenyellow;"><SvgIcon id="check" /></button>
           {:else}
-            <button on:click={() => onClickMapping(renderedRow)}>
-              <SvgIcon href="{base}/icons.svg" id="plus" width="16px" height="16px" />
-            </button>
+            <button on:click={() => onClickMapping(renderedRow)}><SvgIcon id="plus" /></button>
           {/if}
-          <button on:click={() => referToAthena(renderedRow.id)}
-            ><SvgIcon href="{base}/icons.svg" id="link" width="16px" height="16px" /></button
-          >
+          <button on:click={() => referToAthena(renderedRow.id)}><SvgIcon id="link" /></button>
         </div>
         <div slot="upperSlot">
           <SearchHead {selectedRow} on:rowChange={onRowChange} />
@@ -367,6 +290,42 @@
 </dialog>
 
 <style>
+  .athena-dialog {
+    width: 90%;
+    height: 90%;
+    border: none;
+    border-radius: 10px;
+    padding: 0;
+    top: 0;
+    left: 0;
+    transform: none;
+  }
+
+  .dialog-container {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  .close-dialog {
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+    border: none;
+    background-color: inherit;
+    color: #4f4f4f;
+  }
+
+  .close-dialog:hover {
+    color: #3b3b3b;
+  }
+
+  .close-dialog:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px #cecece;
+  }
+
   .search-container {
     padding: 0.5rem 0 0 0;
   }

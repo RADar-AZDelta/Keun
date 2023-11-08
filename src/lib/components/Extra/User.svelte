@@ -67,34 +67,144 @@
   })
 </script>
 
-<button title="Author" aria-label="User button" on:click={openDialog} data-name="header-button">
+<button title="Author" aria-label="User button" on:click={openDialog} class="header-button">
   <p>{$user && $user.name ? $user.name : ''}</p>
-  <SvgIcon href="{base}/icons.svg" id="user" width="16px" height="16px" />
+  <SvgIcon id="user" />
 </button>
 
-<dialog bind:this={userDialog} data-name="user-dialog">
-  <div data-name="user-container" use:clickOutside on:outClick={closeDialog}>
+<dialog bind:this={userDialog} class="user-dialog">
+  <div class="user-container" use:clickOutside on:outClick={closeDialog}>
     {#if authImplementation == 'firebase'}
-      <button data-name="close-dialog" on:click={closeDialog} disabled={!$user ? true : false}>
-        <SvgIcon href="{base}/icons.svg" id="x" width="16px" height="16px" />
+      <button class="close-dialog" on:click={closeDialog} disabled={!$user ? true : false}>
+        <SvgIcon id="x" />
       </button>
-      <section data-name="author">
+      <section class="author">
         <button on:click={login}>Google</button>
       </section>
     {:else}
-      <button data-name="close-dialog" on:click={closeDialog} disabled={!$user ? true : false}>
-        <SvgIcon href="{base}/icons.svg" id="x" width="16px" height="16px" />
+      <button class="close-dialog" on:click={closeDialog} disabled={!$user ? true : false}>
+        <SvgIcon id="x" />
       </button>
-      <section data-name="author">
-        <h2>Who is the author?</h2>
+      <section class="author">
+        <h2 class="title">Who is the author?</h2>
         <input id="author" type="text" placeholder="John Wick" bind:value={author} />
-        <div data-name="buttons-container">
-          <button data-name="cancel" on:click={cancelLogIn} disabled={author == undefined ? true : false}>
-            Cancel
-          </button>
-          <button data-name="save" on:click={login} disabled={author == undefined ? true : false}> Save </button>
+        <div class="buttons-container">
+          <button class="cancel" on:click={cancelLogIn} disabled={author == undefined ? true : false}> Cancel </button>
+          <button class="save" on:click={login} disabled={author == undefined ? true : false}> Save </button>
         </div>
       </section>
     {/if}
   </div>
 </dialog>
+
+<style>
+  .header-button {
+    border: 1px solid #d8d8d8;
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #f6f6f6;
+    width: 40px;
+    height: 40px !important;
+  }
+
+  .user-dialog {
+    border-radius: 10px;
+    border: none;
+    width: 400px;
+  }
+  
+  .close-dialog {
+    position: absolute;
+    right: 1rem;
+    top: 1rem;
+    border: none;
+    background-color: inherit;
+    color: #4f4f4f;
+  }
+
+  .close-dialog:hover {
+    color: #bbbbbb;
+  }
+
+  .close-dialog:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px #cecece;
+  }
+
+  .author {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .title {
+    text-align: center;
+    font-size: 24px;
+    font-weight: 600;
+    padding: 0 2rem;
+    margin: 0;
+  }
+
+  input {
+    width: 80%;
+    padding: 0.5rem;
+    border: 1px solid #cecece;
+    border-radius: 5px;
+    font-size: 1rem;
+  }
+
+  input:hover {
+    border: 1px solid #bbbbbb;
+  }
+
+  input:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px #c5c5c5;
+  }
+
+  .buttons-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 85%;
+  }
+
+  .cancel,
+  .save {
+    height: auto;
+    padding: 0.5rem 1rem;
+    font-size: 1rem;
+  }
+
+  .cancel {
+    background-color: #e2e2e2;
+    color: black;
+  }
+
+  .cancel:hover {
+    background-color: #d8d8d8;
+  }
+
+  .cancel:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px #c5c5c5;
+  }
+
+  .save {
+    background-color: #80c3d8;
+    color: black;
+  }
+
+  .save:hover {
+    background-color: #71bbd4;
+  }
+
+  .save:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px #62b4cf;
+  }
+</style>
