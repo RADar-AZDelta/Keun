@@ -11,7 +11,7 @@
   // @ts-ignore
   import { LatencyOptimisedTranslator } from '@browsermt/bergamot-translator/translator.js'
   import { stringToFile } from '$lib/utils'
-  import { customFileTypeImpl, databaseImpl, fileTypeImpl, saveImpl } from '$lib/store'
+  import { abortAutoMapping, customFileTypeImpl, databaseImpl, fileTypeImpl, saveImpl } from '$lib/store'
   import { selectedFileId, settings, translator, triggerAutoMapping, user } from '$lib/store'
   import { loadImplementationDB, loadImplementationDataType, loadImplementationSave } from '$lib/implementation'
   import columnsUsagi from '$lib/data/columnsUsagi.json'
@@ -257,6 +257,7 @@
     disabled = false
     dataTableMapping.setDisabled(false)
     if (autoMappingPromise) autoMappingAbortController.abort()
+    $abortAutoMapping = false
     // Check previous page and current page
     const pag = dataTableMapping.getTablePagination()
     if (previousPage !== pag.currentPage) currentVisibleRows = new Map<number, Record<string, any>>()
@@ -428,6 +429,10 @@
   }
 
   // TODO: implement the globalAthenaFilter.filter in the Search package
+
+  $: {
+    if ($abortAutoMapping == true) abortAutoMap()
+  }
 
   $: {
     if ($triggerAutoMapping) {

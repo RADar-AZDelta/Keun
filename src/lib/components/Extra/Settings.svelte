@@ -1,5 +1,5 @@
 <script lang="ts">
-  import SvgIcon from './SvgIcon.svelte'
+  import SvgIcon from '$lib/components/Extra/SvgIcon.svelte'
   import { clickOutside } from '$lib/actions/clickOutside'
   import { abortAutoMapping, settings, triggerAutoMapping } from '$lib/store'
 
@@ -55,7 +55,7 @@
 <dialog bind:this={settingsDialog} class="settings-dialog">
   <div class="settings-container" use:clickOutside on:outClick={outClick}>
     {#if settings}
-      <button class="close-dialog" on:outClick={outClick}><SvgIcon id="x" /></button>
+      <button class="close-dialog" on:click={outClick}><SvgIcon id="x" /></button>
       <section class="settings">
         <h2 class="title">Settings</h2>
         <div class="options">

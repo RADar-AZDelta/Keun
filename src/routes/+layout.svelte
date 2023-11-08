@@ -4,8 +4,6 @@
   import { beforeNavigate } from '$app/navigation'
   import '@radar-azdelta/svelte-datatable/styles/data-table.scss'
   import '$lib/styles/table.scss'
-  import '$lib/styles/files.scss'
-  import '$lib/styles/layout.scss'
   import { authImplementation, settings, user } from '$lib/store'
   import Header from '$lib/components/Extra/Header.svelte'
   import Manual from '$lib/components/Extra/Manual.svelte'
@@ -46,6 +44,17 @@
 </main>
 
 <style>
+  :global(body) {
+    font-family: BlinkMacSystemFont, -apple-system, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans',
+      'Droid Sans', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+  }
+
+  :global(p),
+  :global(input) {
+    margin: 0;
+    padding: 0;
+  }
+
   .header {
     display: flex;
     justify-content: space-between;

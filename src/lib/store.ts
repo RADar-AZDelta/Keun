@@ -26,6 +26,8 @@ export const customFileTypeImpl = writable<IDataTypeFunctionalities | undefined>
 
 export const selectedFileId = writable<string>()
 
+export const abortAutoMapping = writable<boolean>(false)
+
 export const translator = writable<LatencyOptimisedTranslator>()
 
 loadImplementationDB()
