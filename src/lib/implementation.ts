@@ -10,8 +10,8 @@ export async function loadImplementationDB(): Promise<IUpdatedFunctionalityImpl>
             else if (databaseImplementation === 'sqlite') { }
             else {
                 await import('$lib/databaseImpl/LocalImpl').then(({ default: LocalImpl }) => {
-                    impl = new LocalImpl()
-                    return resolve(impl)
+                    databaseImpl.set(new LocalImpl())
+                    return databaseImpl
                 })
             }
         })()
@@ -24,8 +24,8 @@ export async function loadImplementationAuth(): Promise<IAuthImpl> {
             if (impl) return resolve(impl)
             if (authImplementation === 'firebase') { }
             else import('$lib/authImpl/LocalImpl').then(({ default: LocalImpl }) => {
-                impl = new LocalImpl()
-                return resolve(impl)
+                authImpl.set(new LocalImpl())
+                return authImpl
             })
         })
     })
@@ -37,8 +37,8 @@ export async function loadImplementationSave(): Promise<ICustomStoreOptions> {
             if (impl) return resolve(impl)
             if (saveImplementation === 'firebase') {
                 await import('$lib/saveImplementations/FirebaseSaveImpl').then(({ default: FirebaseSaveImpl }) => {
-                    impl = new FirebaseSaveImpl()
-                    return resolve(impl)
+                    saveImpl.set(new FirebaseSaveImpl())
+                    return saveImpl
                 })
             } else return impl
         })
@@ -51,9 +51,9 @@ export async function loadImplementationDataType() {
             if (impl) return resolve(impl)
             if (databaseImplementation === 'firebase') {
                 await import('$lib/dataTypes/FirebaseFileDataTypeImpl').then(({ default: FirebaseFileDataTypeImpl }) => {
-                    impl = new FirebaseFileDataTypeImpl()
+                    fileTypeImpl.set(new FirebaseFileDataTypeImpl())
                     customFileTypeImpl.set(new FirebaseFileDataTypeImpl())
-                    return resolve(impl)
+                    return fileTypeImpl
                 })
             } else return impl
         })
