@@ -328,7 +328,7 @@
     if (!$databaseImpl) await loadImplementationDB()
     await $databaseImpl!.editFile($selectedFileId, blob, customBlob)
     await $databaseImpl!.downloadFile($selectedFileId)
-    goto('/')
+    goto(`${base}/`)
   }
 
   // A method to get the file from the database implementation
