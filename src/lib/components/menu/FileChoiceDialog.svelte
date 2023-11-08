@@ -11,20 +11,22 @@
   const dispatch = createEventDispatcher<PageEvents>()
   let dialog: HTMLDialogElement
 
-  export async function showDialog() {
+  export async function showDialog(): Promise<void> {
     dialog.showModal()
   }
 
-  export async function closeDialog() {
+  export async function closeDialog(): Promise<void> {
     dialog.close()
   }
 
+  // Go to the mapping page of the current uploaded file
   async function mapCachedFile(): Promise<void> {
     if (dev) console.log(`mapCachedFile: Go to the route "/mapping" to map the file: ${$selectedFileId}`)
     goto(`/mapping?id=${$selectedFileId}`)
   }
 
-  async function uploadFile() {
+  // Send a request to the parent to rewrite the current uploaded file with the new file that is inserted
+  async function uploadFile(): Promise<void> {
     if (dev) console.log(`uploadFile: Upload the file instead of using the cached version.`)
     dispatch('fileUpload', { id: $selectedFileId })
   }
@@ -32,9 +34,7 @@
 
 <dialog class="location-dialog" bind:this={dialog}>
   <div class="location-container">
-    <button on:click={closeDialog} class="close-dialog" disabled={processing}>
-      <SvgIcon id="x" />
-    </button>
+    <button on:click={closeDialog} class="close-dialog" disabled={processing}><SvgIcon id="x" /></button>
     <h2 class="dialog-title">Do you want to use this file or the cached version of this file?</h2>
     <div class="button-choices">
       <button on:click={uploadFile}>File</button>

@@ -15,17 +15,17 @@
   let currentColumns: string[] = []
   let missingColumns: Record<string, string> = {}
 
-  export async function showDialog() {
+  export async function showDialog(): Promise<void> {
     dialog.showModal()
   }
 
-  export async function closeDialog() {
+  export async function closeDialog(): Promise<void> {
     file = undefined
     dialog.close()
   }
 
   // A method for when a new file has been put in the field
-  async function onFileInputChange(e: Event) {
+  async function onFileInputChange(e: Event): Promise<void> {
     if (dev) console.log('onFileInputChange: A file has been upload via the input button')
     const allowedExtensions = ['csv']
     const inputFiles = (e.target as HTMLInputElement).files
@@ -41,7 +41,7 @@
   }
 
   // Read the content of the file, seperate the columns from the rows and check if all columns are in the file
-  async function checkForMissingColumns(this: FileReader, ev: ProgressEvent<FileReader>) {
+  async function checkForMissingColumns(this: FileReader, ev: ProgressEvent<FileReader>): Promise<void> {
     if (dev) console.log('checkForMissingColumns: Checking if there are missing columns in the file')
     if (!this.result) return
     let content = this.result.toString()
@@ -60,13 +60,18 @@
     })
     // Show the pop up where the user can select the corresponding columns to the missing important columns
     if (dev) console.log('checkForMissingColumns: All missing columns were identified')
-    dispatch('columnsDialogShow')
+    dispatch('columnsDialogShow', { missingColumns, currentColumns, file })
   }
 
+  // When a file is dropped in the dropping field
   async function fileDrop(e: CustomEvent<FileDropEventDetail>) {
     file = e.detail.file
+    const reader = new FileReader()
+    reader.onload = checkForMissingColumns
+    reader.readAsText(file)
   }
 
+  // Send a request to the parent to check if there already is a file with the same name
   async function checkForCache() {
     if (!file) return
     dispatch('checkForCache', { file })
@@ -76,10 +81,8 @@
 <dialog bind:this={dialog} class="file-dialog">
   <div class="file-input-container">
     <h1 class="file-input-title">Upload a new file</h1>
-    <button on:click={closeDialog} class="close-dialog" disabled={processing}>
-      <SvgIcon id="x" />
-    </button>
-    <Drop extensions={['csv']} readerMethod={checkForMissingColumns} on:fileDrop={fileDrop}>
+    <button on:click={closeDialog} class="close-dialog" disabled={processing}><SvgIcon id="x" /></button>
+    <Drop extensions={['csv']} on:fileDrop={fileDrop}>
       <label class="upload-file">
         {#if file}
           <SvgIcon id="excel" width="40px" height="40px" />

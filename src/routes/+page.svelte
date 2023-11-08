@@ -10,7 +10,7 @@
   import FirebaseImpl from '$lib/components/menu/FirebaseImpl.svelte'
   import LocalImpl from '$lib/components/menu/LocalImpl.svelte'
   import Spinner from '$lib/components/Extra/Spinner.svelte'
-  import type { IFile } from '$lib/components/Types'
+  import type { ColumnsDialogShowEventDetail, IFile } from '$lib/components/Types'
   import type {
     CheckForCacheEventDetail,
     DeleteFilesEventDetail,
@@ -22,50 +22,44 @@
 
   let files: IFile[] = [],
     file: File,
-    currentColumns: string[],
-    missingColumns: Record<string, string> = {},
+    cols: string[] = [],
+    missing: Record<string, string> = {},
     authorizedAuthors: string[],
     processing: boolean = false,
-    chosenFile: string
+    selected: string
 
   let fileInputDialog: SvelteComponent,
     authorsDialog: SvelteComponent,
     columnDialog: SvelteComponent,
     locationDialog: SvelteComponent
 
-  /////////////////////////////// Methods regarding file upload && mapping ///////////////////////////////
-
-  // A method to upload a file
+  // A method to upload a file & refetch all the files
   async function uploadFile(): Promise<void> {
     if (dev) console.log('uploadFile: Uploading a file')
-    // Upload the file to the storage depending on the implementationmethod
     if (!$databaseImpl) await loadImplementationDB()
     await $databaseImpl!.uploadFile(file, authorizedAuthors)
-    const filesFound = await $databaseImpl!.getFiles()
-    if (filesFound) files = filesFound
+    await getFiles()
     fileInputDialog.closeDialog()
-    if (dev) console.log('uploadFile: The file has been uploaded')
   }
 
-  /////////////////////////////// Methods regarding deleting & editing a file ///////////////////////////////
-
-  // A method to select a file and open the authors dialog
+  // Select the correct file & show a pop-up to change the authors
   async function editRights(e: CustomEvent<EditRightsEventDetail>): Promise<void> {
-    chosenFile = e.detail.id
+    selected = e.detail.id
     authorsDialog.showDialog()
   }
 
-  /////////////////////////////// Methods regarding dialogs ///////////////////////////////
-
-  function openFileInputDialog(): void {
+  // Open the input pop-up to add a file
+  async function openFileInputDialog(): Promise<void> {
     fileInputDialog.showDialog()
   }
 
-  function openColumnDialog(): void {
+  // Open the pop-up to change missing columns to the correct name
+  async function openColumnDialog(e: CustomEvent<ColumnsDialogShowEventDetail>): Promise<void> {
+    if (e.detail.file) file = e.detail.file
+    missing = e.detail.missingColumns
+    cols = e.detail.currentColumns
     columnDialog.showDialog()
   }
-
-  /////////////////////////////// General methods ///////////////////////////////
 
   // A method to check if there is cache of files
   async function checkForCache(e: CustomEvent<CheckForCacheEventDetail>): Promise<void> {
@@ -73,20 +67,15 @@
     if (!$databaseImpl) await loadImplementationDB()
     file = e.detail.file
     const cached = await $databaseImpl!.checkFileExistance(e.detail.file.name)
-    // When the application is using Firebase, this function will always return void so the file will be uploaded
-    // Checking for cache is only for local mapping without a cloud implementation
-    if (cached) {
-      $selectedFileId = cached.toString()
-      locationDialog.showDialog()
-    } else await uploadFile()
+    if (!cached) return await uploadFile()
+    $selectedFileId = cached.toString()
+    locationDialog.showDialog()
   }
-
-  /////////////////////////////// On click events ///////////////////////////////
 
   // A method to get all the files to map
   async function getFiles(): Promise<void> {
     if (dev) console.log('getFiles: Get all the files in the database')
-    if (!$databaseImpl) return
+    if (!$databaseImpl) await loadImplementationDB()
     const getFilesRes = await $databaseImpl?.getFiles()
     if (getFilesRes) files = getFilesRes
   }
@@ -109,17 +98,19 @@
     if (dev) console.log('deleteFile: File has been deleted')
   }
 
-  async function reUploadFile(e: CustomEvent<FileUploadEventDetail>) {
+  // When choosing to delete the cache & upload the file with the same name again
+  async function reUploadFile(e: CustomEvent<FileUploadEventDetail>): Promise<void> {
     deleteFiles(e)
     uploadFile()
   }
 
+  // Update the columns to the correct name in a file
   async function updateFileColumns(e: CustomEvent<FileUpdatedColumnsEventDetail>) {
     file = e.detail.file
+    uploadFile()
   }
 
   $: {
-    // When the user changes, renew the files
     if ($user && $databaseImpl) getFiles()
   }
 </script>
@@ -141,15 +132,9 @@
   bind:this={fileInputDialog}
 />
 
-<ColumnsDialog
-  {missingColumns}
-  {currentColumns}
-  {file}
-  on:fileUpdateColumns={updateFileColumns}
-  bind:this={columnDialog}
-/>
+<ColumnsDialog {missing} {cols} {file} on:fileUpdateColumns={updateFileColumns} bind:this={columnDialog} />
 
-<AuthorsDialog bind:processing bind:chosenFile bind:this={authorsDialog} />
+<AuthorsDialog bind:processing bind:selected bind:this={authorsDialog} />
 
 <main class="files-screen">
   <section class="file-selection">
