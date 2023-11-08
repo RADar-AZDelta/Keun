@@ -18,12 +18,14 @@
     goto(`${base}/mapping?id=${id}`)
   }
 
-  async function downloadFiles(e: Event, id: string) {
+  // Send a request to the parent to download the files with corresponding id
+  async function downloadFiles(e: Event, id: string): Promise<void> {
     if (e && e.stopPropagation) e.stopPropagation()
     dispatch('downloadFiles', { id })
   }
 
-  async function deleteFiles(e: Event, id: string) {
+  // Send a request to the parent to delete the files with corresponding id
+  async function deleteFiles(e: Event, id: string): Promise<void> {
     if (e && e.stopPropagation) e.stopPropagation()
     dispatch('deleteFiles', { id })
   }
@@ -36,12 +38,8 @@
       <p class="file-name">{file.name}</p>
     </div>
     <div>
-      <button class="download-file" on:click={e => downloadFiles(e, file.id)}>
-        <SvgIcon id="download" />
-      </button>
-      <button class="delete-file" on:click={e => {deleteFiles(e, file.id)}}>
-        <SvgIcon id="x" />
-      </button>
+      <button class="download-file" on:click={e => downloadFiles(e, file.id)}><SvgIcon id="download" /></button>
+      <button class="delete-file" on:click={e => deleteFiles(e, file.id)}><SvgIcon id="x" /></button>
     </div>
   </button>
 {/each}

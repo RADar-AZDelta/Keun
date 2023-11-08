@@ -5,38 +5,38 @@
   import SvgIcon from '$lib/components/Extra/SvgIcon.svelte'
   import type { PageEvents } from '$lib/components/Types'
 
-  export let missingColumns: Record<string, string>, currentColumns: string[], file: File
+  export let missing: Record<string, string>, cols: string[], file: File
 
   const dispatch = createEventDispatcher<PageEvents>()
 
   let dialog: HTMLDialogElement
 
-  export async function showDialog() {
+  export async function showDialog(): Promise<void> {
     dialog.showModal()
   }
 
-  export async function closeDialog() {
+  export async function closeDialog(): Promise<void> {
     dialog.close()
   }
 
   // A method to rename the columns to get a standardized version of the file
-  function fileUploadWithColumnChanges(): void {
+  async function fileUploadWithColumnChanges(): Promise<void> {
     if (dev) console.log('fileUploadWithColumnChanges: The file is uploading and process the column changes')
     if (!$user) return console.error('fileUploadWithColumnChanges: There is no author name set.')
     // if (!($implementation === 'firebase' && $settings?.author?.roles?.includes('Admin')) && $databaseImpl) return
     var reader = new FileReader()
     reader.onload = processUpdatedColumns
-    reader.readAsText(file)
+    reader.readAsText(<Blob>file)
   }
 
   // Read the file and update the columns
-  function processUpdatedColumns(this: FileReader, ev: ProgressEvent<FileReader>): void {
+  async function processUpdatedColumns(this: FileReader, ev: ProgressEvent<FileReader>): Promise<void> {
     if (dev) console.log('processUpdatedColumns: Update the given columns to the expected columns')
     if (!ev.target?.result) return
     // Get the columns row of the file
     const fileContent = ev.target.result.toString()
     let columns = fileContent.substring(0, fileContent.indexOf('\n'))
-    for (let [newColumn, oldColumn] of Object.entries(missingColumns)) {
+    for (let [newColumn, oldColumn] of Object.entries(missing)) {
       // Replace the old columns with the standardized columns
       columns = columns.replace(oldColumn, newColumn)
     }
@@ -51,23 +51,19 @@
 
 <dialog bind:this={dialog} class="column-dialog">
   <div class="dialog-container">
-    <button class="close-dialog" on:click={closeDialog}>
-      <SvgIcon id="x" />
-    </button>
+    <button class="close-dialog" on:click={closeDialog}><SvgIcon id="x" /></button>
     <h1>Set columns</h1>
-    {#each Object.entries(missingColumns) as [newColumn, oldColumn]}
+    {#each Object.keys(missing) as newColumn, _}
       <div class="column-selection">
         <p>{newColumn} column:</p>
-        <select name={newColumn} id={newColumn} bind:value={missingColumns[newColumn]}>
-          {#if currentColumns}
-            {#each currentColumns as col}
-              {#if col.toLowerCase() == newColumn.toLowerCase()}
-                <option value={col} selected>{col}</option>
-              {:else}
-                <option value={col}>{col}</option>
-              {/if}
-            {/each}
-          {/if}
+        <select name={newColumn} id={newColumn} bind:value={missing[newColumn]}>
+          {#each cols as col}
+            {#if col.toLowerCase() === newColumn.toLowerCase()}
+              <option value={col} selected>{col}</option>
+            {:else}
+              <option value={col}>{col}</option>
+            {/if}
+          {/each}
         </select>
       </div>
     {/each}

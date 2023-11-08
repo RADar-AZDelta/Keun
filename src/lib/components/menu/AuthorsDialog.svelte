@@ -4,15 +4,15 @@
   import { loadImplementationDB } from '$lib/implementation'
   import SvgIcon from '$lib/components/Extra/SvgIcon.svelte'
 
-  export let processing: boolean, chosenFile: string
+  export let processing: boolean, selected: string
 
   let dialog: HTMLDialogElement, authorizedAuthors: string[]
 
-  export async function showDialog() {
+  export async function showDialog(): Promise<void> {
     dialog.showModal()
   }
 
-  export async function closeDialog() {
+  export async function closeDialog(): Promise<void> {
     dialog.close()
   }
 
@@ -39,7 +39,7 @@
                 <label class="option">
                   <input
                     type="checkbox"
-                    checked={info.files ? Object.values(info.files).includes(chosenFile) : false}
+                    checked={info.files ? Object.values(info.files).includes(selected) : false}
                     bind:group={authorizedAuthors}
                     value={uid}
                   />
@@ -51,7 +51,7 @@
         {/if}
       {/await}
     </ul>
-    <button on:click={() => editFile(chosenFile)}>Update</button>
+    <button on:click={() => editFile(selected)}>Update</button>
   </div>
 </dialog>
 

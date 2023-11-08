@@ -12,7 +12,7 @@ export interface IFileIdTemplate {
 export interface PageEvents {
   fileDrop: FileDropEventDetail
   fileUpload: FileUploadEventDetail
-  columnsDialogShow: void
+  columnsDialogShow: ColumnsDialogShowEventDetail
   checkForCache: CheckForCacheEventDetail
   fileUpdateColumns: FileUpdatedColumnsEventDetail
   downloadFiles: DownloadFilesEventDetail
@@ -22,6 +22,11 @@ export interface PageEvents {
 
 export type FileDropEventDetail = IFileTemplate
 export type FileUploadEventDetail = IFileIdTemplate
+export interface ColumnsDialogShowEventDetail {
+  missingColumns: Record<string, string>
+  currentColumns: string[]
+  file: File | undefined
+}
 export type CheckForCacheEventDetail = IFileTemplate
 export type FileUpdatedColumnsEventDetail = IFileTemplate
 export type DownloadFilesEventDetail = IFileIdTemplate
@@ -290,6 +295,7 @@ export interface IAuthImpl {
   logIn(name?: string): Promise<void>
   logOut(): Promise<void>
   getAuthor(): Promise<string | null | void>
+  
   getAllAuthors(): Promise<void | IUserRestriction>
 }
 

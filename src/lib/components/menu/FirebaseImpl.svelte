@@ -13,23 +13,25 @@
   const dispatch = createEventDispatcher<PageEvents>()
 
   // A method to send the user to the mappingtool
-  function openMappingTool(fileId: string): void {
+  async function openMappingTool(fileId: string): Promise<void> {
     if (dev) console.log('openMappingTool: Navigating to the mapping tool')
     $selectedFileId = fileId
     goto(`${base}/mapping?impl=firebase&id=${fileId}`)
   }
 
-  async function downloadFiles(e: Event, id: string) {
+  // Send a request to the parent to download the files with the corresponding id
+  async function downloadFiles(e: Event, id: string): Promise<void> {
     if (e && e.stopPropagation) e.stopPropagation()
     dispatch('downloadFiles', { id })
   }
 
-  async function deleteFiles(e: Event, id: string) {
+  // Send a request to the parent to delete the files with the corresponding id
+  async function deleteFiles(e: Event, id: string): Promise<void> {
     if (e && e.stopPropagation) e.stopPropagation()
     dispatch('deleteFiles', { id })
   }
 
-  // A method to select a file and open the authors dialog
+  // Send a request to the parent to be able to edit the rights of the file with corresponding id
   async function editRights(e: Event, id: string): Promise<void> {
     if (e && e.stopPropagation) e.stopPropagation()
     dispatch('editRights', { id })
@@ -45,12 +47,8 @@
       </div>
       {#if $user.roles?.includes('Admin')}
         <div>
-          <button class="download-file" on:click={e => downloadFiles(e, file.id)}>
-            <SvgIcon id="download" />
-          </button>
-          <button class="edit-file" on:click={e => {editRights(e, file.id)}}>
-            <SvgIcon id="edit" />
-          </button>
+          <button class="download-file" on:click={e => downloadFiles(e, file.id)}><SvgIcon id="download" /></button>
+          <button class="edit-file" on:click={e => editRights(e, file.id)}><SvgIcon id="edit" /></button>
           <button class="delete-file" on:click={e => deleteFiles(e, file.id)}><SvgIcon id="x" /></button>
         </div>
       {/if}

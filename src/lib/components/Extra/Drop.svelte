@@ -3,7 +3,7 @@
   import { createEventDispatcher } from 'svelte'
   import type { PageEvents } from '$lib/components/Types'
 
-  export let extensions: string[], readerMethod: any
+  export let extensions: string[]
 
   const dispatch = createEventDispatcher<PageEvents>()
 
@@ -11,8 +11,6 @@
   async function dropHandler(event: DragEvent): Promise<void> {
     if (dev) console.log('dropHandler: A file has been dropped in the drag and drop area')
     event.preventDefault()
-    const reader = new FileReader()
-    reader.onload = readerMethod
     if (!event.dataTransfer?.items) return
     if (event.dataTransfer.items.length > 1) return alert('Only drop one file')
     const item = event.dataTransfer.items[0]
@@ -23,7 +21,6 @@
     // Check if the extension is allowed, check the file for missing columns
     if (!extension || !extensions.includes(extension) || !f) return alert('The file is not allowed')
     dispatch('fileDrop', { file: f })
-    reader.readAsText(f)
   }
 </script>
 
