@@ -55,6 +55,10 @@
     background-color: inherit;
   }
 
+  .file-card:hover, .file-card:focus {
+    background-color: lightgray;
+  }
+
   .file-name-container {
     display: flex;
     align-items: center;

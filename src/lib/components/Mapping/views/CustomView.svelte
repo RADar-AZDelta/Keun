@@ -1,5 +1,3 @@
-<!-- Copyright 2023 RADar-AZDelta -->
-<!-- SPDX-License-Identifier: gpl3+ -->
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
   import DataTable from '@radar-azdelta/svelte-datatable'
@@ -61,9 +59,7 @@
   {#if errorMessage}
     <div class="errormessage">
       <p>{errorMessage}</p>
-      <button class="errormessage-button" on:click={deleteError}>
-        <SvgIcon href="/icons.svg" id="x" width="16px" height="16px" />
-      </button>
+      <button class="errormessage-button" on:click={deleteError}><SvgIcon id="x" /></button>
     </div>
   {/if}
 </div>

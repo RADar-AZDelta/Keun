@@ -22,9 +22,9 @@
 </script>
 
 <main>
-  <header data-name="header">
+  <header class="header">
     <Header />
-    <ul data-name="page-nav">
+    <ul class="page-nav">
       {#if $page.url.pathname !== '/' && $page.url.pathname !== '/Keun'}
         <li><a href="{base}/">File selection</a></li>
       {/if}
@@ -33,7 +33,7 @@
       {/if}
     </ul>
     {#if $page.url.pathname.substring($page.url.pathname.lastIndexOf('/')) !== 'registration'}
-      <div data-name="header-buttons-container" id="settings">
+      <div class="header-buttons-container" id="settings">
         <Manual />
         {#if $settings}
           <Settings />
@@ -44,3 +44,37 @@
   </header>
   <slot />
 </main>
+
+<style>
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1rem;
+  }
+
+  .page-nav {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  a {
+    text-decoration: none;
+    font-weight: 500;
+    color: #454545;
+  }
+
+  a:hover,
+  a:focus {
+    font-weight: 600;
+    color: #0070a0;
+  }
+
+  .header-buttons-container {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+</style>
