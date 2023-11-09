@@ -215,7 +215,7 @@
       filter = await translate(filter)
     }
     if (signal.aborted) return
-    const url = encodeURI(mappingUrl + '&page=1&pageSize=1&standardConcept=Standard')
+    const url = encodeURI(mappingUrl + `&page=1&pageSize=1&standardConcept=Standard&query=${filter}`)
     // Get the first result of the Athena API call
     const conceptsResult = await fetch(url)
     const conceptsData = await conceptsResult.json()
@@ -494,6 +494,7 @@
       {selectedRowIndex}
       mainTable={dataTableMapping}
       customTable={dataTableCustomConcepts}
+      bind:globalAthenaFilter
       on:singleMapping={singleMapping}
       on:multipleMapping={multipleMapping}
       on:rowChange={navigateRow}
