@@ -33,12 +33,13 @@
   // A method to throw an event to the parent to approve a row
   async function approveRow(): Promise<void> {
     if (!$user) return
-    if ($user.name === renderedRow.statusSetBy) return
     const currentState = renderedRow.mappingStatus
+    if ($user.name === renderedRow.statusSetBy && (currentState === 'SEMI-APPROVED' || currentState === 'APPROVED'))
+      return
     let update: Record<string, any> = {}
     if (currentState === 'SEMI-APPROVED')
       update = { 'ADD_INFO:approvedBy': $user.name, 'ADD_INFO:approvedOn': Date.now(), mappingStatus: 'APPROVED' }
-    else if (currentState !== 'SEMI-APPROVED' || currentState !== 'APPROVED')
+    else if (currentState !== 'SEMI-APPROVED' && currentState !== 'APPROVED')
       update = {
         statusSetBy: $user.name,
         statusSetOn: Date.now(),
@@ -73,7 +74,8 @@
   // A method to throw an event to the parent to delete a row
   async function deleteRow(): Promise<void> {
     // If there are not multiple concepts mapped to this row, reset the row, otherwise you can delete the row
-    if (renderedRow['ADD_INFO:numberOfConcepts'] <= 1) await table.updateRows(new Map([[index, await resetRow()]]))
+    const conceptsNumber = renderedRow['ADD_INFO:numberOfConcepts']
+    if (conceptsNumber < 2 || !conceptsNumber) return await table.updateRows(new Map([[index, await resetRow()]]))
     const existanceQuery = (<Query>query().params({ source: renderedRow.soruceCode }))
       .filter((r: any, params: any) => r.sourceCode === params.source)
       .toObject()

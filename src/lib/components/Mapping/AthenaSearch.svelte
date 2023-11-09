@@ -25,7 +25,11 @@
     UpdateDetailsEventDetail,
   } from '$lib/components/Types'
 
-  export let selectedRow: Record<string, any>, selectedRowIndex: number, mainTable: DataTable, customTable: DataTable
+  export let selectedRow: Record<string, any>,
+    selectedRowIndex: number,
+    mainTable: DataTable,
+    customTable: DataTable,
+    globalAthenaFilter: { column: string; filter: string | undefined }
 
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
   const views: IView[] = [
@@ -189,6 +193,7 @@
     if ($settings.mapToMultipleConcepts) multipleMapping(renderedRow)
     else singleMapping(renderedRow)
     setVocabularyId()
+    selectedRow.conceptId = renderedRow.id
   }
 
   ///////////////////////////// CUSTOM INPUT ROW METHODS /////////////////////////////
@@ -259,9 +264,9 @@
   <div class="dialog-container" use:clickOutside on:outClick={closeDialog}>
     <button class="close-dialog" on:click={closeDialog}><SvgIcon id="x" /></button>
     <section class="search-container">
-      <Search {views}>
+      <Search {views} bind:globalFilter={globalAthenaFilter} >
         <div slot="action-athena" let:renderedRow>
-          {#if mappedData.find(con => con.conceptId === renderedRow.conceptId)}
+          {#if selectedRow.conceptId === renderedRow.id}
             <button title="Map to row" style="background-color: greenyellow;"><SvgIcon id="check" /></button>
           {:else}
             <button on:click={() => onClickMapping(renderedRow)}><SvgIcon id="plus" /></button>

@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@radar-azdelta/svelte-athena-search':
-        specifier: ^0.0.16
-        version: 0.0.16(vite@4.3.9)
+        specifier: ^0.0.17
+        version: 0.0.17(vite@4.3.9)
       '@radar-azdelta/svelte-datatable':
         specifier: ^0.0.48
         version: 0.0.48
@@ -1142,8 +1142,8 @@ packages:
     resolution: {integrity: sha512-Vvn3zZrhQZkkBE8LSuW3em98c0FwgO4nxzv6OdSxPKJIEKY2bGbHn+mhGIPerzI4twdxaP8/0+06HBpwf345Lw==}
     dev: false
 
-  /@radar-azdelta/svelte-athena-search@0.0.16(vite@4.3.9):
-    resolution: {integrity: sha512-iPsCwGk3bgW5W4nnKFbxAMrDb1upMmCAna4npGIgbKbZs0z/DFhnLHxyXv/MU2Fva7qr1natAY+/UU8/oxTilA==}
+  /@radar-azdelta/svelte-athena-search@0.0.17(vite@4.3.9):
+    resolution: {integrity: sha512-tYD2Py19UhKqhmLUg/it8kMSotuh9MEJ+3nFZ/5Umo0K4/B1m/FVG97/G3JLitMrgyuvf7IPdmXISvqLDe86yA==}
     dependencies:
       '@radar-azdelta/svelte-datatable': 0.0.48
       '@sveltejs/kit': 1.27.3(svelte@4.2.2)(vite@4.3.9)
@@ -1357,8 +1357,8 @@ packages:
   /@types/cookie@0.5.1:
     resolution: {integrity: sha512-COUnqfB2+ckwXXSFInsFdOAWQzCCx+a5hq2ruyj+Vjund94RJQd4LG2u9hnvJrTgunKAaax7ancBYlDrNYxA0g==}
 
-  /@types/estree@1.0.4:
-    resolution: {integrity: sha512-2JwWnHK9H+wUZNorf2Zr6ves96WHoWDJIftkcxPKsS7Djta6Zu519LarhRNljPXkpsZR2ZMwNCPeW7omW07BJw==}
+  /@types/estree@1.0.5:
+    resolution: {integrity: sha512-/kYRxGDLWzHOB7q+wtSUQlFrtcdUccpfy+X+9iMBpHK8QLLhx2wIPYuS5DYtR9Wa/YlZAbIovy7qVdB1Aq6Lyw==}
     dev: false
 
   /@types/express-serve-static-core@4.17.35:
@@ -2027,7 +2027,7 @@ packages:
     resolution: {integrity: sha512-7qJWqItLA8/VPVlKJlFXU+NBlo/qyfs39aJcuMT/2ere32ZqvF5OSxgdM5xOfJJ7O429gg2HM47y8v9P+9wrNw==}
     dependencies:
       '@jridgewell/sourcemap-codec': 1.4.15
-      '@types/estree': 1.0.4
+      '@types/estree': 1.0.5
       acorn: 8.11.2
       estree-walker: 3.0.3
       periscopic: 3.1.0
@@ -2439,7 +2439,7 @@ packages:
   /estree-walker@3.0.3:
     resolution: {integrity: sha512-7RUKfXgSMMkzt6ZuXmqapOurLGPPfgj6l9uRZ7lRGolvk0y2yocc35LdcxKC5PQZdn2DMqioAQ2NoWcrTKmm6g==}
     dependencies:
-      '@types/estree': 1.0.4
+      '@types/estree': 1.0.5
     dev: false
 
   /esutils@2.0.3:
@@ -2941,7 +2941,7 @@ packages:
   /is-reference@3.0.2:
     resolution: {integrity: sha512-v3rht/LgVcsdZa3O2Nqs+NMowLOxeOm7Ay9+/ARQ2F+qEoANRcqrjAZKGN0v8ymUetZGgkp26LTnGT7H0Qo9Pg==}
     dependencies:
-      '@types/estree': 1.0.4
+      '@types/estree': 1.0.5
     dev: false
 
   /is-stream-ended@0.1.4:
@@ -3561,7 +3561,7 @@ packages:
   /periscopic@3.1.0:
     resolution: {integrity: sha512-vKiQ8RRtkl9P+r/+oefh25C3fhybptkHKCZSPlcXiJux2tJF55GnEj3BVn4A5gKfq9NWWXXrxkHBwVPUfH0opw==}
     dependencies:
-      '@types/estree': 1.0.4
+      '@types/estree': 1.0.5
       estree-walker: 3.0.3
       is-reference: 3.0.2
     dev: false
