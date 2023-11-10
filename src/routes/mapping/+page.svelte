@@ -18,7 +18,7 @@
   import columnsCustomConcept from '$lib/data/columnsCustomConcept.json'
   import AthenaSearch from '$lib/components/Mapping/AthenaSearch.svelte'
   import UsagiRow from '$lib/components/Mapping/UsagiRow.svelte'
-  import type { ITablePagination, IMapRow } from '$lib/components/Types'
+  import type { ITablePagination, IMapRow, NavigateRowEventDetail } from '$lib/components/Types'
   import { fillInAdditionalFields } from '$lib/mappingUtils/utils'
   import type {
     MappingEventDetail,
@@ -30,15 +30,17 @@
   // General variables
   let file: File | undefined = undefined,
     customConceptsFile: File | undefined = undefined,
-    tableOptions: ITableOptions = {
-      id: $selectedFileId,
-      rowsPerPage: 15,
-      rowsPerPageOptions: [5, 10, 15, 20, 50, 100],
-      actionColumn: true,
-      paginationOnTop: true,
-    },
     customTableOptions: ITableOptions = { id: 'customConceptsTable', saveOptions: false },
     disabled: boolean = false
+
+  let tableOptions: ITableOptions = {
+    id: $page.url.searchParams.get('id') ? $page.url.searchParams.get('id')! : '',
+    rowsPerPage: 15,
+    rowsPerPageOptions: [5, 10, 15, 20, 50, 70, 100],
+    actionColumn: true,
+    paginationOnTop: true,
+    saveOptions: false,
+  }
 
   let search: SvelteComponent
 
@@ -82,8 +84,12 @@
     // Add extra information like the number of concepts mapped for this row, and the last typed filter to the row
     if (!mappedRow['ADD_INFO:numberOfConcepts']) mappedRow['ADD_INFO:numberOfConcepts'] = 1
     mappedRow['ADD_INFO:lastAthenaFilter'] = lastTypedFilter
-    mappedRow['comment'] = event.detail.extra.comment
-    mappedRow['assignedReviewer'] = event.detail.extra.reviewer
+    mappedRow.comment = event.detail.extra.comment
+    mappedRow.assignedReviewer = event.detail.extra.reviewer
+    mappedRow.statusSetBy = $user.name
+    mappedRow.statusSetOn = Date.now()
+    mappedRow.mappingStatus = 'SEMI-APPROVED'
+
     // Update the selected row to the updated row
     await dataTableMapping.updateRows(new Map([[mappedIndex, mappedRow]]))
   }
@@ -100,6 +106,7 @@
     const update = {
       mappingStatus: 'SEMI-APPROVED',
       statusSetBy: author,
+      statusSetOn: Date.now(),
       'ADD_INFO:lastAthenaFilter': lastTypedFilter,
       'ADD_INFO:numberOfConcepts': 1,
       comment: event.detail.extra.comment,
@@ -122,28 +129,12 @@
     }
   }
 
-  // When the arrow button in the Athena pop-up is clicked to navigate to a different row
-  async function navigateRow(event: CustomEvent<RowChangeEventDetail>): Promise<void> {
-    let pag: ITablePagination = await dataTableMapping.getTablePagination()
-    if (!pag.currentPage || !pag.rowsPerPage) return
-    const currentRow = event.detail.currentRow
-    const indexParams = <Query>query().params({
-      code: currentRow.sourceCode,
-      name: currentRow.sourceName,
-      concept: currentRow.conceptName === 'Unmapped' ? undefined : currentRow.conceptName,
-    })
-    const indexQuery = indexParams
-      .filter((r: any, p: any) => r.sourceCode === p.code && r.sourceName === p.name && r.conceptName === p.concept)
-      .toObject()
-    const row = await dataTableMapping.executeQueryAndReturnResults(indexQuery)
-    const index = row.indices[0]
-    if (!pag.totalRows) return
-    if (event.detail.up && index + 1 < pag.totalRows) selectedRowIndex = index === pag.totalRows - 1 ? index : index + 1
-    else if (!event.detail.up && index - 1 >= 0) selectedRowIndex = index === 0 ? index : index - 1
-    selectedRow = await dataTableMapping.getFullRow(selectedRowIndex)
+  async function navigateRow(event: CustomEvent<NavigateRowEventDetail>) {
+    const { row, index } = event.detail
+    selectedRowIndex = index
+    selectedRow = row
     const translation = await translate(selectedRow.sourceName)
     globalAthenaFilter.filter = typeof translation == 'string' ? translation : selectedRow.sourceName
-    changePagination(event.detail.up, selectedRowIndex, pag)
   }
 
   // When the button to automap a single row is clicked, automap the row
@@ -195,9 +186,12 @@
   async function changePagination(up: boolean, index: number, pagination: ITablePagination): Promise<void> {
     // When the index exceeds the number of rows per page, go to the next page or go to the previous page
     if (!index || !pagination.currentPage || !pagination.rowsPerPage) return
+    // TODO: check if sorted backwards --> the page change is different then
     const rpp = pagination.rowsPerPage
     const cur = pagination.currentPage
-    const newPage = up && index % rpp === 0 ? cur + 1 : !up && (index + 1) % rpp === 0 ? cur - 1 : previousPage
+    let newPage: number = previousPage
+    if (up && index % rpp === 0) newPage = cur + 1
+    else if (!up && (index + 1) % rpp === 0) newPage = cur - 1
     if (newPage === previousPage) return
     if (dev) console.log('changePagination: change pagination to ', newPage)
     dataTableMapping.changePagination({ currentPage: newPage })
@@ -497,7 +491,7 @@
       bind:globalAthenaFilter
       on:singleMapping={singleMapping}
       on:multipleMapping={multipleMapping}
-      on:rowChange={navigateRow}
+      on:navigateRow={navigateRow}
       bind:this={search}
     />
   {/if}

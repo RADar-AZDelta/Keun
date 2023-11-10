@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
+  import { settings } from '$lib/store'
   import { reformatDate } from '$lib/utils'
   import AutocompleteInput from '$lib/components/Extra/AutocompleteInput.svelte'
   import SvgIcon from '$lib/components/Extra/SvgIcon.svelte'
@@ -19,16 +20,11 @@
   let mappedButton: boolean = false
 
   async function saveToRow(e: CustomEvent<any>) {
-    inputRow[e.detail.id] = e.detail.value
-  }
-
-  function convertResult(): void {
-    for (let item of Object.entries(inputRow)) convertedRow[item[0]] = item[1].value
-    dispatch('customMappingInput', { row: convertedRow })
+    inputRow[e.detail.id].value = e.detail.value
   }
 
   async function onClickMapping() {
-    const validated = await validateInputs(inputRow.domain_id, inputRow.concept_class_id)
+    const validated = await validateInputs(inputRow['domain_id'].value, inputRow['concept_class_id'].value)
     if (!validated) return
     mapped = {
       conceptId: '0',
@@ -43,7 +39,8 @@
       invalidReason: '',
     }
     mappedButton = true
-    convertResult()
+    for (let item of Object.entries(inputRow)) convertedRow[item[0]] = item[1].value
+    dispatch('customMappingInput', { row: convertedRow })
   }
 
   async function validateInputs(domain: string, conceptClassId: string) {
@@ -62,12 +59,22 @@
     }
     return true
   }
+
+  async function setDefaults() {
+    inputRow['concept_code'].value = selectedRow.sourceCode
+    inputRow['vocabulary_id'].value = $settings.vocabularyIdCustomConcept
+    inputRow['concept_id'].value = '0'
+    inputRow['valid_start_date'].value = reformatDate()
+    inputRow['valid_end_date'].value = '2099-12-31'
+  }
+
+  setDefaults()
 </script>
 
 {#if columns}
-  {#if originalIndex == 0}
+  {#if originalIndex === 0}
     <td>
-      {#if mappedButton}
+      {#if !mappedButton}
         <button on:click={onClickMapping}><SvgIcon id="plus" /></button>
       {:else}
         <button style="background-color: greenyellow;"><SvgIcon id="check" /></button>
@@ -79,7 +86,7 @@
   {#each columns || [] as column (column.id)}
     <td>
       <div class="cell-container">
-        {#if inputRow[column.id].inputAvailable}
+        {#if inputRow[column.id].inputAvailable && originalIndex === 0}
           {#if inputRow[column.id].suggestions}
             <AutocompleteInput
               id={column.id}

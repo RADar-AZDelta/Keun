@@ -4,6 +4,7 @@
   import { abortAutoMapping, settings, triggerAutoMapping } from '$lib/store'
 
   let savedAutomapping: boolean,
+    possibleOutclick: boolean,
     settingsDialog: HTMLDialogElement,
     languages: Record<string, string> = {
       nl: 'Dutch',
@@ -15,23 +16,23 @@
     }
 
   // A method to close the dialog if it was opened
-  function closeDialog(): void {
-    if (settingsDialog.attributes.getNamedItem('open') !== null) settingsDialog.close()
+  async function closeDialog(): Promise<void> {
+    settingsDialog.close()
   }
 
   // A method to open the dialog if it was closed
-  function openDialog(): void {
+  async function openDialog(): Promise<void> {
     savedAutomapping = $settings.autoMap
-    if (settingsDialog.attributes.getNamedItem('open') === null) settingsDialog.showModal()
+    settingsDialog.showModal()
+    possibleOutclick = true
   }
 
   // A method to set the settings in the localstorage
   async function saveSettings(): Promise<void> {
-    if (settingsDialog.attributes.getNamedItem('open')) return
-    $settings.fontsize = $settings.fontsize > 16 ? 16 : $settings.fontsize < 8 ? 8 : $settings.fontsize
-    document.documentElement.style.setProperty('--font-size', `${$settings.fontsize}px`)
-    document.documentElement.style.setProperty('--font-number', `${$settings.fontsize}`)
-    if ($settings.autoMap && savedAutomapping !== $settings.autoMap) triggerAutoMapping.set(true)
+    if ($settings.autoMap && savedAutomapping !== $settings.autoMap) {
+      triggerAutoMapping.set(true)
+      savedAutomapping = true
+    }
   }
 
   async function abort(): Promise<void> {
@@ -39,8 +40,10 @@
   }
 
   async function outClick() {
+    if (!possibleOutclick) return
     saveSettings()
     closeDialog()
+    possibleOutclick = false
   }
 
   async function changeAutoMapping() {
@@ -62,8 +65,13 @@
           <div class="option">
             <p>Map to multiple concepts?</p>
             <div class="switch">
-              <input id="MultipleConcepts" type="checkbox" bind:checked={$settings.mapToMultipleConcepts} />
-              <label for="MultipleConcepts" />
+              <input
+                class="switch-input"
+                id="MultipleConcepts"
+                type="checkbox"
+                bind:checked={$settings.mapToMultipleConcepts}
+              />
+              <label class="switch-label" for="MultipleConcepts" />
             </div>
           </div>
           <div class="option">
@@ -90,10 +98,6 @@
           <div class="option">
             <p>Default vocabulary ID for custom concepts</p>
             <input type="text" placeholder="local ID e.g. AZDELTA" bind:value={$settings.vocabularyIdCustomConcept} />
-          </div>
-          <div class="option">
-            <p>Font size</p>
-            <input type="number" bind:value={$settings.fontsize} min="8" max="16" />
           </div>
         </div>
       </section>

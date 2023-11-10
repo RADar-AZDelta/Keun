@@ -4,18 +4,27 @@
   import { beforeNavigate } from '$app/navigation'
   import '@radar-azdelta/svelte-datatable/styles/data-table.scss'
   import '$lib/styles/table.scss'
-  import { authImplementation, settings, user } from '$lib/store'
+  import { authImplementation, settings, settingsImpl, user } from '$lib/store'
   import Header from '$lib/components/Extra/Header.svelte'
   import Manual from '$lib/components/Extra/Manual.svelte'
   import Settings from '$lib/components/Extra/Settings.svelte'
   import User from '$lib/components/Extra/User.svelte'
+  import { loadImplementationSettings } from '$lib/implementation'
+  import { onMount } from 'svelte'
 
   // TODO: set up Firebase project for internal use in AZD (Firebase impl)
   // TODO: set up SQLite impl for reference for other hospitals
 
   beforeNavigate(async ({ from, to, cancel }): Promise<void> => {
-    // TODO: check this to sync the settings on navigation
+    if (!$settingsImpl) loadImplementationSettings()
+    $settingsImpl?.updateSettings($settings)
     // await $implementationClass.syncSettings('write')
+  })
+
+  onMount(async () => {
+    if (!$settingsImpl) await loadImplementationSettings()
+    const storedSettings = await $settingsImpl?.getSettings()
+    if (storedSettings) $settings = storedSettings
   })
 </script>
 

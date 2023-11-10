@@ -1,5 +1,5 @@
 import type { deleteFileStorage } from '$lib/firebase'
-import { IDataTypeFunctionalities, type ICustomStoreOptions } from '@radar-azdelta/svelte-datatable/components/DataTable'
+import { IDataTypeFunctionalities, type ICustomStoreOptions, type IPagination } from '@radar-azdelta/svelte-datatable/components/DataTable'
 
 export interface IFileTemplate {
   file: File
@@ -82,6 +82,7 @@ export interface CustomOptionsEvents {
   deleteRow: DeleteRowEventDetail
   deleteRowInnerMapping: DeleteRowInnerMappingEventDetail
   rowChange: RowChangeEventDetail
+  navigateRow: NavigateRowEventDetail
   reviewerChanged: ReviewerChangedEventDetail
   updateUniqueConceptIds: UpdateUniqueConceptIdsEventDetail
   customMapping: CustomMappingEventDetail
@@ -127,6 +128,11 @@ export interface DeleteRowInnerMappingEventDetail {
 export interface RowChangeEventDetail {
   up: boolean
   currentRow: Record<string, any>
+}
+
+export interface NavigateRowEventDetail {
+  row: Record<string, any>
+  index: number
 }
 
 export interface ReviewerChangedEventDetail {
@@ -200,7 +206,6 @@ export interface ISettings {
   language: string
   savedAuthors: string[]
   vocabularyIdCustomConcept: string
-  fontsize: number
   popupSidesShowed: ISides
 }
 
@@ -340,5 +345,5 @@ export interface IAuthImpl {
 
 export interface ISettingsImpl {
   getSettings(): Promise<ISettings>
-  updateSettings(settings: ISettings): Promise<ISettings>
+  updateSettings(settings: ISettings): Promise<void>
 }
