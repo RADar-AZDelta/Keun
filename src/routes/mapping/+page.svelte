@@ -22,8 +22,8 @@
   import columnsCustomConcept from '$lib/data/columnsCustomConcept.json'
   import AthenaSearch from '$lib/components/mapping/AthenaSearch.svelte'
   import UsagiRow from '$lib/components/mapping/UsagiRow.svelte'
-  import type { IMapRow, NavigateRowEventDetail } from '$lib/components/Types'
-  import { fillInAdditionalFields } from '$lib/mappingUtils'
+  import type { IAthenaRow, IMapRow, IUsagiRow, NavigateRowEventDetail } from '$lib/components/Types'
+  import { addExtraFields } from '$lib/mappingUtils'
   import type { MappingEventDetail, AutoMapRowEventDetail, RowSelectionEventDetail } from '$lib/components/Types'
 
   // General variables
@@ -53,7 +53,7 @@
   // Table related variables
   let tableInit: boolean = false,
     currentVisibleRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>(),
-    selectedRow: Record<string, any>,
+    selectedRow: IUsagiRow,
     selectedRowIndex: number,
     previousPage: number
 
@@ -63,11 +63,6 @@
 
   let dataTableMapping: DataTable,
     dataTableCustomConcepts: DataTable,
-    importantAthenaColumns = new Map<string, string>([
-      ['id', 'conceptId'],
-      ['name', 'conceptName'],
-      ['domain', 'domainId'],
-    ]),
     autoMappingAbortController: AbortController,
     autoMappingPromise: Promise<void> | undefined
 
@@ -79,10 +74,10 @@
   async function singleMapping(event: CustomEvent<MappingEventDetail>): Promise<void> {
     if (dev) console.log('singleMapping: Single mapping for the row with sourceCode ', selectedRow.sourceCode)
     // Map the selected row with the selected concept
-    const { mappedIndex, mappedRow } = await rowMapping(event.detail.originalRow!, event.detail.row)
+    const { mappedIndex, mappedRow } = await rowMapping(event.detail.originalRow, event.detail.row)
     // Add extra information like the number of concepts mapped for this row, and the last typed filter to the row
     if (!mappedRow['ADD_INFO:numberOfConcepts']) mappedRow['ADD_INFO:numberOfConcepts'] = 1
-    mappedRow['ADD_INFO:lastAthenaFilter'] = lastTypedFilter
+    mappedRow['ADD_INFO:lastAthenaFilter'] = lastTypedFilter ? lastTypedFilter : null
     mappedRow.comment = event.detail.extra.comment
     mappedRow.assignedReviewer = event.detail.extra.reviewer
     mappedRow.statusSetBy = $user.name
@@ -106,7 +101,7 @@
       mappingStatus: 'SEMI-APPROVED',
       statusSetBy: author,
       statusSetOn: Date.now(),
-      'ADD_INFO:lastAthenaFilter': lastTypedFilter,
+      'ADD_INFO:lastAthenaFilter': lastTypedFilter ? lastTypedFilter : null,
       'ADD_INFO:numberOfConcepts': 1,
       comment: event.detail.extra.comment,
       assignedReviewer: event.detail.extra.reviewer,
@@ -144,7 +139,7 @@
     const signal = autoMappingAbortController.signal
     autoMappingPromise = new Promise(async (resolve, reject): Promise<void> => {
       const row = await dataTableMapping.getFullRow(event.detail.index)
-      await autoMapRow(signal, row, event.detail.index)
+      await autoMapRow(signal, row as IUsagiRow, event.detail.index)
     })
   }
 
@@ -182,14 +177,15 @@
   }
 
   // A method to automatically map a given row
-  async function autoMapRow(signal: AbortSignal, row: Record<string, any>, index: number): Promise<void> {
+  async function autoMapRow(signal: AbortSignal, row: IUsagiRow, index: number): Promise<void> {
     if (dev) console.log('autoMapRow: Start automapping row with index ', index)
     if (signal.aborted) return
     let filter = row.sourceName
     // Check the language set in the $settings and translate the filter to English if it's not English
     if ($settings) {
       if (!$settings.language) $settings.language = 'en'
-      filter = await translate(filter)
+      const translated = await translate(filter)
+      if (translated) filter = translated
     }
     if (signal.aborted) return
     const url = encodeURI(mappingUrl + `&page=1&pageSize=1&standardConcept=Standard&query=${filter}`)
@@ -200,7 +196,7 @@
     // Map the row with the first result
     const { mappedIndex, mappedRow } = await rowMapping(row, conceptsData.content[0], true, index)
     mappedRow['ADD_INFO:numberOfConcepts'] = row['ADD_INFO:numberOfConcepts']
-    mappedRow['ADD_INFO:lastAthenaFilter'] = filter
+    mappedRow['ADD_INFO:lastAthenaFilter'] = filter ? filter : null
     if (signal.aborted) return
     await dataTableMapping.updateRows(new Map([[mappedIndex, mappedRow]]))
     if (dev) console.log('autoMapRow: Finished automapping row with index ', index)
@@ -208,21 +204,20 @@
 
   // A method to map a certain row to a given Athena concept
   async function rowMapping(
-    usagiRow: Record<string, any>,
-    athenaRow: Record<string, any>,
+    usagiRow: IUsagiRow,
+    athenaRow: IAthenaRow,
     autoMap = false,
     index?: number
   ): Promise<IMapRow> {
     let rowIndex: number = index ? index : selectedRowIndex
     if (dev) console.log('rowMapping: Start mapping row with index ', rowIndex)
-    let mappedUsagiRow: Record<string, any> = usagiRow
+    let mappedUsagiRow: IUsagiRow = usagiRow
     if (!mappedUsagiRow) return { mappedIndex: rowIndex, mappedRow: mappedUsagiRow }
     // Map the import columns that are given from Athena
-    for (let [name, alt] of importantAthenaColumns) {
-      if (name === 'id' && autoMap) mappedUsagiRow['sourceAutoAssignedConceptIds'] = athenaRow[name]
-      else mappedUsagiRow[alt] = athenaRow[name]
-    }
-    mappedUsagiRow = await fillInAdditionalFields(mappedUsagiRow, usagiRow, autoMap)
+    mappedUsagiRow.conceptId = athenaRow.id
+    mappedUsagiRow.conceptName = athenaRow.name
+    mappedUsagiRow.domainId = athenaRow.domain
+    mappedUsagiRow = await addExtraFields(mappedUsagiRow, autoMap)
     if (dev) console.log('rowMapping: Finished mapping row with index ', rowIndex)
     return { mappedIndex: rowIndex, mappedRow: mappedUsagiRow }
   }
@@ -301,7 +296,6 @@
   // Sync the file with the database implementation & download it from the implementation
   async function downloadPage(): Promise<void> {
     const blob = await dataTableMapping.getBlob()
-    console.log('BLOB ', blob)
     const customBlob = dataTableCustomConcepts ? await dataTableCustomConcepts.getBlob() : undefined
     if (!$databaseImpl) await loadImplementationDB()
     await $databaseImpl!.editFile($selectedFileId, blob, customBlob)
@@ -438,6 +432,13 @@
     content="Keun is a mapping tool to map concepts to OMOP concepts. It's a web based modern variant of Usagi."
   />
 </svelte:head>
+
+<button on:click={async() => {
+  const row = await dataTableMapping.getFullRow(1)
+  console.log(row)
+  }}>
+  See
+</button>
 
 {#if file}
   <DataTable

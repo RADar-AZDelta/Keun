@@ -29,7 +29,6 @@ export default class LocalImpl implements IUpdatedFunctionalityImpl {
     if (dev) console.log(`getFiles: Get files in IndexedDB`)
     await this.openDatabase()
     const files = await this.db!.getAll(true)
-    console.log("FILES FOUND ", files)
     return files
   }
 
@@ -59,7 +58,6 @@ export default class LocalImpl implements IUpdatedFunctionalityImpl {
     const fileInfo: IFile | undefined = await this.db?.get(id, true)
     if (!fileInfo) return console.error(`editFile: No file found with id ${id}`)
     const fileString = await blobToString(blob)
-    console.log("FILESTRING ", fileString, " AND BLOB ", blob)
     const fileContent: IFile = { id, name: fileInfo.name, authors: [], version: fileInfo.version++, content: fileString }
     await this.db?.set(fileContent, id, true)
     if (!customBlob) return

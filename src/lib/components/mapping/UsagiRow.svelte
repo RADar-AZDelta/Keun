@@ -9,7 +9,7 @@
   import type DataTable from '@radar-azdelta/svelte-datatable'
   import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
   import type Query from 'arquero/dist/types/query/query'
-  import type { MappingEvents } from '$lib/components/Types'
+  import type { IUsagiRow, MappingEvents } from '$lib/components/Types'
 
   export let renderedRow: Record<string, any>,
     columns: IColumnMetaData[] | undefined,
@@ -27,7 +27,7 @@
   // Send a request to the parent that a row is selected to map
   async function mapRow(): Promise<void> {
     if (dev) console.log(`mapRow: ${index}`)
-    dispatch('rowSelection', { row: renderedRow, index })
+    dispatch('rowSelection', { row: renderedRow as IUsagiRow, index })
   }
 
   // A method to throw an event to the parent to approve a row
@@ -36,7 +36,7 @@
     const currentState = renderedRow.mappingStatus
     if ($user.name === renderedRow.statusSetBy && (currentState === 'SEMI-APPROVED' || currentState === 'APPROVED'))
       return
-    let update: Record<string, any> = {}
+    let update = {}
     if (currentState === 'SEMI-APPROVED')
       update = { 'ADD_INFO:approvedBy': $user.name, 'ADD_INFO:approvedOn': Date.now(), mappingStatus: 'APPROVED' }
     else if (currentState !== 'SEMI-APPROVED' && currentState !== 'APPROVED')
@@ -130,7 +130,7 @@
     <button on:click={mapRow} title="Map" {disabled}><SvgIcon id="search" width="10px" height="10px" /></button>
     <button on:click={deleteRow} title="Delete" {disabled}><SvgIcon id="eraser" width="10px" height="10px" /></button>
     <button on:click={onClickAutoMap} title="Automap" {disabled}>AUTO</button>
-    <p>{renderedRow['ADD_INFO:numberOfConcepts'] > 1 ? renderedRow['ADD_INFO:numberOfConcepts'] : ''}</p>
+    <p>{renderedRow['ADD_INFO:numberOfConcepts'] ?? 0 > 1 ? renderedRow['ADD_INFO:numberOfConcepts'] : ''}</p>
     <button on:click={approveRow} title="Approve" {disabled}><SvgIcon id="check" width="10px" height="10px" /></button>
     <button on:click={flagRow} title="Flag" {disabled}><SvgIcon id="flag" width="10px" height="10px" /></button>
     <button on:click={unapproveRow} title="Unapprove" {disabled}><SvgIcon id="x" width="10px" height="10px" /></button>

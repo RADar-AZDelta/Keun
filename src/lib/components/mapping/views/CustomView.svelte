@@ -3,16 +3,24 @@
   import DataTable, { type ITableOptions } from '@radar-azdelta/svelte-datatable'
   import { reformatDate } from '$lib/utils'
   import customColumns from '$lib/data/columnsCustomConcept.json'
-  import suggestions from '$lib/data/customConceptInfo.json'
-  import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
   import InputRow from '$lib/components/mapping/views/InputRow.svelte'
-  import type { CustomMappingInputEventDetail, MappingEvents, UpdateErrorEventDetail } from '$lib/components/Types'
+  import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
+  import type {
+    CustomMappingInputEventDetail,
+    ICustomConceptInput,
+    IUsagiRow,
+    MappingEvents,
+    UpdateErrorEventDetail,
+  } from '$lib/components/Types'
+  import { query } from 'arquero'
+  import type Query from 'arquero/dist/types/query/query'
 
-  export let customConceptData: Record<string, any>[], selectedRow: Record<string, any>
+  export let selectedRow: IUsagiRow, customTable: DataTable
 
   const dispatch = createEventDispatcher<MappingEvents>()
 
-  const inputAvailableColumns = ['name', 'className', 'domain', 'vocabulary']
+  let data: ICustomConceptInput[] = []
+
   let errorMessage: string = ''
   const options: ITableOptions = {
     actionColumn: true,
@@ -21,22 +29,11 @@
     rowsPerPageOptions: [5, 10, 15],
   }
 
-  async function getCustomColumnConfig() {
-    const config: Record<string, any> = {}
-    for (let col of customColumns) {
-      const name = col.label ? col.label : col.id
-      const columnConfig: any[] = customColumns.filter(col => col.id === name || col.label === name)
-      config[col.id] = {
-        inputAvailable: inputAvailableColumns.includes(name),
-        value: columnConfig[0].value === 'date' ? reformatDate() : columnConfig[0].value ? columnConfig[0].value : '',
-        suggestions: (<Record<string, any>>suggestions)[columnConfig[0].id],
-      }
-    }
-    return config
-  }
-
   async function onClickMapping(e: CustomEvent<CustomMappingInputEventDetail>) {
     dispatch('customMappingInput', { ...e.detail })
+    data[0] = e.detail.originalRow
+    await createInputRow()
+    data = data
     deleteError()
   }
 
@@ -47,25 +44,54 @@
   async function updateError(e: CustomEvent<UpdateErrorEventDetail>) {
     errorMessage = e.detail.error
   }
+
+  async function getCustomsForRow() {
+    const params = <Query>query().params({ code: selectedRow.sourceCode })
+    const conceptsQuery = params.filter((r: any, p: any) => r.concept_code === p.code).toObject()
+    const concepts = await customTable.executeQueryAndReturnResults(conceptsQuery)
+    data = concepts.queriedData
+    await createInputRow()
+  }
+
+  async function createInputRow() {
+    const inputRow: ICustomConceptInput = {
+      concept_id: 0,
+      concept_name: '',
+      domain_id: '',
+      vocabulary_id: '',
+      concept_class_id: '',
+      standard_concept: '',
+      concept_code: selectedRow.sourceCode,
+      valid_start_date: reformatDate(),
+      valid_end_date: '2099-12-31',
+      invalid_reason: '',
+    }
+    if (data[0]?.concept_name) data.unshift(inputRow)
+    else data[0] = inputRow
+  }
+
+  $: {
+    selectedRow
+    getCustomsForRow()
+  }
 </script>
 
 <div class="custom-concept-container">
   <h2 class="custom-concept-title">Create a custom concept</h2>
-  {#await getCustomColumnConfig() then config}
-    <DataTable data={customConceptData} columns={customColumns} {options}>
-      <InputRow
-        slot="default"
-        let:columns
-        let:originalIndex
-        data={config}
-        {columns}
-        {originalIndex}
-        {selectedRow}
-        on:customMappingInput={onClickMapping}
-        on:updateError={updateError}
-      />
-    </DataTable>
-  {/await}
+  <DataTable {data} columns={customColumns} {options}>
+    <InputRow
+      slot="default"
+      let:columns
+      let:renderedRow
+      let:originalIndex
+      {renderedRow}
+      {columns}
+      {originalIndex}
+      {customTable}
+      on:customMappingInput={onClickMapping}
+      on:updateError={updateError}
+    />
+  </DataTable>
 
   {#if errorMessage}
     <div class="errormessage">

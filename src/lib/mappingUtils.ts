@@ -1,19 +1,16 @@
 import { user } from '$lib/store'
 import additionalColumns from '$lib/data/additionalColumns.json'
+import type { ICustomConcept, ICustomConceptInput, IExtraUsagiCols, IUsagiAllExtra, IUsagiRow } from '$lib/components/Types'
 
-const additionalFields: Record<string, any> = additionalColumns
+const additionalFields: IExtraUsagiCols = additionalColumns
 
 // A method to fill in the additional fields of a row
-export async function fillInAdditionalFields(
-    row: Record<string, any>,
-    usagiRow: Record<string, any>,
-    autoMap: boolean
-): Promise<Record<string, any>> {
+export async function addExtraFields(row: IUsagiRow, autoMap: boolean): Promise<IUsagiRow> {
     let author: string | null | undefined = ''
     user.subscribe((user) => author = user.name)
-    const extra: Record<string, any> = {
+    const extra: IExtraUsagiCols = {
         statusSetBy: author,
-        statusSetOn: new Date(),
+        statusSetOn: new Date().getTime(),
         matchScore: 0,
         mappingType: null,
         comment: null,
@@ -23,20 +20,37 @@ export async function fillInAdditionalFields(
         'ADD_INFO:numberOfConcepts': null,
         "ADD_INFO:customConcept": null,
     }
-    if ((!usagiRow.statusSetBy || usagiRow.statusSetBy == author) && !autoMap) extra.mappingStatus = 'SEMI-APPROVED'
-    if (usagiRow.createdBy && usagiRow.createdBy !== author) {
+    if ((!row.statusSetBy || row.statusSetBy == author) && !autoMap) extra.mappingStatus = 'SEMI-APPROVED'
+    if (row.createdBy && row.createdBy !== author) {
         extra.createdBy = author
-        extra.createdOn = new Date()
+        extra.createdOn = new Date().getTime()
         extra['ADD_INFO:customConcept'] = null
     }
+    Object.assign(row, extra)
     return row
 }
 
 export async function resetRow() {
-    const reset = additionalFields
+    const reset: IUsagiAllExtra = additionalFields
     reset.conceptId = null
     reset.domainId = null
     reset.conceptName = null
     delete reset.sourceAutoAssignedConceptIds
     return reset
+}
+
+export async function transformFromCustomRowToUsagiRow(custom: ICustomConceptInput) {
+    const usagiRow: ICustomConcept = {
+        conceptId: custom.concept_id,
+        conceptName: custom.concept_name,
+        domainId: custom.domain_id,
+        vocabularyId: custom.vocabulary_id,
+        conceptClassId: custom.concept_class_id,
+        standardConcept: custom.standard_concept,
+        conceptCode: custom.concept_code,
+        validStartDate: custom.valid_start_date,
+        validEndDate: custom.valid_end_date,
+        invalidReason: custom.invalid_reason
+    }
+    return usagiRow
 }

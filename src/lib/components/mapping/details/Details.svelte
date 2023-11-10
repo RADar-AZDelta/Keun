@@ -89,6 +89,7 @@
     font-size: 1.5rem;
     font-weight: 600;
     margin: 0;
+    padding-right: 1rem;
   }
 
   .button {
