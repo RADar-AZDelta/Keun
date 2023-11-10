@@ -7,8 +7,8 @@
   import type Query from 'arquero/dist/types/query/query'
   // @ts-ignore
   import { Search } from '@radar-azdelta/svelte-athena-search'
-  import { customConcept, settings } from '$lib/store'
-  import { fillInAdditionalFields, resetRow } from '$lib/mappingUtils'
+  import { settings } from '$lib/store'
+  import { addExtraFields, resetRow } from '$lib/mappingUtils'
   import { clickOutside } from '$lib/actions/clickOutside'
   import SearchHead from '$lib/components/mapping/SearchHead.svelte'
   import CustomView from '$lib/components/mapping/views/CustomView.svelte'
@@ -16,7 +16,16 @@
   import MappedView from '$lib/components/mapping/views/MappedView.svelte'
   import type DataTable from '@radar-azdelta/svelte-datatable'
   import type { IView } from '@radar-azdelta/svelte-athena-search/dist/Types'
-  import type { ICustomConcept, MappingEvents, NavigateRowEventDetail } from '$lib/components/Types'
+  import type {
+    IAthenaRow,
+    ICustomConcept,
+    IExtraUsagiCols,
+    IMappedRow,
+    IUsagiAllExtra,
+    IUsagiRow,
+    MappingEvents,
+    NavigateRowEventDetail,
+  } from '$lib/components/Types'
   import type {
     CustomMappingInputEventDetail,
     EquivalenceChangeEventDetail,
@@ -24,7 +33,7 @@
     UpdateDetailsEventDetail,
   } from '$lib/components/Types'
 
-  export let selectedRow: Record<string, any>,
+  export let selectedRow: IUsagiRow,
     selectedRowIndex: number,
     mainTable: DataTable,
     customTable: DataTable,
@@ -37,8 +46,7 @@
   ]
 
   let dialog: HTMLDialogElement
-  let mappedData: Record<string, any>[] = [{}],
-    customConceptData: Record<string, any>[] = [{}]
+  let mappedData: (IMappedRow | object)[] = [{}]
   let reviewer: string = '',
     comment: string = '',
     equivalence: string = 'EQUAL'
@@ -49,13 +57,13 @@
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
   // A method that catches the event for single mapping and throws an event to the parent
-  async function singleMapping(row: Record<string, any>): Promise<void> {
+  async function singleMapping(row: IAthenaRow): Promise<void> {
     row.equivalence = equivalence
     dispatch('singleMapping', { originalRow: selectedRow, row, extra: { comment, reviewer } })
   }
 
   // A method that catches the event for multiple mapping and throws an event to the parent
-  async function multipleMapping(row: Record<string, any>): Promise<void> {
+  async function multipleMapping(row: IAthenaRow): Promise<void> {
     row.equivalence = equivalence
     dispatch('multipleMapping', { originalRow: selectedRow, row, extra: { comment, reviewer } })
   }
@@ -65,7 +73,7 @@
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
   // Delete a custom concept from the custom concept table
-  async function removeFromCustomTable(conceptId: string, conceptName: string) {
+  async function removeFromCustomTable(conceptId: number, conceptName: string) {
     const params = <Query>query().params({ id: conceptId, name: conceptName })
     const existanceQuery = params
       .filter((r: any, p: any) => r.concept_id === p.id && r.concept_name === p.name)
@@ -77,7 +85,7 @@
   // Delete the mapping in the table & update the other rows if it has multiple concepts that are mapped to the row
   async function removeMapping(e: CustomEvent<RemoveMappingEventDetail>): Promise<void> {
     const { conceptId, conceptName } = e.detail
-    if (conceptId === '0') removeFromCustomTable(conceptId, conceptName)
+    if (conceptId === 0) removeFromCustomTable(conceptId, conceptName)
     const params = <Query>query().params({ code: selectedRow.sourceCode })
     const conceptsQuery = params.filter((r: any, p: any) => r.sourceCode === p.code).toObject()
     const concepts = await mainTable.executeQueryAndReturnResults(conceptsQuery)
@@ -99,14 +107,15 @@
     fillMappedTable()
   }
 
-  // Map the new custom concept to the selected row
-  async function mapCustomRow(customConcept: Record<string, any>) {
+  // Map a new custom concept to a row
+  async function customMapping(e: CustomEvent<CustomMappingInputEventDetail>) {
     if (dev) console.log('mapCustmoRow: Map a row to a custom concept')
-    let mappedRow = selectedRow
-    mappedRow = await fillInAdditionalFields(mappedRow, selectedRow, false)
-    const update: Record<string, any> = {
-      conceptId: customConcept['concept_id'],
-      conceptName: customConcept['concept_name'],
+    mappedData = [...mappedData, e.detail.row]
+    const customConcept = e.detail.row
+    let mappedRow = await addExtraFields(selectedRow, false)
+    const update: IUsagiAllExtra = {
+      conceptId: customConcept.conceptId,
+      conceptName: customConcept.conceptName,
       comment,
       assignedReviewer: reviewer,
       mappingStatus: 'SEMI-APPROVED',
@@ -133,41 +142,6 @@
     await mainTable.insertRows([mappedRow])
   }
 
-  // Add a new custom concept to the table with all custom concepts
-  async function addCustomConcept(row: Record<string, any>) {
-    const conceptRow = row
-    customConceptData = [conceptRow, ...customConceptData]
-    const params = {
-      name: row.concept_name,
-      domain: row.domain_id,
-      vocab: row.vocabulary_id,
-      class: row.concept_class_id,
-    }
-    const existanceParams = <Query>query().params(params)
-    const existanceQuery = existanceParams
-      .filter(
-        (r: any, p: any) =>
-          r.concept_name === p.name &&
-          r.domain_id === p.domain &&
-          r.vocabulary_id === p.vocab &&
-          r.concept_class_id === p.class
-      )
-      .toObject()
-    const existance = await customTable.executeQueryAndReturnResults(existanceQuery)
-    if (!existance.indices.length) {
-      const testRow = await customTable.getFullRow(0)
-      if (testRow.domain_id === 'test') await customTable.deleteRows([0])
-      await customTable.insertRows([conceptRow])
-    }
-  }
-
-  // Map a new custom concept to a row
-  async function customMapping(e: CustomEvent<CustomMappingInputEventDetail>) {
-    const row = <ICustomConcept>e.detail.row
-    await addCustomConcept(row)
-    await mapCustomRow(row)
-  }
-
   ///////////////////////////// DETAILS METHODS /////////////////////////////
 
   async function onUpdateDetails(e: CustomEvent<UpdateDetailsEventDetail>) {
@@ -186,19 +160,17 @@
     window.open(encodeURI(referUrl), '_blank')?.focus()
   }
 
-  async function onClickMapping(renderedRow: Record<string, any>) {
+  async function onClickMapping(renderedRow: IAthenaRow) {
     if ($settings.mapToMultipleConcepts) multipleMapping(renderedRow)
     else singleMapping(renderedRow)
-    setVocabularyId()
     selectedRow.conceptId = renderedRow.id
-  }
-
-  ///////////////////////////// CUSTOM INPUT ROW METHODS /////////////////////////////
-
-  // A method to set the custom concept vocabulary id from the settings
-  function setVocabularyId(): void {
-    if (!$settings?.hasOwnProperty('vocabularyIdCustomConcept')) return
-    $customConcept.vocabulary_id = $settings.vocabularyIdCustomConcept
+    mappedData.push({
+      sourceCode: selectedRow.sourceCode,
+      sourceName: selectedRow.sourceName,
+      conceptId: renderedRow.id,
+      conceptName: renderedRow.name,
+      customConcept: renderedRow.id === 0 ? true : false,
+    })
   }
 
   ///////////////////////////// MAPPED TABLE METHODS /////////////////////////////
@@ -239,7 +211,6 @@
     fillMappedTable()
     comment = ''
     reviewer = ''
-    setVocabularyId()
   }
 
   onMount(() => {
@@ -279,7 +250,7 @@
           <SearchHead {selectedRow} {mainTable} on:navigateRow={onNavigateRow} />
         </div>
         <div slot="slotView1">
-          <CustomView {customConceptData} {selectedRow} on:customMappingInput={customMapping} />
+          <CustomView {selectedRow} {customTable} on:customMappingInput={customMapping} />
         </div>
         <div slot="slotView2">
           <MappedView {mappedData} on:removeMapping={removeMapping} />

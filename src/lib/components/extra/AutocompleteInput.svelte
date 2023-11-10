@@ -1,7 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
   import debounce from 'lodash.debounce'
-  import { customConcept } from '$lib/store'
   import { clickOutside } from '$lib/actions/clickOutside'
   import type { ICustomEvents } from '$lib/components/Types'
 
@@ -10,7 +9,7 @@
     initial: string | undefined = undefined
 
   let inputValue: string | null,
-    value: string | null,
+    value: string,
     key: string,
     filteredValues: Map<string, any> = new Map(),
     autoCompleted: boolean = false,
@@ -22,9 +21,11 @@
 
   // A method for when the input needs to be saved, don't show an error because the user can be typing and can get frustrated with the error
   function save(): void {
-    value = inputValue
+    if (!inputValue) return
+    value = list[inputValue] ? list[inputValue] : inputValue
     // The input value must be chosen from the list of values suggested
-    if (Object.values(list).includes(value)) dispatch('autoComplete', { id, value, key })
+    if (Object.keys(list).includes(value) || Object.values(list).includes(value))
+      dispatch('autoComplete', { id, value, key })
   }
 
   // A method to apply a suggestion to the input field
@@ -58,7 +59,6 @@
 
   $: {
     inputValue
-    if (inputValue) $customConcept[id] = inputValue
     filter()
   }
 </script>

@@ -3,15 +3,15 @@
   import DataTable, { type ITableOptions } from '@radar-azdelta/svelte-datatable'
   import columns from '$lib/data/columnsMapped.json'
   import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
-  import type { MappingEvents } from '$lib/components/Types'
+  import type { IMappedRow, MappingEvents } from '$lib/components/Types'
 
-  export let mappedData: Record<string, any>[]
+  export let mappedData: (IMappedRow | object)[]
 
   const dispatch = createEventDispatcher<MappingEvents>()
 
   let options: ITableOptions = { actionColumn: true, id: 'mappedConcepts' }
 
-  async function removeMapping(row: Record<string, string>) {
+  async function removeMapping(row: IMappedRow) {
     if (!row.conceptId || !row.conceptName) return
     dispatch('removeMapping', { conceptId: row.conceptId, conceptName: row.conceptName })
   }

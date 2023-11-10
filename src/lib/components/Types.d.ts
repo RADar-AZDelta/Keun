@@ -53,13 +53,13 @@ export interface MappingEvents {
 }
 
 export interface RowSelectionEventDetail {
-  row: Record<string, any>
+  row: IUsagiRow
   index: number
 }
 
 export interface UpdateRowEventDetail {
   index: number
-  row: Record<string, any>
+  row: IUsagiRow
 }
 
 export interface AutoMapRowEventDetail {
@@ -74,22 +74,23 @@ export interface DeleteRowEventDetail {
 }
 
 export interface MappingEventDetail {
-  originalRow?: Record<string, any>
-  row: Record<string, any>
+  originalRow: IUsagiRow
+  row: IAthenaRow
   extra: IExtra
 }
 
 export interface CustomMappingInputEventDetail {
-  row: ICustomConcept | Record<string, string>
+  row: ICustomConcept
+  originalRow: ICustomConceptInput
 }
 
 export interface RemoveMappingEventDetail {
-  conceptId: string
+  conceptId: number
   conceptName: string
 }
 
 export interface NavigateRowEventDetail {
-  row: Record<string, any>
+  row: IUsagiRow
   index: number
 }
 
@@ -166,8 +167,21 @@ export interface ITablePagination {
   totalRows: number | undefined;
 }
 
+export interface ICustomConceptInput {
+  concept_id: number
+  concept_code: string
+  concept_name: string
+  concept_class_id: string
+  domain_id: string
+  vocabulary_id: string
+  standard_concept: string
+  valid_start_date: string
+  valid_end_date: string
+  invalid_reason: string
+}
+
 export interface ICustomConcept {
-  conceptId: string
+  conceptId: number
   conceptName: string
   domainId: string
   vocabularyId: string
@@ -205,7 +219,73 @@ export interface IUserRestriction {
 
 export interface IMapRow {
   mappedIndex: number
-  mappedRow: Record<string, any>
+  mappedRow: IUsagiRow
+}
+
+export interface IAthenaRow {
+  className: string
+  code: string
+  domain: string
+  equivalence: string
+  id: number
+  invalidReason: string
+  name: string
+  score: any
+  standardConcept: string
+  vocabulary: string
+}
+
+export interface IMappedRow {
+  sourceCode: string
+  sourceName: string
+  conceptId: number
+  conceptName: string
+  customConcept: boolean
+}
+
+export interface IUsagiRow extends IExtraUsagiCols, IUsagiMappedCols {
+  sourceCode: string
+  sourceFrequency: number
+  sourceName: string
+}
+
+export type IUsagiAllExtra = IUsagiMappedCols & IExtraUsagiCols
+
+export interface IUsagiMappedCols {
+  conceptId?: number | null
+  conceptName?: string | null
+  domainId?: string | null
+  sourceAutoAssignedConceptIds?: string | null
+}
+
+export interface ICustomColumn {
+  id: string
+  label?: string
+  value?: any
+}
+
+export interface ICustomColumnConfig {
+  inputAvailable: boolean
+  value: string
+  suggestions: Record<string, string>
+}
+
+export interface IExtraUsagiCols {
+  'ADD_INFO:approvedBy'?: string | null
+  'ADD_INFO:approvedOn'?: number | null
+  'ADD_INFO:customConcept'?: boolean | null
+  'ADD_INFO:lastAthenaFilter'?: string | null
+  'ADD_INFO:numberOfConcepts'?: number | null
+  matchScore?: number | null
+  statusSetBy?: string | null
+  statusSetOn?: number | null
+  mappingType?: string | null
+  assignedReviewer?: string | null
+  comment?: string | null
+  createdBy?: string | null
+  createdOn?: number | null
+  equivalence?: string | null
+  mappingStatus?: string | null
 }
 
 export interface IUpdatedFunctionalityImpl {

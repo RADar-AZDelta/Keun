@@ -1,118 +1,91 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte'
-  import { settings } from '$lib/store'
-  import { reformatDate } from '$lib/utils'
+  import type { ICustomConceptInput, MappingEvents } from '$lib/components/Types'
   import AutocompleteInput from '$lib/components/extra/AutocompleteInput.svelte'
   import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
-  import customConceptInfo from '$lib/data/customConceptInfo.json'
+  import suggestions from '$lib/data/customConceptInfo.json'
+  import { transformFromCustomRowToUsagiRow } from '$lib/mappingUtils'
+  import type DataTable from '@radar-azdelta/svelte-datatable'
   import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
-  import type { MappingEvents } from '$lib/components/Types'
+  import { query } from 'arquero'
+  import type Query from 'arquero/dist/types/query/query'
+  import { createEventDispatcher } from 'svelte'
 
-  export let columns: IColumnMetaData[] | undefined,
-    data: Record<string, any>,
+  export let renderedRow: Record<string, any>,
+    columns: IColumnMetaData[] | undefined,
     originalIndex: number,
-    selectedRow: Record<string, string>
+    customTable: DataTable
+
+  const inputAvailableColumns = ['concept_name', 'concept_class_id', 'domain_id', 'vocabulary_id']
+  const colSuggestions: Record<string, Record<string, string>> = suggestions
 
   const dispatch = createEventDispatcher<MappingEvents>()
-  let convertedRow: Record<string, string> = {}
-  let inputRow: Record<string, any> = data
-  let mapped: Record<string, string> = {}
-  let mappedButton: boolean = false
+
+  let inputRow: Record<string, any> = originalIndex === 0 ? renderedRow : {}
+  let showMappingButton: boolean = true
 
   async function saveToRow(e: CustomEvent<any>) {
-    inputRow[e.detail.id].value = e.detail.value
+    if (originalIndex !== 0) return
+    inputRow[e.detail.id] = e.detail.value
   }
 
   async function onClickMapping() {
-    const validated = await validateInputs(inputRow['domain_id'].value, inputRow['concept_class_id'].value)
-    if (!validated) return
-    mapped = {
-      conceptId: '0',
-      conceptName: inputRow.concept_name,
-      domainId: inputRow.domain_id,
-      vocabularyId: inputRow.vocabulary_id,
-      conceptClassId: inputRow.concept_class_id,
-      standardConcept: '',
-      conceptCode: selectedRow.sourceCode,
-      validStartDate: reformatDate(),
-      validEndDate: '2099-12-31',
-      invalidReason: '',
-    }
-    mappedButton = true
-    for (let item of Object.entries(inputRow)) convertedRow[item[0]] = item[1].value
-    dispatch('customMappingInput', { row: convertedRow })
+    if (originalIndex !== 0) return
+    addCustomConcept()
+    const transformedRow = await transformFromCustomRowToUsagiRow(inputRow as ICustomConceptInput)
+    showMappingButton = false
+    dispatch('customMappingInput', { row: transformedRow, originalRow: inputRow as ICustomConceptInput })
   }
 
-  async function validateInputs(domain: string, conceptClassId: string) {
-    const domainKeys = Object.keys(customConceptInfo.domain_id)
-    const domainValues = Object.values(customConceptInfo.domain_id)
-    // Check if the domain id and the concept class id are predefined values
-    if (!domainKeys.includes(domain) || !domainValues.includes(domain)) {
-      dispatch('updateError', { error: 'The domain id is not valid' })
-      return false
+  async function addCustomConcept() {
+    const concept = inputRow
+    const params = {
+      name: concept.concept_name,
+      domain: concept.domain_id,
+      vocab: concept.vocabulary_id,
+      class: concept.concept_class_id,
     }
-    const classKeys = Object.keys(customConceptInfo.concept_class_id)
-    const classValues = Object.values(customConceptInfo.concept_class_id)
-    if (!classKeys.includes(conceptClassId) || !classValues.includes(conceptClassId)) {
-      dispatch('updateError', { error: 'The concept class id is not valid' })
-      return false
-    }
-    return true
+    const existanceParams = <Query>query().params(params)
+    const existanceQuery = existanceParams
+      .filter((r: any, p: any) => {
+        r.concept_name === p.name &&
+          r.domain_id === p.domain &&
+          r.vocabulary_id === p.vocab &&
+          r.concept_class_id === p.class
+      })
+      .toObject()
+    const existance = await customTable.executeQueryAndReturnResults(existanceQuery)
+    if (existance.indices.length) return
+    const testRow = await customTable.getFullRow(0)
+    if (testRow.domain_id === 'test') await customTable.deleteRows([0])
+    await customTable.insertRows([concept])
   }
-
-  async function setDefaults() {
-    inputRow['concept_code'].value = selectedRow.sourceCode
-    inputRow['vocabulary_id'].value = $settings.vocabularyIdCustomConcept
-    inputRow['concept_id'].value = '0'
-    inputRow['valid_start_date'].value = reformatDate()
-    inputRow['valid_end_date'].value = '2099-12-31'
-  }
-
-  setDefaults()
 </script>
-
-<!-- TODO: show already mapped custom concepts of this row -->
 
 {#if columns}
   {#if originalIndex === 0}
-    <td>
-      {#if !mappedButton}
-        <button on:click={onClickMapping}><SvgIcon id="plus" /></button>
-      {:else}
-        <button style="background-color: greenyellow;"><SvgIcon id="check" /></button>
-      {/if}
-    </td>
+    {#if showMappingButton}
+      <button on:click={onClickMapping}><SvgIcon id="plus" /></button>
+    {:else}
+      <button style="background-color: greenyellow;"><SvgIcon id="check" /></button>
+    {/if}
+    {#each columns as column, _}
+      <td>
+        <div class="cell-container">
+          {#if inputAvailableColumns.includes(column.id) && ['domain_id', 'concept_class_id'].includes(column.id)}
+            <AutocompleteInput id={column.id} list={colSuggestions[column.id]} on:autoComplete={saveToRow} />
+          {:else if inputAvailableColumns.includes(column.id)}
+            <input bind:value={inputRow[column.id]} />
+          {:else}
+            <p>{inputRow[column.id]}</p>
+          {/if}
+        </div>
+      </td>
+    {/each}
   {:else}
     <td />
+    <!-- Empty cell for action column -->
+    {#each columns as column, _}
+      <td><p>{renderedRow[column.id]}</p></td>
+    {/each}
   {/if}
-  {#each columns || [] as column (column.id)}
-    <td>
-      <div class="cell-container">
-        {#if inputRow[column.id].inputAvailable && originalIndex === 0}
-          {#if inputRow[column.id].suggestions}
-            <AutocompleteInput
-              id={column.id}
-              initial={inputRow[column.id].value}
-              list={inputRow[column.id].suggestions}
-              on:autoComplete={saveToRow}
-            />
-          {:else}
-            <input type="text" bind:value={inputRow[column.id].value} />
-          {/if}
-        {:else}
-          <p>{inputRow[column.id].value}</p>
-        {/if}
-      </div>
-    </td>
-  {/each}
 {/if}
-
-<style>
-  td {
-    overflow: hidden;
-  }
-
-  .cell-container {
-    width: 140px;
-  }
-</style>

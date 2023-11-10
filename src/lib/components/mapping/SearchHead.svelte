@@ -4,9 +4,9 @@
   import { query } from 'arquero'
   import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
   import type Query from 'arquero/dist/types/query/query'
-  import type { ITablePagination, MappingEvents } from '$lib/components/Types'
+  import type { ITablePagination, IUsagiRow, MappingEvents } from '$lib/components/Types'
 
-  export let selectedRow: Record<string, any>, mainTable: DataTable
+  export let selectedRow: IUsagiRow, mainTable: DataTable
 
   const dispatch = createEventDispatcher<MappingEvents>()
 
@@ -45,7 +45,7 @@
         {#if selectedRow != undefined}
           <td title={selectedRow.sourceCode}>{selectedRow.sourceCode}</td>
           <td title={selectedRow.sourceName}>{selectedRow.sourceName}</td>
-          <td title={selectedRow.sourceFrequency}>{selectedRow.sourceFrequency}</td>
+          <td title={selectedRow.sourceFrequency.toString()}>{selectedRow.sourceFrequency}</td>
         {/if}
       </tr>
     </table>
