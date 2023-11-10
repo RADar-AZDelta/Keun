@@ -1,30 +1,44 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
   import SvgIcon from '$lib/components/Extra/SvgIcon.svelte'
-  import type { CustomOptionsEvents } from '$lib/components/Types'
+  import type DataTable from '@radar-azdelta/svelte-datatable'
+  import type { CustomOptionsEvents, ITablePagination } from '$lib/components/Types'
+  import type Query from 'arquero/dist/types/query/query'
+  import { query } from 'arquero'
 
-  export let selectedRow: Record<string, any>
+  export let selectedRow: Record<string, any>, mainTable: DataTable
 
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
-  async function nextRow(): Promise<void> {
-    dispatch('rowChange', { up: true, currentRow: selectedRow })
-  }
-
-  async function previousRow(): Promise<void> {
-    dispatch('rowChange', { up: false, currentRow: selectedRow })
+  async function navigateRows(up: boolean) {
+    let pag: ITablePagination = await mainTable.getTablePagination()
+    if (!pag.currentPage || !pag.rowsPerPage) return
+    const indexParams = <Query>query().params({
+      code: selectedRow.sourceCode,
+      name: selectedRow.sourceName,
+      concept: selectedRow.conceptName === 'Unmapped' ? undefined : selectedRow.conceptName,
+    })
+    const indexQuery = indexParams
+      .filter((r: any, p: any) => r.sourceCode === p.code && r.sourceName === p.name && r.conceptName === p.concept)
+      .toObject()
+    const rows = await mainTable.executeQueryAndReturnResults(indexQuery)
+    const i = rows.indices[0]
+    const { row, index, page } = up ? await mainTable.getNextRow(i) : await mainTable.getPreviousRow(i)
+    if(!row.sourceCode) return
+    if (pag.currentPage !== page) mainTable.changePagination({ currentPage: page })
+    dispatch('navigateRow', { row, index })
   }
 </script>
 
 <div class="table-head">
   <div class="currentRow">
-    <button class="arrow-button" title="Previous row" id="left" on:click={nextRow}>
+    <button class="arrow-button" title="Previous row" id="left" on:click={() => navigateRows(false)}>
       <SvgIcon id="arrow-left" width="24px" height="24px" />
     </button>
     <table>
       <tr>
         <th>sourceCode</th>
-        <td>sourceName</td>
+        <th>sourceName</th>
         <th>sourceFrequency</th>
       </tr>
       <tr>
@@ -35,7 +49,7 @@
         {/if}
       </tr>
     </table>
-    <button class="arrow-button" title="Next row" id="right" on:click={previousRow}>
+    <button class="arrow-button" title="Next row" id="right" on:click={() => navigateRows(true)}>
       <SvgIcon id="arrow-right" width="24px" height="24px" />
     </button>
   </div>

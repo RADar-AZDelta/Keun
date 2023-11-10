@@ -1,6 +1,6 @@
-import { authImpl, authImplementation, customFileTypeImpl, databaseImpl, databaseImplementation, fileTypeImpl, saveImpl, saveImplementation } from "./store";
+import { authImpl, authImplementation, customFileTypeImpl, databaseImpl, databaseImplementation, fileTypeImpl, saveImpl, saveImplementation, settings, settingsImpl } from "./store";
 import type { ICustomStoreOptions } from "@radar-azdelta/svelte-datatable/components/DataTable";
-import type { IAuthImpl, IUpdatedFunctionalityImpl } from "./components/Types";
+import type { IAuthImpl, ISettingsImpl, IUpdatedFunctionalityImpl } from "./components/Types";
 
 export async function loadImplementationDB(): Promise<IUpdatedFunctionalityImpl> {
     return new Promise(async (resolve, reject) => {
@@ -41,6 +41,19 @@ export async function loadImplementationSave(): Promise<ICustomStoreOptions> {
                     return saveImpl
                 })
             } else return impl
+        })
+    })
+}
+
+export async function loadImplementationSettings(): Promise<ISettingsImpl> {
+    return new Promise(async (resolve, reject) => {
+        settingsImpl.subscribe(async (impl) => {
+            if (impl) return resolve(impl)
+            if (databaseImplementation === 'firebase') { }
+            else await import('$lib/settingsImpl/localImpl').then(({ default: LocalSettingsImpl }) => {
+                settingsImpl.set(new LocalSettingsImpl())
+                return settingsImpl
+            })
         })
     })
 }

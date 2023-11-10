@@ -43,8 +43,8 @@
   },
   "type": "module",
   "dependencies": {
-    "@radar-azdelta/svelte-athena-search": "^0.0.17",
-    "@radar-azdelta/svelte-datatable": "^0.0.48",
+    "@radar-azdelta/svelte-athena-search": "^0.0.18",
+    "@radar-azdelta/svelte-datatable": "^0.0.55",
     "arquero": "^5.2.0",
     "better-sqlite3": "^8.6.0",
     "firebase": "^9.23.0",

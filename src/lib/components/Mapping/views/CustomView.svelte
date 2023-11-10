@@ -1,18 +1,22 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
   import DataTable from '@radar-azdelta/svelte-datatable'
+  import { reformatDate } from '$lib/utils'
   import customColumns from '$lib/data/columnsCustomConcept.json'
   import suggestions from '$lib/data/customConceptInfo.json'
   import SvgIcon from '$lib/components/Extra/SvgIcon.svelte'
-  import { reformatDate } from '$lib/utils'
-  import type { CustomMappingInputEventDetail, CustomOptionsEvents } from '$lib/components/Types'
   import InputRow from '$lib/components/Mapping/views/InputRow.svelte'
+  import type {
+    CustomMappingInputEventDetail,
+    CustomOptionsEvents,
+    UpdateErrorEventDetail,
+  } from '$lib/components/Types'
 
   export let customConceptData: Record<string, any>[], selectedRow: Record<string, any>
 
   const dispatch = createEventDispatcher<CustomOptionsEvents>()
 
-  const inputAvailableColumns = ['code', 'name', 'className', 'domain', 'vocabulary']
+  const inputAvailableColumns = ['name', 'className', 'domain', 'vocabulary']
   let errorMessage: string = ''
   const options = { actionColumn: true, id: 'createCustomConcepts', saveOptions: false }
 
@@ -32,10 +36,15 @@
 
   async function onClickMapping(e: CustomEvent<CustomMappingInputEventDetail>) {
     dispatch('customMappingInput', { ...e.detail })
+    deleteError()
   }
 
   async function deleteError() {
     errorMessage = ''
+  }
+
+  async function updateError(e: CustomEvent<UpdateErrorEventDetail>) {
+    errorMessage = e.detail.error
   }
 </script>
 
@@ -52,6 +61,7 @@
         {originalIndex}
         {selectedRow}
         on:customMappingInput={onClickMapping}
+        on:updateError={updateError}
       />
     </DataTable>
   {/await}

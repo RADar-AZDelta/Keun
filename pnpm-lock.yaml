@@ -9,11 +9,11 @@ importers:
   .:
     dependencies:
       '@radar-azdelta/svelte-athena-search':
-        specifier: ^0.0.17
-        version: 0.0.17(vite@4.3.9)
+        specifier: ^0.0.18
+        version: 0.0.18(vite@4.3.9)
       '@radar-azdelta/svelte-datatable':
-        specifier: ^0.0.48
-        version: 0.0.48
+        specifier: ^0.0.55
+        version: 0.0.55
       arquero:
         specifier: ^5.2.0
         version: 5.2.0
@@ -1142,8 +1142,8 @@ packages:
     resolution: {integrity: sha512-Vvn3zZrhQZkkBE8LSuW3em98c0FwgO4nxzv6OdSxPKJIEKY2bGbHn+mhGIPerzI4twdxaP8/0+06HBpwf345Lw==}
     dev: false
 
-  /@radar-azdelta/svelte-athena-search@0.0.17(vite@4.3.9):
-    resolution: {integrity: sha512-tYD2Py19UhKqhmLUg/it8kMSotuh9MEJ+3nFZ/5Umo0K4/B1m/FVG97/G3JLitMrgyuvf7IPdmXISvqLDe86yA==}
+  /@radar-azdelta/svelte-athena-search@0.0.18(vite@4.3.9):
+    resolution: {integrity: sha512-R7BP5cPS8Ov13HDo50j5kzFcWnfyaMJ40qM9/171cIm3cLDyjkFJk1IlZ9G9gkOYqajqohtz+Hw4jB0AGq0JGw==}
     dependencies:
       '@radar-azdelta/svelte-datatable': 0.0.48
       '@sveltejs/kit': 1.27.3(svelte@4.2.2)(vite@4.3.9)
@@ -1160,6 +1160,18 @@ packages:
     dependencies:
       '@types/lodash': 4.14.195
       arquero: 5.2.0
+      lodash.debounce: 4.0.8
+      lodash.isequal: 4.5.0
+    transitivePeerDependencies:
+      - encoding
+    dev: false
+
+  /@radar-azdelta/svelte-datatable@0.0.55:
+    resolution: {integrity: sha512-bGgiXX4St2ZM1IV8uNlX0YzEOUlE53IHRpsdRYk3i7tAcKzx0kWSEatdlSiXTc41hk0yBbB1rIlyF/1lq2JkUQ==}
+    dependencies:
+      '@types/lodash': 4.14.195
+      arquero: 5.2.0
+      comlink: 4.4.1
       lodash.debounce: 4.0.8
       lodash.isequal: 4.5.0
     transitivePeerDependencies:
@@ -1220,7 +1232,7 @@ packages:
       svelte: ^3.54.0 || ^4.0.0-next.0
       vite: ^4.0.0
     dependencies:
-      '@sveltejs/vite-plugin-svelte': 2.4.6(svelte@3.59.1)(vite@4.3.9)
+      '@sveltejs/vite-plugin-svelte': 2.5.0(svelte@3.59.1)(vite@4.3.9)
       '@types/cookie': 0.5.1
       cookie: 0.5.0
       devalue: 4.3.2
@@ -1255,7 +1267,7 @@ packages:
       - typescript
     dev: true
 
-  /@sveltejs/vite-plugin-svelte-inspector@1.0.4(@sveltejs/vite-plugin-svelte@2.4.6)(svelte@3.59.1)(vite@4.3.9):
+  /@sveltejs/vite-plugin-svelte-inspector@1.0.4(@sveltejs/vite-plugin-svelte@2.5.0)(svelte@3.59.1)(vite@4.3.9):
     resolution: {integrity: sha512-zjiuZ3yydBtwpF3bj0kQNV0YXe+iKE545QGZVTaylW3eAzFr+pJ/cwK8lZEaRp4JtaJXhD5DyWAV4AxLh6DgaQ==}
     engines: {node: ^14.18.0 || >= 16}
     peerDependencies:
@@ -1263,7 +1275,7 @@ packages:
       svelte: ^3.54.0 || ^4.0.0
       vite: ^4.0.0
     dependencies:
-      '@sveltejs/vite-plugin-svelte': 2.4.6(svelte@3.59.1)(vite@4.3.9)
+      '@sveltejs/vite-plugin-svelte': 2.5.0(svelte@3.59.1)(vite@4.3.9)
       debug: 4.3.4
       svelte: 3.59.1
       vite: 4.3.9(@types/node@20.1.2)(sass@1.62.1)
@@ -1290,14 +1302,14 @@ packages:
       - supports-color
     dev: true
 
-  /@sveltejs/vite-plugin-svelte@2.4.6(svelte@3.59.1)(vite@4.3.9):
-    resolution: {integrity: sha512-zO79p0+DZnXPnF0ltIigWDx/ux7Ni+HRaFOw720Qeivc1azFUrJxTl0OryXVibYNx1hCboGia1NRV3x8RNv4cA==}
+  /@sveltejs/vite-plugin-svelte@2.5.0(svelte@3.59.1)(vite@4.3.9):
+    resolution: {integrity: sha512-FxLZLVfFA2soGw7ej8Ohuav7+AOsJILiPlL8FgY5MABDDmDqb637o8Xd/QGkrXLC1qXyG1bnteOw5Z5yrA2lHA==}
     engines: {node: ^14.18.0 || >= 16}
     peerDependencies:
-      svelte: ^3.54.0 || ^4.0.0
+      svelte: ^3.54.0 || ^4.0.0 || ^5.0.0-next.0
       vite: ^4.0.0
     dependencies:
-      '@sveltejs/vite-plugin-svelte-inspector': 1.0.4(@sveltejs/vite-plugin-svelte@2.4.6)(svelte@3.59.1)(vite@4.3.9)
+      '@sveltejs/vite-plugin-svelte-inspector': 1.0.4(@sveltejs/vite-plugin-svelte@2.5.0)(svelte@3.59.1)(vite@4.3.9)
       debug: 4.3.4
       deepmerge: 4.3.1
       kleur: 4.1.5
@@ -2051,6 +2063,10 @@ packages:
 
   /color-name@1.1.4:
     resolution: {integrity: sha512-dOy+3AuW3a2wNbZHIuMZpTcgjGuLU/uBL/ubcZF9OXbDo8ff4O8yVp5Bf0efS8uEoYo5q4Fx7dY9OgQGXgAsQA==}
+
+  /comlink@4.4.1:
+    resolution: {integrity: sha512-+1dlx0aY5Jo1vHy/tSsIGpSkN4tS9rZSW8FIhG0JH/crs9wwweswIo/POr451r7bZww3hFbPAKnTpimzL/mm4Q==}
+    dev: false
 
   /command-line-args@5.2.1:
     resolution: {integrity: sha512-H4UfQhZyakIjC74I9d34fGYDwk3XpSr17QhEd0Q3I9Xq1CETHo4Hcuo87WyWHpAF1aSLjLRf5lD9ZGX2qStUvg==}

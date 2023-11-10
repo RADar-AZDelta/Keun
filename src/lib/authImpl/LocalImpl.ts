@@ -5,7 +5,6 @@ import { user } from "$lib/store";
 export default class LocalImpl implements IAuthImpl {
     async logIn(name?: string): Promise<void> {
         if(dev) console.log('logIn: Logging in and saving in localstorage')
-        console.log("HERE ", name)
         if(!name) return console.error('logIn: Provide a name to log in with just a name')
         localStorage.setItem("author", name)
         user.set({ name })
