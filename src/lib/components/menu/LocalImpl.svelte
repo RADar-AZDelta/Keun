@@ -4,7 +4,7 @@
   import { base } from '$app/paths'
   import { createEventDispatcher } from 'svelte'
   import { selectedFileId } from '$lib/store'
-  import SvgIcon from '$lib/components/Extra/SvgIcon.svelte'
+  import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
   import type { IFile, PageEvents } from '$lib/components/Types'
 
   export let files: IFile[]
@@ -55,7 +55,8 @@
     background-color: inherit;
   }
 
-  .file-card:hover, .file-card:focus {
+  .file-card:hover,
+  .file-card:focus {
     background-color: lightgray;
   }
 

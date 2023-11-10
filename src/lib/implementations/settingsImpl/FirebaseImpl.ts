@@ -1,0 +1,1 @@
+// TODO: implement the settings implementation for Firebase

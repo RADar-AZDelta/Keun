@@ -1,8 +1,8 @@
 <script lang="ts">
   import { dev } from '$app/environment'
   import { authImpl, databaseImpl } from '$lib/store'
-  import { loadImplementationDB } from '$lib/implementation'
-  import SvgIcon from '$lib/components/Extra/SvgIcon.svelte'
+  import { loadImplementationDB } from '$lib/implementations/implementation'
+  import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
 
   export let processing: boolean, selected: string
 
