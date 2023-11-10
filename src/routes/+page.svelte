@@ -2,14 +2,14 @@
   import { dev } from '$app/environment'
   import type { SvelteComponent } from 'svelte'
   import { selectedFileId, databaseImplementation, databaseImpl, user } from '$lib/store'
-  import { loadImplementationDB } from '$lib/implementation'
+  import { loadImplementationDB } from '$lib/implementations/implementation'
   import FileChoiceDialog from '$lib/components/menu/FileChoiceDialog.svelte'
   import FileInputDialog from '$lib/components/menu/FileInputDialog.svelte'
   import ColumnsDialog from '$lib/components/menu/ColumnsDialog.svelte'
   import AuthorsDialog from '$lib/components/menu/AuthorsDialog.svelte'
   import FirebaseImpl from '$lib/components/menu/FirebaseImpl.svelte'
   import LocalImpl from '$lib/components/menu/LocalImpl.svelte'
-  import Spinner from '$lib/components/Extra/Spinner.svelte'
+  import Spinner from '$lib/components/extra/Spinner.svelte'
   import type { ColumnsDialogShowEventDetail, IFile } from '$lib/components/Types'
   import type {
     CheckForCacheEventDetail,

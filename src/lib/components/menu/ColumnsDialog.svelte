@@ -2,7 +2,7 @@
   import { createEventDispatcher } from 'svelte'
   import { dev } from '$app/environment'
   import { user } from '$lib/store'
-  import SvgIcon from '$lib/components/Extra/SvgIcon.svelte'
+  import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
   import type { PageEvents } from '$lib/components/Types'
 
   export let missing: Record<string, string>, cols: string[], file: File

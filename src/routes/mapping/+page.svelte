@@ -13,19 +13,18 @@
   import { stringToFile } from '$lib/utils'
   import { abortAutoMapping, customFileTypeImpl, databaseImpl, fileTypeImpl, saveImpl } from '$lib/store'
   import { selectedFileId, settings, translator, triggerAutoMapping, user } from '$lib/store'
-  import { loadImplementationDB, loadImplementationDataType, loadImplementationSave } from '$lib/implementation'
+  import {
+    loadImplementationDB,
+    loadImplementationDataType,
+    loadImplementationSave,
+  } from '$lib/implementations/implementation'
   import columnsUsagi from '$lib/data/columnsUsagi.json'
   import columnsCustomConcept from '$lib/data/columnsCustomConcept.json'
-  import AthenaSearch from '$lib/components/Mapping/AthenaSearch.svelte'
-  import UsagiRow from '$lib/components/Mapping/UsagiRow.svelte'
-  import type { ITablePagination, IMapRow, NavigateRowEventDetail } from '$lib/components/Types'
-  import { fillInAdditionalFields } from '$lib/mappingUtils/utils'
-  import type {
-    MappingEventDetail,
-    RowChangeEventDetail,
-    AutoMapRowEventDetail,
-    RowSelectionEventDetail,
-  } from '$lib/components/Types'
+  import AthenaSearch from '$lib/components/mapping/AthenaSearch.svelte'
+  import UsagiRow from '$lib/components/mapping/UsagiRow.svelte'
+  import type { IMapRow, NavigateRowEventDetail } from '$lib/components/Types'
+  import { fillInAdditionalFields } from '$lib/mappingUtils'
+  import type { MappingEventDetail, AutoMapRowEventDetail, RowSelectionEventDetail } from '$lib/components/Types'
 
   // General variables
   let file: File | undefined = undefined,
@@ -182,22 +181,6 @@
     return translation.target.text
   }
 
-  // A method to change the pagination of the table based on the index and the rows per page
-  async function changePagination(up: boolean, index: number, pagination: ITablePagination): Promise<void> {
-    // When the index exceeds the number of rows per page, go to the next page or go to the previous page
-    if (!index || !pagination.currentPage || !pagination.rowsPerPage) return
-    // TODO: check if sorted backwards --> the page change is different then
-    const rpp = pagination.rowsPerPage
-    const cur = pagination.currentPage
-    let newPage: number = previousPage
-    if (up && index % rpp === 0) newPage = cur + 1
-    else if (!up && (index + 1) % rpp === 0) newPage = cur - 1
-    if (newPage === previousPage) return
-    if (dev) console.log('changePagination: change pagination to ', newPage)
-    dataTableMapping.changePagination({ currentPage: newPage })
-    previousPage = pagination.currentPage
-  }
-
   // A method to automatically map a given row
   async function autoMapRow(signal: AbortSignal, row: Record<string, any>, index: number): Promise<void> {
     if (dev) console.log('autoMapRow: Start automapping row with index ', index)
@@ -318,11 +301,12 @@
   // Sync the file with the database implementation & download it from the implementation
   async function downloadPage(): Promise<void> {
     const blob = await dataTableMapping.getBlob()
+    console.log('BLOB ', blob)
     const customBlob = dataTableCustomConcepts ? await dataTableCustomConcepts.getBlob() : undefined
     if (!$databaseImpl) await loadImplementationDB()
     await $databaseImpl!.editFile($selectedFileId, blob, customBlob)
     await $databaseImpl!.downloadFile($selectedFileId)
-    goto(`${base}/`)
+    // goto(`${base}/`)
   }
 
   // A method to get the file from the database implementation
@@ -372,6 +356,7 @@
   async function syncFile() {
     if (!dataTableMapping) return
     const blob = await dataTableMapping.getBlob()
+    if (!blob) return
     const customBlob = dataTableCustomConcepts ? await dataTableCustomConcepts.getBlob() : undefined
     if (!$databaseImpl) await loadImplementationDB()
     await $databaseImpl!.editFile($selectedFileId, blob, customBlob)
@@ -421,8 +406,6 @@
     }, [])
     return modifiedColumns.concat(addedColumns)
   }
-
-  // TODO: implement the globalAthenaFilter.filter in the Search package
 
   $: {
     if ($abortAutoMapping == true) abortAutoMap()

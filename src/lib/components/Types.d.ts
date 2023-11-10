@@ -39,19 +39,21 @@ export type EditRightsEventDetail = IFileIdTemplate
 
 export interface MappingEvents {
   rowSelection: RowSelectionEventDetail
-  actionPerformed: ActionPerformedEventDetail
   updateRow: UpdateRowEventDetail
   autoMapRow: AutoMapRowEventDetail
   deleteRow: DeleteRowEventDetail
+  singleMapping: MappingEventDetail
+  multipleMapping: MappingEventDetail
+  customMappingInput: CustomMappingInputEventDetail
+  removeMapping: RemoveMappingEventDetail
+  navigateRow: NavigateRowEventDetail
+  updateDetails: UpdateDetailsEventDetail
+  equivalenceChange: EquivalenceChangeEventDetail
+  updateError: UpdateErrorEventDetail
 }
 
 export interface RowSelectionEventDetail {
   row: Record<string, any>
-  index: number
-}
-
-export interface ActionPerformedEventDetail {
-  action: 'APPROVED' | 'FLAGGED' | 'UNAPPROVED'
   index: number
 }
 
@@ -71,82 +73,9 @@ export interface DeleteRowEventDetail {
   erase: boolean
 }
 
-////////////////////////////// Events for the actual mapping //////////////////////////////
-
-export interface CustomOptionsEvents {
-  generalVisibilityChanged: VisibilityChangedEventDetail
-  filterOptionsChanged: FilterOptionsChangedEventDetail
-  singleMapping: MappingEventDetail
-  multipleMapping: MappingEventDetail
-  actionPerformed: ActionPerformedEventDetail
-  deleteRow: DeleteRowEventDetail
-  deleteRowInnerMapping: DeleteRowInnerMappingEventDetail
-  rowChange: RowChangeEventDetail
-  navigateRow: NavigateRowEventDetail
-  reviewerChanged: ReviewerChangedEventDetail
-  updateUniqueConceptIds: UpdateUniqueConceptIdsEventDetail
-  customMapping: CustomMappingEventDetail
-  customMappingInput: CustomMappingInputEventDetail
-  autoMapRow: AutoMapRowEventDetail
-  autoComplete: AutoCompleteEventDetail
-  updateDetails: UpdateDetailsEventDetail
-  fileUploaded: FileUploadedEventDetail
-  equivalenceChange: EquivalenceChangeEventDetail
-  updateError: UpdateErrorEventDetail
-  removeMapping: RemoveMappingEventDetail
-}
-
-export interface VisibilityChangedEventDetail {
-  visibility: boolean
-  data?: any
-}
-
-export interface FilterOptionsChangedEventDetail {
-  filters: Map<string, string[]>
-}
-
 export interface MappingEventDetail {
   originalRow?: Record<string, any>
   row: Record<string, any>
-  extra: IExtra
-}
-
-export interface DeleteRowEventDetail {
-  indexes: number[]
-  sourceCode: string | number
-  conceptId: string | number
-  erase: boolean
-}
-
-export interface DeleteRowInnerMappingEventDetail {
-  conceptId: string
-  conceptName: string
-  erase: boolean
-  custom: boolean
-}
-
-export interface RowChangeEventDetail {
-  up: boolean
-  currentRow: Record<string, any>
-}
-
-export interface NavigateRowEventDetail {
-  row: Record<string, any>
-  index: number
-}
-
-export interface ReviewerChangedEventDetail {
-  reviewer: string
-}
-
-export interface UpdateUniqueConceptIdsEventDetail {
-  conceptId: string
-  conceptName: string
-  multiple: boolean
-}
-
-export interface CustomMappingEventDetail {
-  row: ICustomConcept | Record<string, string>
   extra: IExtra
 }
 
@@ -154,26 +83,19 @@ export interface CustomMappingInputEventDetail {
   row: ICustomConcept | Record<string, string>
 }
 
-export interface AutoMapRowEventDetail {
-  index: number
-  sourceName: string
+export interface RemoveMappingEventDetail {
+  conceptId: string
+  conceptName: string
 }
 
-export interface AutoCompleteEventDetail {
-  id: string
-  value: any
-  key: string
+export interface NavigateRowEventDetail {
+  row: Record<string, any>
+  index: number
 }
 
 export interface UpdateDetailsEventDetail {
-  index: number
-  equivalence: string
   comments: string
   reviewer: string
-}
-
-export interface FileUploadedEventDetail {
-  file: File
 }
 
 export interface EquivalenceChangeEventDetail {
@@ -184,9 +106,32 @@ export interface UpdateErrorEventDetail {
   error: string
 }
 
-export interface RemoveMappingEventDetail {
-  conceptId: string
-  conceptName: string
+////////////////////////////// Events for extra components //////////////////////////////
+
+export interface ICustomEvents {
+  autoComplete: AutoCompleteEventDetail
+  autoCompleteShort: AutoCompleteShortEventDetail
+}
+
+export interface AutoCompleteEventDetail {
+  id: string
+  value: string | null
+  key: string
+}
+
+export interface AutoCompleteShortEventDetail {
+  value: string
+}
+
+////////////////////////////// Interfaces //////////////////////////////
+
+export interface ISettings {
+  mapToMultipleConcepts: boolean
+  autoMap: boolean
+  language: string
+  savedAuthors: string[]
+  vocabularyIdCustomConcept: string
+  popupSidesShowed: ISides
 }
 
 export interface ICategories {
@@ -200,24 +145,10 @@ export interface ISides {
   details: boolean
 }
 
-export interface ISettings {
-  mapToMultipleConcepts: boolean
-  autoMap: boolean
-  language: string
-  savedAuthors: string[]
-  vocabularyIdCustomConcept: string
-  popupSidesShowed: ISides
-}
-
 export interface IUser {
   uid?: string | null
   name?: string | null
   roles?: [string]
-}
-
-export interface IFilter {
-  name: string
-  categories: ICategories
 }
 
 interface IExtra {
@@ -225,27 +156,8 @@ interface IExtra {
   reviewer: string
 }
 
-export interface IDatabaseFile {
-  data: Record<string, any>[]
-  fileName: string
-  usersUID?: string[]
-}
-
 export interface IDataTypeFile extends IDataTypeFunctionalities {
   syncFile(update?: boolean, get?: boolean): Promise<File | void>
-}
-
-export interface ISync {
-  id: string
-  fileName: string
-  blob?: Blob
-  action?: "get" | "update"
-}
-
-export interface ICache {
-  blob: Blob
-  fileName: string
-  action?: "get" | "update"
 }
 
 export interface ITablePagination {
@@ -294,32 +206,6 @@ export interface IUserRestriction {
 export interface IMapRow {
   mappedIndex: number
   mappedRow: Record<string, any>
-}
-
-export interface IFunctionalityImpl {
-  readFileFirstTime(fileName: string): Promise<{
-    file: File | undefined;
-    customConceptsFile: File | undefined;
-  } | void>
-  getFiles(): Promise<string[] | void>
-  getFilesAdmin(): Promise<string[] | void>
-  uploadFile(file: File, authorizedAuthors: string[]): Promise<string[] | void>
-  editFile(fileName: string, authorizedAuthors: string[]): Promise<void>
-  deleteFile(fileName: string): Promise<string[] | void>
-  downloadFile(fileName: string, usagiString?: boolean, customString?: boolean): Promise<void>
-  getAllAuthors(): Promise<Record<string, { email: string; files: Record<string, string> }> | void>
-  watchValueFromDatabase(path: string, subCallback: () => unknown, remove?: boolean): Promise<void>
-
-  syncSettings(action: 'read' | 'write'): Promise<void>
-  getSavedAuthor(): Promise<void>
-  logIn(author: string | null | undefined): Promise<void>
-  cancelLogIn(backupAuthor: string | null | undefined): Promise<void>
-  syncFile(data: ISync): Promise<File | void>
-  cache(data: ICache): Promise<File | void>
-  removeCache(fileName: string): Promise<void>
-  checkForCache(fileName: string): Promise<boolean | void>
-  getCachedFiles(): Promise<string[] | void>
-  checkCustomConcepts(name: string): Promise<File | void>
 }
 
 export interface IUpdatedFunctionalityImpl {

@@ -2,9 +2,9 @@
   import { dev } from '$app/environment'
   import { createEventDispatcher } from 'svelte'
   import { authImpl, databaseImplementation } from '$lib/store'
-  import Drop from '$lib/components/Extra/Drop.svelte'
-  import Spinner from '$lib/components/Extra/Spinner.svelte'
-  import SvgIcon from '$lib/components/Extra/SvgIcon.svelte'
+  import Drop from '$lib/components/extra/Drop.svelte'
+  import Spinner from '$lib/components/extra/Spinner.svelte'
+  import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
   import type { FileDropEventDetail, PageEvents } from '$lib/components/Types'
 
   export let processing: boolean

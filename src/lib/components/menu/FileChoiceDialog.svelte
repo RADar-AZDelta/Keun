@@ -3,7 +3,7 @@
   import { goto } from '$app/navigation'
   import { createEventDispatcher } from 'svelte'
   import { selectedFileId } from '$lib/store'
-  import SvgIcon from '$lib/components/Extra/SvgIcon.svelte'
+  import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
   import type { PageEvents } from '$lib/components/Types'
 
   export let processing: boolean

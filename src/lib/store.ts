@@ -2,14 +2,16 @@ import { PUBLIC_CLOUD_DATABASE_IMPLEMENTATION, PUBLIC_CLOUD_AUTH_IMPLEMENTATION,
 import { writable } from 'svelte/store'
 // @ts-ignore
 import { LatencyOptimisedTranslator } from '@browsermt/bergamot-translator/translator.js'
-import { loadImplementationAuth, loadImplementationDB, loadImplementationDataType, loadImplementationSave, loadImplementationSettings } from '$lib/implementation'
+import { loadImplementationAuth, loadImplementationDB, loadImplementationDataType, loadImplementationSave, loadImplementationSettings } from '$lib/implementations/implementation'
 import type { ICustomStoreOptions, IDataTypeFunctionalities } from '@radar-azdelta/svelte-datatable/components/DataTable'
 import type { ISettingsImpl, IAuthImpl, ISettings, IUpdatedFunctionalityImpl, IUser } from '$lib/components/Types'
+import type { User } from 'firebase/auth'
 
 export const customConcept = writable<Record<string, string>>({ domain_id: '', vocabulary_id: '', concept_class_id: '', concept_name: '', })
 
 export const settings = writable<ISettings>({ mapToMultipleConcepts: false, autoMap: false, language: 'en', savedAuthors: [], vocabularyIdCustomConcept: '', popupSidesShowed: { filters: true, details: true }, })
 
+export const firebaseUser = writable<User>()
 export const user = writable<IUser>()
 
 export const triggerAutoMapping = writable<boolean>(false)
