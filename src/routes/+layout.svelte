@@ -1,51 +1,45 @@
 <script lang="ts">
+  import { onMount } from 'svelte'
   import { page } from '$app/stores'
   import { base } from '$app/paths'
   import { beforeNavigate } from '$app/navigation'
   import '@radar-azdelta/svelte-datatable/styles/data-table.scss'
-  import '$lib/styles/table.scss'
-  import '$lib/styles/files.scss'
-  import '$lib/styles/layout.scss'
-  import { implementation, implementationClass, settings } from '$lib/store'
-  import Header from '$lib/components/Extra/Header.svelte'
-  import Manual from '$lib/components/Extra/Manual.svelte'
-  import Settings from '$lib/components/Extra/Settings.svelte'
-  import User from '$lib/components/Extra/User.svelte'
+  import '$lib/table.scss'
+  import { authImplementation, settings, settingsImpl, user } from '$lib/store'
+  import Header from '$lib/components/extra/Header.svelte'
+  import Manual from '$lib/components/extra/Manual.svelte'
+  import Settings from '$lib/components/extra/Settings.svelte'
+  import User from '$lib/components/extra/User.svelte'
+  import { loadImplementationSettings } from '$lib/implementations/implementation'
 
-  async function loadImplementation(): Promise<void> {
-    if ($implementationClass) return $implementationClass.syncSettings('read')
-    if ($implementation == 'firebase')
-      await import('$lib/utilClasses/FirebaseImpl').then(({ default: FirebaseImpl }) => {
-        $implementationClass = new FirebaseImpl()
-        $implementationClass.syncSettings('read')
-      })
-    else
-      import('$lib/utilClasses/LocalImpl').then(({ default: LocalImpl }) => {
-        $implementationClass = new LocalImpl()
-        $implementationClass.syncSettings('read')
-      })
-  }
-
-  loadImplementation()
+  // TODO: set up Firebase project for internal use in AZD (Firebase impl)
+  // TODO: set up SQLite impl for reference for other hospitals
 
   beforeNavigate(async ({ from, to, cancel }): Promise<void> => {
-    await $implementationClass.syncSettings('write')
+    if (!$settingsImpl) loadImplementationSettings()
+    $settingsImpl?.updateSettings($settings)
+  })
+
+  onMount(async () => {
+    if (!$settingsImpl) await loadImplementationSettings()
+    const storedSettings = await $settingsImpl?.getSettings()
+    if (storedSettings) $settings = storedSettings
   })
 </script>
 
 <main>
-  <header data-name="header">
+  <header class="header">
     <Header />
-    <ul data-name="page-nav">
+    <ul class="page-nav">
       {#if $page.url.pathname !== '/' && $page.url.pathname !== '/Keun'}
         <li><a href="{base}/">File selection</a></li>
       {/if}
-      {#if $settings.author && $settings.author.roles?.includes('Admin') && $implementation == 'firebase'}
+      {#if $user && $user.roles?.includes('Admin') && authImplementation == 'firebase'}
         <li><a href="{base}/register">Registration</a></li>
       {/if}
     </ul>
     {#if $page.url.pathname.substring($page.url.pathname.lastIndexOf('/')) !== 'registration'}
-      <div data-name="header-buttons-container" id="settings">
+      <div class="header-buttons-container" id="settings">
         <Manual />
         {#if $settings}
           <Settings />
@@ -56,3 +50,48 @@
   </header>
   <slot />
 </main>
+
+<style>
+  :global(body) {
+    font-family: BlinkMacSystemFont, -apple-system, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans',
+      'Droid Sans', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+  }
+
+  :global(p),
+  :global(input) {
+    margin: 0;
+    padding: 0;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1rem;
+  }
+
+  .page-nav {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+  }
+
+  a {
+    text-decoration: none;
+    font-weight: 500;
+    color: #454545;
+  }
+
+  a:hover,
+  a:focus {
+    font-weight: 600;
+    color: #0070a0;
+  }
+
+  .header-buttons-container {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+</style>

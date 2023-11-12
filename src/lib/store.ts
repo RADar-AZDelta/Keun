@@ -1,61 +1,38 @@
+import { PUBLIC_CLOUD_DATABASE_IMPLEMENTATION, PUBLIC_CLOUD_AUTH_IMPLEMENTATION, PUBLIC_CLOUD_SAVE_IMPLEMENTATION } from '$env/static/public'
 import { writable } from 'svelte/store'
-import type { IFunctionalityImpl, ISettings } from './components/Types'
-import { PUBLIC_CLOUD_IMPLEMENTATION } from '$env/static/public'
-  // @ts-ignore
-  import { LatencyOptimisedTranslator } from '@browsermt/bergamot-translator/translator.js'
+// @ts-ignore
+import { LatencyOptimisedTranslator } from '@browsermt/bergamot-translator/translator.js'
+import { loadImplementationAuth, loadImplementationDB, loadImplementationDataType, loadImplementationSave, loadImplementationSettings } from '$lib/implementations/implementation'
+import type { ICustomStoreOptions, IDataTypeFunctionalities } from '@radar-azdelta/svelte-datatable/components/DataTable'
+import type { ISettingsImpl, IAuthImpl, ISettings, IUpdatedFunctionalityImpl, IUser } from '$lib/components/Types'
+import type { User } from 'firebase/auth'
 
-const customConcept = writable<Record<string, string>>({
-  domain_id: '',
-  vocabulary_id: '',
-  concept_class_id: '',
-  concept_name: '',
-})
+export const settings = writable<ISettings>({ mapToMultipleConcepts: false, autoMap: false, language: 'en', savedAuthors: [], vocabularyIdCustomConcept: '', popupSidesShowed: { filters: true, details: true }, })
 
-const settings = writable<ISettings>({
-  mapToMultipleConcepts: false,
-  autoMap: false,
-  language: 'en',
-  author: {},
-  savedAuthors: [],
-  vocabularyIdCustomConcept: '',
-  fontsize: 10,
-  popupSidesShowed: { filters: true, details: true },
-})
+export const firebaseUser = writable<User>()
+export const user = writable<IUser>()
 
-const triggerAutoMapping = writable<boolean>(false)
+export const triggerAutoMapping = writable<boolean>(false)
 
-const abortAutoMapping = writable<boolean>(false)
+export const databaseImplementation = PUBLIC_CLOUD_DATABASE_IMPLEMENTATION || 'none'
+export const authImplementation = PUBLIC_CLOUD_AUTH_IMPLEMENTATION || 'none'
+export const saveImplementation = PUBLIC_CLOUD_SAVE_IMPLEMENTATION || 'none'
 
-const implementation = writable<string>(PUBLIC_CLOUD_IMPLEMENTATION || "none")
+export const databaseImpl = writable<IUpdatedFunctionalityImpl | undefined>(undefined)
+export const authImpl = writable<IAuthImpl | undefined>(undefined)
+export const saveImpl = writable<ICustomStoreOptions | undefined>(undefined)
+export const settingsImpl = writable<ISettingsImpl | undefined>(undefined)
+export const fileTypeImpl = writable<IDataTypeFunctionalities | undefined>(undefined)
+export const customFileTypeImpl = writable<IDataTypeFunctionalities | undefined>(undefined)
 
-const implementationClass = writable<IFunctionalityImpl>()
+export const selectedFileId = writable<string>()
 
-async function loadImplementation(): Promise<unknown> {
-  return new Promise(async (resolve, reject) => {
-    let implementationMethod: string = ""
-    implementation.subscribe((implementation) => implementationMethod = implementation)
-    implementationClass.subscribe(async (impl) => {
-      if(!impl) {
-        if(implementationMethod == "firebase") {
-          await import('$lib/utilClasses/FirebaseImpl').then(({ default: FirebaseImpl }) => {
-            implementationClass.set(new FirebaseImpl())
-            resolve(implementationClass)
-          })
-        } else {
-          import('$lib/utilClasses/LocalImpl').then(({ default: LocalImpl }) => {
-            implementationClass.set(new LocalImpl())
-            resolve(implementationClass)
-          })
-        }
-      } else resolve(undefined)
-    })
-  })
-}
+export const abortAutoMapping = writable<boolean>(false)
 
-const fileName = writable<string>()
+export const translator = writable<LatencyOptimisedTranslator>()
 
-const translator = writable<LatencyOptimisedTranslator>()
-
-loadImplementation()
-
-export { customConcept, settings, triggerAutoMapping, implementation, implementationClass, fileName, abortAutoMapping, translator }
+loadImplementationDB()
+loadImplementationAuth()
+loadImplementationSave()
+loadImplementationDataType()
+loadImplementationSettings()
