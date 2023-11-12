@@ -21,7 +21,8 @@ const config = {
   },
 
   kit: {
-    adapter: process.env.PUBLIC_CLOUD_DATABASE_IMPLEMENTATION === "none" ? staticAdapter({ fallback: '404.html', pages: 'build', assets: 'build', strict: true }) : autoAdapter(),
+    // adapter: process.env.PUBLIC_CLOUD_DATABASE_IMPLEMENTATION === "none" ? staticAdapter({ fallback: '404.html', pages: 'build', assets: 'build', strict: true }) : autoAdapter(),
+    adapter: staticAdapter({ fallback: '404.html', pages: 'build', assets: 'build', strict: true }),
     paths: {
       base: process.argv.includes('dev') ? '' : '/Keun',
     }
