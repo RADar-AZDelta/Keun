@@ -33,7 +33,6 @@ jobs:
       - name: build
         run: |
           pnpm run build
-          touch build/.nojekyll
 
       - name: Upload Artifacts
         uses: actions/upload-pages-artifact@v1
