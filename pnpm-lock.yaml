@@ -9,8 +9,8 @@ importers:
   .:
     dependencies:
       '@radar-azdelta/svelte-athena-search':
-        specifier: ^0.0.20
-        version: 0.0.20(vite@4.3.9)
+        specifier: ^0.0.21
+        version: 0.0.21(vite@4.3.9)
       '@radar-azdelta/svelte-datatable':
         specifier: ^0.0.56
         version: 0.0.56
@@ -442,8 +442,8 @@ packages:
       text-decoding: 1.0.0
     dev: false
 
-  /@fastify/busboy@2.0.0:
-    resolution: {integrity: sha512-JUFJad5lv7jxj926GPgymrWQxxjPYuJNiNjNMzqT+HiuP6Vl3dk5xzG+8sTX96np0ZAluvaMzPsjhHZ5rNuNQQ==}
+  /@fastify/busboy@2.1.0:
+    resolution: {integrity: sha512-+KpH+QxZU7O4675t3mnkQKcZZg56u+K/Ct2K+N2AZYNVK8kyeo/bI18tI8aPm3tvNNRyTWfj6s5tnGNlcbQRsA==}
     engines: {node: '>=14'}
     dev: false
 
@@ -1142,28 +1142,17 @@ packages:
     resolution: {integrity: sha512-Vvn3zZrhQZkkBE8LSuW3em98c0FwgO4nxzv6OdSxPKJIEKY2bGbHn+mhGIPerzI4twdxaP8/0+06HBpwf345Lw==}
     dev: false
 
-  /@radar-azdelta/svelte-athena-search@0.0.20(vite@4.3.9):
-    resolution: {integrity: sha512-ef2t0qzPzx3SYOmFKva3KDWvK+9sR5uCgRIzow6CHHCs7Vo+9NrESMZ+uEj/QJFhWW/rtJThy16UyXnYN+772w==}
+  /@radar-azdelta/svelte-athena-search@0.0.21(vite@4.3.9):
+    resolution: {integrity: sha512-f8YrsctAVkf3NRpDw6Lg0Y1oqna83fu+pcO/AAWbYdBHB9Mv9FMkjerOncrDeP7OAAQcqilR/nl1HTM+27XAMA==}
     dependencies:
-      '@radar-azdelta/svelte-datatable': 0.0.48
-      '@sveltejs/kit': 1.27.4(svelte@4.2.3)(vite@4.3.9)
+      '@radar-azdelta/svelte-datatable': 0.0.56
+      '@sveltejs/kit': 1.27.5(svelte@4.2.3)(vite@4.3.9)
       lodash.debounce: 4.0.8
       svelte: 4.2.3
     transitivePeerDependencies:
       - encoding
       - supports-color
       - vite
-    dev: false
-
-  /@radar-azdelta/svelte-datatable@0.0.48:
-    resolution: {integrity: sha512-sBndsTAUVgauUpVB9tQ4Y2ebufV4KP73rh4ncvGcrjfscJKntIoU71JVnXPREup6tLT0m3hylLwG6+G4P5e0cw==}
-    dependencies:
-      '@types/lodash': 4.14.195
-      arquero: 5.2.0
-      lodash.debounce: 4.0.8
-      lodash.isequal: 4.5.0
-    transitivePeerDependencies:
-      - encoding
     dev: false
 
   /@radar-azdelta/svelte-datatable@0.0.56:
@@ -1223,8 +1212,8 @@ packages:
       - supports-color
     dev: true
 
-  /@sveltejs/kit@1.27.4(svelte@4.2.3)(vite@4.3.9):
-    resolution: {integrity: sha512-Vxl8Jf0C1+/8i/slsxFOnwJntCBDLueO/O6GJ0390KUnyW3Zs+4ZiIinD+cEcYnJPQQ9CRzVSr9Bn6DbmTn4Dw==}
+  /@sveltejs/kit@1.27.5(svelte@4.2.3)(vite@4.3.9):
+    resolution: {integrity: sha512-+L1WPs/ZYNjXoBFoFARypD4aZOjkT51vFpRCtQI45+Fmmfi4Y0dH/8VFlmYD6VlGe89ViIPg7lgf/JpGQ2tr7A==}
     engines: {node: ^16.14 || >=18}
     hasBin: true
     requiresBuild: true
@@ -4491,7 +4480,7 @@ packages:
     resolution: {integrity: sha512-cSb4bPFd5qgR7qr2jYAi0hlX9n5YKK2ONKkLFkxl+v/9BvC0sOpZjBHDBSXc5lWAf5ty9oZdRXytBIHzgUcerw==}
     engines: {node: '>=14.0'}
     dependencies:
-      '@fastify/busboy': 2.0.0
+      '@fastify/busboy': 2.1.0
     dev: false
 
   /universalify@2.0.0:
