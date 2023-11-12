@@ -287,7 +287,7 @@
     if (!row.conceptId) row.conceptId = row.sourceAutoAssignedConceptIds
     const currentStatus = row.statusSetBy
     let update = {}
-    if (currentStatus === author)
+    if (currentStatus !== author && (row.mappingStatus === 'SEMI-APPROVED' || row.mappingStatus === 'APPROVED'))
       update = { 'ADD_INFO:approvedBy': author, 'ADD_INFO:approvedOn': Date.now(), mappingStatus: 'APPROVED' }
     else update = { statusSetBy: author, statusSetOn: Date.now(), mappingStatus: 'SEMI-APPROVED' }
     return Object.assign(row, update)
