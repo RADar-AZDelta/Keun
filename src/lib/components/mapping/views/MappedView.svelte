@@ -12,7 +12,7 @@
   let options: ITableOptions = { actionColumn: true, id: 'mappedConcepts' }
 
   async function removeMapping(row: IMappedRow) {
-    if (!row.conceptId || !row.conceptName) return
+    if (!row.conceptName) return
     dispatch('removeMapping', { conceptId: row.conceptId, conceptName: row.conceptName })
   }
 </script>
@@ -20,7 +20,7 @@
 <div class="table">
   <DataTable data={mappedData} {columns} {options} let:renderedRow>
     <td>
-      {#if renderedRow.conceptId && renderedRow.conceptName}
+      {#if renderedRow.conceptName}
         <button on:click={() => removeMapping(renderedRow)}><SvgIcon id="x" /></button>
       {/if}
     </td>

@@ -87,7 +87,8 @@ export default class LocalImpl implements IUpdatedFunctionalityImpl {
     const fileId = fileInfo.id
     const blob = await stringToBlob(fileInfo.content)
     const file = new File([blob], fileInfo.name, { type: 'text/csv' })
-    await this.download(fileInfo.name, file)
+    const updatedName = file.name.split('.')[0] + '_usagi.csv'
+    await this.download(updatedName, file)
     await this.downloadCustomFile(fileId)
     await this.deleteFile(id)
   }
@@ -99,7 +100,8 @@ export default class LocalImpl implements IUpdatedFunctionalityImpl {
     if (customFileInfo.content.includes('0,test,test,test,test,S,123')) return
     const customBlob = await stringToBlob(customFileInfo.content)
     const customFile = new File([customBlob], customFileInfo.name, { type: 'text/csv' })
-    await this.download(customFile.name, customFile)
+    const updatedName = customFile.name.split('.')[0] + '_concept.csv'
+    await this.download(updatedName, customFile)
   }
 
   async getAllAuthors(): Promise<void | IUserRestriction> { }

@@ -14,6 +14,7 @@
   } from '$lib/components/Types'
   import { query } from 'arquero'
   import type Query from 'arquero/dist/types/query/query'
+  import { settings } from '$lib/store'
 
   export let selectedRow: IUsagiRow, customTable: DataTable
 
@@ -66,8 +67,14 @@
       valid_end_date: '2099-12-31',
       invalid_reason: '',
     }
-    if (data[0]?.concept_name) data.unshift(inputRow)
-    else data[0] = inputRow
+    if ($settings.mapToMultipleConcepts) {
+      if (data[0]?.concept_name) data.unshift(inputRow)
+      else data[0] = inputRow
+    } else {
+      if (data.length >= 2) data = [inputRow, data[0]]
+      else if (data[0]?.concept_name) data.unshift(inputRow)
+      else data[0] = inputRow
+    }
   }
 
   $: {
