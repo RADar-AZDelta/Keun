@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { onMount } from 'svelte'
   import { page } from '$app/stores'
   import { base } from '$app/paths'
   import { beforeNavigate } from '$app/navigation'
@@ -10,7 +11,6 @@
   import Settings from '$lib/components/extra/Settings.svelte'
   import User from '$lib/components/extra/User.svelte'
   import { loadImplementationSettings } from '$lib/implementations/implementation'
-  import { onMount } from 'svelte'
 
   // TODO: set up Firebase project for internal use in AZD (Firebase impl)
   // TODO: set up SQLite impl for reference for other hospitals
@@ -18,7 +18,6 @@
   beforeNavigate(async ({ from, to, cancel }): Promise<void> => {
     if (!$settingsImpl) loadImplementationSettings()
     $settingsImpl?.updateSettings($settings)
-    // await $implementationClass.syncSettings('write')
   })
 
   onMount(async () => {

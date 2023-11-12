@@ -1,15 +1,15 @@
 <script lang="ts">
-  import type { ICustomConceptInput, MappingEvents } from '$lib/components/Types'
+  import { createEventDispatcher } from 'svelte'
+  import { query } from 'arquero'
+  import type DataTable from '@radar-azdelta/svelte-datatable'
+  import { settings } from '$lib/store'
+  import { transformFromCustomRowToUsagiRow } from '$lib/mappingUtils'
+  import suggestions from '$lib/data/customConceptInfo.json'
   import AutocompleteInput from '$lib/components/extra/AutocompleteInput.svelte'
   import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
-  import suggestions from '$lib/data/customConceptInfo.json'
-  import { transformFromCustomRowToUsagiRow } from '$lib/mappingUtils'
-  import { settings } from '$lib/store'
-  import type DataTable from '@radar-azdelta/svelte-datatable'
-  import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
-  import { query } from 'arquero'
   import type Query from 'arquero/dist/types/query/query'
-  import { createEventDispatcher } from 'svelte'
+  import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
+  import type { ICustomConceptInput, MappingEvents } from '$lib/components/Types'
 
   export let renderedRow: Record<string, any>,
     columns: IColumnMetaData[] | undefined,

@@ -1,10 +1,13 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
   import DataTable, { type ITableOptions } from '@radar-azdelta/svelte-datatable'
+  import { query } from 'arquero'
+  import { settings } from '$lib/store'
   import { reformatDate } from '$lib/utils'
   import customColumns from '$lib/data/columnsCustomConcept.json'
   import InputRow from '$lib/components/mapping/views/InputRow.svelte'
   import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
+  import type Query from 'arquero/dist/types/query/query'
   import type {
     CustomMappingInputEventDetail,
     ICustomConceptInput,
@@ -12,9 +15,6 @@
     MappingEvents,
     UpdateErrorEventDetail,
   } from '$lib/components/Types'
-  import { query } from 'arquero'
-  import type Query from 'arquero/dist/types/query/query'
-  import { settings } from '$lib/store'
 
   export let selectedRow: IUsagiRow, customTable: DataTable
 

@@ -11,6 +11,7 @@
   // @ts-ignore
   import { LatencyOptimisedTranslator } from '@browsermt/bergamot-translator/translator.js'
   import { stringToFile } from '$lib/utils'
+  import { addExtraFields } from '$lib/mappingUtils'
   import { abortAutoMapping, customFileTypeImpl, databaseImpl, fileTypeImpl, saveImpl } from '$lib/store'
   import { selectedFileId, settings, translator, triggerAutoMapping, user } from '$lib/store'
   import {
@@ -23,7 +24,6 @@
   import AthenaSearch from '$lib/components/mapping/AthenaSearch.svelte'
   import UsagiRow from '$lib/components/mapping/UsagiRow.svelte'
   import type { IAthenaRow, IMapRow, IUsagiRow, NavigateRowEventDetail } from '$lib/components/Types'
-  import { addExtraFields } from '$lib/mappingUtils'
   import type { MappingEventDetail, AutoMapRowEventDetail, RowSelectionEventDetail } from '$lib/components/Types'
 
   // General variables
@@ -51,8 +51,7 @@
     globalAthenaFilter: { column: string; filter: string | undefined } = { column: 'all', filter: undefined }
 
   // Table related variables
-  let tableInit: boolean = false,
-    currentVisibleRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>(),
+  let currentVisibleRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>(),
     selectedRow: IUsagiRow,
     selectedRowIndex: number,
     previousPage: number
@@ -300,7 +299,7 @@
     if (!$databaseImpl) await loadImplementationDB()
     await $databaseImpl!.editFile($selectedFileId, blob, customBlob)
     await $databaseImpl!.downloadFile($selectedFileId)
-    // goto(`${base}/`)
+    goto(`${base}/`)
   }
 
   // A method to get the file from the database implementation
@@ -354,11 +353,6 @@
     const customBlob = dataTableCustomConcepts ? await dataTableCustomConcepts.getBlob() : undefined
     if (!$databaseImpl) await loadImplementationDB()
     await $databaseImpl!.editFile($selectedFileId, blob, customBlob)
-  }
-
-  // A method to set a variable when the table is initialized
-  async function dataTableInitialized(): Promise<void> {
-    tableInit = true
   }
 
   // A method to create the meta data per column
@@ -434,19 +428,15 @@
   />
 </svelte:head>
 
-{#if tableInit}
+{#if file}
   <button on:click={syncFile}>Save</button>
   <button on:click={downloadPage}>Download</button>
   <button on:click={approvePage}>Approve page</button>
-{/if}
-
-{#if file}
   <DataTable
     data={file}
     bind:this={dataTableMapping}
     options={tableOptions}
     on:rendering={abortAutoMap}
-    on:initialized={dataTableInitialized}
     on:renderingComplete={autoMapPage}
     modifyColumnMetadata={modifyUsagiColumnMetadata}
   >
