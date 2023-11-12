@@ -3,8 +3,6 @@ import autoAdapter from '@sveltejs/adapter-auto';
 import staticAdapter from '@sveltejs/adapter-static'
 import { vitePreprocess } from '@sveltejs/kit/vite'
 
-const dev = process.argv.includes('dev');
-
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
   // Consult https://github.com/sveltejs/svelte-preprocess
@@ -23,9 +21,9 @@ const config = {
   },
 
   kit: {
-    adapter: process.env.PUBLIC_CLOUD_DATABASE_IMPLEMENTATION === "none" ? staticAdapter({ fallback: 'index.html' }) : autoAdapter(),
+    adapter: process.env.PUBLIC_CLOUD_DATABASE_IMPLEMENTATION === "none" ? staticAdapter({ fallback: '404.html', pages: 'build', assets: 'build', strict: true }) : autoAdapter(),
     paths: {
-      base: dev ? '' : '/Keun',
+      base: process.argv.includes('dev') ? '' : '/Keun',
     }
   },
 }
