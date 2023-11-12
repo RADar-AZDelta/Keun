@@ -1,22 +1,25 @@
 import { dev } from '$app/environment'
 import { json, type RequestHandler } from '@sveltejs/kit'
+import { firebaseUser } from '$lib/store'
+
+// TODO: check this because firebaseUser !== user
 
 export const POST: RequestHandler = async ({ request, cookies }) => {
   const payload = await request.json()
   const token: string = payload.token || ''
-  await import('$lib/firebaseAdmin.server').then(async({ decodeToken }) => {
-    const decodedToken = await decodeToken(token) 
+  firebaseUser.subscribe(async user => {
+    const res = await user?.getIdTokenResult()
     if (token) {
       cookies.set('token', token, {
         path: '/',
         httpOnly: true,
         secure: !dev,
-        expires: decodedToken?.exp ? undefined : new Date(decodedToken?.exp!)
+        expires: !res?.claims.exp ? undefined : new Date(res.claims.exp),
       })
     } else {
       cookies.delete('token', { path: '/' })
     }
-  })
+  })()
 
   return json({})
 }

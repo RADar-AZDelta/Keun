@@ -52,45 +52,18 @@ export function base64ToFile(dataUrl: string, fileName: string) {
 
 export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export function removeUndefineds(obj: any): any {
+export function removeUndefinedsAndNulls(obj: any, specificProperties?: string[] | undefined): any {
   if (!obj) {
-      return null;
+      return false;
   }
-  if (typeof obj === 'object') {
-      for (let key in obj) {
-          obj[key] = removeUndefineds(obj[key]);
-      }
+  if(typeof obj !== 'object') return obj
+  for(let [key, value] of Object.entries(obj)) {
+    if(specificProperties && specificProperties?.includes(key)) obj[key] = removeUndefinedsAndNulls(value, specificProperties)
+    else obj[key] = removeUndefinedsAndNulls(value, specificProperties)
   }
   return obj;
 }
 
-export function replaceNullsWithFalse(obj: any, specificProperties?: string[] | undefined): any {
-  if(!obj) {
-    return false;
-  }
-  if(typeof obj === 'object') {
-    if(Array.isArray(obj)) {
-      for(let innerObj in obj) {
-        for(let [key, value] of Object.entries(obj[innerObj])) {
-          if(specificProperties){
-            if(specificProperties.includes(key)) obj[innerObj][key] = replaceNullsWithFalse(obj[innerObj][key])
-          } else {
-            obj[innerObj][key] = replaceNullsWithFalse(obj[innerObj][key])
-          }
-        }
-      }
-    } else {
-      for(let [key, value] of Object.entries(obj)) {
-        if(specificProperties){
-          if(specificProperties.includes(key)) obj[key] = replaceNullsWithFalse(obj[key])
-        } else {
-          obj[key] = replaceNullsWithFalse(obj[key])
-        }
-      }
-    }
-  }
-  return obj
-}
 
 export function onInterval(callback: () => void, milliseconds: number) {
   const interval = setInterval(callback, milliseconds)
@@ -146,4 +119,17 @@ export async function blobToString(blob: Blob): Promise<any> {
 
 export async function stringToBlob(str: string, type: string = "text/csv"): Promise<Blob> {
   return new Blob([str], { type })
+}
+
+export async function stringToFile(str: string, name: string, type: string = "text/csv"): Promise<File> {
+  const blob = new Blob([str], { type })
+  return new File([blob], name, { type })
+}
+
+export function reformatDate(date: Date = new Date()) {
+  return `${date.getFullYear()}-${
+      (date.getMonth() + 1).toString().length === 2
+        ? date.getMonth() + 1
+        : `0${date.getMonth() + 1}`
+    }-${date.getDate().toString().length === 2 ? date.getDate() : `0${date.getDate()}`}`
 }
