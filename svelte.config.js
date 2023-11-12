@@ -23,7 +23,7 @@ const config = {
   },
 
   kit: {
-    adapter: process.env.PUBLIC_CLOUD_IMPLEMENTATION === "none" ? staticAdapter({ fallback: 'index.html' }) : autoAdapter(),
+    adapter: process.env.PUBLIC_CLOUD_DATABASE_IMPLEMENTATION === "none" ? staticAdapter({ fallback: 'index.html' }) : autoAdapter(),
     paths: {
       base: dev ? '' : '/Keun',
     }
