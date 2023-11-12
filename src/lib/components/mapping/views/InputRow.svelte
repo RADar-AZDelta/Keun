@@ -4,6 +4,7 @@
   import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
   import suggestions from '$lib/data/customConceptInfo.json'
   import { transformFromCustomRowToUsagiRow } from '$lib/mappingUtils'
+  import { settings } from '$lib/store'
   import type DataTable from '@radar-azdelta/svelte-datatable'
   import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
   import { query } from 'arquero'
@@ -36,7 +37,17 @@
     dispatch('customMappingInput', { row: transformedRow, originalRow: inputRow as ICustomConceptInput })
   }
 
+  // If multiple mapping is off & there are already other custom concepts for this row, delete those
+  async function checkForPreviousCustomConcept() {
+    const params = <Query>query().params({ code: inputRow.concept_code })
+    const existanceQuery = params.filter((r: any, p: any) => r.concept_code === p.code).toObject()
+    const existance = await customTable.executeQueryAndReturnResults(existanceQuery)
+    if (!existance.queriedData.length) return
+    await customTable.deleteRows(existance.indices)
+  }
+
   async function addCustomConcept() {
+    if (!$settings.mapToMultipleConcepts) await checkForPreviousCustomConcept()
     const concept = inputRow
     const params = {
       name: concept.concept_name,

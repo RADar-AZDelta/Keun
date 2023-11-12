@@ -18,8 +18,6 @@
   import type { IView } from '@radar-azdelta/svelte-athena-search/dist/Types'
   import type {
     IAthenaRow,
-    ICustomConcept,
-    IExtraUsagiCols,
     IMappedRow,
     IUsagiAllExtra,
     IUsagiRow,
@@ -51,6 +49,7 @@
     comment: string = '',
     equivalence: string = 'EQUAL'
   let activatedAthenaFilters = new Map<string, string[]>([['standardConcept', ['Standard']]])
+  let mappedToConceptIds: number[] = []
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // EVENTS
@@ -59,12 +58,14 @@
   // A method that catches the event for single mapping and throws an event to the parent
   async function singleMapping(row: IAthenaRow): Promise<void> {
     row.equivalence = equivalence
+    mappedToConceptIds = [row.id]
     dispatch('singleMapping', { originalRow: selectedRow, row, extra: { comment, reviewer } })
   }
 
   // A method that catches the event for multiple mapping and throws an event to the parent
   async function multipleMapping(row: IAthenaRow): Promise<void> {
     row.equivalence = equivalence
+    mappedToConceptIds = [...mappedToConceptIds, row.id]
     dispatch('multipleMapping', { originalRow: selectedRow, row, extra: { comment, reviewer } })
   }
 
@@ -84,25 +85,29 @@
 
   // Delete the mapping in the table & update the other rows if it has multiple concepts that are mapped to the row
   async function removeMapping(e: CustomEvent<RemoveMappingEventDetail>): Promise<void> {
+    console.log('REMOVE MAPPING')
     const { conceptId, conceptName } = e.detail
     if (conceptId === 0) removeFromCustomTable(conceptId, conceptName)
     const params = <Query>query().params({ code: selectedRow.sourceCode })
     const conceptsQuery = params.filter((r: any, p: any) => r.sourceCode === p.code).toObject()
     const concepts = await mainTable.executeQueryAndReturnResults(conceptsQuery)
+    console.log(concepts)
     if (!concepts.indices.length) return
     if (concepts.indices.length > 1) {
-      const rowListIndex = concepts.queriedData.find(
+      const rowListIndex = concepts.queriedData.findIndex(
         (r: any) => r.conceptId === conceptId && r.conceptName === conceptName
       )
+      debugger
       const originalIndex = concepts.indices[rowListIndex]
       const extraIndices = concepts.indices.filter((i: number) => i !== originalIndex)
       const updatedRows = new Map<number, Record<string, any>>()
       extraIndices.forEach((i: number) => updatedRows.set(i, { 'ADD_INFO:numberOfConcepts': extraIndices.length }))
       await mainTable.updateRows(updatedRows)
-      await mainTable.deleteRows(originalIndex)
+      await mainTable.deleteRows([originalIndex])
     } else {
+      const index = concepts.indices[0]
       const reset = await resetRow()
-      await mainTable.updateRows(new Map([concepts.indices[0], reset]))
+      await mainTable.updateRows(new Map([[index, reset]]))
     }
     fillMappedTable()
   }
@@ -110,7 +115,13 @@
   // Map a new custom concept to a row
   async function customMapping(e: CustomEvent<CustomMappingInputEventDetail>) {
     if (dev) console.log('mapCustmoRow: Map a row to a custom concept')
-    mappedData = [...mappedData, e.detail.row]
+    if ($settings.mapToMultipleConcepts) {
+      mappedData = [...mappedData, e.detail.row]
+      mappedToConceptIds = [...mappedToConceptIds, e.detail.row.conceptId]
+    } else {
+      mappedData = [e.detail.row]
+      mappedToConceptIds = [e.detail.row.conceptId]
+    }
     const customConcept = e.detail.row
     let mappedRow = await addExtraFields(selectedRow, false)
     const update: IUsagiAllExtra = {
@@ -121,7 +132,6 @@
       mappingStatus: 'SEMI-APPROVED',
       'ADD_INFO:customConcept': true,
     }
-    if (!mappedRow['ADD_INFO:numberOfConcepts']) update['ADD_INFO:numberOfConcepts'] = 1
     Object.assign(mappedRow, update)
     if (!$settings || !$settings.mapToMultipleConcepts) {
       return await mainTable.updateRows(new Map([[selectedRowIndex, mappedRow]]))
@@ -130,7 +140,8 @@
     const conceptsParams = <Query>query().params({ code: mappedRow.sourceCode })
     const conceptsQuery = conceptsParams.filter((r: any, p: any) => r.sourceCode === p.code).toObject()
     const concepts = await mainTable.executeQueryAndReturnResults(conceptsQuery)
-    if (concepts.queriedData.length === 1 && !concepts.queriedData[0].conceptId)
+    // Update the test row if it is still in there
+    if (concepts.queriedData.length === 1 && !concepts.queriedData[0].conceptName)
       return await mainTable.updateRows(new Map([[selectedRowIndex, mappedRow]]))
 
     mappedRow['ADD_INFO:numberOfConcepts'] = concepts.indices.length + 1
@@ -164,34 +175,49 @@
     if ($settings.mapToMultipleConcepts) multipleMapping(renderedRow)
     else singleMapping(renderedRow)
     selectedRow.conceptId = renderedRow.id
-    mappedData.push({
+    const mappedRow = {
       sourceCode: selectedRow.sourceCode,
       sourceName: selectedRow.sourceName,
       conceptId: renderedRow.id,
       conceptName: renderedRow.name,
       customConcept: renderedRow.id === 0 ? true : false,
-    })
+    }
+    if ($settings.mapToMultipleConcepts) mappedData = [...mappedData, mappedRow]
+    else mappedData = [mappedRow]
+  }
+
+  async function getAllMappedToConcepts() {
+    if (!$settings.mapToMultipleConcepts || !selectedRow?.sourceCode) return
+    const params = <Query>query().params({ code: selectedRow.sourceCode })
+    const rowsQuery = params.filter((r: any, p: any) => r.sourceCode === p.code).toObject()
+    const rows = await mainTable.executeQueryAndReturnResults(rowsQuery)
+    mappedToConceptIds = rows.queriedData.map((r: IUsagiRow) => r.conceptId)
   }
 
   ///////////////////////////// MAPPED TABLE METHODS /////////////////////////////
 
   // A method to fill the table with the already mapped concepts
   async function fillMappedTable() {
+    console.log('FILL MAPPED')
     mappedData = []
     if (!selectedRow?.sourceCode) return
     const queryParams = <Query>query().params({ source: selectedRow.sourceCode })
     const conceptsQuery = queryParams.filter((d: any, p: any) => d.sourceCode === p.source && d.conceptName).toObject()
     const concepts = await mainTable.executeQueryAndReturnResults(conceptsQuery)
     if (!concepts.queriedData.length) return (mappedData = [{}])
-    for (let concept of concepts.queriedData)
-      mappedData.push({
+    const newMappedData: (object | IMappedRow)[] = []
+    for (let concept of concepts.queriedData) {
+      const con = {
         sourceCode: concept.sourceCode,
         sourceName: concept.sourceName,
         conceptId: concept.conceptId,
         conceptName: concept.conceptName,
         customConcept: concept.conceptId === '0' ? true : false,
-      })
-    mappedData = mappedData
+      }
+      if (!newMappedData.includes(con)) newMappedData.push(con)
+    }
+    mappedData = newMappedData
+    console.log('SHOW MAPPED ', mappedData)
   }
 
   ///////////////////////////// HEAD METHODS /////////////////////////////
@@ -229,6 +255,7 @@
 
   $: {
     selectedRowIndex
+    getAllMappedToConcepts()
     fillMappedTable()
   }
 </script>
@@ -239,7 +266,7 @@
     <section class="search-container">
       <Search {views} bind:globalFilter={globalAthenaFilter}>
         <div slot="action-athena" let:renderedRow>
-          {#if selectedRow?.conceptId === renderedRow.id}
+          {#if mappedToConceptIds.includes(renderedRow.id)}
             <button title="Map to row" style="background-color: greenyellow;"><SvgIcon id="check" /></button>
           {:else}
             <button on:click={() => onClickMapping(renderedRow)}><SvgIcon id="plus" /></button>

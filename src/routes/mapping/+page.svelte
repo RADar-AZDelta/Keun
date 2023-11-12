@@ -420,7 +420,8 @@
   $: author = $user ? $user.name : null
 
   // Sync the file to the database implementation before leaving the page
-  beforeNavigate(async ({ from, to, cancel }) => syncFile())
+  // Note: this does not always work so for that reason, there is a save button provided
+  beforeNavigate(async ({ from, to, cancel }) => await syncFile())
 
   onDestroy(() => removeWatch())
 </script>
@@ -433,12 +434,11 @@
   />
 </svelte:head>
 
-<button on:click={async() => {
-  const row = await dataTableMapping.getFullRow(1)
-  console.log(row)
-  }}>
-  See
-</button>
+{#if tableInit}
+  <button on:click={syncFile}>Save</button>
+  <button on:click={downloadPage}>Download</button>
+  <button on:click={approvePage}>Approve page</button>
+{/if}
 
 {#if file}
   <DataTable
@@ -460,6 +460,7 @@
       index={originalIndex}
       {disabled}
       table={dataTableMapping}
+      customTable={dataTableCustomConcepts}
       bind:currentVisibleRows
       on:rowSelection={selectRow}
       on:autoMapRow={autoMapSingleRow}
@@ -488,11 +489,6 @@
       bind:this={dataTableCustomConcepts}
     />
   </div>
-
-  {#if tableInit}
-    <button on:click={approvePage}>Approve page</button>
-    <button on:click={downloadPage}>Download</button>
-  {/if}
 {/if}
 
 <style>
