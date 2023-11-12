@@ -36,6 +36,6 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    exclude: ['@radar-azdelta/svelte-datatable', '@browsermt/bergamot-translator'],
+    exclude: ['@radar-azdelta/svelte-datatable', '@browsermt/bergamot-translator', '@radar-azdelta/svelte-athena-search'],
   },
 })
