@@ -1,17 +1,23 @@
 steps:
-- name: 'node:lts'
-  entrypoint: npm
-  args: ['install', 'pnpm']
-  id: 'Install pnpm'
+- name: 'gcr.io/cloud-builders/wget'
+  args:
+  - '--quiet'
+  - '-O'
+  - 'pnpm'
+  - 'https://get.pnpm.io/install.sh'
+
+- name: 'debian:11'
+  args:
+  - 'bash'
+  - '-c'
+  - |
+    mv pnpm /tmp
+    chmod 755 /tmp/pnpm
+    /tmp/pnpm install"
 
 - name: 'node:lts'
-  entrypoint: pnpm
-  args: ['install']
-  id: 'Install all dependencies'
-
-- name: 'node:lts'
-  entrypoint: pnpm
-  args: ["run", "build"]
+  args:
+    - '/tmp/pnpm run build'
   id: 'Build the application'
 
 - name: 'gcr.io/cloud-builders/wget'
