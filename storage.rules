@@ -1,0 +1,50 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /files/{fileId} {
+      function isSignedIn() {
+      	return request.auth != null;
+      }
+      
+      function getRole(arr) {
+      	let role = firestore.get(/databases/(default)/documents/roles/$(request.auth.uid)).data.role;
+        return role in arr;
+      }
+
+      function checkAuthorList() {
+        let list = firestore.get(/databases/(default)/documents/files/$(fileId)).authors;
+        return request.auth.uid in list || getRole(['admin'])
+      }
+      
+      function getRoleClaims(arr) {
+      	return request.auth.token.role in arr;
+      }
+    
+      allow create, delete: if isSignedIn() && getRoleClaims(['admin']) && getRole(['admin']);
+      allow read, update: if isSignedIn() && getRoleClaims(['user', 'admin']) && getRole(['user', 'admin']) && checkAuthorList();
+    }
+    match /customFiles/{fileId} {
+      function isSignedIn() {
+      	return request.auth != null;
+      }
+      
+      function getRole(arr) {
+      	let role = firestore.get(/databases/(default)/documents/roles/$(request.auth.uid)).data.role;
+        return role in arr;
+      }
+
+      function checkAuthorList() {
+        let list = firestore.get(/databases/(default)/documents/files/$(fileId)).authors;
+        return request.auth.uid in list || getRole(['admin'])
+      }
+      
+      function getRoleClaims(arr) {
+      	return request.auth.token.role in arr;
+      }
+    
+      allow create, delete: if isSignedIn() && getRoleClaims(['admin']) && getRole(['admin']);
+      allow read, update: if isSignedIn() && getRoleClaims(['user', 'admin']) && getRole(['user', 'admin']) && checkAuthorList();
+    }
+  }
+}
