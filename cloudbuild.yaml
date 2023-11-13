@@ -2,7 +2,7 @@ steps:
 - name: 'node:lts'
   entrypoint: npm
   args: ['install', '-g', 'pnpm']
-  id: 'Install pnpm globally
+  id: 'Install pnpm globally'
 
 - name: 'node:lts'
   entrypoint: pnpm
