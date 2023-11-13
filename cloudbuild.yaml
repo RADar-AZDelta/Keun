@@ -1,23 +1,12 @@
 steps:
-- name: 'gcr.io/cloud-builders/wget'
-  args:
-  - '--quiet'
-  - '-O'
-  - 'pnpm'
-  - 'https://get.pnpm.io/install.sh'
-
-- name: 'debian:11'
-  args:
-  - 'bash'
-  - '-c'
-  - |
-    mv pnpm /tmp
-    chmod 755 /tmp/pnpm
-    /tmp/pnpm install"
+- name: 'node:lts'
+  entrypoint: npm
+  args: ['install']
+  id: 'Install all dependencies'
 
 - name: 'node:lts'
-  args:
-    - '/tmp/pnpm run build'
+  entrypoint: npm
+  args: ["run", "build"]
   id: 'Build the application'
 
 - name: 'gcr.io/cloud-builders/wget'
