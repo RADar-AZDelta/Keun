@@ -23,4 +23,4 @@ steps:
   - |
     mv firebase /tmp
     chmod 755 /tmp/firebase
-    /tmp/firebase deploy --project ${PROJECT_ID} --non-interactive -m "Build ${BUILD_ID}"
+    /tmp/firebase deploy --project ${PROJECT_ID} --non-interactive -m "Build ${BUILD_ID}" --debug
