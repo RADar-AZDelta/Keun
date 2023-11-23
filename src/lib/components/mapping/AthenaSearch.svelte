@@ -85,7 +85,6 @@
 
   // Delete the mapping in the table & update the other rows if it has multiple concepts that are mapped to the row
   async function removeMapping(e: CustomEvent<RemoveMappingEventDetail>): Promise<void> {
-    console.log('REMOVE MAPPING')
     const { conceptId, conceptName } = e.detail
     if (conceptId === 0) removeFromCustomTable(conceptId, conceptName)
     const params = <Query>query().params({ code: selectedRow.sourceCode })
@@ -198,7 +197,6 @@
 
   // A method to fill the table with the already mapped concepts
   async function fillMappedTable() {
-    console.log('FILL MAPPED')
     mappedData = []
     if (!selectedRow?.sourceCode) return
     const queryParams = <Query>query().params({ source: selectedRow.sourceCode })
@@ -217,7 +215,6 @@
       if (!newMappedData.includes(con)) newMappedData.push(con)
     }
     mappedData = newMappedData
-    console.log('SHOW MAPPED ', mappedData)
   }
 
   ///////////////////////////// HEAD METHODS /////////////////////////////
