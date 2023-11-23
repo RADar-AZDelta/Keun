@@ -1,5 +1,13 @@
-import type { FirebaseApp } from "firebase/app";
-import { GithubAuthProvider, GoogleAuthProvider, getAuth, type AuthProvider, signInWithPopup, signOut, type User, type IdTokenResult, onAuthStateChanged, type Auth, type UserCredential } from 'firebase/auth';
+import {
+	PUBLIC_FIREBASE_API_KEY,
+	PUBLIC_FIREBASE_AUTH_DOMAIN,
+	PUBLIC_FIREBASE_PROJECT_ID,
+	PUBLIC_FIREBASE_STORAGE_BUCKET,
+	PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+	PUBLIC_FIREBASE_APP_ID,
+} from '$env/static/public'
+import { getApps, type FirebaseApp, type FirebaseOptions, initializeApp, getApp } from "firebase/app";
+import { GithubAuthProvider, GoogleAuthProvider, getAuth, type AuthProvider, signInWithPopup, signOut, type User, type IdTokenResult, onAuthStateChanged, type Auth, type UserCredential, OAuthProvider } from 'firebase/auth';
 import { DataSnapshot, Database, child, get, getDatabase, off, onValue, push, ref, remove, set, update } from 'firebase/database'
 import { deleteObject, getBlob, getStorage, ref as storageRef, uploadBytes, type FirebaseStorage } from 'firebase/storage'
 import type { UserSession } from '../app';
@@ -7,67 +15,37 @@ import { sleep } from './utils';
 import { writable } from 'svelte/store';
 import { browser, dev } from '$app/environment';
 
-// Initialize Firebase
-let firebaseApp: FirebaseApp | undefined, firebaseAuth: Auth | undefined, firebaseDatabase: Database | undefined, firebaseStorage: FirebaseStorage | undefined
-
-async function getFirebaseApp(): Promise<void> {
-	const res = await fetch('/api/firebase');
-	const body = await res.json()
-	if(body.app) firebaseApp = body.app
-	else console.error('There was no Firebase API key defined.')
+const firebaseConfig: FirebaseOptions = {
+	apiKey: PUBLIC_FIREBASE_API_KEY,
+	authDomain: PUBLIC_FIREBASE_AUTH_DOMAIN,
+	projectId: PUBLIC_FIREBASE_PROJECT_ID,
+	storageBucket: PUBLIC_FIREBASE_STORAGE_BUCKET,
+	messagingSenderId: PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+	appId: PUBLIC_FIREBASE_APP_ID,
 }
 
-// Providers
-const googleAuthProvider = new GoogleAuthProvider();
-const githubAuthProvider = new GithubAuthProvider();
+let firebaseApp: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig)
 
-// Auth
-async function setAuth(): Promise<Auth> {
-	if(!firebaseApp) await getFirebaseApp()
-	firebaseAuth = getAuth(firebaseApp);
-	return firebaseAuth
-}
-// Realtime Database
-async function setDatabase(): Promise<void> {{
-	if(!firebaseApp) await getFirebaseApp()
-	firebaseDatabase = getDatabase(firebaseApp);
-}}
-// Storage
-async function setStorage(): Promise<void> {
-	if(!firebaseApp) await getFirebaseApp()
-	firebaseStorage = getStorage(firebaseApp);
-}
+const firebaseAuth = getAuth(firebaseApp)
+const firebaseDatabase = getDatabase(firebaseApp)
+const firebaseStorage = getStorage(firebaseApp)
+
+const microsoftAuthProvider = new OAuthProvider('microsoft.com')
+microsoftAuthProvider.setCustomParameters({
+	// tenant: PUBLIC_TENANT_ID,
+})
+
 
 // Methods
-async function logIn(provider: string): Promise<UserCredential> {
-	try {
-		let authProvider: AuthProvider;
-
-		switch (provider) {
-			case 'google':
-				authProvider = googleAuthProvider;
-				break;
-			case 'github':
-				authProvider = githubAuthProvider;
-				break;
-		}
-		if(!firebaseAuth) await setAuth()
-		const userCred = await signInWithPopup(firebaseAuth!, authProvider!);
-		const token = await userCred.user.getIdTokenResult(true);
-		await setToken(token.token);
-		return userCred
-	} catch (error: any) {
-		throw {
-			code: error.code,
-			message: error.message,
-			email: error.customData.email
-		};
-	}
+async function logIn(): Promise<UserCredential> {
+	const userCred = await signInWithPopup(firebaseAuth, microsoftAuthProvider)
+	const token = await userCred.user.getIdTokenResult(true)
+	await setToken(token.token)
+	return userCred
 }
 
 async function logOut(): Promise<void> {
-	if(!firebaseAuth) await setAuth()
-	await signOut(firebaseAuth!);
+	await signOut(firebaseAuth);
 	await setToken();
 }
 
@@ -132,7 +110,7 @@ const userSessionStore = writable<UserSession>({});
 let _resolve: any;
 const userSessionInitialized = new Promise((resolve) => (_resolve = resolve));
 
-if(browser && firebaseAuth) {
+if (browser && firebaseAuth) {
 	onAuthStateChanged(firebaseAuth, async (user) => {
 		if (user) {
 			const token = await user.getIdTokenResult(false);
@@ -151,22 +129,22 @@ const onlyReadableUserSessionStore = { subscribe: userSessionStore.subscribe };
 
 async function writeToDatabase(path: string, data: Object): Promise<void> {
 	if (dev) console.log("writeToDatabase: Write data to the path ", path)
-	if(!firebaseDatabase) await setDatabase()
+	if (!firebaseDatabase) await setDatabase()
 	const reference = ref(firebaseDatabase!, path);
 	await set(reference, data)
 }
 
 async function pushToDatabase(path: string, data: any): Promise<void> {
 	if (dev) console.log("writeToDatabase: Push data to the path ", path)
-	if(!firebaseDatabase) await setDatabase()
-    const reference = ref(firebaseDatabase!, path)
-    await push(reference, data)
+	if (!firebaseDatabase) await setDatabase()
+	const reference = ref(firebaseDatabase!, path)
+	await push(reference, data)
 }
 
 async function readDatabase(path: string): Promise<any> {
 	if (dev) console.log('readDatabase: Read data from the path ', path)
 	let receivedData: any;
-	if(!firebaseDatabase) await setDatabase()
+	if (!firebaseDatabase) await setDatabase()
 	const reference = ref(firebaseDatabase!);
 	await get(child(reference, path))
 		.then((snapshot: DataSnapshot) => {
@@ -179,11 +157,11 @@ async function readDatabase(path: string): Promise<any> {
 }
 
 async function watchValueDatabase(path: string, callback: (snapshot: DataSnapshot) => unknown, remove: boolean = false): Promise<void> {
-	if(!firebaseDatabase) await setDatabase()
+	if (!firebaseDatabase) await setDatabase()
 	const reference = ref(firebaseDatabase!, path)
 	if (dev) console.log('watchValueDatabase: Watching the value at path ', path)
 	const valueCheck = onValue(reference, callback)
-	if(remove) {
+	if (remove) {
 		// Close twice because it will create the listener twice
 		valueCheck()
 		valueCheck()
@@ -191,13 +169,13 @@ async function watchValueDatabase(path: string, callback: (snapshot: DataSnapsho
 }
 async function deleteDatabase(path: string): Promise<void> {
 	if (dev) console.log('deleteDatabase: Delete the data at the path ', path)
-	if(!firebaseDatabase) await setDatabase()
+	if (!firebaseDatabase) await setDatabase()
 	remove(ref(firebaseDatabase!, path))
 }
 
 async function updateDatabase(path: string, data: Object): Promise<void> {
 	if (dev) console.log('updateDatabase: Update the database with data at the path ', path)
-	if(!firebaseDatabase) await setDatabase()
+	if (!firebaseDatabase) await setDatabase()
 	const reference = ref(firebaseDatabase!, path)
 	await update(reference, data)
 }
@@ -205,25 +183,25 @@ async function updateDatabase(path: string, data: Object): Promise<void> {
 async function uploadFileToStorage(reference: string, file: File): Promise<string | void> {
 	return new Promise(async (resolve, reject) => {
 		if (dev) console.log('uploadFileToStorage: Upload the file to the storage at reference ', reference)
-		if(!firebaseStorage) await setStorage()
+		if (!firebaseStorage) await setStorage()
 		const storageReference = storageRef(firebaseStorage!, reference)
-		await uploadBytes(storageReference, file).catch((e) => {resolve(e.message)}).finally(() => resolve())
+		await uploadBytes(storageReference, file).catch((e) => { resolve(e.message) }).finally(() => resolve())
 	})
 }
 
 async function readFileStorage(reference: string): Promise<Blob | undefined> {
-	return new Promise(async(resolve, reject) => {
+	return new Promise(async (resolve, reject) => {
 		if (dev) console.log('readFileStorage: Read the file from storage at reference ', reference)
-		if(!firebaseStorage) await setStorage()
-	const storageReference = storageRef(firebaseStorage!, reference)
+		if (!firebaseStorage) await setStorage()
+		const storageReference = storageRef(firebaseStorage!, reference)
 		await getBlob(storageReference).then((blob: Blob) => resolve(blob)).catch(() => resolve(undefined))
 	})
 }
 
 async function deleteFileStorage(reference: string): Promise<string | void> {
-	return new Promise(async(resolve, reject) => {
+	return new Promise(async (resolve, reject) => {
 		if (dev) console.log('deleteFileStorage: Delete the file at reference ', reference)
-		if(!firebaseStorage) await setStorage()
+		if (!firebaseStorage) await setStorage()
 		const storageReference = storageRef(firebaseStorage!, reference)
 		deleteObject(storageReference).catch((e: Error) => resolve(e.message)).finally(() => resolve())
 	})
@@ -235,7 +213,7 @@ export {
 	onlyReadableUserSessionStore as userSessionStore,
 	userSessionInitialized,
 	writeToDatabase,
-    pushToDatabase,
+	pushToDatabase,
 	readDatabase,
 	watchValueDatabase,
 	deleteDatabase,
