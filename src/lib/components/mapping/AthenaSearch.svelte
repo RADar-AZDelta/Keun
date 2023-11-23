@@ -94,7 +94,7 @@
     if (!concepts.indices.length) return
     if (concepts.indices.length > 1) {
       const rowListIndex = concepts.queriedData.findIndex(
-        (r: any) => r.conceptId === conceptId && r.conceptName === conceptName
+        (r: any) => r.conceptId === conceptId && r.conceptName === conceptName,
       )
       debugger
       const originalIndex = concepts.indices[rowListIndex]
@@ -146,7 +146,7 @@
     mappedRow['ADD_INFO:numberOfConcepts'] = concepts.indices.length + 1
     const rowsToUpdate = new Map()
     concepts.indices.forEach((i: number) =>
-      rowsToUpdate.set(i, { 'ADD_INFO:numberOfConcepts': concepts.indices.length + 1 })
+      rowsToUpdate.set(i, { 'ADD_INFO:numberOfConcepts': concepts.indices.length + 1 }),
     )
     await mainTable.updateRows(rowsToUpdate)
     await mainTable.insertRows([mappedRow])
@@ -263,7 +263,7 @@
     <section class="search-container">
       <Search {views} bind:globalFilter={globalAthenaFilter}>
         <div slot="action-athena" let:renderedRow>
-          {#if mappedToConceptIds.includes(renderedRow.id)}
+          {#if mappedToConceptIds.includes(renderedRow.id) && (selectedRow.mappingStatus === 'APPROVED' || selectedRow.mappingStatus === 'SEMI-APPROVED')}
             <button title="Map to row" style="background-color: greenyellow;"><SvgIcon id="check" /></button>
           {:else}
             <button on:click={() => onClickMapping(renderedRow)}><SvgIcon id="plus" /></button>
