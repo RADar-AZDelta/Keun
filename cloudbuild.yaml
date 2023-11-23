@@ -1,26 +1,26 @@
-steps:
-- name: 'node:lts'
-  entrypoint: npm
-  args: ['install']
-  id: 'Install all dependencies'
+# steps:
+# - name: 'node:lts'
+#   entrypoint: npm
+#   args: ['install']
+#   id: 'Install all dependencies'
 
-- name: 'node:lts'
-  entrypoint: npm
-  args: ["run", "build"]
-  id: 'Build the application'
+# - name: 'node:lts'
+#   entrypoint: npm
+#   args: ["run", "build"]
+#   id: 'Build the application'
 
-- name: 'gcr.io/cloud-builders/wget'
-  args:
-  - '--quiet'
-  - '-O'
-  - 'firebase'
-  - 'https://firebase.tools/bin/linux/latest'
+# - name: 'gcr.io/cloud-builders/wget'
+#   args:
+#   - '--quiet'
+#   - '-O'
+#   - 'firebase'
+#   - 'https://firebase.tools/bin/linux/latest'
   
-- name: 'debian:11'
-  args:
-  - 'bash'
-  - '-c'
-  - |
-    mv firebase /tmp
-    chmod 755 /tmp/firebase
-    /tmp/firebase deploy --project ${PROJECT_ID} --non-interactive -m "Build ${BUILD_ID}" --debug
+# - name: 'debian:11'
+#   args:
+#   - 'bash'
+#   - '-c'
+#   - |
+#     mv firebase /tmp
+#     chmod 755 /tmp/firebase
+#     /tmp/firebase deploy --project ${PROJECT_ID} --non-interactive -m "Build ${BUILD_ID}" --debug
