@@ -1,0 +1,87 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /files/{fileId} {
+        function isSignedIn() {
+          return request.auth != null;
+        }
+
+        function getRole(arr) {
+          let role = get(/databases/$(database)/documents/roles/$(request.auth.uid)).data.role;
+          return role in arr;
+        }
+
+        function getRoleClaims(arr) {
+          return request.auth.token.role in arr;
+        }
+
+        allow read: if isSignedIn() && getRoleClaims(['user', 'admin']) && getRole(['user', 'admin']);
+        allow write: if isSignedIn() && getRoleClaims(['admin']) && getRole(['admin']);
+    }
+
+    match /settings/{userId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function checkId() {
+        return request.auth.uid == userId;
+      }
+
+      function getRoleClaims(arr) {
+        return request.auth.token.role in arr;
+      }
+
+      function getRole(arr) {
+        let role = get(/databases/$(database)/documents/roles/$(request.auth.uid)).data.role;
+        return role in arr;
+      }
+
+      allow read, write: if isSignedIn() && checkId() && getRoleClaims(['user', 'admin']) && getRole(['user', 'admin']);
+    }
+
+    match /tableOptions/{fileId}/{userId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function checkId() {
+        return request.auth.uid == userId;
+      }
+
+      function getRoleClaims(arr) {
+        return request.auth.token.role in arr;
+      }
+
+      function getRole(arr) {
+        let role = get(/databases/$(database)/documents/roles/$(request.auth.uid)).data.role;
+        return role in arr;
+      }
+
+      function checkAccess() {
+        let accessList = get(/databases/$(database)/documents/files/$(fileId)).data.access;
+        return request.auth.uid in accessList
+      }
+
+      allow read, write: if isSignedIn() && checkId() && getRoleClaims(['user', 'admin']) && getRole(['user', 'admin']) && checkAccess()
+    }
+
+    match /roles/{userId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function checkId() {
+        return request.auth.uid == userId;
+      }
+
+      function getRoleClaims(arr) {
+        return request.auth.token.role in arr;
+      }
+
+      allow read: if isSignedIn() && checkId() && getRoleClaims(['user', 'admin']);
+      allow write: if false;
+    }
+  }
+  }
