@@ -85,7 +85,6 @@
 
   // Delete the mapping in the table & update the other rows if it has multiple concepts that are mapped to the row
   async function removeMapping(e: CustomEvent<RemoveMappingEventDetail>): Promise<void> {
-    console.log('REMOVE MAPPING')
     const { conceptId, conceptName } = e.detail
     if (conceptId === 0) removeFromCustomTable(conceptId, conceptName)
     const params = <Query>query().params({ code: selectedRow.sourceCode })
@@ -95,7 +94,7 @@
     if (!concepts.indices.length) return
     if (concepts.indices.length > 1) {
       const rowListIndex = concepts.queriedData.findIndex(
-        (r: any) => r.conceptId === conceptId && r.conceptName === conceptName
+        (r: any) => r.conceptId === conceptId && r.conceptName === conceptName,
       )
       debugger
       const originalIndex = concepts.indices[rowListIndex]
@@ -147,7 +146,7 @@
     mappedRow['ADD_INFO:numberOfConcepts'] = concepts.indices.length + 1
     const rowsToUpdate = new Map()
     concepts.indices.forEach((i: number) =>
-      rowsToUpdate.set(i, { 'ADD_INFO:numberOfConcepts': concepts.indices.length + 1 })
+      rowsToUpdate.set(i, { 'ADD_INFO:numberOfConcepts': concepts.indices.length + 1 }),
     )
     await mainTable.updateRows(rowsToUpdate)
     await mainTable.insertRows([mappedRow])
@@ -198,7 +197,6 @@
 
   // A method to fill the table with the already mapped concepts
   async function fillMappedTable() {
-    console.log('FILL MAPPED')
     mappedData = []
     if (!selectedRow?.sourceCode) return
     const queryParams = <Query>query().params({ source: selectedRow.sourceCode })
@@ -217,7 +215,6 @@
       if (!newMappedData.includes(con)) newMappedData.push(con)
     }
     mappedData = newMappedData
-    console.log('SHOW MAPPED ', mappedData)
   }
 
   ///////////////////////////// HEAD METHODS /////////////////////////////
@@ -266,7 +263,7 @@
     <section class="search-container">
       <Search {views} bind:globalFilter={globalAthenaFilter}>
         <div slot="action-athena" let:renderedRow>
-          {#if mappedToConceptIds.includes(renderedRow.id)}
+          {#if mappedToConceptIds.includes(renderedRow.id) && (selectedRow.mappingStatus === 'APPROVED' || selectedRow.mappingStatus === 'SEMI-APPROVED')}
             <button title="Map to row" style="background-color: greenyellow;"><SvgIcon id="check" /></button>
           {:else}
             <button on:click={() => onClickMapping(renderedRow)}><SvgIcon id="plus" /></button>

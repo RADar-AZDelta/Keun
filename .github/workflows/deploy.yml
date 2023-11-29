@@ -2,7 +2,7 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: 'master'
+    branches: 'site'
 
 jobs:
   build_site:
@@ -33,6 +33,7 @@ jobs:
       - name: build
         run: |
           pnpm run build
+          touch build/.nojekyll
 
       - name: Upload Artifacts
         uses: actions/upload-pages-artifact@v2
