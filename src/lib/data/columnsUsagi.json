@@ -30,18 +30,23 @@
     "editable": false
   },
   {
+    "id": "mappingStatus",
+    "visible": true,
+    "editable": false
+  },
+  {
     "id": "domainId",
-    "visible": false,
+    "visible": true,
+    "editable": false
+  },
+  {
+    "id": "vocabulary",
+    "visible": true,
     "editable": false
   },
   {
     "id": "matchScore",
     "visible": false,
-    "editable": false
-  },
-  {
-    "id": "mappingStatus",
-    "visible": true,
     "editable": false
   },
   {
