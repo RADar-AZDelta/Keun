@@ -34,6 +34,8 @@ export async function resetRow() {
     const reset: IUsagiAllExtra = additionalFields
     reset.conceptId = null
     reset.domainId = null
+    reset.vocabulary = null
+    reset.className = null
     reset.conceptName = null
     delete reset.sourceAutoAssignedConceptIds
     return reset
