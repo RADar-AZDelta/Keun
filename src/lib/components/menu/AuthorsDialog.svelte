@@ -29,17 +29,17 @@
     <ul class="list">
       {#await $authImpl?.getAllAuthors() then users}
         {#if users}
-          {#each Object.entries(users) as [uid, info]}
-            {#if info.email}
+          {#each users as user, _}
+            {#if user.id}
               <li>
                 <label class="option">
                   <input
                     type="checkbox"
-                    checked={info.files ? Object.values(info.files).includes(selected) : false}
+                    checked={user.fileIds ? Object.values(user.fileIds).includes(selected) : false}
                     bind:group={authorizedAuthors}
-                    value={uid}
+                    value={user.id}
                   />
-                  {info.email}
+                  {user.name}
                 </label>
               </li>
             {/if}
