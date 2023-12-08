@@ -34,7 +34,7 @@ import DataTableWorker from '@radar-azdelta/svelte-datatable/workers/DataTable.w
 import { DataTypeCommonBase } from '@radar-azdelta/svelte-datatable/components/datatable/data/DataTypeCommonBase'
 import { readDatabase, readFileStorage, uploadFileToStorage, userSessionStore, writeToDatabase } from '$lib/firebase'
 import { IndexedDB } from '../../helperClasses/IndexedDB'
-import { convertBlobToHexString, convertHexStringToBlob } from '$lib/utils'
+import { convertBlobToHexString, convertHexStringToBlob } from 'utils'
 import type { IDataTypeFile } from '$lib/components/Types'
 
 // TODO: implement datatype for a Firebase file

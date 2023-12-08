@@ -1,6 +1,6 @@
 import type { IColumnMetaData, ICustomStoreOptions, IStoredOptions, ITableOptions } from '@radar-azdelta/svelte-datatable/components/DataTable'
 import { readDatabase, userSessionStore, writeToDatabase } from '$lib/firebase';
-import { removeUndefinedsAndNulls } from '$lib/utils';
+import { removeUndefinedsAndNulls } from 'utils';
 import { dev } from '$app/environment';
 
 // TODO: implement the save implementation for Firebase
