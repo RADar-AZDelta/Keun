@@ -99,11 +99,11 @@
       <ul class="authors-list">
         {#await $authImpl?.getAllAuthors() then users}
           {#if users}
-            {#each Object.entries(users) as [uid, info]}
+            {#each users as user, _}
               <li class="author-option">
                 <label class="author-label">
-                  <input type="checkbox" name={info.email} id={info.email} bind:group={authorizedAuthors} value={uid} />
-                  {info.email}
+                  <input type="checkbox" id={user.name} bind:group={authorizedAuthors} value={user.id} />
+                  {user.name}
                 </label>
               </li>
             {/each}

@@ -215,6 +215,7 @@ export interface IFile {
 
 export interface IUserRestriction {
   id: string
+  name: string
   fileIds: string[]
 }
 
@@ -306,8 +307,7 @@ export interface IAuthImpl {
   logIn(name?: string): Promise<void>
   logOut(): Promise<void>
   getAuthor(): Promise<string | null | void>
-
-  getAllAuthors(): Promise<void | IUserRestriction>
+  getAllAuthors(): Promise<void | IUserRestriction[]>
 }
 
 export interface ISettingsImpl {
