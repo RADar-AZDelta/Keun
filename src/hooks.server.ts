@@ -1,4 +1,3 @@
-// import { decodeToken } from '$lib/firebase/firebaseAdmin.server'
 // import { redirect, type Handle } from '@sveltejs/kit'
 import type { Handle } from '@sveltejs/kit'
 import { sequence } from '@sveltejs/kit/hooks'

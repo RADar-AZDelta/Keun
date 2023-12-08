@@ -1,20 +1,16 @@
 <script lang="ts">
   import { dev } from '$app/environment'
+  import { SvgIcon } from 'components'
   import { authImpl, databaseImpl } from '$lib/store'
   import { loadImplementationDB } from '$lib/implementations/implementation'
-  import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
 
   export let processing: boolean, selected: string
 
   let dialog: HTMLDialogElement, authorizedAuthors: string[]
 
-  export async function showDialog(): Promise<void> {
-    dialog.showModal()
-  }
+  export const showDialog = () => dialog.showModal()
 
-  export async function closeDialog(): Promise<void> {
-    dialog.close()
-  }
+  export const closeDialog = () => dialog.close()
 
   // A method to edit the authors that have access to a file
   async function editFile(id: string): Promise<void> {

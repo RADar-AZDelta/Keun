@@ -3,9 +3,8 @@
   import { goto } from '$app/navigation'
   import { base } from '$app/paths'
   import { createEventDispatcher } from 'svelte'
+  import { SvgIcon, Spinner } from 'components'
   import { selectedFileId, user } from '$lib/store'
-  import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
-  import Spinner from '$lib/components/extra/Spinner.svelte'
   import type { PageEvents, IFile } from '$lib/components/Types'
 
   export let files: IFile[]

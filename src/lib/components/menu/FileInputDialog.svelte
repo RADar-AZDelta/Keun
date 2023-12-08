@@ -1,10 +1,8 @@
 <script lang="ts">
   import { dev } from '$app/environment'
   import { createEventDispatcher } from 'svelte'
+  import { Drop, Spinner, SvgIcon } from 'components'
   import { authImpl, databaseImplementation } from '$lib/store'
-  import Drop from '$lib/components/extra/Drop.svelte'
-  import Spinner from '$lib/components/extra/Spinner.svelte'
-  import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
   import type { FileDropEventDetail, PageEvents } from '$lib/components/Types'
 
   export let processing: boolean
@@ -82,7 +80,8 @@
   <div class="file-input-container">
     <h1 class="file-input-title">Upload a new file</h1>
     <button on:click={closeDialog} class="close-dialog" disabled={processing}><SvgIcon id="x" /></button>
-    <Drop extensions={['csv']} on:fileDrop={fileDrop}>
+    <!-- <Drop extensions={['csv']} on:fileDrop={fileDrop}> -->
+    <Drop extensions={['csv']} on:drop={fileDrop}>
       <label class="upload-file">
         {#if file}
           <SvgIcon id="excel" width="40px" height="40px" />

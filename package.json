@@ -48,6 +48,9 @@
     "firebase": "^10.6.0",
     "firebase-admin": "^11.11.0",
     "lodash.debounce": "^4.0.8",
-    "lodash.isequal": "^4.5.0"
+    "lodash.isequal": "^4.5.0",
+    "firebase_utils": "file:./submodules/firebase_utils",
+    "utils": "file:./submodules/utils",
+    "components": "file:./submodules/components"
   }
 }

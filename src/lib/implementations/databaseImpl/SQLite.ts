@@ -1,6 +1,7 @@
 import { dev } from '$app/environment'
 import { goto } from '$app/navigation'
 import { base } from '$app/paths'
+import { downloadWithUrl } from 'utils'
 import type { IFile, IMessage, IUpdatedFunctionalityImpl } from '$lib/components/Types'
 
 // TODO: implement Auth implementation for SQLite
@@ -58,12 +59,7 @@ export default class SQLiteImpl implements IUpdatedFunctionalityImpl {
     const file = new File([blob], fileInfo.details.name, { type: 'text/csv' })
     let element = document.createElement('a')
     const url = URL.createObjectURL(file)
-    element.setAttribute('href', url)
-    element.setAttribute('download', fileInfo.details.name)
-    document.body.appendChild(element)
-    element.click()
-    document.body.removeChild(element)
-    URL.revokeObjectURL(url)
+    await downloadWithUrl(url, fileInfo.details.name)
   }
 
   async watchValueFromDatabase(path: string, subCallback: () => unknown, remove?: boolean | undefined): Promise<void> {}
