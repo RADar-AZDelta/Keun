@@ -8,6 +8,10 @@ export async function loadImplementationDB(): Promise<IUpdatedFunctionalityImpl>
     databaseImpl.subscribe(async impl => {
       if (impl) return resolve(impl)
       if (databaseImplementation === 'firebase') {
+        await import('$lib/implementations/databaseImpl/FirebaseImpl').then(({ default: FirebaseImpl }) => {
+          databaseImpl.set(new FirebaseImpl())
+          return databaseImpl
+        })
       } else if (databaseImplementation === 'sqlite') {
       } else {
         await import('$lib/implementations/databaseImpl/LocalImpl').then(({ default: LocalImpl }) => {
@@ -24,6 +28,10 @@ export async function loadImplementationAuth(): Promise<IAuthImpl> {
     authImpl.subscribe(async impl => {
       if (impl) return resolve(impl)
       if (authImplementation === 'firebase') {
+        import('$lib/implementations/authImpl/FirebaseImpl').then(({ default: FirebaseImpl }) => {
+          authImpl.set(new FirebaseImpl())
+          return authImpl
+        })
       } else
         import('$lib/implementations/authImpl/LocalImpl').then(({ default: LocalImpl }) => {
           authImpl.set(new LocalImpl())
@@ -54,6 +62,10 @@ export async function loadImplementationSettings(): Promise<ISettingsImpl> {
     settingsImpl.subscribe(async impl => {
       if (impl) return resolve(impl)
       if (databaseImplementation === 'firebase') {
+        await import('$lib/implementations/settingsImpl/FirebaseImpl').then(({ default: FirebaseSettingsImpl }) => {
+          settingsImpl.set(new FirebaseSettingsImpl())
+          return settingsImpl
+        })
       } else
         await import('$lib/implementations/settingsImpl/localImpl').then(({ default: LocalSettingsImpl }) => {
           settingsImpl.set(new LocalSettingsImpl())
