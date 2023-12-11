@@ -24,7 +24,13 @@ files: {
 },
 users: {
   {userId}: {
-    files: string[],
+    files: [
+      {
+        id: string
+        options: ITableOptions
+        columns: IColumnMetaData[]
+      }
+    ],
     name: string
     lastName: string
     role: string
@@ -100,7 +106,7 @@ export default class FirebaseImpl implements IUpdatedFunctionalityImpl {
     const { files } = userInfo.files
     let allFiles: IFile[] = []
     for (let file of files) {
-      const res = await this.getFileFromColl(this.storageCollection, file)
+      const res = await this.getFileFromColl(this.storageCollection, file.id)
       if (res) allFiles.push(res)
     }
     return allFiles
