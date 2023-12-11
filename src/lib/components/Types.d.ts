@@ -295,7 +295,7 @@ export interface IExtraUsagiCols {
 export interface IUpdatedFunctionalityImpl {
   getFile(id: string): Promise<IConceptFiles | void>
   checkFileExistance(name: string): Promise<boolean | string | void>
-  getFiles(uesrId?: string, roles?: string[]): Promise<IFile[] | void>
+  getFiles(userId?: string, roles?: string[]): Promise<IFile[] | void>
   uploadFile(file: File, authors: string[]): Promise<string[] | void>
   editFile(id: string, blob: Blob, customBlob?: Blob): Promise<void>
   editFileAuthors(id: string, authors: string[]): Promise<void>
