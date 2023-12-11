@@ -9,6 +9,11 @@ steps:
   args: ["run", "build"]
   id: 'Build the application'
 
+- name: 'bearer/bearer'
+  entrypoint: bearer
+  args: ["scan", "."]
+  id: "Scan the application for vulnerabilities"
+
 - name: 'gcr.io/cloud-builders/wget'
   args:
   - '--quiet'

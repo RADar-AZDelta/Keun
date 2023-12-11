@@ -11,7 +11,7 @@ import { GithubAuthProvider, GoogleAuthProvider, getAuth, type AuthProvider, sig
 import { DataSnapshot, Database, child, get, getDatabase, off, onValue, push, ref, remove, set, update } from 'firebase/database'
 import { deleteObject, getBlob, getStorage, ref as storageRef, uploadBytes, type FirebaseStorage } from 'firebase/storage'
 import type { UserSession } from '../app';
-import { sleep } from './utils';
+import { sleep } from 'utils';
 import { writable } from 'svelte/store';
 import { browser, dev } from '$app/environment';
 

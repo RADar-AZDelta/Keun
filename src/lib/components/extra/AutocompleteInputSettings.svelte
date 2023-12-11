@@ -1,7 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
   import { settings } from '$lib/store'
-  import { localStorageSetter } from '$lib/utils'
+  import { localStorageSetter } from 'utils'
   import debounce from 'lodash.debounce'
   import type { ICustomEvents } from '$lib/components/Types'
 
@@ -39,7 +39,7 @@
       ...filteredNames,
       ...$settings.savedAuthors.filter(
         name =>
-          name.toLowerCase().startsWith(inputValue.toLowerCase()) && name.toLowerCase() !== inputValue.toLowerCase()
+          name.toLowerCase().startsWith(inputValue.toLowerCase()) && name.toLowerCase() !== inputValue.toLowerCase(),
       ),
     ]
     filteredValues = filteredNames
@@ -63,6 +63,7 @@
     <ul>
       {#each filteredValues as name, i}
         {#if i < 7 && !autoCompleted}
+          <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
           <li id={name} on:click={onClickAutoComplete} on:keydown={onClickAutoComplete}>{name}</li>
         {/if}
       {/each}

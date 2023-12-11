@@ -1,16 +1,16 @@
-import type { IColumnMetaData, ICustomStoreOptions, IStoredOptions, ITableOptions } from '@radar-azdelta/svelte-datatable/components/DataTable'
-import { readDatabase, userSessionStore, writeToDatabase } from '$lib/firebase';
-import { removeUndefinedsAndNulls } from '$lib/utils';
-import { dev } from '$app/environment';
-
-// TODO: implement the save implementation for Firebase
+import type {
+  IColumnMetaData,
+  ICustomStoreOptions,
+  IStoredOptions,
+  ITableOptions,
+} from '@radar-azdelta/svelte-datatable/components/DataTable'
+import { dev } from '$app/environment'
+import { readFirestore, userSessionStore, writeToFirestore } from 'firebase_utils'
 
 export default class FirebaseSaveImpl implements ICustomStoreOptions {
   storedOptions: ITableOptions
   storedColumns: IColumnMetaData[] | undefined
-  initialized: boolean = false
-  dbVersion: number = 0
-  customDBVersion: number = 0
+  collection: string = 'users'
 
   constructor(options?: ITableOptions | undefined) {
     if (dev) console.log('FirebaseSaveImpl: Creating the save implementation for Firebase')
@@ -24,76 +24,68 @@ export default class FirebaseSaveImpl implements ICustomStoreOptions {
       singleSort: false,
       defaultColumnWidth: 200,
     }
-    if(options) Object.assign(defaultOptions, options)
+    if (options) Object.assign(defaultOptions, options)
     this.storedOptions = defaultOptions
   }
 
-  private async loadWithoutLogin(): Promise<string> {
-    if (dev) console.log('load: The user was not logged in, create a deviceId and use it to save the settings & columns online')
-    let deviceId = localStorage.getItem('deviceId')!
-    if (!deviceId) {
-      deviceId = crypto.randomUUID()
-      localStorage.setItem('deviceId', deviceId)
+  async load(id: string, internalColumns?: IColumnMetaData[]): Promise<IStoredOptions> {
+    if (dev) console.log('load: loading the options & columns from Firestore')
+    if (!id || !this.storedOptions.id) return { tableOptions: this.storedOptions, columnMetaData: this.storedColumns }
+    const result = await this.getCurrentFile(id)
+    if (!result) return { tableOptions: this.storedOptions, columnMetaData: this.storedColumns }
+    const { file } = result
+    if (file.options) Object.assign(this.storedOptions, file.options)
+    const columns = file.columns
+    if (columns && internalColumns) {
+      const storedInternalColumns: Map<string, IColumnMetaData> = JSON.parse(columns).reduce(
+        (acc: Map<string, IColumnMetaData>, cur: IColumnMetaData) => {
+          acc.set(cur.id, cur)
+          return acc
+        },
+        new Map<string, IColumnMetaData>(),
+      )
+      this.storedColumns = internalColumns.map((col: IColumnMetaData) => {
+        if (storedInternalColumns.has(col.id)) Object.assign(col, storedInternalColumns.get(col.id))
+        return col
+      })
     }
-    return deviceId
-  }
-
-  private async readDB(uid: string, id: string): Promise<void> {
-    try {
-      if (dev) console.log(`load: Load the settings & columns from Firebase for user with uid: ${uid} & DataTable id: ${this.storedOptions.id}`)
-      const data = await readDatabase(`/authors/${uid}/${id}`)
-      if(!data) {
-        if (dev) console.log('load: There were no settings & columns found in the database, write them to the database')
-        this.store(this.storedOptions, this.storedColumns)
-      }
-      if (dev) console.log('load: The settings & columns were loaded from the Firebase database')
-      if(data.options.saveImpl) delete data.options.saveImpl
-      Object.assign(this.storedOptions, data.options)
-      if(this.storedColumns) Object.assign(this.storedColumns, data.columns)
-      else this.storedColumns = data.columns
-    } catch (e) {
-      if (dev) console.log('load: Something went wrong with reading the database, write to the database')
-      this.initialized = true
-      this.store(this.storedOptions, this.storedColumns)
-    }
-  }
-
-  async load (id: string): Promise<IStoredOptions> {
-    this.storedOptions.id = id
-    let uid: string | undefined
-    userSessionStore.subscribe(async (userSession) => {
-      uid = userSession.uid
-    })
-    if(!uid) uid = await this.loadWithoutLogin()
-    if (!this.storedOptions.id){
-      if (dev) console.log('load: There was no id set, so the settings & columns could not be loaded.')
-      return { tableOptions: this.storedOptions, columnMetaData: this.storedColumns }
-    }
-    await this.readDB(uid, this.storedOptions.id)
-    if(this.storedOptions.saveImpl) delete this.storedOptions.saveImpl
-    this.initialized = true
     return { tableOptions: this.storedOptions, columnMetaData: this.storedColumns }
   }
 
-  private async writeToDB(uid: string) {
-    if (dev) console.log('store: Writing to database ...')
-    // Write the options and columns to the database under the given DataTable id
-    writeToDatabase(`/authors/${uid}/${this.storedOptions.id}`, { options: this.storedOptions ?? null, columns: this.storedColumns || null})
+  async store(options: ITableOptions, columns: IColumnMetaData[] | undefined): Promise<void> {
+    if (dev) console.log('store: Storing the settings & columns to Firestore')
+    if (options.saveOptions === false) return await this.deleteFromFirestore(options.id)
+    const result = await this.getCurrentFile(options.id)
+    if (!result) return
+    let { userOpts, file, uid } = result
+    delete file.options.saveImpl
+    delete file.options.dataTypeImpl
+    file = { options: file.options, columns: file.columns, id: file.options.id }
+    await writeToFirestore(this.collection, uid, userOpts)
   }
 
-  async store (options: ITableOptions, columns: IColumnMetaData[] | undefined): Promise<void> {
-    if (dev) console.log('store: Storing the settings & columns to the storage ', options)
-    // If there is no userId given for authentication, create a deviceId and save it in the localStorage to identify the device
-    if(!this.initialized) return
-    if(options.saveImpl) delete options.saveImpl
-    if(options.dataTypeImpl) delete options.dataTypeImpl
-    this.storedOptions = removeUndefinedsAndNulls(options, ['actionColumn', 'singleSort', 'saveOptions'])
-    this.storedColumns = removeUndefinedsAndNulls(columns, ["visible", "sortable", "filterable", "resizable", "repositionalbe", "editable"])
-    let uid: string | undefined
-    userSessionStore.subscribe((userSession) => {
-        uid = userSession.uid
+  private async deleteFromFirestore(fileId?: string) {
+    const result = await this.getCurrentFile(fileId)
+    if (!result) return
+    const { userOpts, file, uid } = result
+    delete file.options
+    delete file.columns
+    await writeToFirestore(this.collection, uid, userOpts)
+  }
+
+  private async getCurrentFile(fileId?: string) {
+    if (!fileId) return undefined
+    const uid = await this.getUserId()
+    if (!uid) return undefined
+    const userOpts = await readFirestore(this.collection, uid)
+    if (!userOpts) return undefined
+    const file = userOpts.files.find((f: any) => f.id === fileId)
+    return { userOpts, file, uid }
+  }
+
+  private async getUserId(): Promise<string | undefined> {
+    return new Promise((resolve, reject) => {
+      userSessionStore.subscribe(user => resolve(user.uid))()
     })
-    if(!uid) uid = await this.loadWithoutLogin()
-    if(uid && this.storedOptions.id) await this.writeToDB(uid)
   }
 }

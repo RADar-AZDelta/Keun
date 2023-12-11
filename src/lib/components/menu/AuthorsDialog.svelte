@@ -1,20 +1,16 @@
 <script lang="ts">
   import { dev } from '$app/environment'
+  import { SvgIcon } from 'components'
   import { authImpl, databaseImpl } from '$lib/store'
   import { loadImplementationDB } from '$lib/implementations/implementation'
-  import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
 
   export let processing: boolean, selected: string
 
   let dialog: HTMLDialogElement, authorizedAuthors: string[]
 
-  export async function showDialog(): Promise<void> {
-    dialog.showModal()
-  }
+  export const showDialog = () => dialog.showModal()
 
-  export async function closeDialog(): Promise<void> {
-    dialog.close()
-  }
+  export const closeDialog = () => dialog.close()
 
   // A method to edit the authors that have access to a file
   async function editFile(id: string): Promise<void> {
@@ -33,17 +29,17 @@
     <ul class="list">
       {#await $authImpl?.getAllAuthors() then users}
         {#if users}
-          {#each Object.entries(users) as [uid, info]}
-            {#if info.email}
+          {#each users as user, _}
+            {#if user.id}
               <li>
                 <label class="option">
                   <input
                     type="checkbox"
-                    checked={info.files ? Object.values(info.files).includes(selected) : false}
+                    checked={user.fileIds ? Object.values(user.fileIds).includes(selected) : false}
                     bind:group={authorizedAuthors}
-                    value={uid}
+                    value={user.id}
                   />
-                  {info.email}
+                  {user.name}
                 </label>
               </li>
             {/if}

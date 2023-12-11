@@ -1,72 +1,86 @@
 import { dev } from '$app/environment'
-import { goto } from '$app/navigation'
 import { base } from '$app/paths'
-import type { IFile, IMessage, IUpdatedFunctionalityImpl } from '$lib/components/Types'
+import type { IConceptFiles, IFile, IMessage, IUpdatedFunctionalityImpl } from '$lib/components/Types'
 
-// TODO: implement Auth implementation for SQLite
+/* Possible SQLite structure
+
+files: {
+  {id}: {
+    name: string
+    authors: string[]
+    customName: string
+    content: string
+  }
+},
+users: {
+  {userId}: {
+    files: [
+      {
+        id: string
+        options: ITableOptions
+        columns: IColumnMetaData[]
+      }
+    ],
+    name: string
+    lastName: string
+    role: string
+  }
+}
+  
+*/
 
 export default class SQLiteImpl implements IUpdatedFunctionalityImpl {
   path = `${base}/api/sqlite/file`
+  customPath = `${base}/api/sqlite/customFile`
 
-  // Get full file to start mapping
-  async getFile(id: string): Promise<any> {
-    const updatedPath = `${this.path}?id=${id}`
-    return await this.performRequest(updatedPath)
+  async getFile(id: string): Promise<void | IConceptFiles> {
+    // SELECT id, name, content FROM files WHERE id == $id
+    // SELECT id, name, content FROM customFiles WHERE id == $id
+    if (dev) console.log(`getFile: Get flie with id ${id} in SQLite`)
+    const fileInfo = await this.performRequest(this.path, { id })
+    if (!fileInfo) return
+    const { file, name, customName } = fileInfo.details
+    const fileObj = { id, file, name }
+    let customFile = undefined
+    if (customName) {
+      const customInfo = await this.performRequest(this.customPath, { id })
+      if (customInfo) customFile = { id, file: customInfo.details.file, name: customInfo.details.name }
+    }
+    return { file: fileObj, customFile }
   }
 
-  // Get some info of the file to show in the choice menu
-  async getFiles(): Promise<any> {
-    return await this.performRequest(`${this.path}?info`)
+  checkFileExistance(name: string): Promise<string | boolean | void> {
+    // SELECT id FROM files WHERE id == $id
+    throw new Error('Method not implemented.')
   }
 
-  async getFilesAdmin(): Promise<IFile[] | void> {}
-
-  async uploadFile(file: File, authors: string[]): Promise<void | string[]> {
-    return new Promise((async, resolve) => {
-      if (dev) console.log('uploadFile: Uploading file to SQLite database')
-      const reader = new FileReader()
-      reader.onload = async () => {
-        if (reader.result && typeof reader.result !== 'string') {
-          await this.performRequest(this.path, {
-            fileName: file.name,
-            file: JSON.stringify(Array.from(new Uint8Array(reader.result))),
-            fileType: 'concepts',
-          })
-          goto(`${base}/mapping`)
-          resolve()
-        }
-      }
-      reader.readAsArrayBuffer(file)
-    })
+  getFiles(userId?: string | undefined, roles?: string[] | undefined): Promise<void | IFile[]> {
+    // SELECT files FROM user WHERE id == $userId
+    // SELECT id, name, content FROM files WHERE files IN $files
+    throw new Error('Method not implemented.')
   }
 
-  async editFileAuthors(id: string, authors: string[]): Promise<void> {
-    await this.performRequest(this.path + 'authors', { id, authors })
+  uploadFile(file: File, authors: string[]): Promise<void | string[]> {
+    // INSERT INTO files (id, name, content, authors) VALUES ($id, $name, $content, $authors)
+    // UPDATE user SET files = json_insert(files, '$[#]', fileId) WHERE id = authorId
+    throw new Error('Method not implemented.')
   }
 
-  async deleteFile(id: string): Promise<void> {
-    await this.performRequest(this.path, { id })
+  editFile(id: string, blob: Blob, customBlob?: Blob | undefined): Promise<void> {
+    // UPDATE files SET content = blob WHERE id = id
+    // UPDATE customFiles SET content = customBlob WHERE id = id
+    throw new Error('Method not implemented.')
   }
 
-  async downloadFile(id: string): Promise<void> {
-    const updatedPath = `${this.path}?id=${id}`
-    const fileInfo = await this.performRequest(updatedPath)
-    if (!fileInfo.details.file || !fileInfo.details.name) return
-    const fileArray = fileInfo.details.file
-    const buffer = new Uint8Array(fileArray)
-    const blob = new Blob([buffer], { type: 'text/csv' })
-    const file = new File([blob], fileInfo.details.name, { type: 'text/csv' })
-    let element = document.createElement('a')
-    const url = URL.createObjectURL(file)
-    element.setAttribute('href', url)
-    element.setAttribute('download', fileInfo.details.name)
-    document.body.appendChild(element)
-    element.click()
-    document.body.removeChild(element)
-    URL.revokeObjectURL(url)
+  editFileAuthors(id: string, authors: string[]): Promise<void> {
+    throw new Error('Method not implemented.')
   }
-
-  async watchValueFromDatabase(path: string, subCallback: () => unknown, remove?: boolean | undefined): Promise<void> {}
+  deleteFile(id: string): Promise<void> {
+    throw new Error('Method not implemented.')
+  }
+  downloadFile(id: string): Promise<void> {
+    throw new Error('Method not implemented.')
+  }
 
   private async performRequest(path: string, options: Object = {}): Promise<IMessage> {
     const res = await fetch(path, options)
