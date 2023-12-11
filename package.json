@@ -45,12 +45,12 @@
     "@radar-azdelta/svelte-datatable": "^0.0.58",
     "arquero": "^5.2.0",
     "better-sqlite3": "^9.1.1",
+    "components": "file:./submodules/components",
     "firebase": "^10.6.0",
     "firebase-admin": "^11.11.0",
+    "firebase_utils": "file:./submodules/firebase_utils",
     "lodash.debounce": "^4.0.8",
     "lodash.isequal": "^4.5.0",
-    "firebase_utils": "file:./submodules/firebase_utils",
-    "utils": "file:./submodules/utils",
-    "components": "file:./submodules/components"
+    "utils": "file:./submodules/utils"
   }
 }
