@@ -1,5 +1,8 @@
-import type { deleteFileStorage } from '$lib/firebase'
-import { IDataTypeFunctionalities, type ICustomStoreOptions, type IPagination } from '@radar-azdelta/svelte-datatable/components/DataTable'
+import type {
+  IDataTypeFunctionalities,
+  ICustomStoreOptions,
+  IPagination,
+} from '@radar-azdelta/svelte-datatable/components/DataTable'
 
 export interface IFileTemplate {
   file: File
@@ -142,7 +145,7 @@ export interface ICategories {
 }
 
 export interface ISides {
-  filters: boolean;
+  filters: boolean
   details: boolean
 }
 
@@ -162,9 +165,9 @@ export interface IDataTypeFile extends IDataTypeFunctionalities {
 }
 
 export interface ITablePagination {
-  currentPage: number | undefined;
-  rowsPerPage: number | undefined;
-  totalRows: number | undefined;
+  currentPage: number | undefined
+  rowsPerPage: number | undefined
+  totalRows: number | undefined
 }
 
 export interface ICustomConceptInput {
@@ -207,13 +210,12 @@ export interface IConceptFiles {
 export interface IFile {
   id: string
   name: string
-  authors: string[] | string
-  version: number
-  content: string
+  file?: File
 }
 
 export interface IUserRestriction {
   id: string
+  name: string
   fileIds: string[]
 }
 
@@ -293,22 +295,19 @@ export interface IExtraUsagiCols {
 export interface IUpdatedFunctionalityImpl {
   getFile(id: string): Promise<IConceptFiles | void>
   checkFileExistance(name: string): Promise<boolean | string | void>
-  getFiles(): Promise<IFile[] | void>
-  getFilesAdmin(): Promise<IFile[] | void>
+  getFiles(userId?: string, roles?: string[]): Promise<IFile[] | void>
   uploadFile(file: File, authors: string[]): Promise<string[] | void>
   editFile(id: string, blob: Blob, customBlob?: Blob): Promise<void>
   editFileAuthors(id: string, authors: string[]): Promise<void>
   deleteFile(id: string): Promise<void>
   downloadFile(id: string): Promise<void>
-  watchValueFromDatabase(path: string, subCallback: () => unknown, remove?: boolean): Promise<void>
 }
 
 export interface IAuthImpl {
   logIn(name?: string): Promise<void>
   logOut(): Promise<void>
   getAuthor(): Promise<string | null | void>
-
-  getAllAuthors(): Promise<void | IUserRestriction>
+  getAllAuthors(): Promise<void | IUserRestriction[]>
 }
 
 export interface ISettingsImpl {

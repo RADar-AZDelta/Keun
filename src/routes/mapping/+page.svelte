@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { SvelteComponent, onDestroy } from 'svelte'
+  import type { SvelteComponent } from 'svelte'
   import { base } from '$app/paths'
   import { page } from '$app/stores'
   import { beforeNavigate, goto } from '$app/navigation'
@@ -10,7 +10,7 @@
   import DataTable from '@radar-azdelta/svelte-datatable'
   // @ts-ignore
   import { LatencyOptimisedTranslator } from '@browsermt/bergamot-translator/translator.js'
-  import { reformatDate, stringToFile } from '$lib/utils'
+  import { reformatDate } from 'utils'
   import { addExtraFields } from '$lib/mappingUtils'
   import { abortAutoMapping, customFileTypeImpl, databaseImpl, fileTypeImpl, saveImpl } from '$lib/store'
   import { selectedFileId, settings, translator, triggerAutoMapping, user } from '$lib/store'
@@ -23,14 +23,13 @@
   import columnsCustomConcept from '$lib/data/columnsCustomConcept.json'
   import AthenaSearch from '$lib/components/mapping/AthenaSearch.svelte'
   import UsagiRow from '$lib/components/mapping/UsagiRow.svelte'
+  import type { IAthenaRow, ICustomConceptInput, IMapRow, IUsagiRow } from '$lib/components/Types'
   import type {
-    IAthenaRow,
-    ICustomConceptInput,
-    IMapRow,
-    IUsagiRow,
+    MappingEventDetail,
     NavigateRowEventDetail,
+    AutoMapRowEventDetail,
+    RowSelectionEventDetail,
   } from '$lib/components/Types'
-  import type { MappingEventDetail, AutoMapRowEventDetail, RowSelectionEventDetail } from '$lib/components/Types'
 
   // General variables
   let file: File | undefined = undefined,
@@ -343,22 +342,8 @@
     if (!$selectedFileId) return
     if (!$databaseImpl) await loadImplementationDB()
     const res = await $databaseImpl!.getFile($selectedFileId)
-    if (res && res?.file) file = await stringToFile(res.file.content, res.file.name)
-    if (res && res?.customFile) customConceptsFile = await stringToFile(res.customFile.content, res.customFile.name)
-  }
-
-  // Add event listeners on the database
-  async function setupWatch(): Promise<void> {
-    if (!$databaseImpl) await loadImplementationDB()
-    await $databaseImpl!.watchValueFromDatabase(`/files/${$selectedFileId}`, () => readFile())
-    await $databaseImpl!.watchValueFromDatabase('/files/customConcepts', () => readFile())
-  }
-
-  // Remove the event listener on the database
-  async function removeWatch(): Promise<void> {
-    if (!$databaseImpl) return
-    $databaseImpl.watchValueFromDatabase(`/files/${$selectedFileId}`, () => readFile(), true)
-    $databaseImpl.watchValueFromDatabase('/files/customConcepts', () => readFile(), true)
+    if (res && res?.file) file = res.file.file
+    if (res && res?.customFile) customConceptsFile = res.customFile.file
   }
 
   // Load the file to start mapping
@@ -367,7 +352,7 @@
     if (!urlId) return goto(`${base}/`)
     $selectedFileId = urlId
     readFile()
-    setupWatch()
+    // setupWatch()
   }
 
   // Select the new navigated row to open in the search dialog
@@ -452,8 +437,6 @@
   // Sync the file to the database implementation before leaving the page
   // Note: this does not always work so for that reason, there is a save button provided
   beforeNavigate(async ({ from, to, cancel }) => await syncFile())
-
-  onDestroy(() => removeWatch())
 </script>
 
 <svelte:head>
