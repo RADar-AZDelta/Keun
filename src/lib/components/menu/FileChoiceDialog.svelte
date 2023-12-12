@@ -2,7 +2,7 @@
   import { dev } from '$app/environment'
   import { goto } from '$app/navigation'
   import { createEventDispatcher } from 'svelte'
-  import { SvgIcon } from 'components'
+  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
   import { selectedFileId } from '$lib/store'
   import type { PageEvents } from '$lib/components/Types'
 

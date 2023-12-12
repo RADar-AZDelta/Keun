@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { clickOutside, SvgIcon } from 'components'
+  import clickOutside from '$lib/obsolete/clickOutside'
+  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
   import { abortAutoMapping, settings, triggerAutoMapping } from '$lib/store'
 
   let savedAutomapping: boolean, possibleOutclick: boolean, settingsDialog: HTMLDialogElement

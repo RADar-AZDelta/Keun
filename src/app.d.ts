@@ -3,11 +3,12 @@
 // and what to do when importing types
 
 export interface UserSession {
-	uid?: string;
-	name?: string | null;
-	email?: string | null;
-	roles?: [string];
-	token?: string;
+  uid?: string;
+  name?: string;
+  email?: string;
+  roles?: [string];
+  token?: string;
+  exp?: string
 }
 
 

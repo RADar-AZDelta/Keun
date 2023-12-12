@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
-  import { SvgIcon } from 'components'
+  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
   import debounce from 'lodash.debounce'
   import Equivalence from '$lib/components/mapping/details/Equivalence.svelte'
   import AutocompleteInputSettings from '$lib/components/extra/AutocompleteInputSettings.svelte'

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
   import debounce from 'lodash.debounce'
-  import { clickOutside } from 'components'
+  import clickOutside from '$lib/obsolete/clickOutside'
   import type { ICustomEvents } from '$lib/components/Types'
 
   export let id: string,

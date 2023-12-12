@@ -1,7 +1,7 @@
 <script lang="ts">
   import { dev } from '$app/environment'
   import type { SvelteComponent } from 'svelte'
-  import { Spinner } from 'components'
+  import Spinner from '$lib/obsolete/Spinner.svelte'
   import { selectedFileId, databaseImplementation, databaseImpl, user } from '$lib/store'
   import { loadImplementationDB } from '$lib/implementations/implementation'
   import FileChoiceDialog from '$lib/components/menu/FileChoiceDialog.svelte'
