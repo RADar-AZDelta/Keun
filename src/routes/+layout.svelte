@@ -1,16 +1,16 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
-  import { page } from '$app/stores'
-  import { base } from '$app/paths'
   import { beforeNavigate } from '$app/navigation'
-  import '@radar-azdelta/svelte-datatable/styles/data-table.scss'
-  import '$lib/table.scss'
-  import { authImplementation, settings, settingsImpl, user } from '$lib/store'
+  import { base } from '$app/paths'
+  import { page } from '$app/stores'
   import Header from '$lib/components/extra/Header.svelte'
   import Manual from '$lib/components/extra/Manual.svelte'
   import Settings from '$lib/components/extra/Settings.svelte'
   import User from '$lib/components/extra/User.svelte'
   import { loadImplementationSettings } from '$lib/implementations/implementation'
+  import { authImplementation, settings, settingsImpl, user } from '$lib/store'
+  import '$lib/table.scss'
+  import '@radar-azdelta/svelte-datatable/styles/data-table.scss'
+  import { onMount } from 'svelte'
 
   // TODO: set up Firebase project for internal use in AZD (Firebase impl)
   // TODO: set up SQLite impl for reference for other hospitals

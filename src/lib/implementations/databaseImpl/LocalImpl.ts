@@ -1,7 +1,7 @@
 import { dev } from '$app/environment'
 import initial from '$lib/data/customBlobInitial.json'
 import { IndexedDB } from '$lib/helperClasses/IndexedDB'
-import { fileToBlob, blobToString, stringToBlob, stringToFile, downloadWithUrl } from '$lib/obsolete/utils'
+import { blobToString, downloadWithUrl, fileToBlob, stringToBlob, stringToFile } from '$lib/obsolete/utils'
 import type { IConceptFiles, IFile, IUpdatedFunctionalityImpl, IUserRestriction } from '$lib/components/Types'
 
 export default class LocalImpl implements IUpdatedFunctionalityImpl {

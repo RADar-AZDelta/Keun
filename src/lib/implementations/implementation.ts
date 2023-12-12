@@ -1,7 +1,15 @@
-import { authImpl, databaseImpl, fileTypeImpl, saveImpl, settingsImpl } from '$lib/store'
-import { authImplementation, databaseImplementation, saveImplementation } from '$lib/store'
-import type { ICustomStoreOptions } from '@radar-azdelta/svelte-datatable/components/DataTable'
+import {
+  authImpl,
+  authImplementation,
+  databaseImpl,
+  databaseImplementation,
+  fileTypeImpl,
+  saveImpl,
+  saveImplementation,
+  settingsImpl,
+} from '$lib/store'
 import type { IAuthImpl, ISettingsImpl, IUpdatedFunctionalityImpl } from '$lib/components/Types'
+import type { ICustomStoreOptions } from '@radar-azdelta/svelte-datatable/components/DataTable'
 
 export async function loadImplementationDB(): Promise<IUpdatedFunctionalityImpl> {
   return new Promise(async resolve => {

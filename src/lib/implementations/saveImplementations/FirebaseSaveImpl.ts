@@ -1,5 +1,5 @@
-import { readFirestore, userSessionStore, writeToFirestore } from '$lib/obsolete/firebase'
 import { dev } from '$app/environment'
+import { readFirestore, userSessionStore, writeToFirestore } from '$lib/obsolete/firebase'
 import type {
   IColumnMetaData,
   ICustomStoreOptions,

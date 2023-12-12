@@ -1,11 +1,11 @@
 import { DataTypeCommonBase } from '@radar-azdelta/svelte-datatable/components/datatable/data/DataTypeCommonBase'
 import { dev } from '$app/environment'
 import type { TFilter } from '@radar-azdelta/svelte-datatable'
-import type { IDataTypeInfo } from '@radar-azdelta/svelte-datatable/components/DataTable'
 import type {
   FetchDataFunc,
   IColumnMetaData,
   IDataTypeFunctionalities,
+  IDataTypeInfo,
   IRender,
   SortDirection,
 } from '@radar-azdelta/svelte-datatable/components/DataTable'

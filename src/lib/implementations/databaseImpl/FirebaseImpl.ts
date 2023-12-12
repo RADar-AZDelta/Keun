@@ -1,14 +1,14 @@
 import { dev } from '$app/environment'
 import initial from '$lib/data/customBlobInitial.json'
 import {
+  deleteDocumentFirestore,
+  deleteFileStorage,
   readFileStorage,
   readFirestore,
   readFirestoreCollection,
+  updateToFirestore,
   uploadFileStorage,
   writeToFirestore,
-  updateToFirestore,
-  deleteFileStorage,
-  deleteDocumentFirestore,
 } from '$lib/obsolete/firebase'
 import { downloadWithUrl } from '$lib/obsolete/utils'
 import type { IConceptFiles, IFile, IUpdatedFunctionalityImpl } from '$lib/components/Types'

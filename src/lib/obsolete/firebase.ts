@@ -1,18 +1,42 @@
-import { getApps, getApp, initializeApp } from '@firebase/app'
-import { collection, getFirestore, query } from '@firebase/firestore'
-import { getBlob, getMetadata, getStorage, ref, uploadBytes, listAll } from '@firebase/storage'
-import { deleteDoc, doc, getDoc, getDocs, setDoc, updateDoc } from '@firebase/firestore'
-import { getAuth, signInWithPopup, signOut, onAuthStateChanged, OAuthProvider } from '@firebase/auth'
-import { deleteObject, type FirebaseStorage, type UploadMetadata } from '@firebase/storage'
+import { getApp, getApps, initializeApp } from '@firebase/app'
+import { OAuthProvider, getAuth, onAuthStateChanged, signInWithPopup, signOut } from '@firebase/auth'
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  getFirestore,
+  query,
+  setDoc,
+  updateDoc,
+} from '@firebase/firestore'
+import {
+  deleteObject,
+  getBlob,
+  getMetadata,
+  getStorage,
+  listAll,
+  ref,
+  uploadBytes,
+  type FirebaseStorage,
+  type UploadMetadata,
+} from '@firebase/storage'
 import { writable } from 'svelte/store'
-import { PUBLIC_FIREBASE_MESSAGING_SENDER_ID } from '$env/static/public'
-import { PUBLIC_FIREBASE_STORAGE_BUCKET, PUBLIC_FIREBASE_APP_ID, PUBLIC_TENANT_ID } from '$env/static/public'
-import { PUBLIC_FIREBASE_API_KEY, PUBLIC_FIREBASE_AUTH_DOMAIN, PUBLIC_FIREBASE_PROJECT_ID } from '$env/static/public'
+import {
+  PUBLIC_FIREBASE_API_KEY,
+  PUBLIC_FIREBASE_APP_ID,
+  PUBLIC_FIREBASE_AUTH_DOMAIN,
+  PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  PUBLIC_FIREBASE_PROJECT_ID,
+  PUBLIC_FIREBASE_STORAGE_BUCKET,
+  PUBLIC_TENANT_ID,
+} from '$env/static/public'
 import { sleep } from '$lib/obsolete/utils'
-import type { UserSession } from '../../app'
 import type { FirebaseApp, FirebaseOptions } from '@firebase/app'
-import type { Firestore, QueryFieldFilterConstraint } from '@firebase/firestore'
 import type { Auth, ParsedToken, User, UserCredential } from '@firebase/auth'
+import type { Firestore, QueryFieldFilterConstraint } from '@firebase/firestore'
+import type { UserSession } from '../../app'
 
 const firebaseConfig: FirebaseOptions = {
   apiKey: PUBLIC_FIREBASE_API_KEY,
@@ -174,19 +198,19 @@ async function deleteFileStorage(reference: string) {
 }
 
 export {
+  deleteDocumentFirestore,
+  deleteFileStorage,
+  executeFilterQueryFirestore,
+  getFilesFromRef,
   logIn,
   logOut,
-  onlyReadableUserSessionStore as userSessionStore,
-  userSessionInitialized,
-  writeToFirestore,
-  updateToFirestore,
+  readFileStorage,
   readFirestore,
   readFirestoreCollection,
-  executeFilterQueryFirestore,
-  deleteDocumentFirestore,
-  uploadFileStorage,
-  readFileStorage,
   readMetaData,
-  getFilesFromRef,
-  deleteFileStorage,
+  updateToFirestore,
+  uploadFileStorage,
+  userSessionInitialized,
+  onlyReadableUserSessionStore as userSessionStore,
+  writeToFirestore,
 }
