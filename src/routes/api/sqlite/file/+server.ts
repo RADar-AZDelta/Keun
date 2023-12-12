@@ -1,6 +1,6 @@
+import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { json, type RequestHandler } from '@sveltejs/kit'
 import Database, { type Database as DB } from 'better-sqlite3'
-import { readFileSync, writeFileSync, existsSync, appendFileSync } from 'node:fs'
 import type { IFile } from '$lib/components/Types'
 
 let db: DB
@@ -53,7 +53,7 @@ export const DELETE: RequestHandler = async ({ request }) => {
   // Implement authentication & check if the person has the corresponding role to use this action
   if (!tableExistance) await createTable()
   const body = await request.json()
-  if (!body || !body.id) return await writeLog(`DELETE: Provide the id of the file to delete in the body.`, body)
+  if (!body || !body.id) return await writeLog('DELETE: Provide the id of the file to delete in the body.', body)
   return await deleteFileById(body.id)
 }
 
@@ -76,12 +76,12 @@ async function createTable() {
       details: res,
     })
   } catch (e) {
-    return await writeLog(`CREATE TABLE: Could not create the table file in the database`, e)
+    return await writeLog('CREATE TABLE: Could not create the table file in the database', e)
   }
 }
 
 async function checkTableExistance() {
-  const query = "SELECT name FROM sqlite_master WHERE type = 'table' AND name= 'file'"
+  const query = 'SELECT name FROM sqlite_master WHERE type = \'table\' AND name= \'file\''
   const stmnt = db.prepare(query)
   const res = stmnt.get()
   return res ? true : false
@@ -112,8 +112,8 @@ async function messageReturn(message: string, details: any) {
 }
 
 async function checkForMissingValues(required: string[], file: any) {
-  let missing: string[] = []
-  for (let req of required) if (!file[req]) missing.push(req)
+  const missing: string[] = []
+  for (const req of required) if (!file[req]) missing.push(req)
   if (missing.length > 0)
     return json({
       result: 'error',
@@ -165,8 +165,7 @@ async function insertFile(file: IFile) {
 
 async function updateFileContent(content: string, id: string) {
   try {
-    const query =
-      'UPDATE file SET content = $content WHERE id = $id;'
+    const query = 'UPDATE file SET content = $content WHERE id = $id;'
     const stmnt = db.prepare(query)
     const res = stmnt.run({ content, id })
     await saveToDatabase()

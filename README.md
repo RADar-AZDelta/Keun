@@ -42,7 +42,7 @@ The PUBLIC_CLOUD_AUTH_IMPLEMENTATION is the implementation used for authenticati
 
 The PUBLIC_CLOUD_SAVE_IMPLEMENTATION is the implementation used to save the table configuration from the Svelte-datatable. In the local implementation, this is saved in IndexedDB, but this can also be saved in Firestore or a SQL database.
 
-At the moment there are three implementations made. 
+At the moment there are three implementations made.
 
 ##### Local implementation
 
@@ -102,7 +102,9 @@ You could combine multiple cloud implementations according to your wishes. You c
 Feel free to create other cloud implementations through a pull request!
 
 # Usage
+
 ### Menu
+
 ##### Add a file to Keun
 
 ##### Download a file
@@ -110,6 +112,7 @@ Feel free to create other cloud implementations through a pull request!
 ##### Delete a file
 
 ### Mapping
+
 ##### Mapping to an existing concept
 
 ##### Mapping to a custom concept

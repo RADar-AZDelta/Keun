@@ -4,84 +4,107 @@ service cloud.firestore {
   match /databases/{database}/documents {
     match /files/{fileId} {
         function isSignedIn() {
+        	// Check if the user is logged in
           return request.auth != null;
         }
 
         function getRole(arr) {
+        	// Check the role set in the Firestore collection "roles"
           let role = get(/databases/$(database)/documents/roles/$(request.auth.uid)).data.role;
           return role in arr;
         }
 
         function getRoleClaims(arr) {
+        	// Check the roles through the custom claims in the auth
           return request.auth.token.role in arr;
         }
+        
+        function checkProvider() {
+        	// All the users must be logged in through OAuth of Microsoft
+          // Microsoft is not an option here so it'll be custom
+      		return request.auth.token.firebase.sign_in_provider == "custom"
+      	}
+      
+      function checkRights() {
+      		// Check if the user trying to read the file info, is in the list of authors
+          let uid = request.auth.uid;
+          let authors = get(/databases/(default)/documents/files/$(fileId)).data.authors;
+          return uid in authors;
+      	}
 
-        allow read: if isSignedIn() && getRoleClaims(['user', 'admin']) && getRole(['user', 'admin']);
-        allow write: if isSignedIn() && getRoleClaims(['admin']) && getRole(['admin']);
+				// The user must be logged in through Microsoft, has the role "user" || "admin" & is in the list of authors for this file
+        allow read: if isSignedIn() && getRoleClaims(['user', 'admin']) && getRole(['user', 'admin']) && checkProvider() && checkRights();
+        // The user must be logged in through Microsoft & has the role "admin"
+        allow write: if isSignedIn() && getRoleClaims(['admin']) && getRole(['admin']) && checkProvider();
     }
+    
+    match /users/{userId} {
+        function isSignedIn() {
+        	// Check if the user is logged in
+          return request.auth != null;
+        }
+        
+        function checkId() {
+          // Check if the role of the requested user is the same as the user that's reading
+          return request.auth.uid == userId;
+      	}
 
-    match /settings/{userId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
+        function getRole(arr) {
+        	// Check the role set in the Firestore collection "roles"
+          let role = get(/databases/$(database)/documents/roles/$(request.auth.uid)).data.role;
+          return role in arr;
+        }
 
-      function checkId() {
-        return request.auth.uid == userId;
-      }
+        function getRoleClaims(arr) {
+        	// Check the roles through the custom claims in the auth
+          return request.auth.token.role in arr;
+        }
+        
+        function checkProvider() {
+        	// All the users must be logged in through OAuth of Microsoft
+          // Microsoft is not an option here so it'll be custom
+      		return request.auth.token.firebase.sign_in_provider == "custom"
+      	}
 
-      function getRoleClaims(arr) {
-        return request.auth.token.role in arr;
-      }
-
-      function getRole(arr) {
-        let role = get(/databases/$(database)/documents/roles/$(request.auth.uid)).data.role;
-        return role in arr;
-      }
-
-      allow read, write: if isSignedIn() && checkId() && getRoleClaims(['user', 'admin']) && getRole(['user', 'admin']);
-    }
-
-    match /tableOptions/{fileId}/{userId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function checkId() {
-        return request.auth.uid == userId;
-      }
-
-      function getRoleClaims(arr) {
-        return request.auth.token.role in arr;
-      }
-
-      function getRole(arr) {
-        let role = get(/databases/$(database)/documents/roles/$(request.auth.uid)).data.role;
-        return role in arr;
-      }
-
-      function checkAccess() {
-        let accessList = get(/databases/$(database)/documents/files/$(fileId)).data.access;
-        return request.auth.uid in accessList
-      }
-
-      allow read, write: if isSignedIn() && checkId() && getRoleClaims(['user', 'admin']) && getRole(['user', 'admin']) && checkAccess()
+				// The user must be logged in through Microsoft, has the role "user" || "admin" & is reading his own user info
+        allow read: if isSignedIn() && getRoleClaims(['user', 'admin']) && checkId() && getRole(['user', 'admin']) && checkProvider();
+        // The user must be logged in through Microsoft & has the role "admin"
+        allow write: if isSignedIn() && getRoleClaims(['admin']) && checkId() && getRole(['admin']) && checkProvider();
     }
 
     match /roles/{userId} {
       function isSignedIn() {
+      	// The user must be logged in
         return request.auth != null;
       }
 
       function checkId() {
+      	// Check if the role of the requested user is the same as the user that's reading
         return request.auth.uid == userId;
       }
 
       function getRoleClaims(arr) {
+      	// Check the roles through the custom claims in the auth
         return request.auth.token.role in arr;
       }
+      
+      function getRole(arr) {
+        // Check the role set in the Firestore collection "roles"
+        let role = get(/databases/$(database)/documents/roles/$(request.auth.uid)).data.role;
+        return role in arr;
+      }
+      
+      function checkProvider() {
+        // All the users must be logged in through OAuth of Microsoft
+        // Microsoft is not an option here so it'll be custom
+        return request.auth.token.firebase.sign_in_provider == "custom"
+      }
 
-      allow read: if isSignedIn() && checkId() && getRoleClaims(['user', 'admin']);
-      allow write: if false;
+			// The user must be logged in through Microsoft, has the role "user" || "admin" & is reading his own role
+      allow get: if isSignedIn() && checkId() && getRoleClaims(['user', 'admin']) && getRole(['user', 'admin']) && checkProvider();
+      // No one is allowed to perform other actions than read his/her own roles
+      // The roles will be set through an external script
+      allow write, update, delete, create, list: if false;
     }
   }
   }

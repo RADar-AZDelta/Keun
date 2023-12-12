@@ -1,6 +1,6 @@
 import { dev } from '$app/environment'
-import type { ISettings, ISettingsImpl } from '$lib/components/Types'
 import { readFirestore, updateToFirestore, userSessionStore } from '$lib/obsolete/firebase'
+import type { ISettings, ISettingsImpl } from '$lib/components/Types'
 
 const defaultSettings: ISettings = {
   mapToMultipleConcepts: false,
@@ -15,7 +15,7 @@ export default class FirebaseImpl implements ISettingsImpl {
   collection: string = 'settings'
 
   async getSettings(): Promise<ISettings> {
-    return new Promise((resolve, reject) => {
+    return new Promise(resolve => {
       if (dev) console.log('getSettings: Reading the settings from Firestore')
       userSessionStore.subscribe(async user => {
         if (!user?.uid) return defaultSettings

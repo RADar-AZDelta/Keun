@@ -1,15 +1,14 @@
+import { DataTypeCommonBase } from '@radar-azdelta/svelte-datatable/components/datatable/data/DataTypeCommonBase'
 import { dev } from '$app/environment'
 import type { TFilter } from '@radar-azdelta/svelte-datatable'
-import type { IDataTypeInfo } from '@radar-azdelta/svelte-datatable/components/DataTable'
 import type {
   FetchDataFunc,
   IColumnMetaData,
   IDataTypeFunctionalities,
+  IDataTypeInfo,
   IRender,
   SortDirection,
 } from '@radar-azdelta/svelte-datatable/components/DataTable'
-import { DataTypeCommonBase } from '@radar-azdelta/svelte-datatable/components/datatable/data/DataTypeCommonBase'
-import type Query from 'arquero/dist/types/query/query'
 
 export class AthenaDataTypeImpl extends DataTypeCommonBase implements IDataTypeFunctionalities {
   async setData(data: IDataTypeInfo): Promise<void> {
@@ -29,13 +28,13 @@ export class AthenaDataTypeImpl extends DataTypeCommonBase implements IDataTypeF
     return this.internalColumns as IColumnMetaData[]
   }
 
-  async render(onlyPaginationChanged: boolean): Promise<IRender> {
+  async render(): Promise<IRender> {
     let start: number
-    const filteredColumns = this.internalColumns!.reduce<Map<string, TFilter>>((acc, cur, i) => {
+    const filteredColumns = this.internalColumns!.reduce<Map<string, TFilter>>((acc, cur) => {
       if (cur && cur.filter) acc.set(cur.id, cur.filter)
       return acc
     }, new Map<string, TFilter>())
-    const sortedColumns = this.internalColumns!.reduce<Map<string, SortDirection>>((acc, cur, i) => {
+    const sortedColumns = this.internalColumns!.reduce<Map<string, SortDirection>>((acc, cur) => {
       if (cur && cur.sortDirection) acc.set(cur.id, cur.sortDirection)
       return acc
     }, new Map<string, SortDirection>())
@@ -62,7 +61,7 @@ export class AthenaDataTypeImpl extends DataTypeCommonBase implements IDataTypeF
     let csvArrayObjObjects = ''
     let keyCounterArrayOfObjects: number = 0
     for (let row = 0; row <= this.renderedData!.length; row++) {
-      for (let col of this.internalColumns!) {
+      for (const col of this.internalColumns!) {
         if (row == 0) {
           csvArrayObjObjects += col.id + (keyCounterArrayOfObjects + 1 < this.internalColumns!.length ? ',' : '\r\n')
           keyCounterArrayOfObjects++
@@ -83,7 +82,7 @@ export class AthenaDataTypeImpl extends DataTypeCommonBase implements IDataTypeF
     let csvArrayObjObjects = ''
     let keyCounterArrayOfObjects: number = 0
     for (let row = 0; row <= this.renderedData!.length; row++) {
-      for (let col of this.internalColumns!) {
+      for (const col of this.internalColumns!) {
         if (row == 0) {
           csvArrayObjObjects += col.id + (keyCounterArrayOfObjects + 1 < this.internalColumns!.length ? ',' : '\r\n')
           keyCounterArrayOfObjects++
@@ -99,29 +98,29 @@ export class AthenaDataTypeImpl extends DataTypeCommonBase implements IDataTypeF
     return blob
   }
 
-  async replaceValuesOfColumn(currentValue: any, updatedValue: any, column: string): Promise<void> {}
+  async replaceValuesOfColumn(): Promise<void> {}
 
-  async executeExpressionsAndReturnResults(expressions: Record<string, any>): Promise<void> {}
+  async executeExpressionsAndReturnResults(): Promise<void> {}
 
-  async executeQueryAndReturnResults(query: Query | object): Promise<void> {}
+  async executeQueryAndReturnResults(): Promise<void> {}
 
-  async insertColumns(cols: IColumnMetaData[]): Promise<void> {}
+  async insertColumns(): Promise<void> {}
 
-  async getFullRow(originalIndex: number): Promise<void> {}
+  async getFullRow(): Promise<void> {}
 
-  async deleteRows(originalIndices: number[]): Promise<void> {}
+  async deleteRows(): Promise<void> {}
 
-  async insertRows(rows: Record<string, any>[]): Promise<void> {}
+  async insertRows(): Promise<void> {}
 
-  async updateRows(rowsToUpdateByOriginalIndex: Map<number, Record<string, any>>): Promise<void> {}
+  async updateRows(): Promise<void> {}
 
-  async renameColumns(columns: Record<string, string>): Promise<void> {}
+  async renameColumns(): Promise<void> {}
 
-  async applyFilter(data: any[] | any[][]): Promise<void> {}
+  async applyFilter(): Promise<void> {}
 
-  async applySort(data: any[] | any[][]): Promise<void> {}
+  async applySort(): Promise<void> {}
 
-  async getNextRow(currentIndex: number, rowsPerPage: number, currentPage: number): Promise<any> {}
+  async getNextRow(): Promise<any> {}
 
-  async getPreviousRow(currentIndex: number, rowsPerPage: number, currentPage: number): Promise<any> {}
+  async getPreviousRow(): Promise<any> {}
 }
