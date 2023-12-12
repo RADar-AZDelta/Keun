@@ -1,17 +1,17 @@
 import { dev } from '$app/environment'
-import type { IConceptFiles, IFile, IUpdatedFunctionalityImpl } from '$lib/components/Types'
 import initial from '$lib/data/customBlobInitial.json'
 import {
+  deleteDocumentFirestore,
+  deleteFileStorage,
   readFileStorage,
   readFirestore,
   readFirestoreCollection,
+  updateToFirestore,
   uploadFileStorage,
   writeToFirestore,
-  updateToFirestore,
-  deleteFileStorage,
-  deleteDocumentFirestore,
 } from '$lib/obsolete/firebase'
 import { downloadWithUrl } from '$lib/obsolete/utils'
+import type { IConceptFiles, IFile, IUpdatedFunctionalityImpl } from '$lib/components/Types'
 
 /* Possible Firestore structure
 
@@ -33,7 +33,6 @@ users: {
     ],
     name: string
     lastName: string
-    role: string
   }
 }
   
@@ -90,7 +89,7 @@ export default class FirebaseImpl implements IUpdatedFunctionalityImpl {
     // This method will only be available if you are admin, so we can fetch all the files & check if the same name is found
     if (dev) console.log('checkFileExistence: Check if the file with name')
     const files = await readFirestoreCollection(this.firestoreFileColl)
-    for (let file of files) if (file.name === name) return file.id
+    for (const file of files) if (file.name === name) return file.id
   }
 
   async getFiles(userId?: string, roles?: string[]): Promise<IFile[] | void> {
@@ -104,8 +103,8 @@ export default class FirebaseImpl implements IUpdatedFunctionalityImpl {
     if (!userInfo)
       return console.error('getFiles: Could not get files for user, there were no files assigned to his account')
     const { files } = userInfo.files
-    let allFiles: IFile[] = []
-    for (let file of files) {
+    const allFiles: IFile[] = []
+    for (const file of files) {
       const res = await this.getFileFromColl(this.storageCollection, file.id)
       if (res) allFiles.push(res)
     }
@@ -133,7 +132,7 @@ export default class FirebaseImpl implements IUpdatedFunctionalityImpl {
   async editFileAuthors(id: string, authors: string[]): Promise<void> {
     if (dev) console.log(`editFileAuthors: Editing authors of file ${id}`)
     await updateToFirestore(this.firestoreFileColl, id, { authors })
-    for (let author of authors) {
+    for (const author of authors) {
       const userInfo = await readFirestore(this.firestoreUserColl, author)
       if (userInfo) await writeToFirestore(this.firestoreUserColl, author, { files: [...userInfo.files, id] })
     }

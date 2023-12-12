@@ -1,13 +1,33 @@
-import { PUBLIC_CLOUD_DATABASE_IMPLEMENTATION, PUBLIC_CLOUD_AUTH_IMPLEMENTATION, PUBLIC_CLOUD_SAVE_IMPLEMENTATION } from '$env/static/public'
 import { writable } from 'svelte/store'
-// @ts-ignore
-import { LatencyOptimisedTranslator } from '@browsermt/bergamot-translator/translator.js'
-import { loadImplementationAuth, loadImplementationDB, loadImplementationDataType, loadImplementationSave, loadImplementationSettings } from '$lib/implementations/implementation'
-import type { ICustomStoreOptions, IDataTypeFunctionalities } from '@radar-azdelta/svelte-datatable/components/DataTable'
-import type { ISettingsImpl, IAuthImpl, ISettings, IUpdatedFunctionalityImpl, IUser } from '$lib/components/Types'
+import {
+  PUBLIC_CLOUD_AUTH_IMPLEMENTATION,
+  PUBLIC_CLOUD_DATABASE_IMPLEMENTATION,
+  PUBLIC_CLOUD_SAVE_IMPLEMENTATION,
+} from '$env/static/public'
+import {
+  loadImplementationAuth,
+  loadImplementationDB,
+  loadImplementationDataType,
+  loadImplementationSave,
+  loadImplementationSettings,
+} from '$lib/implementations/implementation'
+import type { IAuthImpl, ISettings, ISettingsImpl, IUpdatedFunctionalityImpl, IUser } from '$lib/components/Types'
+// @ts-expect-error Typescript issue that the package does not export .d.ts files
+import type { LatencyOptimisedTranslator } from '@browsermt/bergamot-translator/translator.js'
+import type {
+  ICustomStoreOptions,
+  IDataTypeFunctionalities,
+} from '@radar-azdelta/svelte-datatable/components/DataTable'
 import type { User } from 'firebase/auth'
 
-export const settings = writable<ISettings>({ mapToMultipleConcepts: false, autoMap: false, language: 'en', savedAuthors: [], vocabularyIdCustomConcept: '', popupSidesShowed: { filters: true, details: true }, })
+export const settings = writable<ISettings>({
+  mapToMultipleConcepts: false,
+  autoMap: false,
+  language: 'en',
+  savedAuthors: [],
+  vocabularyIdCustomConcept: '',
+  popupSidesShowed: { filters: true, details: true },
+})
 
 export const firebaseUser = writable<User>()
 export const user = writable<IUser>()

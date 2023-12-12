@@ -1,25 +1,25 @@
 <script lang="ts">
   import { dev } from '$app/environment'
-  import type { SvelteComponent } from 'svelte'
-  import Spinner from '$lib/obsolete/Spinner.svelte'
-  import { selectedFileId, databaseImplementation, databaseImpl, user } from '$lib/store'
-  import { loadImplementationDB } from '$lib/implementations/implementation'
-  import FileChoiceDialog from '$lib/components/menu/FileChoiceDialog.svelte'
-  import FileInputDialog from '$lib/components/menu/FileInputDialog.svelte'
-  import ColumnsDialog from '$lib/components/menu/ColumnsDialog.svelte'
-  import AuthorsDialog from '$lib/components/menu/AuthorsDialog.svelte'
-  import FirebaseImpl from '$lib/components/menu/FirebaseImpl.svelte'
-  import LocalImpl from '$lib/components/menu/LocalImpl.svelte'
   import type {
+    CheckForCacheEventDetail,
+    ColumnsDialogShowEventDetail,
+    DeleteFilesEventDetail,
     DownloadFilesEventDetail,
     EditRightsEventDetail,
     FileUpdatedColumnsEventDetail,
     FileUploadEventDetail,
-    ColumnsDialogShowEventDetail,
-    CheckForCacheEventDetail,
-    DeleteFilesEventDetail,
     IFile,
   } from '$lib/components/Types'
+  import AuthorsDialog from '$lib/components/menu/AuthorsDialog.svelte'
+  import ColumnsDialog from '$lib/components/menu/ColumnsDialog.svelte'
+  import FileChoiceDialog from '$lib/components/menu/FileChoiceDialog.svelte'
+  import FileInputDialog from '$lib/components/menu/FileInputDialog.svelte'
+  import FirebaseImpl from '$lib/components/menu/FirebaseImpl.svelte'
+  import LocalImpl from '$lib/components/menu/LocalImpl.svelte'
+  import { loadImplementationDB } from '$lib/implementations/implementation'
+  import Spinner from '$lib/obsolete/Spinner.svelte'
+  import { databaseImpl, databaseImplementation, selectedFileId, user } from '$lib/store'
+  import type { SvelteComponent } from 'svelte'
 
   let files: IFile[] = [],
     file: File,
