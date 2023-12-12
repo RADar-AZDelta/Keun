@@ -258,7 +258,6 @@ export interface IUsagiMappedCols {
   conceptName?: string | null
   domainId?: string | null
   vocabulary?: string | null
-  className?: string | null
   sourceAutoAssignedConceptIds?: string | null
 }
 
