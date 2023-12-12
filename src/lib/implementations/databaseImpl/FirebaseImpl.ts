@@ -33,7 +33,6 @@ users: {
     ],
     name: string
     lastName: string
-    role: string
   }
 }
   

@@ -20,9 +20,19 @@ service firebase.storage {
       function getRoleClaims(arr) {
       	return request.auth.token.role in arr;
       }
+      
+      function checkProvider() {
+      	return request.auth.token.firebase.sign_in_provider == "custom"
+      }
+      
+      function checkRights() {
+      	let uid = request.auth.uid;
+        let authors = firestore.get(/databases/(default)/documents/files/$(fileId)).data.authors;
+        return uid in authors;
+      }
     
-      allow create, delete: if isSignedIn() && getRoleClaims(['admin']) && getRole(['admin']);
-      allow read, update: if isSignedIn() && getRoleClaims(['user', 'admin']) && getRole(['user', 'admin']) && checkAuthorList();
+      allow create, delete: if isSignedIn() && getRoleClaims(['admin']) && getRole(['admin']) && checkProvider();
+      allow read, update: if isSignedIn() && getRoleClaims(['user', 'admin']) && getRole(['user', 'admin']) && checkAuthorList() && checkRights();
     }
     match /customFiles/{fileId} {
       function isSignedIn() {
@@ -42,9 +52,19 @@ service firebase.storage {
       function getRoleClaims(arr) {
       	return request.auth.token.role in arr;
       }
+      
+      function checkProvider() {
+      	return request.auth.token.firebase.sign_in_provider == "custom"
+      }
+      
+      function checkRights() {
+      	let uid = request.auth.uid;
+        let authors = firestore.get(/databases/(default)/documents/files/$(fileId)).data.authors;
+        return uid in authors;
+      }
     
-      allow create, delete: if isSignedIn() && getRoleClaims(['admin']) && getRole(['admin']);
-      allow read, update: if isSignedIn() && getRoleClaims(['user', 'admin']) && getRole(['user', 'admin']) && checkAuthorList();
+      allow create, delete: if isSignedIn() && getRoleClaims(['admin']) && getRole(['admin']) && checkProvider();
+      allow read, update: if isSignedIn() && getRoleClaims(['user', 'admin']) && getRole(['user', 'admin']) && checkAuthorList() && checkProvider() && checkRights();
     }
   }
 }
