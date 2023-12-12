@@ -1,6 +1,6 @@
-import { sequence } from '@sveltejs/kit/hooks'
 // import authorizedPages from '$lib/config/authorizedPages.json'
 // import { user } from '$lib/store'
+import { sequence } from '@sveltejs/kit/hooks'
 import type { Handle } from '@sveltejs/kit'
 
 // const securityHeaders = {

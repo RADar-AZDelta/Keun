@@ -1,7 +1,7 @@
 import { writable } from 'svelte/store'
 import {
-  PUBLIC_CLOUD_DATABASE_IMPLEMENTATION,
   PUBLIC_CLOUD_AUTH_IMPLEMENTATION,
+  PUBLIC_CLOUD_DATABASE_IMPLEMENTATION,
   PUBLIC_CLOUD_SAVE_IMPLEMENTATION,
 } from '$env/static/public'
 import {
@@ -11,13 +11,13 @@ import {
   loadImplementationSave,
   loadImplementationSettings,
 } from '$lib/implementations/implementation'
+import type { IAuthImpl, ISettings, ISettingsImpl, IUpdatedFunctionalityImpl, IUser } from '$lib/components/Types'
 // @ts-expect-error Typescript issue that the package does not export .d.ts files
 import type { LatencyOptimisedTranslator } from '@browsermt/bergamot-translator/translator.js'
 import type {
   ICustomStoreOptions,
   IDataTypeFunctionalities,
 } from '@radar-azdelta/svelte-datatable/components/DataTable'
-import type { ISettingsImpl, IAuthImpl, ISettings, IUpdatedFunctionalityImpl, IUser } from '$lib/components/Types'
 import type { User } from 'firebase/auth'
 
 export const settings = writable<ISettings>({
