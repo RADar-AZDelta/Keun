@@ -10,8 +10,8 @@ import {
   updateToFirestore,
   deleteFileStorage,
   deleteDocumentFirestore,
-} from 'firebase_utils'
-import { downloadWithUrl } from 'utils'
+} from '$lib/obsolete/firebase'
+import { downloadWithUrl } from '$lib/obsolete/utils'
 
 /* Possible Firestore structure
 

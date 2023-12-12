@@ -2,5 +2,8 @@
 	"awooga.originalColorCustomizations": {},
 	"workbench.colorCustomizations": {},
 	"editor.formatOnSave": true,
+	"editor.codeActionsOnSave": {
+		"source.fixAll.eslint": "explicit"
+	},
 	"[svelte]": { "editor.defaultFormatter": "svelte.svelte-vscode" }
 }

@@ -26,6 +26,7 @@
     "@typescript-eslint/parser": "^6.11.0",
     "eslint": "^8.53.0",
     "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-import": "^2.29.0",
     "prettier": "^3.1.0",
     "prettier-plugin-svelte": "^3.1.0",
     "sass": "^1.69.5",
@@ -41,16 +42,17 @@
   },
   "type": "module",
   "dependencies": {
+    "@firebase/app": "^0.9.25",
+    "@firebase/auth": "^1.5.1",
+    "@firebase/firestore": "^4.4.0",
+    "@firebase/storage": "^0.12.0",
     "@radar-azdelta/svelte-athena-search": "^0.0.22",
     "@radar-azdelta/svelte-datatable": "^0.0.58",
     "arquero": "^5.2.0",
     "better-sqlite3": "^9.1.1",
-    "components": "file:./submodules/components",
     "firebase": "^10.6.0",
     "firebase-admin": "^11.11.0",
-    "firebase_utils": "file:./submodules/firebase_utils",
     "lodash.debounce": "^4.0.8",
-    "lodash.isequal": "^4.5.0",
-    "utils": "file:./submodules/utils"
+    "lodash.isequal": "^4.5.0"
   }
 }

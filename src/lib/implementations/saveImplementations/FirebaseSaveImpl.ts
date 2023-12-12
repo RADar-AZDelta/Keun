@@ -5,7 +5,7 @@ import type {
   ITableOptions,
 } from '@radar-azdelta/svelte-datatable/components/DataTable'
 import { dev } from '$app/environment'
-import { readFirestore, userSessionStore, writeToFirestore } from 'firebase_utils'
+import { readFirestore, userSessionStore, writeToFirestore } from '$lib/obsolete/firebase'
 
 export default class FirebaseSaveImpl implements ICustomStoreOptions {
   storedOptions: ITableOptions

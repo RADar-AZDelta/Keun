@@ -10,7 +10,7 @@
   import DataTable from '@radar-azdelta/svelte-datatable'
   // @ts-ignore
   import { LatencyOptimisedTranslator } from '@browsermt/bergamot-translator/translator.js'
-  import { reformatDate } from 'utils'
+  import { reformatDate } from '$lib/obsolete/utils'
   import { addExtraFields } from '$lib/mappingUtils'
   import { abortAutoMapping, customFileTypeImpl, databaseImpl, fileTypeImpl, saveImpl } from '$lib/store'
   import { selectedFileId, settings, translator, triggerAutoMapping, user } from '$lib/store'

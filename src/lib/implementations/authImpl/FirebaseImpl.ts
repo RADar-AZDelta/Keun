@@ -1,6 +1,6 @@
 import { dev } from '$app/environment'
 import type { IAuthImpl, IUserRestriction } from '$lib/components/Types'
-import { logIn, logOut, readFirestoreCollection, userSessionStore } from 'firebase_utils'
+import { logIn, logOut, readFirestoreCollection, userSessionStore } from '$lib/obsolete/firebase'
 import { user } from '$lib/store'
 
 export default class LocalImpl implements IAuthImpl {

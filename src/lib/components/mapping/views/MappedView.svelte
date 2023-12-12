@@ -1,7 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
   import DataTable, { type ITableOptions } from '@radar-azdelta/svelte-datatable'
-  import { SvgIcon } from 'components'
+  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
   import columns from '$lib/data/columnsMapped.json'
   import type { IMappedRow, MappingEvents } from '$lib/components/Types'
 
