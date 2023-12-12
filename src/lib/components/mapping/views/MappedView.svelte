@@ -24,9 +24,9 @@
         <button on:click={() => removeMapping(renderedRow)}><SvgIcon id="x" /></button>
       {/if}
     </td>
-    {#each columns as column}
+    {#each Object.keys(renderedRow) as key}
       <td>
-        <p>{renderedRow[column.id]}</p>
+        <p>{renderedRow[key]}</p>
       </td>
     {/each}
   </DataTable>
