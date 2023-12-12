@@ -1,6 +1,7 @@
 <script lang="ts">
   import SvelteMarkDown from 'svelte-markdown'
-  import { clickOutside, SvgIcon } from 'components'
+  import clickOutside from '$lib/obsolete/clickOutside'
+  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
 
   let manualDialog: HTMLDialogElement, manualText: string
 

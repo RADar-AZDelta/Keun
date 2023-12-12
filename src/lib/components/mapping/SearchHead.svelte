@@ -1,7 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
   import { query } from 'arquero'
-  import {SvgIcon} from 'components'
+  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
   import type DataTable from '@radar-azdelta/svelte-datatable'
   import type Query from 'arquero/dist/types/query/query'
   import type { ITablePagination, IUsagiRow, MappingEvents } from '$lib/components/Types'
