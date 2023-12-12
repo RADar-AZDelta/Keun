@@ -5,6 +5,8 @@
   },
   "hosting": {
     "public": "public",
+    "cleanUrls": true,
+    "trailingSlash": false,
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       {
@@ -15,5 +17,6 @@
   },
   "storage": {
     "rules": "storage.rules"
-  }
+  },
+  "singleProjectMode": true
 }

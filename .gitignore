@@ -14,3 +14,5 @@ vite.config.ts.timestamp-*
 /static/testing-images/download.png
 files.db
 bearer
+public
+.firebase/*
