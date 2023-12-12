@@ -4,7 +4,7 @@ import type { ICustomStoreOptions } from '@radar-azdelta/svelte-datatable/compon
 import type { IAuthImpl, ISettingsImpl, IUpdatedFunctionalityImpl } from '$lib/components/Types'
 
 export async function loadImplementationDB(): Promise<IUpdatedFunctionalityImpl> {
-  return new Promise(async (resolve, reject) => {
+  return new Promise(async resolve => {
     databaseImpl.subscribe(async impl => {
       if (impl) return resolve(impl)
       if (databaseImplementation === 'firebase') {
@@ -12,7 +12,6 @@ export async function loadImplementationDB(): Promise<IUpdatedFunctionalityImpl>
           databaseImpl.set(new FirebaseImpl())
           return databaseImpl
         })
-      } else if (databaseImplementation === 'sqlite') {
       } else {
         await import('$lib/implementations/databaseImpl/LocalImpl').then(({ default: LocalImpl }) => {
           databaseImpl.set(new LocalImpl())
@@ -24,7 +23,7 @@ export async function loadImplementationDB(): Promise<IUpdatedFunctionalityImpl>
 }
 
 export async function loadImplementationAuth(): Promise<IAuthImpl> {
-  return new Promise(async (resolve, reject) => {
+  return new Promise(async resolve => {
     authImpl.subscribe(async impl => {
       if (impl) return resolve(impl)
       if (authImplementation === 'firebase') {
@@ -42,7 +41,7 @@ export async function loadImplementationAuth(): Promise<IAuthImpl> {
 }
 
 export async function loadImplementationSave(): Promise<ICustomStoreOptions> {
-  return new Promise(async (resolve, reject) => {
+  return new Promise(async resolve => {
     saveImpl.subscribe(async impl => {
       if (impl) return resolve(impl)
       if (saveImplementation === 'firebase') {
@@ -58,7 +57,7 @@ export async function loadImplementationSave(): Promise<ICustomStoreOptions> {
 }
 
 export async function loadImplementationSettings(): Promise<ISettingsImpl> {
-  return new Promise(async (resolve, reject) => {
+  return new Promise(async resolve => {
     settingsImpl.subscribe(async impl => {
       if (impl) return resolve(impl)
       if (databaseImplementation === 'firebase') {
@@ -76,7 +75,7 @@ export async function loadImplementationSettings(): Promise<ISettingsImpl> {
 }
 
 export async function loadImplementationDataType() {
-  return new Promise(async (resolve, reject) => {
+  return new Promise(async resolve => {
     fileTypeImpl.subscribe(async impl => {
       return resolve(impl)
     })

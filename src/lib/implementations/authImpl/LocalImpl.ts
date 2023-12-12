@@ -1,6 +1,6 @@
 import { dev } from '$app/environment'
-import type { IAuthImpl, IUserRestriction } from '$lib/components/Types'
 import { user } from '$lib/store'
+import type { IAuthImpl, IUserRestriction } from '$lib/components/Types'
 
 export default class LocalImpl implements IAuthImpl {
   async logIn(name?: string): Promise<void> {

@@ -161,7 +161,7 @@
     if ($translator) return $translator
     $translator = new LatencyOptimisedTranslator(
       { workers: 1, batchSize: 1, registryUrl: 'bergamot/registry.json', html: true },
-      undefined
+      undefined,
     )
     return $translator
   }
@@ -207,7 +207,7 @@
     usagiRow: IUsagiRow,
     athenaRow: IAthenaRow,
     autoMap = false,
-    index?: number
+    index?: number,
   ): Promise<IMapRow> {
     let rowIndex: number = index ? index : selectedRowIndex
     if (dev) console.log('rowMapping: Start mapping row with index ', rowIndex)

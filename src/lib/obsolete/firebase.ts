@@ -1,18 +1,18 @@
-import { PUBLIC_FIREBASE_MESSAGING_SENDER_ID } from '$env/static/public'
-import { PUBLIC_FIREBASE_STORAGE_BUCKET, PUBLIC_FIREBASE_APP_ID, PUBLIC_TENANT_ID } from '$env/static/public'
-import { PUBLIC_FIREBASE_API_KEY, PUBLIC_FIREBASE_AUTH_DOMAIN, PUBLIC_FIREBASE_PROJECT_ID } from '$env/static/public'
-import { sleep } from '$lib/obsolete/utils'
 import { getApps, getApp, initializeApp } from '@firebase/app'
 import { collection, getFirestore, query } from '@firebase/firestore'
 import { getBlob, getMetadata, getStorage, ref, uploadBytes, listAll } from '@firebase/storage'
 import { deleteDoc, doc, getDoc, getDocs, setDoc, updateDoc } from '@firebase/firestore'
 import { getAuth, signInWithPopup, signOut, onAuthStateChanged, OAuthProvider } from '@firebase/auth'
+import { deleteObject, type FirebaseStorage, type UploadMetadata } from '@firebase/storage'
+import { writable } from 'svelte/store'
+import { PUBLIC_FIREBASE_MESSAGING_SENDER_ID } from '$env/static/public'
+import { PUBLIC_FIREBASE_STORAGE_BUCKET, PUBLIC_FIREBASE_APP_ID, PUBLIC_TENANT_ID } from '$env/static/public'
+import { PUBLIC_FIREBASE_API_KEY, PUBLIC_FIREBASE_AUTH_DOMAIN, PUBLIC_FIREBASE_PROJECT_ID } from '$env/static/public'
+import { sleep } from '$lib/obsolete/utils'
 import type { UserSession } from '../../app'
 import type { FirebaseApp, FirebaseOptions } from '@firebase/app'
-import { deleteObject, type FirebaseStorage, type UploadMetadata } from '@firebase/storage'
 import type { Firestore, QueryFieldFilterConstraint } from '@firebase/firestore'
 import type { Auth, ParsedToken, User, UserCredential } from '@firebase/auth'
-import { writable } from 'svelte/store'
 
 const firebaseConfig: FirebaseOptions = {
   apiKey: PUBLIC_FIREBASE_API_KEY,
@@ -24,7 +24,7 @@ const firebaseConfig: FirebaseOptions = {
 }
 
 // Initialize Firebase
-let firebaseApp: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig)
+const firebaseApp: FirebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig)
 
 // Auth
 const firebaseAuth: Auth = getAuth(firebaseApp)
@@ -95,7 +95,7 @@ const onlyReadableUserSessionStore = { subscribe: userSessionStore.subscribe }
 
 /////////////////////////////////////////// FIRESTORE ///////////////////////////////////////////
 
-async function writeToFirestore(collection: string, id: string, data: Object) {
+async function writeToFirestore(collection: string, id: string, data: object) {
   await setDoc(doc(firestore, collection, id), data)
 }
 
@@ -118,9 +118,9 @@ async function readFirestoreCollection(coll: string) {
 async function executeFilterQueryFirestore(coll: string, filter: QueryFieldFilterConstraint) {
   const q = query(collection(firestore, coll), filter)
   const querySnapshot = await getDocs(q)
-  let queriedData: Record<string, any> = {}
+  const queriedData: Record<string, any> = {}
   querySnapshot.forEach(doc => {
-    queriedData[doc.id as keyof Object] = doc.data()
+    queriedData[doc.id as keyof object] = doc.data()
   })
   return queriedData
 }
@@ -188,5 +188,5 @@ export {
   readFileStorage,
   readMetaData,
   getFilesFromRef,
-  deleteFileStorage
+  deleteFileStorage,
 }

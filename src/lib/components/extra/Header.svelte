@@ -48,13 +48,27 @@
   }
 
   .logo-text.text-bold {
-    font-family: Calibri, Candara, Segoe, Segoe UI, Optima, Arial, sans-serif;
+    font-family:
+      Calibri,
+      Candara,
+      Segoe,
+      Segoe UI,
+      Optima,
+      Arial,
+      sans-serif;
     font-weight: bold;
     font-size: 50px;
   }
 
   .logo-text.text-light {
-    font-family: Calibri, Candara, Segoe, Segoe UI, Optima, Arial, sans-serif;
+    font-family:
+      Calibri,
+      Candara,
+      Segoe,
+      Segoe UI,
+      Optima,
+      Arial,
+      sans-serif;
     font-size: 25px;
   }
 </style>

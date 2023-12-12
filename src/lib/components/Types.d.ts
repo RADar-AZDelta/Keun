@@ -1,8 +1,4 @@
-import type {
-  IDataTypeFunctionalities,
-  ICustomStoreOptions,
-  IPagination,
-} from '@radar-azdelta/svelte-datatable/components/DataTable'
+import type { IDataTypeFunctionalities } from '@radar-azdelta/svelte-datatable/components/DataTable'
 
 export interface IFileTemplate {
   file: File
