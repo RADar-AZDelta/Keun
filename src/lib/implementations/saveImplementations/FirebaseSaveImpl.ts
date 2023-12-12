@@ -1,11 +1,11 @@
+import { readFirestore, userSessionStore, writeToFirestore } from '$lib/obsolete/firebase'
+import { dev } from '$app/environment'
 import type {
   IColumnMetaData,
   ICustomStoreOptions,
   IStoredOptions,
   ITableOptions,
 } from '@radar-azdelta/svelte-datatable/components/DataTable'
-import { dev } from '$app/environment'
-import { readFirestore, userSessionStore, writeToFirestore } from '$lib/obsolete/firebase'
 
 export default class FirebaseSaveImpl implements ICustomStoreOptions {
   storedOptions: ITableOptions
@@ -52,12 +52,13 @@ export default class FirebaseSaveImpl implements ICustomStoreOptions {
     return { tableOptions: this.storedOptions, columnMetaData: this.storedColumns }
   }
 
-  async store(options: ITableOptions, columns: IColumnMetaData[] | undefined): Promise<void> {
+  async store(options: ITableOptions): Promise<void> {
     if (dev) console.log('store: Storing the settings & columns to Firestore')
     if (options.saveOptions === false) return await this.deleteFromFirestore(options.id)
     const result = await this.getCurrentFile(options.id)
     if (!result) return
-    let { userOpts, file, uid } = result
+    let { file } = result
+    const { userOpts, uid } = result
     delete file.options.saveImpl
     delete file.options.dataTypeImpl
     file = { options: file.options, columns: file.columns, id: file.options.id }
@@ -84,8 +85,6 @@ export default class FirebaseSaveImpl implements ICustomStoreOptions {
   }
 
   private async getUserId(): Promise<string | undefined> {
-    return new Promise((resolve, reject) => {
-      userSessionStore.subscribe(user => resolve(user.uid))()
-    })
+    return new Promise(resolve => userSessionStore.subscribe(user => resolve(user.uid))())
   }
 }

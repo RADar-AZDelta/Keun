@@ -49,40 +49,40 @@ export default class SQLiteImpl implements IUpdatedFunctionalityImpl {
     return { file: fileObj, customFile }
   }
 
-  checkFileExistance(name: string): Promise<string | boolean | void> {
+  checkFileExistance(): Promise<string | boolean | void> {
     // SELECT id FROM files WHERE id == $id
     throw new Error('Method not implemented.')
   }
 
-  getFiles(userId?: string | undefined, roles?: string[] | undefined): Promise<void | IFile[]> {
+  getFiles(): Promise<void | IFile[]> {
     // SELECT files FROM user WHERE id == $userId
     // SELECT id, name, content FROM files WHERE files IN $files
     throw new Error('Method not implemented.')
   }
 
-  uploadFile(file: File, authors: string[]): Promise<void | string[]> {
+  uploadFile(): Promise<void | string[]> {
     // INSERT INTO files (id, name, content, authors) VALUES ($id, $name, $content, $authors)
     // UPDATE user SET files = json_insert(files, '$[#]', fileId) WHERE id = authorId
     throw new Error('Method not implemented.')
   }
 
-  editFile(id: string, blob: Blob, customBlob?: Blob | undefined): Promise<void> {
+  editFile(): Promise<void> {
     // UPDATE files SET content = blob WHERE id = id
     // UPDATE customFiles SET content = customBlob WHERE id = id
     throw new Error('Method not implemented.')
   }
 
-  editFileAuthors(id: string, authors: string[]): Promise<void> {
+  editFileAuthors(): Promise<void> {
     throw new Error('Method not implemented.')
   }
-  deleteFile(id: string): Promise<void> {
+  deleteFile(): Promise<void> {
     throw new Error('Method not implemented.')
   }
-  downloadFile(id: string): Promise<void> {
+  downloadFile(): Promise<void> {
     throw new Error('Method not implemented.')
   }
 
-  private async performRequest(path: string, options: Object = {}): Promise<IMessage> {
+  private async performRequest(path: string, options: object = {}): Promise<IMessage> {
     const res = await fetch(path, options)
     const message: IMessage = await res.json()
     return message
