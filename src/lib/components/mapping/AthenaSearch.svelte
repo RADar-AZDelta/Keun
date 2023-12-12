@@ -126,9 +126,6 @@
     const update: IUsagiAllExtra = {
       conceptId: customConcept.conceptId,
       conceptName: customConcept.conceptName,
-      domainId: customConcept.domainId,
-      vocabulary: customConcept.vocabularyId,
-      className: customConcept.conceptClassId,
       comment,
       assignedReviewer: reviewer,
       mappingStatus: 'SEMI-APPROVED',
