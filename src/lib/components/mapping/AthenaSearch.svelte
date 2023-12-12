@@ -2,9 +2,10 @@
   import { createEventDispatcher, onMount } from 'svelte'
   import { dev } from '$app/environment'
   import { query } from 'arquero'
-  import { clickOutside, SvgIcon } from 'components'
+  import clickOutside from '$lib/obsolete/clickOutside'
+  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
   import { settings } from '$lib/store'
-  import { localStorageGetter } from 'utils'
+  import { localStorageGetter } from '$lib/obsolete/utils'
   import type Query from 'arquero/dist/types/query/query'
   // @ts-ignore
   import { Search } from '@radar-azdelta/svelte-athena-search'

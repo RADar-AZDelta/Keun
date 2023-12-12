@@ -1,6 +1,6 @@
 <script lang="ts">
   import { dev } from '$app/environment'
-  import { SvgIcon } from 'components'
+  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
   import { authImpl, databaseImpl } from '$lib/store'
   import { loadImplementationDB } from '$lib/implementations/implementation'
 

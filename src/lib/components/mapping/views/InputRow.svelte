@@ -2,7 +2,7 @@
   import { createEventDispatcher } from 'svelte'
   import type DataTable from '@radar-azdelta/svelte-datatable'
   import { query } from 'arquero'
-  import { SvgIcon } from 'components'
+  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
   import { settings } from '$lib/store'
   import suggestions from '$lib/data/customConceptInfo.json'
   import { transformFromCustomRowToUsagiRow } from '$lib/mappingUtils'

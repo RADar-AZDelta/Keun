@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { clickOutside, SvgIcon } from 'components'
+  import clickOutside from '$lib/obsolete/clickOutside'
+  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
   import { authImpl, authImplementation, user } from '$lib/store'
   import type { IAuthImpl } from '$lib/components/Types'
 

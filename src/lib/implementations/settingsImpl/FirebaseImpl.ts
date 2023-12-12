@@ -1,6 +1,6 @@
 import { dev } from '$app/environment'
 import type { ISettings, ISettingsImpl } from '$lib/components/Types'
-import { readFirestore, updateToFirestore, userSessionStore } from 'firebase_utils'
+import { readFirestore, updateToFirestore, userSessionStore } from '$lib/obsolete/firebase'
 
 const defaultSettings: ISettings = {
   mapToMultipleConcepts: false,

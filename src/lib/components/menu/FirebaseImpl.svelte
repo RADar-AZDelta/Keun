@@ -3,7 +3,8 @@
   import { goto } from '$app/navigation'
   import { base } from '$app/paths'
   import { createEventDispatcher } from 'svelte'
-  import { SvgIcon, Spinner } from 'components'
+  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
+  import Spinner from '$lib/obsolete/Spinner.svelte'
   import { selectedFileId, user } from '$lib/store'
   import type { PageEvents, IFile } from '$lib/components/Types'
 
