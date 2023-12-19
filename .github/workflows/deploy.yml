@@ -33,13 +33,13 @@ jobs:
       - name: build
         run: |
           pnpm run build
-          touch build/.nojekyll
+          touch public/.nojekyll
 
       - name: Upload Artifacts
         uses: actions/upload-pages-artifact@v2
         with:
           # this should match the `pages` option in your adapter-static options
-          path: 'build/'
+          path: 'public/'
 
   deploy:
     needs: build_site
