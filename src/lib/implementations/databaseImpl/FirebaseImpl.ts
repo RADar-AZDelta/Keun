@@ -18,7 +18,6 @@ import type { IConceptFiles, IFile, IUpdatedFunctionalityImpl } from '$lib/compo
 files: {
   {id}: {
     name: string
-    authors: string[]
     customName: string
   }
 },
@@ -27,10 +26,11 @@ users: {
     files: [
       {
         id: string
-        options: ITableOptions
         columns: IColumnMetaData[]
+        tableOptions: any
       }
     ],
+    options: ITableOptions
     name: string
     lastName: string
   }
@@ -87,12 +87,13 @@ export default class FirebaseImpl implements IUpdatedFunctionalityImpl {
 
   async checkFileExistance(name: string): Promise<string | boolean | void> {
     // This method will only be available if you are admin, so we can fetch all the files & check if the same name is found
-    if (dev) console.log('checkFileExistence: Check if the file with name')
+    if (dev) console.log('checkFileExistence: Check if the file with name already exists')
     const files = await readFirestoreCollection(this.firestoreFileColl)
     for (const file of files) if (file.name === name) return file.id
   }
 
-  async getFiles(userId?: string, roles?: string[]): Promise<IFile[] | void> {
+  async getFiles(userId?: string): Promise<IFile[] | void> {
+    // TODO: automize the roles in Azure AD to implement this in a good way
     if (dev) console.log('getFiles: Get files from Firebase Storage')
     if (!userId) return console.error('getFiles: The user is not logged in, so his files could not be fetched')
     if (roles && roles?.includes('admin')) {
@@ -170,9 +171,9 @@ export default class FirebaseImpl implements IUpdatedFunctionalityImpl {
 
   private async uploadToFirebase(coll: string, file: File, authors: string[], id?: string) {
     const fileId = id ?? crypto.randomUUID()
-    await uploadFileStorage(`${coll}/${id}`, file, { customMetadata: { id: fileId, name: file.name } })
+    await uploadFileStorage(`${coll}/${fileId}`, file, { customMetadata: { id: fileId, name: file.name } })
     await writeToFirestore(this.firestoreFileColl, fileId, { name: file.name, authors })
-    return id
+    return fileId
   }
 
   private async download(coll: string, id: string) {
