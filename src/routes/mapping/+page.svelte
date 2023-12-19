@@ -267,7 +267,7 @@
       const row = concepts.queriedData[i]
       const index = concepts.indices[i]
       // If the conceptId is empty & sourceAutoAssignedConceptIds is not filled in. The sourceAutoAssignedConceptIds is filled in by automapping so if it was already filled in, it was automapped already
-      if (!row.conceptId && !row.sourceAutoAssignedConceptIds) await autoMapRow(signal, row, index)
+      if (!row.conceptId && !row.sourceAutoAssignedConceptIds && !row.conceptName) await autoMapRow(signal, row, index)
     }
     if (dev) console.log('autoMapPage: Finished auto mapping')
     return null
