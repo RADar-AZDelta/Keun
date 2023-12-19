@@ -1,10 +1,9 @@
 <script lang="ts">
   import SvelteMarkDown from 'svelte-markdown'
-  import { clickOutside } from '$lib/actions/clickOutside'
-  import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
+  import clickOutside from '$lib/obsolete/clickOutside'
+  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
 
-  let manualDialog: HTMLDialogElement,
-    manualText: string = ''
+  let manualDialog: HTMLDialogElement, manualText: string
 
   async function getManual(): Promise<void> {
     if (manualText) return
@@ -19,10 +18,7 @@
     manualDialog.showModal()
   }
 
-  // A method to close the dialog if it was opened
-  function closeDialog(): void {
-    if (manualDialog.attributes.getNamedItem('open') !== null) manualDialog.close()
-  }
+  const closeDialog = () => manualDialog.close()
 </script>
 
 <button title="Manual" on:click={openDialog} class="header-button"><SvgIcon id="info" /></button>

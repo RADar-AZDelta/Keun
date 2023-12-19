@@ -1,7 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
   import debounce from 'lodash.debounce'
-  import { clickOutside } from '$lib/actions/clickOutside'
+  import clickOutside from '$lib/obsolete/clickOutside'
   import type { ICustomEvents } from '$lib/components/Types'
 
   export let id: string,
@@ -46,7 +46,7 @@
         (key.toLowerCase().includes(inputValue!.toLowerCase()) ||
           value.toLowerCase().includes(inputValue!.toLowerCase())) &&
         key.toLowerCase() !== inputValue?.toLowerCase() &&
-        value.toLowerCase() !== inputValue?.toLowerCase()
+        value.toLowerCase() !== inputValue?.toLowerCase(),
     )
     if (!pairs.length) return
     for (let [key, value] of pairs) filteredValues.set(key, value)
@@ -81,6 +81,7 @@
     <ul use:clickOutside on:outClick={() => (suggestionsFocus = false)}>
       {#each [...filteredValues] as [key, value], i}
         {#if i < 7 && !autoCompleted}
+          <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
           <li id={key} on:click={onClickAutoComplete} on:keydown={onClickAutoComplete}>{key}</li>
         {/if}
       {/each}

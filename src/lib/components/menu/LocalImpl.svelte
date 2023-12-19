@@ -3,8 +3,8 @@
   import { goto } from '$app/navigation'
   import { base } from '$app/paths'
   import { createEventDispatcher } from 'svelte'
+  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
   import { selectedFileId } from '$lib/store'
-  import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
   import type { IFile, PageEvents } from '$lib/components/Types'
 
   export let files: IFile[]
@@ -31,7 +31,7 @@
   }
 </script>
 
-{#each files as file}
+{#each files as file, _}
   <button class="file-card" on:click={() => mapCachedFile(file.id)}>
     <div class="file-name-container">
       <SvgIcon id="excel" width="40px" height="40px" />

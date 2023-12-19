@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { SvelteComponent, onDestroy } from 'svelte'
+  import type { SvelteComponent } from 'svelte'
   import { base } from '$app/paths'
   import { page } from '$app/stores'
   import { beforeNavigate, goto } from '$app/navigation'
@@ -10,7 +10,7 @@
   import DataTable from '@radar-azdelta/svelte-datatable'
   // @ts-ignore
   import { LatencyOptimisedTranslator } from '@browsermt/bergamot-translator/translator.js'
-  import { reformatDate, stringToFile } from '$lib/utils'
+  import { reformatDate } from '$lib/obsolete/utils'
   import { addExtraFields } from '$lib/mappingUtils'
   import { abortAutoMapping, customFileTypeImpl, databaseImpl, fileTypeImpl, saveImpl } from '$lib/store'
   import { selectedFileId, settings, translator, triggerAutoMapping, user } from '$lib/store'
@@ -23,21 +23,14 @@
   import columnsCustomConcept from '$lib/data/columnsCustomConcept.json'
   import AthenaSearch from '$lib/components/mapping/AthenaSearch.svelte'
   import UsagiRow from '$lib/components/mapping/UsagiRow.svelte'
-  import type {
-    IAthenaRow,
-    ICustomConceptInput,
-    IMapRow,
-    IUsagiRow,
-    NavigateRowEventDetail,
-  } from '$lib/components/Types'
+  import type { IAthenaRow, IMapRow, IUsagiRow, NavigateRowEventDetail } from '$lib/components/Types'
   import type { MappingEventDetail, AutoMapRowEventDetail, RowSelectionEventDetail } from '$lib/components/Types'
 
   // General variables
   let file: File | undefined = undefined,
     customConceptsFile: File | undefined = undefined,
     customTableOptions: ITableOptions = { id: 'customConceptsTable', saveOptions: false },
-    disabled: boolean = false,
-    customsExtracted: boolean = false
+    disabled: boolean = false
 
   let tableOptions: ITableOptions = {
     id: $page.url.searchParams.get('id') ? $page.url.searchParams.get('id')! : '',
@@ -89,6 +82,8 @@
     mappedRow.statusSetBy = $user.name
     mappedRow.statusSetOn = Date.now()
     mappedRow.mappingStatus = 'SEMI-APPROVED'
+    mappedRow.vocabulary = event.detail.row.vocabulary
+
     // Update the selected row to the updated row
     await dataTableMapping.updateRows(new Map([[mappedIndex, mappedRow]]))
   }
@@ -186,13 +181,14 @@
     if (dev) console.log('autoMapRow: Start automapping row with index ', index)
     if (signal.aborted) return
     let filter = row.sourceName
+    if (!filter) return
     // Check the language set in the $settings and translate the filter to English if it's not English
     if ($settings) {
       if (!$settings.language) $settings.language = 'en'
       const translated = await translate(filter)
       if (translated) filter = translated
     }
-    if (signal.aborted) return
+    if (signal.aborted || !filter) return
     const url = encodeURI(mappingUrl + `&page=1&pageSize=1&standardConcept=Standard&query=${filter}`)
     // Get the first result of the Athena API call
     const conceptsResult = await fetch(url)
@@ -223,37 +219,9 @@
     mappedUsagiRow.conceptName = athenaRow.name
     mappedUsagiRow.domainId = athenaRow.domain
     mappedUsagiRow.vocabulary = athenaRow.vocabulary
-    mappedUsagiRow.className = athenaRow.className
     mappedUsagiRow = await addExtraFields(mappedUsagiRow, autoMap)
     if (dev) console.log('rowMapping: Finished mapping row with index ', rowIndex)
     return { mappedIndex: rowIndex, mappedRow: mappedUsagiRow }
-  }
-
-  async function extractCustomConcepts(): Promise<void | boolean> {
-    if (dev) console.log('exractCustomConcepts: start extracting the already mapped custom concepts from the table')
-    const customQuery = query()
-      .filter((r: any) => r['ADD_INFO:customConcept'] === true && r.conceptId === 0)
-      .toObject()
-    const concepts = await dataTableMapping.executeQueryAndReturnResults(customQuery)
-    if (!concepts?.indices?.length) return (customsExtracted = true)
-    const testRow = await dataTableCustomConcepts.getFullRow(0)
-    if (testRow?.domain_id === 'test') await dataTableCustomConcepts.deleteRows([0])
-    for (let concept of concepts.queriedData) {
-      const custom: ICustomConceptInput = {
-        concept_id: concept.conceptId,
-        concept_code: concept.sourceName,
-        concept_name: concept.conceptName,
-        concept_class_id: concept.className,
-        domain_id: concept.domainId,
-        vocabulary_id: concept.vocabulary,
-        standard_concept: '',
-        valid_start_date: reformatDate(),
-        valid_end_date: '2099-12-31',
-        invalid_reason: '',
-      }
-      await dataTableCustomConcepts.insertRows([custom])
-    }
-    customsExtracted = true
   }
 
   // Abort the automapping that is happening
@@ -271,7 +239,6 @@
 
   // Start the automapping of all the visible rows, but create an abortcontroller to be able to stop the automapping at any moment
   async function autoMapPage(): Promise<void> {
-    if (!customsExtracted) await extractCustomConcepts()
     if (!$settings?.autoMap) return
     if (dev) console.log('autoMapPage: Starting auto mapping')
     // Abort any automapping that is happening at the moment
@@ -340,25 +307,12 @@
 
   // A method to get the file from the database implementation
   async function readFile(): Promise<void> {
+    if (dev) console.log(`readFile: reading the file with id: ${$selectedFileId}`)
     if (!$selectedFileId) return
     if (!$databaseImpl) await loadImplementationDB()
     const res = await $databaseImpl!.getFile($selectedFileId)
-    if (res && res?.file) file = await stringToFile(res.file.content, res.file.name)
-    if (res && res?.customFile) customConceptsFile = await stringToFile(res.customFile.content, res.customFile.name)
-  }
-
-  // Add event listeners on the database
-  async function setupWatch(): Promise<void> {
-    if (!$databaseImpl) await loadImplementationDB()
-    await $databaseImpl!.watchValueFromDatabase(`/files/${$selectedFileId}`, () => readFile())
-    await $databaseImpl!.watchValueFromDatabase('/files/customConcepts', () => readFile())
-  }
-
-  // Remove the event listener on the database
-  async function removeWatch(): Promise<void> {
-    if (!$databaseImpl) return
-    $databaseImpl.watchValueFromDatabase(`/files/${$selectedFileId}`, () => readFile(), true)
-    $databaseImpl.watchValueFromDatabase('/files/customConcepts', () => readFile(), true)
+    if (res && res?.file) file = res.file.file
+    if (res && res?.customFile) customConceptsFile = res.customFile.file
   }
 
   // Load the file to start mapping
@@ -367,7 +321,7 @@
     if (!urlId) return goto(`${base}/`)
     $selectedFileId = urlId
     readFile()
-    setupWatch()
+    // setupWatch()
   }
 
   // Select the new navigated row to open in the search dialog
@@ -452,8 +406,6 @@
   // Sync the file to the database implementation before leaving the page
   // Note: this does not always work so for that reason, there is a save button provided
   beforeNavigate(async ({ from, to, cancel }) => await syncFile())
-
-  onDestroy(() => removeWatch())
 </script>
 
 <svelte:head>

@@ -1,6 +1,6 @@
 import { sveltekit } from '@sveltejs/kit/vite'
-import { defineConfig } from 'vitest/config'
 import { viteStaticCopy } from 'vite-plugin-static-copy'
+import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   plugins: [
@@ -17,8 +17,8 @@ export default defineConfig({
         },
         {
           src: 'static/keun.svg',
-          dest: '_app/immutable/assets'
-        }
+          dest: '_app/immutable/assets',
+        },
       ],
     }),
   ],
@@ -36,6 +36,10 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    exclude: ['@radar-azdelta/svelte-datatable', '@browsermt/bergamot-translator', '@radar-azdelta/svelte-athena-search'],
+    exclude: [
+      '@radar-azdelta/svelte-datatable',
+      '@browsermt/bergamot-translator',
+      '@radar-azdelta/svelte-athena-search',
+    ],
   },
 })

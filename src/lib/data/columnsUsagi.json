@@ -45,11 +45,6 @@
     "editable": false
   },
   {
-    "id": "className",
-    "visible": false,
-    "editable": false
-  },
-  {
     "id": "matchScore",
     "visible": false,
     "editable": false

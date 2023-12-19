@@ -1,5 +1,5 @@
 {
-  "name": "svelte-mapper",
+  "name": "keun",
   "version": "0.0.1",
   "private": true,
   "scripts": {
@@ -10,8 +10,8 @@
     "test": "playwright test",
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
-    "lint": "prettier --plugin-search-dir . --check . && eslint .",
-    "format": "prettier --plugin-search-dir . --write ."
+    "lint": "pnpm format && prettier . --check . && eslint . --fix",
+    "format": "prettier . --write ."
   },
   "devDependencies": {
     "@browsermt/bergamot-translator": "^0.4.9",
@@ -24,9 +24,10 @@
     "@types/lodash.debounce": "^4.0.9",
     "@typescript-eslint/eslint-plugin": "^6.11.0",
     "@typescript-eslint/parser": "^6.11.0",
-    "eslint": "^8.53.0",
+    "eslint": "^8.55.0",
     "eslint-config-prettier": "^9.0.0",
-    "prettier": "^3.1.0",
+    "eslint-plugin-import": "^2.29.0",
+    "prettier": "^3.1.1",
     "prettier-plugin-svelte": "^3.1.0",
     "sass": "^1.69.5",
     "svelte": "^4.2.3",
@@ -41,6 +42,10 @@
   },
   "type": "module",
   "dependencies": {
+    "@firebase/app": "^0.9.25",
+    "@firebase/auth": "^1.5.1",
+    "@firebase/firestore": "^4.4.0",
+    "@firebase/storage": "^0.12.0",
     "@radar-azdelta/svelte-athena-search": "^0.0.22",
     "@radar-azdelta/svelte-datatable": "^0.0.58",
     "arquero": "^5.2.0",

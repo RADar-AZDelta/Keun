@@ -13,3 +13,8 @@ vite.config.ts.timestamp-*
 /static/testing-images/upload.png
 /static/testing-images/download.png
 files.db
+bearer
+public
+.firebase
+errorLogs.txt
+*.sqlite3

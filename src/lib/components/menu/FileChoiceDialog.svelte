@@ -2,8 +2,8 @@
   import { dev } from '$app/environment'
   import { goto } from '$app/navigation'
   import { createEventDispatcher } from 'svelte'
+  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
   import { selectedFileId } from '$lib/store'
-  import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
   import type { PageEvents } from '$lib/components/Types'
 
   export let processing: boolean
@@ -11,13 +11,9 @@
   const dispatch = createEventDispatcher<PageEvents>()
   let dialog: HTMLDialogElement
 
-  export async function showDialog(): Promise<void> {
-    dialog.showModal()
-  }
+  export const showDialog = () => dialog.showModal()
 
-  export async function closeDialog(): Promise<void> {
-    dialog.close()
-  }
+  export const closeDialog = () => dialog.close()
 
   // Go to the mapping page of the current uploaded file
   async function mapCachedFile(): Promise<void> {
