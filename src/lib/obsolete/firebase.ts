@@ -158,7 +158,7 @@ async function deleteDocumentFirestore(coll: string, id: string) {
 
 async function uploadFileStorage(reference: string, file: File, metadata?: UploadMetadata) {
   const storageReference = ref(storage, reference)
-  uploadBytes(storageReference, file, metadata).catch(e => console.error(e))
+  uploadBytes(storageReference, file, metadata).catch(e => console.error(`ERROR FOR STORAGE: `, e))
 }
 
 async function readFileStorage(reference: string) {
