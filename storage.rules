@@ -2,7 +2,7 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-    match /files/{fileId} {
+    match /Keun-files/{fileId} {
       function isSignedIn() {
         // Check if the user is logged in
       	return request.auth != null;
@@ -20,15 +20,15 @@ service firebase.storage {
         return request.auth.uid in list
       }
       
-      function getRoleClaims(arr) {
+      // function getRoleClaims(arr) {
       	// Check the roles through the custom claims in the auth
-      	return request.auth.token.role in arr;
-      }
+      	// return request.auth.token.role in arr;
+      // }
       
       function checkProvider() {
       	// All the users must be logged in through OAuth of Microsoft
         // Microsoft is not an option here so it'll be custom
-      	return request.auth.token.firebase.sign_in_provider == "custom"
+      	return request.auth.token.firebase.sign_in_provider != "anonymous"
       }
       
       function checkRights() {
@@ -39,12 +39,12 @@ service firebase.storage {
       }
 
 			// The user must be logged in through Microsoft, has the role "user" || "admin" & is in the list of authors for this file
-      allow read, update: if isSignedIn() && getRoleClaims(['user', 'admin']) && getRole(['user', 'admin']) && checkRights() && checkAuthorList();
+      allow read, update: if isSignedIn() && getRole(['user', 'admin']) && checkRights() && checkAuthorList();
 			// The user must be logged in through Microsoft & has the role "admin"
-      allow create, delete: if isSignedIn() && getRoleClaims(['admin']) && getRole(['admin']) && checkProvider();
+      allow create, delete: if isSignedIn() && getRole(['admin']) && checkProvider();
     }
     
-    match /customFiles/{fileId} {
+    match /Keun-custom-files/{fileId} {
       function isSignedIn() {
         // Check if the user is logged in
       	return request.auth != null;
@@ -62,15 +62,15 @@ service firebase.storage {
         return request.auth.uid in list
       }
       
-      function getRoleClaims(arr) {
+      // function getRoleClaims(arr) {
       	// Check the roles through the custom claims in the auth
-      	return request.auth.token.role in arr;
-      }
+      	// return request.auth.token.role in arr;
+      // }
       
       function checkProvider() {
       	// All the users must be logged in through OAuth of Microsoft
         // Microsoft is not an option here so it'll be custom
-      	return request.auth.token.firebase.sign_in_provider == "custom"
+      	return request.auth.token.firebase.sign_in_provider != "anonymous"
       }
       
       function checkRights() {
@@ -81,9 +81,9 @@ service firebase.storage {
       }
 
 			// The user must be logged in through Microsoft, has the role "user" || "admin" & is in the list of authors for this file
-      allow read, update: if isSignedIn() && getRoleClaims(['user', 'admin']) && getRole(['user', 'admin']) && checkRights() && checkAuthorList();
+      allow read, update: if isSignedIn() && getRole(['user', 'admin']) && checkRights() && checkAuthorList();
 			// The user must be logged in through Microsoft & has the role "admin"
-      allow create, delete: if isSignedIn() && getRoleClaims(['admin']) && getRole(['admin']) && checkProvider();
+      allow create, delete: if isSignedIn() && getRole(['admin']) && checkProvider();
     }
   }
 }

@@ -15,4 +15,6 @@ vite.config.ts.timestamp-*
 files.db
 bearer
 public
-.firebase/*
+.firebase
+errorLogs.txt
+*.sqlite3

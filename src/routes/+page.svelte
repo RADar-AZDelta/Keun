@@ -144,12 +144,16 @@
         <h1 class="title">Files to map</h1>
         <div class="file-list">
           {#if databaseImplementation === 'firebase'}
-            <FirebaseImpl
-              bind:files
-              on:downloadFiles={downloadFiles}
-              on:deleteFiles={deleteFiles}
-              on:editRights={editRights}
-            />
+            {#if $user?.roles?.includes('user') || $user?.roles?.includes('admin')}
+              <FirebaseImpl
+                bind:files
+                on:downloadFiles={downloadFiles}
+                on:deleteFiles={deleteFiles}
+                on:editRights={editRights}
+              />
+            {:else}
+              <p class="rights-error">You do not have sufficient rights, contact an admin please.</p>
+            {/if}
           {:else}
             <LocalImpl bind:files on:downloadFiles={downloadFiles} on:deleteFiles={deleteFiles} />
           {/if}
@@ -216,5 +220,10 @@
     outline: none;
     box-shadow: 0 0 0 2px #7feb7f;
     background-color: #90ee90;
+  }
+
+  .rights-error {
+    text-align: center;
+    margin: 0 0 1rem 0;
   }
 </style>

@@ -15,17 +15,18 @@ export async function loadImplementationDB(): Promise<IUpdatedFunctionalityImpl>
   return new Promise(async resolve => {
     databaseImpl.subscribe(async impl => {
       if (impl) return resolve(impl)
-      if (databaseImplementation === 'firebase') {
-        await import('$lib/implementations/databaseImpl/FirebaseImpl').then(({ default: FirebaseImpl }) => {
-          databaseImpl.set(new FirebaseImpl())
-          return databaseImpl
-        })
-      } else {
-        await import('$lib/implementations/databaseImpl/LocalImpl').then(({ default: LocalImpl }) => {
-          databaseImpl.set(new LocalImpl())
-          return databaseImpl
-        })
-      }
+      if (databaseImplementation === 'firebase')
+        await import('$lib/implementations/databaseImpl/FirebaseImpl').then(({ default: FirebaseImpl }) =>
+          databaseImpl.set(new FirebaseImpl()),
+        )
+      else if (databaseImplementation === 'sqlite')
+        await import('$lib/implementations/databaseImpl/SQLite').then(({ default: SQLiteImpl }) =>
+          databaseImpl.set(new SQLiteImpl()),
+        )
+      else
+        await import('$lib/implementations/databaseImpl/LocalImpl').then(({ default: LocalImpl }) =>
+          databaseImpl.set(new LocalImpl()),
+        )
     })()
   })
 }

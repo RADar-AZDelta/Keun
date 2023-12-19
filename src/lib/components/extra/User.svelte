@@ -101,7 +101,6 @@
     align-items: center;
     justify-content: center;
     background-color: #f6f6f6;
-    width: 40px;
     height: 40px !important;
   }
 
