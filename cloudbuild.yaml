@@ -1,26 +1,45 @@
 steps:
-- name: 'node:lts'
-  entrypoint: npm
-  args: ['install']
-  id: 'Install all dependencies'
+  # Let Git recognize "/workspace" as a safe directory, otherwise it would throw the following error
+  # Error: failed to get git context: exit status 128
+  # -- git output --
+  # fatal: detected dubious ownership in repository at '/workspace'
+  # To add an exception for this directory, call:
+  # git config --global --add safe.directory /workspace
+  - name: 'gcr.io/cloud-builders/git'
+    entrypoint: 'bash'
+    args: ['-c', 'git config --global --add safe.directory /workspace']
+    id: 'Configure Git to trust /workspace'
 
-- name: 'node:lts'
-  entrypoint: npm
-  args: ["run", "build"]
-  id: 'Build the application'
+  - name: 'node:lts'
+    entrypoint: npm
+    args: ['install']
+    id: 'Install all dependencies'
 
-- name: 'gcr.io/cloud-builders/wget'
-  args:
-  - '--quiet'
-  - '-O'
-  - 'firebase'
-  - 'https://firebase.tools/bin/linux/latest'
-  
-- name: 'debian:11'
-  args:
-  - 'bash'
-  - '-c'
-  - |
-    mv firebase /tmp
-    chmod 755 /tmp/firebase
-    /tmp/firebase deploy --project ${PROJECT_ID} --non-interactive -m "Build ${BUILD_ID}" --debug
+  - name: 'node:lts'
+    entrypoint: npm
+    args: ['run', 'build']
+    id: 'Build the application'
+
+  # Scan the application on CWE's
+  - name: 'bearer/bearer'
+    entrypoint: bearer
+    args: ['scan', '.']
+    id: 'Scan the application for vulnerabilities'
+
+  # Download the Firebase tool package in a container
+  - name: 'gcr.io/cloud-builders/wget'
+    args:
+      - '--quiet'
+      - '-O'
+      - 'firebase'
+      - 'https://firebase.tools/bin/linux/latest'
+
+  # Change the rights to the tool through chmod & deploy the project with Firebase
+  - name: 'debian:11'
+    args:
+      - 'bash'
+      - '-c'
+      - |
+        mv firebase /tmp
+        chmod 755 /tmp/firebase
+        /tmp/firebase deploy --project ${PROJECT_ID} --non-interactive -m "Build ${BUILD_ID}" --debug

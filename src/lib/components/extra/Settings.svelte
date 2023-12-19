@@ -1,24 +1,19 @@
 <script lang="ts">
-  import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
-  import { clickOutside } from '$lib/actions/clickOutside'
+  import clickOutside from '$lib/obsolete/clickOutside'
+  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
   import { abortAutoMapping, settings, triggerAutoMapping } from '$lib/store'
 
-  let savedAutomapping: boolean,
-    possibleOutclick: boolean,
-    settingsDialog: HTMLDialogElement,
-    languages: Record<string, string> = {
-      nl: 'Dutch',
-      en: 'English',
-      de: 'German',
-      fr: 'French',
-      it: 'Italian',
-      es: 'Spanish',
-    }
-
-  // A method to close the dialog if it was opened
-  async function closeDialog(): Promise<void> {
-    settingsDialog.close()
+  let savedAutomapping: boolean, possibleOutclick: boolean, settingsDialog: HTMLDialogElement
+  let languages: Record<string, string> = {
+    nl: 'Dutch',
+    en: 'English',
+    de: 'German',
+    fr: 'French',
+    it: 'Italian',
+    es: 'Spanish',
   }
+
+  const closeDialog = () => settingsDialog.close()
 
   // A method to open the dialog if it was closed
   async function openDialog(): Promise<void> {
@@ -65,13 +60,8 @@
           <div class="option">
             <p>Map to multiple concepts?</p>
             <div class="switch">
-              <input
-                class="switch-input"
-                id="MultipleConcepts"
-                type="checkbox"
-                bind:checked={$settings.mapToMultipleConcepts}
-              />
-              <label class="switch-label" for="MultipleConcepts" />
+              <input class="switch-input" id="mltpl" type="checkbox" bind:checked={$settings.mapToMultipleConcepts} />
+              <label class="switch-label" for="mltpl" />
             </div>
           </div>
           <div class="option">
@@ -79,18 +69,18 @@
             <div class="switch">
               <input
                 class="switch-input"
-                id="Automap"
+                id="automap"
                 type="checkbox"
                 bind:checked={$settings.autoMap}
                 on:change={changeAutoMapping}
               />
-              <label class="switch-label" for="Automap" />
+              <label class="switch-label" for="automap" />
             </div>
           </div>
           <div class="option">
             <p>Language of source CSV</p>
             <select name="language" id="language" bind:value={$settings.language}>
-              {#each Object.keys(languages) as lang}
+              {#each Object.keys(languages) as lang, _}
                 <option value={lang} selected={lang == $settings.language ? true : false}>{languages[lang]}</option>
               {/each}
             </select>

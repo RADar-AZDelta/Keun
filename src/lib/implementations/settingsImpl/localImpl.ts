@@ -1,7 +1,14 @@
 import { dev } from '$app/environment'
 import type { ISettings, ISettingsImpl } from '$lib/components/Types'
 
-const defaultSettings: ISettings = { mapToMultipleConcepts: false, autoMap: false, language: 'en', savedAuthors: [], vocabularyIdCustomConcept: '', popupSidesShowed: { filters: true, details: true } }
+const defaultSettings: ISettings = {
+  mapToMultipleConcepts: false,
+  autoMap: false,
+  language: 'en',
+  savedAuthors: [],
+  vocabularyIdCustomConcept: '',
+  popupSidesShowed: { filters: true, details: true },
+}
 
 export default class LocalImpl implements ISettingsImpl {
   async getSettings(): Promise<ISettings> {

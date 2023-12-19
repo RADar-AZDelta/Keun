@@ -1,24 +1,25 @@
 <script lang="ts">
   import { dev } from '$app/environment'
-  import type { SvelteComponent } from 'svelte'
-  import { selectedFileId, databaseImplementation, databaseImpl, user } from '$lib/store'
-  import { loadImplementationDB } from '$lib/implementations/implementation'
-  import FileChoiceDialog from '$lib/components/menu/FileChoiceDialog.svelte'
-  import FileInputDialog from '$lib/components/menu/FileInputDialog.svelte'
-  import ColumnsDialog from '$lib/components/menu/ColumnsDialog.svelte'
-  import AuthorsDialog from '$lib/components/menu/AuthorsDialog.svelte'
-  import FirebaseImpl from '$lib/components/menu/FirebaseImpl.svelte'
-  import LocalImpl from '$lib/components/menu/LocalImpl.svelte'
-  import Spinner from '$lib/components/extra/Spinner.svelte'
-  import type { ColumnsDialogShowEventDetail, IFile } from '$lib/components/Types'
   import type {
     CheckForCacheEventDetail,
+    ColumnsDialogShowEventDetail,
     DeleteFilesEventDetail,
     DownloadFilesEventDetail,
     EditRightsEventDetail,
     FileUpdatedColumnsEventDetail,
     FileUploadEventDetail,
+    IFile,
   } from '$lib/components/Types'
+  import AuthorsDialog from '$lib/components/menu/AuthorsDialog.svelte'
+  import ColumnsDialog from '$lib/components/menu/ColumnsDialog.svelte'
+  import FileChoiceDialog from '$lib/components/menu/FileChoiceDialog.svelte'
+  import FileInputDialog from '$lib/components/menu/FileInputDialog.svelte'
+  import FirebaseImpl from '$lib/components/menu/FirebaseImpl.svelte'
+  import LocalImpl from '$lib/components/menu/LocalImpl.svelte'
+  import { loadImplementationDB } from '$lib/implementations/implementation'
+  import Spinner from '$lib/obsolete/Spinner.svelte'
+  import { databaseImpl, databaseImplementation, selectedFileId, user } from '$lib/store'
+  import type { SvelteComponent } from 'svelte'
 
   let files: IFile[] = [],
     file: File,
@@ -76,7 +77,7 @@
   async function getFiles(): Promise<void> {
     if (dev) console.log('getFiles: Get all the files in the database')
     if (!$databaseImpl) await loadImplementationDB()
-    const getFilesRes = await $databaseImpl?.getFiles()
+    const getFilesRes = await $databaseImpl?.getFiles($user.uid ?? undefined, $user.roles ?? [])
     if (getFilesRes) files = getFilesRes
   }
 
@@ -143,12 +144,16 @@
         <h1 class="title">Files to map</h1>
         <div class="file-list">
           {#if databaseImplementation === 'firebase'}
-            <FirebaseImpl
-              bind:files
-              on:downloadFiles={downloadFiles}
-              on:deleteFiles={deleteFiles}
-              on:editRights={editRights}
-            />
+            {#if $user?.roles?.includes('user') || $user?.roles?.includes('admin')}
+              <FirebaseImpl
+                bind:files
+                on:downloadFiles={downloadFiles}
+                on:deleteFiles={deleteFiles}
+                on:editRights={editRights}
+              />
+            {:else}
+              <p class="rights-error">You do not have sufficient rights, contact an admin please.</p>
+            {/if}
           {:else}
             <LocalImpl bind:files on:downloadFiles={downloadFiles} on:deleteFiles={deleteFiles} />
           {/if}
@@ -215,5 +220,10 @@
     outline: none;
     box-shadow: 0 0 0 2px #7feb7f;
     background-color: #90ee90;
+  }
+
+  .rights-error {
+    text-align: center;
+    margin: 0 0 1rem 0;
   }
 </style>

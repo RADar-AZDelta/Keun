@@ -1,8 +1,8 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte'
   import { dev } from '$app/environment'
+  import { createEventDispatcher } from 'svelte'
+  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
   import { user } from '$lib/store'
-  import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
   import type { PageEvents } from '$lib/components/Types'
 
   export let missing: Record<string, string>, cols: string[], file: File
@@ -11,13 +11,9 @@
 
   let dialog: HTMLDialogElement
 
-  export async function showDialog(): Promise<void> {
-    dialog.showModal()
-  }
+  export const showDialog = () => dialog.showModal()
 
-  export async function closeDialog(): Promise<void> {
-    dialog.close()
-  }
+  export const closeDialog = () => dialog.close()
 
   // A method to rename the columns to get a standardized version of the file
   async function fileUploadWithColumnChanges(): Promise<void> {
@@ -57,7 +53,7 @@
       <div class="column-selection">
         <p>{newColumn} column:</p>
         <select name={newColumn} id={newColumn} bind:value={missing[newColumn]}>
-          {#each cols as col}
+          {#each cols as col, i}
             {#if col.toLowerCase() === newColumn.toLowerCase()}
               <option value={col} selected>{col}</option>
             {:else}

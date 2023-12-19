@@ -1,8 +1,8 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
   import DataTable, { type ITableOptions } from '@radar-azdelta/svelte-datatable'
+  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
   import columns from '$lib/data/columnsMapped.json'
-  import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
   import type { IMappedRow, MappingEvents } from '$lib/components/Types'
 
   export let mappedData: (IMappedRow | object)[]
@@ -24,9 +24,9 @@
         <button on:click={() => removeMapping(renderedRow)}><SvgIcon id="x" /></button>
       {/if}
     </td>
-    {#each columns as column}
+    {#each Object.keys(renderedRow) as key}
       <td>
-        <p>{renderedRow[column.id]}</p>
+        <p>{renderedRow[key]}</p>
       </td>
     {/each}
   </DataTable>

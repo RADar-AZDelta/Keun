@@ -1,5 +1,5 @@
-import { dev } from '$app/environment'
 import { json, type RequestHandler } from '@sveltejs/kit'
+import { dev } from '$app/environment'
 import { firebaseUser } from '$lib/store'
 
 // TODO: check this because firebaseUser !== user

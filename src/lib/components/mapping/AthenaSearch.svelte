@@ -2,14 +2,14 @@
   import { createEventDispatcher, onMount } from 'svelte'
   import { dev } from '$app/environment'
   import { query } from 'arquero'
-  import { localStorageGetter } from '$lib/utils'
-  import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
+  import clickOutside from '$lib/obsolete/clickOutside'
+  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
+  import { settings } from '$lib/store'
+  import { localStorageGetter } from '$lib/obsolete/utils'
   import type Query from 'arquero/dist/types/query/query'
   // @ts-ignore
   import { Search } from '@radar-azdelta/svelte-athena-search'
-  import { settings } from '$lib/store'
   import { addExtraFields, resetRow } from '$lib/mappingUtils'
-  import { clickOutside } from '$lib/actions/clickOutside'
   import SearchHead from '$lib/components/mapping/SearchHead.svelte'
   import CustomView from '$lib/components/mapping/views/CustomView.svelte'
   import Details from '$lib/components/mapping/details/Details.svelte'
@@ -128,7 +128,6 @@
       conceptName: customConcept.conceptName,
       domainId: customConcept.domainId,
       vocabulary: customConcept.vocabularyId,
-      className: customConcept.conceptClassId,
       comment,
       assignedReviewer: reviewer,
       mappingStatus: 'SEMI-APPROVED',

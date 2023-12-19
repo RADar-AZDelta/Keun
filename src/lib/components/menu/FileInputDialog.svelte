@@ -1,10 +1,10 @@
 <script lang="ts">
   import { dev } from '$app/environment'
   import { createEventDispatcher } from 'svelte'
+  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
+  import Spinner from '$lib/obsolete/Spinner.svelte'
+  import Drop from '$lib/obsolete/Drop.svelte'
   import { authImpl, databaseImplementation } from '$lib/store'
-  import Drop from '$lib/components/extra/Drop.svelte'
-  import Spinner from '$lib/components/extra/Spinner.svelte'
-  import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
   import type { FileDropEventDetail, PageEvents } from '$lib/components/Types'
 
   export let processing: boolean
@@ -82,7 +82,8 @@
   <div class="file-input-container">
     <h1 class="file-input-title">Upload a new file</h1>
     <button on:click={closeDialog} class="close-dialog" disabled={processing}><SvgIcon id="x" /></button>
-    <Drop extensions={['csv']} on:fileDrop={fileDrop}>
+    <!-- <Drop extensions={['csv']} on:fileDrop={fileDrop}> -->
+    <Drop extensions={['csv']} on:drop={fileDrop}>
       <label class="upload-file">
         {#if file}
           <SvgIcon id="excel" width="40px" height="40px" />
@@ -100,11 +101,11 @@
       <ul class="authors-list">
         {#await $authImpl?.getAllAuthors() then users}
           {#if users}
-            {#each Object.entries(users) as [uid, info]}
+            {#each users as user, _}
               <li class="author-option">
                 <label class="author-label">
-                  <input type="checkbox" name={info.email} id={info.email} bind:group={authorizedAuthors} value={uid} />
-                  {info.email}
+                  <input type="checkbox" id={user.name} bind:group={authorizedAuthors} value={user.id} />
+                  {user.name}
                 </label>
               </li>
             {/each}

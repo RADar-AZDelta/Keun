@@ -1,8 +1,8 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
+  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
   import debounce from 'lodash.debounce'
   import Equivalence from '$lib/components/mapping/details/Equivalence.svelte'
-  import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
   import AutocompleteInputSettings from '$lib/components/extra/AutocompleteInputSettings.svelte'
   import type { AutoCompleteShortEventDetail, EquivalenceChangeEventDetail, MappingEvents } from '$lib/components/Types'
 
@@ -13,9 +13,7 @@
   let comments: string = ''
   let equivalence: string = 'EQUAL'
 
-  async function showDetail(value: boolean) {
-    show = value
-  }
+  const showDetail = (value: boolean) => (show = value)
 
   async function onEquivalenceChange(e: CustomEvent<EquivalenceChangeEventDetail>) {
     equivalence = e.detail.equivalence

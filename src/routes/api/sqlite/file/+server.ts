@@ -1,60 +1,54 @@
+import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { json, type RequestHandler } from '@sveltejs/kit'
 import Database, { type Database as DB } from 'better-sqlite3'
-import { readFileSync, writeFileSync, existsSync, appendFileSync } from 'node:fs'
 import type { IFile } from '$lib/components/Types'
 
 let db: DB
 let tableExistance: boolean = false
-const required: string[] = ['id', 'name', 'version', 'authors', 'content']
+const required: string[] = ['id', 'name', 'content']
 
 ///////////////////////////////////////////////////////////// HTTP REQUESTS /////////////////////////////////////////////////////////////
 
 export const GET: RequestHandler = async ({ url }) => {
   const info = url.searchParams.get('info')
   const id = url.searchParams.get('id')
+  const name = url.searchParams.get('name')
+  const custom = url.searchParams.get('custom')
   if (!tableExistance) await createTable()
-  if (id) return await getFile(info ? true : false, id)
+  if (id) return await getFile(custom ? true : false, info ? true : false, id)
+  else if (name) return await getFileWithName(info ? true : false, name)
   else return await getFiles(info ? true : false)
 }
 
-export const POST: RequestHandler = async ({ request }) => {
-  // Implement authentication & check if the person has the corresponding role to use this action
+export const POST: RequestHandler = async ({ request, url }) => {
   if (!tableExistance) await createTable()
+  const custom = url.searchParams.get('custom')
   const body = await request.json()
   if (!body || !body.file)
     return await writeLog('POST: Provide a body with a file object with the correct properties.', body)
   const file: IFile = body.file
   const missingMessage = await checkForMissingValues(required, file)
   if (missingMessage) return missingMessage
-  return await insertFile(file)
+  return await insertFile(custom ? true : false, file)
 }
 
 export const PUT: RequestHandler = async ({ url, request }) => {
-  // Implement authentication & check if the person has the corresponding role to use this action
-  const authors = url.searchParams.get('authors')
   if (!tableExistance) await createTable()
+  const custom = url.searchParams.get('custom')
   const body = await request.json()
   if (!body) return await writeLog('PUT: Provide a body', body)
-  if (authors === null) {
-    if (!body || !body.file)
-      return await writeLog('PUT: Provide a body with a file object with the correct properties', body)
-    const content = body.content
-    const id = body.id
-    return await updateFileContent(content, id)
-  } else {
-    if (!body || !body.id || !body.authors)
-      return await writeLog('PUT: Provide a body with an id and a list of authors', body)
-    const { id, authors } = body
-    return await updateFileAuthorsById(authors, id)
-  }
+  if (!body || !body.content || !body.id)
+    return await writeLog('PUT: Provide a body with a file object with the correct properties', body)
+  const { content, id } = body
+  return await updateFileContent(custom ? true : false, content, id)
 }
 
-export const DELETE: RequestHandler = async ({ request }) => {
-  // Implement authentication & check if the person has the corresponding role to use this action
+export const DELETE: RequestHandler = async ({ request, url }) => {
   if (!tableExistance) await createTable()
+  const custom = url.searchParams.get('custom')
   const body = await request.json()
-  if (!body || !body.id) return await writeLog(`DELETE: Provide the id of the file to delete in the body.`, body)
-  return await deleteFileById(body.id)
+  if (!body || !body.id) return await writeLog('DELETE: Provide the id of the file to delete in the body.', body)
+  return await deleteFileById(custom ? true : false, body.id)
 }
 
 ///////////////////////////////////////////////////////////// Helper functions /////////////////////////////////////////////////////////////
@@ -64,19 +58,19 @@ async function createTable() {
   tableExistance = await checkTableExistance()
   if (tableExistance) return
   const createQuery =
-    'CREATE TABLE file (id  STRING PRIMARY KEY  NOT NULL, name   TEXT  NOT NULL, authors   TEXT    NOT NULL, version    TEXT    NOT NULL, content   TEXT    NOT NULL);'
+    'CREATE TABLE file (id  STRING PRIMARY KEY  NOT NULL, name   TEXT  NOT NULL, content   TEXT    NOT NULL);'
+  const createCustomQuery =
+    'CREATE TABLE customFile (id  STRING PRIMARY KEY  NOT NULL, name   TEXT  NOT NULL, content   TEXT    NOT NULL);'
   try {
     const stmnt = db.prepare(createQuery)
     const res = stmnt.run()
+    const customStmnt = db.prepare(createCustomQuery)
+    const customRes = customStmnt.run()
     await saveToDatabase()
     tableExistance = true
-    return json({
-      result: 'success',
-      message: 'Created table file',
-      details: res,
-    })
+    return messageReturn('Created table file', [res, customRes])
   } catch (e) {
-    return await writeLog(`CREATE TABLE: Could not create the table file in the database`, e)
+    return await writeLog('CREATE TABLE: Could not create the table file in the database', e)
   }
 }
 
@@ -112,35 +106,42 @@ async function messageReturn(message: string, details: any) {
 }
 
 async function checkForMissingValues(required: string[], file: any) {
-  let missing: string[] = []
-  for (let req of required) if (!file[req]) missing.push(req)
-  if (missing.length > 0)
-    return json({
-      result: 'error',
-      message: 'The following properties were missing from the file: ',
-      missing,
-      detail: '',
-    })
+  const missing: string[] = []
+  for (const req of required) if (!file[req]) missing.push(req)
+  if (missing.length > 0) return writeLog('Properties were missing from the file', missing)
 }
 
 ///////////////////////////////////////////////////////////// Database executing functions /////////////////////////////////////////////////////////////
 
-async function getFile(info: boolean | null, id: string) {
+async function getFile(custom: boolean | null, info: boolean | null, id: string) {
   try {
-    const query = info
-      ? 'SELECT id, version, name, authors FROM file WHERE id = $id;'
-      : 'SELECT * FROM file WHERE id = $id;'
+    let query: string = ''
+    if (info && custom) query = 'SELECT name, authors FROM customFile WHERE id = $id;'
+    else if (custom) query = 'SELECT * FROM customFile WHERE id = $id;'
+    else if (info) query = 'SELECT name, authors FROM file WHERE id = $id;'
+    else query = 'SELECT * FROM file WHERE id = $id;'
     const stmnt = db.prepare(query)
-    const res = stmnt.get({ id })
+    const res = stmnt.get({ id, table: custom ? 'customFile' : 'file' })
     return messageReturn(`Read the file: ${id} correctly`, res)
   } catch (e) {
     return await writeLog(`GET: Could not get the file: ${id}`, e)
   }
 }
 
+async function getFileWithName(info: boolean, name: string) {
+  try {
+    const query = info ? 'SELECT name, authors FROM file WHERE name = $name;' : 'SELECT * FROM file WHERE name = $name;'
+    const stmnt = db.prepare(query)
+    const res = stmnt.get({ name })
+    return messageReturn(`Read the file: ${name} correctly`, res)
+  } catch (e) {
+    return await writeLog(`GET: Could not get the file: ${name}`, e)
+  }
+}
+
 async function getFiles(info: boolean | null) {
   try {
-    const query = info ? 'SELECT id, version, name, authors FROM file;' : 'SELECT * FROM file;'
+    const query = info ? 'SELECT id, name FROM file;' : 'SELECT * FROM file;'
     const stmnt = db.prepare(query)
     const res = stmnt.all()
     return messageReturn('Read the projects correctly', res)
@@ -149,13 +150,14 @@ async function getFiles(info: boolean | null) {
   }
 }
 
-async function insertFile(file: IFile) {
+async function insertFile(custom: boolean, file: IFile) {
   try {
-    file.authors = JSON.stringify(file.authors)
-    const query =
-      'INSERT INTO file (id, name, version, authors, content) VALUES ($id, $name, $version, $authors, $content);'
+    console.log('INSERTING FILE ', file, ' AND CUSTOM ', custom)
+    const query = custom
+      ? 'INSERT INTO customFile (id, name, content) VALUES ($id, $name, $content);'
+      : 'INSERT INTO file (id, name, content) VALUES ($id, $name, $content);'
     const stmnt = db.prepare(query)
-    const res = stmnt.run({ ...file })
+    const res = stmnt.run({ table: custom ? 'customFile' : 'file', ...file })
     await saveToDatabase()
     return messageReturn(`Created the record for ${file.name}`, res)
   } catch (e) {
@@ -163,10 +165,11 @@ async function insertFile(file: IFile) {
   }
 }
 
-async function updateFileContent(content: string, id: string) {
+async function updateFileContent(custom: boolean, content: string, id: string) {
   try {
-    const query =
-      'UPDATE file SET content = $content WHERE id = $id;'
+    const query = custom
+      ? 'UPDATE customFile SET content = $content WHERE id = $id;'
+      : 'UPDATE file SET content = $content WHERE id = $id;'
     const stmnt = db.prepare(query)
     const res = stmnt.run({ content, id })
     await saveToDatabase()
@@ -176,22 +179,9 @@ async function updateFileContent(content: string, id: string) {
   }
 }
 
-async function updateFileAuthorsById(authors: string[], id: string) {
+async function deleteFileById(custom: boolean, id: string) {
   try {
-    const authorsString = JSON.stringify(authors)
-    const query = 'UPDATE file SET authors = $authors WHERE id = $id;'
-    const stmnt = db.prepare(query)
-    const res = stmnt.run({ authors: authorsString, id })
-    await saveToDatabase()
-    return messageReturn(`Updated the authors of file ${id}`, res)
-  } catch (e) {
-    return await writeLog(`PUT: Could not update the authors of the file with id ${id}`, e)
-  }
-}
-
-async function deleteFileById(id: string) {
-  try {
-    const query = 'DELETE FROM file WHERE id == $id;'
+    const query = custom ? 'DELETE FROM customFile WHERE id == $id;' : 'DELETE FROM file WHERE id == $id;'
     const stmnt = db.prepare(query)
     const res = stmnt.run({ id })
     await saveToDatabase()

@@ -1,5 +1,4 @@
 import preprocess from 'svelte-preprocess'
-import autoAdapter from '@sveltejs/adapter-auto';
 import staticAdapter from '@sveltejs/adapter-static'
 import { vitePreprocess } from '@sveltejs/kit/vite'
 
@@ -16,16 +15,20 @@ const config = {
 
   vitePlugin: {
     inspector: {
-      toggleKeyCombo: 'control-shift'
-    }
+      toggleKeyCombo: 'control-shift',
+    },
   },
 
   kit: {
     // adapter: process.env.PUBLIC_CLOUD_DATABASE_IMPLEMENTATION === "none" ? staticAdapter({ fallback: '404.html', pages: 'build', assets: 'build', strict: true }) : autoAdapter(),
-    adapter: staticAdapter({ fallback: '404.html', pages: 'build', assets: 'build', strict: true }),
+    adapter: staticAdapter({ fallback: 'index.html', pages: 'public', assets: 'public', strict: true }),
     paths: {
       base: process.argv.includes('dev') ? '' : '/Keun',
-    }
+    },
+    alias: {
+      $lib: 'src/lib',
+      '$lib/*': 'src/lib/*',
+    },
   },
 }
 

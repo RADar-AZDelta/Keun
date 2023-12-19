@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
-  import { clickOutside } from '$lib/actions/clickOutside'
+  import clickOutside from '$lib/obsolete/clickOutside'
+  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
   import { authImpl, authImplementation, user } from '$lib/store'
   import type { IAuthImpl } from '$lib/components/Types'
 
@@ -73,17 +73,14 @@
 
 <dialog bind:this={userDialog} class="user-dialog">
   <div class="user-container" use:clickOutside on:outClick={closeDialog}>
+    <button class="close-dialog" on:click={closeDialog} disabled={!$user ? true : false}>
+      <SvgIcon id="x" />
+    </button>
     {#if authImplementation == 'firebase'}
-      <button class="close-dialog" on:click={closeDialog} disabled={!$user ? true : false}>
-        <SvgIcon id="x" />
-      </button>
       <section class="author">
-        <button on:click={login}>Google</button>
+        <button on:click={login}>Microsoft</button>
       </section>
     {:else}
-      <button class="close-dialog" on:click={closeDialog} disabled={!$user ? true : false}>
-        <SvgIcon id="x" />
-      </button>
       <section class="author">
         <h2 class="title">Who is the author?</h2>
         <input id="author" type="text" placeholder="John Wick" bind:value={author} />
@@ -104,7 +101,6 @@
     align-items: center;
     justify-content: center;
     background-color: #f6f6f6;
-    width: 40px;
     height: 40px !important;
   }
 

@@ -18,39 +18,39 @@ const login = async (page: Page, name: string = 'John Doe', onboarding: boolean 
 
 const importFile = async (page: Page, filePath: string) => {
   // Import a file from the specified path
-  await page.setInputFiles("input[type='file']", filePath)
+  await page.setInputFiles('input[type=\'file\']', filePath)
 }
 
 const enableSettings = async (
   page: Page,
   setting: 'autoMapping' | 'mapToMultiple' | 'lang' | 'defaultVocab' | 'fontSize',
-  settingValue?: string
+  settingValue?: string,
 ) => {
   // Click the settings button
   await page.getByTitle('Settings-Keun').click()
   switch (setting) {
-    case 'autoMapping':
-      // Click the automapping slider
-      await page.locator('#settings label').nth(1).click()
-      break
-    case 'mapToMultiple':
-      // Click the mapToMultiple slider
-      await page.locator('#settings label').nth(0).click()
-      break
-    case 'lang':
-      // Click the language dropdown
-      await page.locator('#settings select').click()
-      // Click the language option
-      if (settingValue !== undefined) await page.locator('#language').selectOption(settingValue)
-      break
-    case 'defaultVocab':
-      // Fill the defaultVocab input
-      if (settingValue !== undefined) await page.locator('#settings input').nth(1).fill(settingValue.toString())
-      break
-    case 'fontSize':
-      // Fill the font input
-      if (settingValue !== undefined) await page.locator('#settings input').nth(2).fill(settingValue.toString())
-      break
+  case 'autoMapping':
+    // Click the automapping slider
+    await page.locator('#settings label').nth(1).click()
+    break
+  case 'mapToMultiple':
+    // Click the mapToMultiple slider
+    await page.locator('#settings label').nth(0).click()
+    break
+  case 'lang':
+    // Click the language dropdown
+    await page.locator('#settings select').click()
+    // Click the language option
+    if (settingValue !== undefined) await page.locator('#language').selectOption(settingValue)
+    break
+  case 'defaultVocab':
+    // Fill the defaultVocab input
+    if (settingValue !== undefined) await page.locator('#settings input').nth(1).fill(settingValue.toString())
+    break
+  case 'fontSize':
+    // Fill the font input
+    if (settingValue !== undefined) await page.locator('#settings input').nth(2).fill(settingValue.toString())
+    break
   }
   // Close the dialog
   await page.getByRole('dialog').getByRole('button').click()
@@ -59,7 +59,7 @@ const enableSettings = async (
 const showColumns = async (page: Page, columns: string[]) => {
   // Click the showColumns button
   await page.getByRole('table').getByRole('button', { name: 'Settings button' }).click()
-  for (let col of columns) {
+  for (const col of columns) {
     await page.locator(`input[name="${col}"]`).check()
   }
   // Close the dialog
@@ -69,7 +69,7 @@ const showColumns = async (page: Page, columns: string[]) => {
 const clickAction = async (
   page: Page,
   rowIndex: number,
-  action: 'Approve' | 'Flag' | 'Unapprove' | 'Delete' | 'AUTO' | 'Delete' | 'Map'
+  action: 'Approve' | 'Flag' | 'Unapprove' | 'Delete' | 'AUTO' | 'Delete' | 'Map',
 ) => {
   await page
     .getByRole('table')
@@ -89,12 +89,12 @@ const openAndMapRow = async (
     equivalence?: 'EQUAL' | 'EQUIVALENT' | 'WIDER' | 'NARROWER' | 'INEXACT' | 'UNMATCHED' | 'UNREVIEWED'
     reviewer?: string
     comment?: string
-  }
+  },
 ) => {
   await clickAction(page, mainTableIndex, 'Map')
 
   if (extra) {
-    for (let detail of Object.keys(extra)) {
+    for (const detail of Object.keys(extra)) {
       if (extra[detail as keyof object]) {
         if (detail == 'equivalence') await page.getByTitle('Equivalence').selectOption(extra[detail as keyof object])
         else if (detail == 'reviewer')
@@ -125,11 +125,11 @@ const openAndAddDetails = async (
   extra: {
     reviewer?: string
     comment?: string
-  }
+  },
 ) => {
   await clickAction(page, mainTableIndex, 'Map')
 
-  for (let detail of Object.keys(extra)) {
+  for (const detail of Object.keys(extra)) {
     if (extra[detail as keyof object]) {
       if (detail == 'reviewer')
         await page.getByRole('textbox', { name: 'Assigned Reviewer' }).fill(extra[detail as keyof object])
@@ -146,11 +146,11 @@ const applyAthenaFilter = async (
   mainTableIndex: number,
   filters: Record<string, string>,
   check: boolean = true,
-  openPopup: boolean = true
+  openPopup: boolean = true,
 ) => {
   if (openPopup) await clickAction(page, mainTableIndex, 'Map')
   await page.getByRole('button', { name: 'F I L T E R S' }).click()
-  for (let filter of Object.keys(filters)) {
+  for (const filter of Object.keys(filters)) {
     await page.getByRole('button', { name: filter }).click()
     await page.getByRole('textbox', { name: 'Search for filter' }).fill(filters[filter])
     await page.getByRole('textbox', { name: 'Search for filter' }).press('Enter')
@@ -162,7 +162,7 @@ const applyAthenaFilter = async (
 
 const removeAthenaFilter = async (page: Page, mainTableIndex: number, filters: string[], openPopup: boolean = true) => {
   if (openPopup) await clickAction(page, mainTableIndex, 'Map')
-  for (let filter of filters) {
+  for (const filter of filters) {
     await page.locator(`#${filter}`).getByRole('button').click()
   }
 }
@@ -170,7 +170,7 @@ const removeAthenaFilter = async (page: Page, mainTableIndex: number, filters: s
 const openAndCustomMapFirstRow = async (
   page: Page,
   options: { domainId: string; vocabId: string | undefined; conceptClassId: string; conceptName: string },
-  mainTableIndex: number
+  mainTableIndex: number,
 ) => {
   await clickAction(page, mainTableIndex, 'Map')
   await page.getByRole('button', { name: 'Custom concept' }).click()
@@ -228,14 +228,14 @@ test.describe('Testing the author functionalities of the mappingtool', () => {
   })
 
   test('Cancel the user in the onboarding', async ({ page }) => {
-await page.goto(`${base}/`)
+    await page.goto(`${base}/`)
     await login(page)
     // Check if you have left the dialog because normally it is not possible, so you should still see the save button
     expect(await page.locator('button:text("Save")'))
   })
 
   test('Cancel change of user after it was filled in, in the onboarding', async ({ page }) => {
-await page.goto(`${base}/`)
+    await page.goto(`${base}/`)
     await login(page, 'John Doe')
     // Click the author button again
     await page.getByRole('button', { name: 'User button' }).click()
@@ -263,7 +263,7 @@ test.describe('Testing the import of files', () => {
     await importFile(page, 'static/file2.csv')
     await expect(page.getByRole('table')).toBeVisible()
     await expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(2).innerText()).not.toBe(
-      cellValue1
+      cellValue1,
     )
   })
 })
@@ -278,7 +278,7 @@ test.describe('Testing the automapping functionalities', () => {
     await expect(page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4)).not.toBe('Unmapped')
   })
   test('Enable automapping and then import the file', async ({ page }) => {
-await page.goto(`${base}/`)
+    await page.goto(`${base}/`)
     await login(page)
     await enableSettings(page, 'autoMapping')
     await importFile(page, 'static/file.csv')
@@ -294,21 +294,21 @@ test.describe('Testing the actions functionalities', () => {
     await init(page)
     await clickAction(page, 3, 'Approve')
     await expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(5).innerText()).toBe(
-      'SEMI-APPROVED'
+      'SEMI-APPROVED',
     )
   })
   test('Does the flag buton work', async ({ page }) => {
     await init(page)
     await clickAction(page, 3, 'Flag')
     await expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(5).innerText()).toBe(
-      'FLAGGED'
+      'FLAGGED',
     )
   })
   test('Does the unapprove button work', async ({ page }) => {
     await init(page)
     await clickAction(page, 3, 'Unapprove')
     await expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(5).innerText()).toBe(
-      'UNAPPROVED'
+      'UNAPPROVED',
     )
   })
   test('Does the approve button work for the second author', async ({ page }) => {
@@ -317,7 +317,7 @@ test.describe('Testing the actions functionalities', () => {
     await login(page, 'Polleke Pollen', false)
     await clickAction(page, 3, 'Approve')
     await expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(5).innerText()).toBe(
-      'APPROVED'
+      'APPROVED',
     )
   })
   test('Does the approve button work for the second author when the second author edits mapping', async ({ page }) => {
@@ -327,7 +327,7 @@ test.describe('Testing the actions functionalities', () => {
     await openAndMapRow(page, 3, 3)
     await clickAction(page, 3, 'Approve')
     expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(5).innerText()).toBe(
-      'SEMI-APPROVED'
+      'SEMI-APPROVED',
     )
   })
   test('Does the automap button work', async ({ page }) => {
@@ -335,7 +335,7 @@ test.describe('Testing the actions functionalities', () => {
     await clickAction(page, 3, 'AUTO')
     await page.waitForTimeout(3000)
     expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()).not.toBe(
-      'Unmapped'
+      'Unmapped',
     )
   })
   test('Does the erase button work', async ({ page }) => {
@@ -344,11 +344,11 @@ test.describe('Testing the actions functionalities', () => {
     await page.waitForTimeout(3000)
     const value = await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()
     expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()).not.toBe(
-      'Unmapped'
+      'Unmapped',
     )
     await clickAction(page, 3, 'Delete')
     await expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()).not.toBe(
-      value
+      value,
     )
     expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()).toBe('Unmapped')
   })
@@ -370,7 +370,7 @@ test.describe('Testing the actions functionalities', () => {
     await clickAction(page, 3, 'AUTO')
     await page.waitForTimeout(3000)
     expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()).toBe(
-      settingAutomappedValue
+      settingAutomappedValue,
     )
   })
   test('Does the automap button give the same result as the automap settings (Dutch)', async ({ page }) => {
@@ -391,7 +391,7 @@ test.describe('Testing the actions functionalities', () => {
     await clickAction(page, 3, 'AUTO')
     await page.waitForTimeout(3000)
     expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()).toBe(
-      settingAutomappedValue
+      settingAutomappedValue,
     )
   })
   test('Is the conceptId filled in when approving the automapping (manual automap)', async ({ page }) => {
@@ -400,7 +400,7 @@ test.describe('Testing the actions functionalities', () => {
     await page.waitForTimeout(1000)
     await clickAction(page, 3, 'Approve')
     expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()).not.toBe(
-      'Unmapped'
+      'Unmapped',
     )
   })
   test('Is the conceptId filled in when approving the automapping (automatic automap)', async ({ page }) => {
@@ -410,14 +410,14 @@ test.describe('Testing the actions functionalities', () => {
     await clickAction(page, 3, 'Approve')
     await page.waitForTimeout(1000)
     expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()).not.toBe(
-      'Unmapped'
+      'Unmapped',
     )
   })
   test('Does the approve page work', async ({ page }) => {
     await init(page)
     await page.getByRole('button', { name: 'Approve page' }).click()
     expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(5).innerText()).toBe(
-      'SEMI-APPROVED'
+      'SEMI-APPROVED',
     )
     await login(page, 'Polleke Pollen', false)
     await page.getByRole('button', { name: 'Approve page' }).click()
@@ -430,7 +430,7 @@ test.describe('Testing the manual mapping', () => {
     await init(page)
     await openAndMapRow(page, 3, 3)
     await expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()).not.toBe(
-      'Unmapped'
+      'Unmapped',
     )
   })
 
@@ -439,10 +439,10 @@ test.describe('Testing the manual mapping', () => {
     await openAndCustomMapFirstRow(
       page,
       { domainId: 'Note', vocabId: 'test', conceptClassId: 'CDT', conceptName: 'test' },
-      3
+      3,
     )
     expect(await page.getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(4).innerText()).not.toBe(
-      'Unmapped'
+      'Unmapped',
     )
   })
 
@@ -453,10 +453,10 @@ test.describe('Testing the manual mapping', () => {
     await openAndMapRow(page, 3, 4)
     await openMappedConceptsForFirstRow(page, 3)
     expect(await page.getByRole('dialog').getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(1)).not.toBe(
-      null
+      null,
     )
     expect(await page.getByRole('dialog').getByRole('table').getByRole('row').nth(4).getByRole('cell').nth(1)).not.toBe(
-      null
+      null,
     )
   })
 
@@ -466,19 +466,19 @@ test.describe('Testing the manual mapping', () => {
     await openAndCustomMapFirstRow(
       page,
       { domainId: 'Note', vocabId: 'test', conceptClassId: 'CDT', conceptName: 'test' },
-      3
+      3,
     )
     await openAndCustomMapFirstRow(
       page,
       { domainId: 'Condition', vocabId: 'test', conceptClassId: 'CDT', conceptName: 'test' },
-      3
+      3,
     )
     await openMappedConceptsForFirstRow(page, 3)
     expect(await page.getByRole('dialog').getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(1)).not.toBe(
-      null
+      null,
     )
     expect(await page.getByRole('dialog').getByRole('table').getByRole('row').nth(4).getByRole('cell').nth(1)).not.toBe(
-      null
+      null,
     )
   })
 
@@ -489,14 +489,14 @@ test.describe('Testing the manual mapping', () => {
     await openAndCustomMapFirstRow(
       page,
       { domainId: 'Note', vocabId: 'test', conceptClassId: 'CDT', conceptName: 'test' },
-      3
+      3,
     )
     await openMappedConceptsForFirstRow(page, 3)
     expect(await page.getByRole('dialog').getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(1)).not.toBe(
-      null
+      null,
     )
     expect(await page.getByRole('dialog').getByRole('table').getByRole('row').nth(4).getByRole('cell').nth(1)).not.toBe(
-      null
+      null,
     )
   })
 
@@ -506,16 +506,16 @@ test.describe('Testing the manual mapping', () => {
     await openAndCustomMapFirstRow(
       page,
       { domainId: 'Note', vocabId: 'test', conceptClassId: 'CDT', conceptName: 'test' },
-      3
+      3,
     )
     await openAndCustomMapFirstRow(
       page,
       { domainId: 'Note', vocabId: 'test', conceptClassId: 'CDT', conceptName: 'test' },
-      3
+      3,
     )
     await openMappedConceptsForFirstRow(page, 3)
     expect(await page.getByRole('dialog').getByRole('table').getByRole('row').nth(3).getByRole('cell').nth(1)).not.toBe(
-      null
+      null,
     )
   })
 
@@ -539,7 +539,7 @@ test.describe('Testing the manual mapping', () => {
         .getByRole('row')
         .nth(3)
         .getByRole('cell')
-        .nth(5)
+        .nth(5),
     ).not.toBe('Observation')
   })
 
@@ -553,7 +553,7 @@ test.describe('Testing the manual mapping', () => {
         .getByRole('row')
         .nth(3)
         .getByRole('cell')
-        .nth(5)
+        .nth(5),
     ).not.toBe('Procedure')
     await removeAthenaFilter(page, 8, ['Procedure'], false)
     expect(
@@ -563,7 +563,7 @@ test.describe('Testing the manual mapping', () => {
         .getByRole('row')
         .nth(3)
         .getByRole('cell')
-        .nth(5)
+        .nth(5),
     ).not.toBe('Observation')
   })
 
@@ -597,7 +597,7 @@ test.describe('Testing the manual mapping', () => {
     await showColumns(page, ['comment'])
     await page.waitForTimeout(1000)
     expect(await page.getByRole('table').getByRole('row').nth(8).getByRole('cell').nth(6).innerText()).toBe(
-      'Jean-Paul is testing'
+      'Jean-Paul is testing',
     )
   })
 
@@ -607,7 +607,7 @@ test.describe('Testing the manual mapping', () => {
     await showColumns(page, ['comment'])
     await page.waitForTimeout(1000)
     expect(await page.getByRole('table').getByRole('row').nth(8).getByRole('cell').nth(6).innerText()).toBe(
-      'Jean-Paul is testing'
+      'Jean-Paul is testing',
     )
   })
 })
