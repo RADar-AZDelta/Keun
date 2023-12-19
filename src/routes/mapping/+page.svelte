@@ -181,13 +181,14 @@
     if (dev) console.log('autoMapRow: Start automapping row with index ', index)
     if (signal.aborted) return
     let filter = row.sourceName
+    if (!filter) return
     // Check the language set in the $settings and translate the filter to English if it's not English
     if ($settings) {
       if (!$settings.language) $settings.language = 'en'
       const translated = await translate(filter)
       if (translated) filter = translated
     }
-    if (signal.aborted) return
+    if (signal.aborted || !filter) return
     const url = encodeURI(mappingUrl + `&page=1&pageSize=1&standardConcept=Standard&query=${filter}`)
     // Get the first result of the Athena API call
     const conceptsResult = await fetch(url)
