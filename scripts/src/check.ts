@@ -22,7 +22,7 @@ async function checkRole(mail: string) {
 const checkMail = (mailParam: string) => checkRole(mailParam.slice(mailParam.indexOf('=') + 1))
 
 function start() {
-  process.argv.slice(2).forEach(function (val, index, array) {
+  process.argv.slice(2).forEach(function (val) {
     if (val.includes('mail')) checkMail(val)
   })
 }

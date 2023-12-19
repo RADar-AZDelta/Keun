@@ -306,6 +306,7 @@
 
   // A method to get the file from the database implementation
   async function readFile(): Promise<void> {
+    if (dev) console.log(`readFile: reading the file with id: ${$selectedFileId}`)
     if (!$selectedFileId) return
     if (!$databaseImpl) await loadImplementationDB()
     const res = await $databaseImpl!.getFile($selectedFileId)

@@ -16,3 +16,5 @@ files.db
 bearer
 public
 .firebase
+errorLogs.txt
+*.sqlite3
