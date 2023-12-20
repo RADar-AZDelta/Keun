@@ -23,14 +23,20 @@
   import columnsCustomConcept from '$lib/data/columnsCustomConcept.json'
   import AthenaSearch from '$lib/components/mapping/AthenaSearch.svelte'
   import UsagiRow from '$lib/components/mapping/UsagiRow.svelte'
-  import type { IAthenaRow, IMapRow, IUsagiRow, NavigateRowEventDetail } from '$lib/components/Types'
-  import type { MappingEventDetail, AutoMapRowEventDetail, RowSelectionEventDetail } from '$lib/components/Types'
+  import type { IAthenaRow, ICustomConceptInput, IMapRow, IUsagiRow } from '$lib/components/Types'
+  import type {
+    MappingEventDetail,
+    AutoMapRowEventDetail,
+    RowSelectionEventDetail,
+    NavigateRowEventDetail,
+  } from '$lib/components/Types'
 
   // General variables
   let file: File | undefined = undefined,
     customConceptsFile: File | undefined = undefined,
     customTableOptions: ITableOptions = { id: 'customConceptsTable', saveOptions: false },
-    disabled: boolean = false
+    disabled: boolean = false,
+    customsExtracted: boolean = false
 
   let tableOptions: ITableOptions = {
     id: $page.url.searchParams.get('id') ? $page.url.searchParams.get('id')! : '',
@@ -224,6 +230,33 @@
     return { mappedIndex: rowIndex, mappedRow: mappedUsagiRow }
   }
 
+  async function extractCustomConcepts(): Promise<void | boolean> {
+    if (dev) console.log('exractCustomConcepts: start extracting the already mapped custom concepts from the table')
+    const customQuery = query()
+      .filter((r: any) => r['ADD_INFO:customConcept'] === true && r.conceptId === 0)
+      .toObject()
+    const concepts = await dataTableMapping.executeQueryAndReturnResults(customQuery)
+    if (!concepts?.indices?.length) return (customsExtracted = true)
+    const testRow = await dataTableCustomConcepts.getFullRow(0)
+    if (testRow?.domain_id === 'test') await dataTableCustomConcepts.deleteRows([0])
+    for (let concept of concepts.queriedData) {
+      const custom: ICustomConceptInput = {
+        concept_id: concept.conceptId,
+        concept_code: concept.sourceName,
+        concept_name: concept.conceptName,
+        concept_class_id: concept.className,
+        domain_id: concept.domainId,
+        vocabulary_id: concept.vocabulary,
+        standard_concept: '',
+        valid_start_date: reformatDate(),
+        valid_end_date: '2099-12-31',
+        invalid_reason: '',
+      }
+      await dataTableCustomConcepts.insertRows([custom])
+    }
+    customsExtracted = true
+  }
+
   // Abort the automapping that is happening
   async function abortAutoMap(): Promise<void> {
     if (dev) console.log('abortAutoMap: Aborting auto mapping')
@@ -239,6 +272,7 @@
 
   // Start the automapping of all the visible rows, but create an abortcontroller to be able to stop the automapping at any moment
   async function autoMapPage(): Promise<void> {
+    if (!customsExtracted) await extractCustomConcepts()
     if (!$settings?.autoMap) return
     if (dev) console.log('autoMapPage: Starting auto mapping')
     // Abort any automapping that is happening at the moment
