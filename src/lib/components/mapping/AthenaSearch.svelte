@@ -127,7 +127,7 @@
       conceptId: customConcept.conceptId,
       conceptName: customConcept.conceptName,
       domainId: customConcept.domainId,
-      vocabulary: customConcept.vocabularyId,
+      vocabularyId: customConcept.vocabularyId,
       comment,
       assignedReviewer: reviewer,
       mappingStatus: 'SEMI-APPROVED',

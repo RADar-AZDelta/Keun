@@ -88,7 +88,7 @@
     mappedRow.statusSetBy = $user.name
     mappedRow.statusSetOn = Date.now()
     mappedRow.mappingStatus = 'SEMI-APPROVED'
-    mappedRow.vocabulary = event.detail.row.vocabulary
+    mappedRow.vocabularyId = event.detail.row.vocabulary
 
     // Update the selected row to the updated row
     await dataTableMapping.updateRows(new Map([[mappedIndex, mappedRow]]))
@@ -224,7 +224,7 @@
     mappedUsagiRow.conceptId = athenaRow.id
     mappedUsagiRow.conceptName = athenaRow.name
     mappedUsagiRow.domainId = athenaRow.domain
-    mappedUsagiRow.vocabulary = athenaRow.vocabulary
+    mappedUsagiRow.vocabularyId = athenaRow.vocabulary
     mappedUsagiRow = await addExtraFields(mappedUsagiRow, autoMap)
     if (dev) console.log('rowMapping: Finished mapping row with index ', rowIndex)
     return { mappedIndex: rowIndex, mappedRow: mappedUsagiRow }
@@ -246,7 +246,7 @@
         concept_name: concept.conceptName,
         concept_class_id: concept.className,
         domain_id: concept.domainId,
-        vocabulary_id: concept.vocabulary,
+        vocabulary_id: concept.vocabularyId,
         standard_concept: '',
         valid_start_date: reformatDate(),
         valid_end_date: '2099-12-31',

@@ -42,16 +42,11 @@
   },
   "type": "module",
   "dependencies": {
-    "@firebase/app": "^0.9.25",
-    "@firebase/auth": "^1.5.1",
-    "@firebase/firestore": "^4.4.0",
-    "@firebase/storage": "^0.12.0",
     "@radar-azdelta/svelte-athena-search": "^0.0.22",
     "@radar-azdelta/svelte-datatable": "^0.0.58",
     "arquero": "^5.2.0",
     "better-sqlite3": "^9.1.1",
-    "firebase": "^10.6.0",
-    "firebase-admin": "^11.11.0",
+    "firebase": "^10.7.1",
     "lodash.debounce": "^4.0.8",
     "lodash.isequal": "^4.5.0"
   }
