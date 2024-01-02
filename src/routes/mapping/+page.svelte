@@ -439,7 +439,7 @@
 
   // Sync the file to the database implementation before leaving the page
   // Note: this does not always work so for that reason, there is a save button provided
-  beforeNavigate(async ({ from, to, cancel }) => await syncFile())
+  beforeNavigate(async () => await syncFile())
 </script>
 
 <svelte:head>
