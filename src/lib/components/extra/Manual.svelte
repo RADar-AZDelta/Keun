@@ -7,7 +7,7 @@
 
   async function getManual(): Promise<void> {
     if (manualText) return
-    const onlineManual = await fetch('https://raw.githubusercontent.com/RADar-AZDelta/Keun/master/README.md')
+    const onlineManual = await fetch('https://raw.githubusercontent.com/RADar-AZDelta/Keun/prd/README.md')
     manualText = await onlineManual.text()
   }
 

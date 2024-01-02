@@ -13,7 +13,6 @@
   import { onMount } from 'svelte'
 
   // TODO: set up Firebase project for internal use in AZD (Firebase impl)
-  // TODO: set up SQLite impl for reference for other hospitals
 
   beforeNavigate(async ({ from, to, cancel }): Promise<void> => {
     if (!$settingsImpl) loadImplementationSettings()
