@@ -2,14 +2,14 @@
   import { beforeNavigate } from '$app/navigation'
   import { base } from '$app/paths'
   import { page } from '$app/stores'
+  import Manual from '$lib/obsolete/Manual.svelte'
   import Header from '$lib/components/extra/Header.svelte'
-  import Manual from '$lib/components/extra/Manual.svelte'
   import Settings from '$lib/components/extra/Settings.svelte'
   import User from '$lib/components/extra/User.svelte'
   import { loadImplementationSettings } from '$lib/implementations/implementation'
   import { authImplementation, settings, settingsImpl, user } from '$lib/store'
   import '$lib/table.scss'
-  import '@radar-azdelta/svelte-datatable/styles/data-table.scss'
+  // import '@radar-azdelta/svelte-datatable/dist/styles/data-table.scss'
   import { onMount } from 'svelte'
 
   // TODO: set up Firebase project for internal use in AZD (Firebase impl)
@@ -39,7 +39,7 @@
     </ul>
     {#if $page.url.pathname.substring($page.url.pathname.lastIndexOf('/')) !== 'registration'}
       <div class="header-buttons-container" id="settings">
-        <Manual />
+        <Manual href="/README.md?raw" />
         {#if $settings}
           <Settings />
           <User />

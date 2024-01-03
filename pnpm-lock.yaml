@@ -9,8 +9,8 @@ dependencies:
     specifier: ^0.0.22
     version: 0.0.22(vite@4.5.1)
   '@radar-azdelta/svelte-datatable':
-    specifier: ^0.0.58
-    version: 0.0.58
+    specifier: ^0.0.64
+    version: 0.0.64(svelte@4.2.8)
   arquero:
     specifier: ^5.2.0
     version: 5.3.0
@@ -961,14 +961,17 @@ packages:
       - encoding
     dev: false
 
-  /@radar-azdelta/svelte-datatable@0.0.58:
-    resolution: {integrity: sha512-p+1iGh7d3LcrpGcjoe7gvh56pNkgg2BqhyA3992mSb4Q9Jn+HSdez31HK2R3W2JLpp+ZIKGc4zALQlnFe1Bq3w==}
+  /@radar-azdelta/svelte-datatable@0.0.64(svelte@4.2.8):
+    resolution: {integrity: sha512-MTGub3ORvn3/RkqXy6ypf9op7f3ioniyvqc2q60b1EcsHsvR2/zR6WYi8+xOS4ilGp1gfjM0VZbN9BZhgPps5Q==}
+    peerDependencies:
+      svelte: ^4.0.0
     dependencies:
-      '@types/lodash': 4.14.202
-      arquero: 5.3.0
+      arquero: 5.4.0
       comlink: 4.4.1
+      esm-env: 1.0.0
       lodash.debounce: 4.0.8
       lodash.isequal: 4.5.0
+      svelte: 4.2.8
     transitivePeerDependencies:
       - encoding
     dev: false
@@ -1382,6 +1385,22 @@ packages:
       tslib: 2.6.2
     dev: false
 
+  /apache-arrow@14.0.2:
+    resolution: {integrity: sha512-EBO2xJN36/XoY81nhLcwCJgFwkboDZeyNQ+OPsG7bCoQjc2BT0aTyH/MR6SrL+LirSNz+cYqjGRlupMMlP1aEg==}
+    hasBin: true
+    dependencies:
+      '@types/command-line-args': 5.2.0
+      '@types/command-line-usage': 5.0.2
+      '@types/node': 20.3.0
+      '@types/pad-left': 2.1.1
+      command-line-args: 5.2.1
+      command-line-usage: 7.0.1
+      flatbuffers: 23.5.26
+      json-bignum: 0.0.3
+      pad-left: 2.1.0
+      tslib: 2.6.2
+    dev: false
+
   /argparse@2.0.1:
     resolution: {integrity: sha512-8+9WqebbFzpX9OR+Wa6O29asIogeRMzcGtAINdpMHHyAg10f05aSFVBbcEqGf/PXw1EjAZ+q2/bEBg3DvurK3Q==}
     dev: true
@@ -1396,6 +1415,16 @@ packages:
     dependencies:
       acorn: 8.11.2
       apache-arrow: 14.0.1
+      node-fetch: 2.7.0
+    transitivePeerDependencies:
+      - encoding
+    dev: false
+
+  /arquero@5.4.0:
+    resolution: {integrity: sha512-YiSueQY3md2/kOgltFeuqjxxASrhGjxUYXZsCWqKbfj70QiN1iuOL/lMfH6M5ZKIyiQCyGlm2NYpvf8t8DmVDg==}
+    dependencies:
+      acorn: 8.11.2
+      apache-arrow: 14.0.2
       node-fetch: 2.7.0
     transitivePeerDependencies:
       - encoding
