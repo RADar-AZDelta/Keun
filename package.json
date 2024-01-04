@@ -16,10 +16,11 @@
   "devDependencies": {
     "@browsermt/bergamot-translator": "^0.4.9",
     "@playwright/test": "^1.39.0",
-    "@sveltejs/adapter-auto": "^2.1.1",
-    "@sveltejs/adapter-static": "^2.0.3",
-    "@sveltejs/kit": "^1.27.5",
+    "@sveltejs/adapter-auto": "^3.0.0",
+    "@sveltejs/adapter-static": "^3.0.0",
+    "@sveltejs/kit": "^2.0.0",
     "@sveltejs/package": "^2.2.2",
+    "@sveltejs/vite-plugin-svelte": "^3.0.0",
     "@types/better-sqlite3": "^7.6.7",
     "@types/lodash.debounce": "^4.0.9",
     "@typescript-eslint/eslint-plugin": "^6.11.0",
@@ -36,14 +37,14 @@
     "svelte-preprocess": "^5.1.0",
     "tslib": "^2.6.2",
     "typescript": "^5.2.2",
-    "vite": "^4.5.0",
+    "vite": "^5.0.0",
     "vite-plugin-static-copy": "^0.17.0",
-    "vitest": "^0.34.6"
+    "vitest": "^1.0.0"
   },
   "type": "module",
   "dependencies": {
-    "@radar-azdelta/svelte-athena-search": "^0.0.22",
-    "@radar-azdelta/svelte-datatable": "^0.0.64",
+    "@radar-azdelta/svelte-athena-search": "^0.0.24",
+    "@radar-azdelta/svelte-datatable": "^0.0.66",
     "arquero": "^5.2.0",
     "better-sqlite3": "^9.1.1",
     "firebase": "^10.7.1",
