@@ -7,7 +7,6 @@
   import { settings } from '$lib/store'
   import { localStorageGetter } from '$lib/obsolete/utils'
   import type Query from 'arquero/dist/types/query/query'
-  // @ts-ignore
   import { Search } from '@radar-azdelta/svelte-athena-search'
   import { addExtraFields, resetRow } from '$lib/mappingUtils'
   import SearchHead from '$lib/components/mapping/SearchHead.svelte'
@@ -15,7 +14,7 @@
   import Details from '$lib/components/mapping/details/Details.svelte'
   import MappedView from '$lib/components/mapping/views/MappedView.svelte'
   import type DataTable from '@radar-azdelta/svelte-datatable'
-  import type { IView } from '@radar-azdelta/svelte-athena-search/dist/Types'
+  import type { IView } from '@radar-azdelta/svelte-athena-search'
   import type {
     IAthenaRow,
     IMappedRow,
@@ -39,8 +38,8 @@
 
   const dispatch = createEventDispatcher<MappingEvents>()
   const views: IView[] = [
-    { name: 'custom concept', value: 'custom', viewSlot: 'slotView1' },
-    { name: 'mapped concepts', value: 'mapped', viewSlot: 'slotView2' },
+    { name: 'custom concept', value: 'custom', viewSlot: 1 },
+    { name: 'mapped concepts', value: 'mapped', viewSlot: 2 },
   ]
 
   let dialog: HTMLDialogElement
