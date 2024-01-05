@@ -19,10 +19,11 @@
     const indexParams = <Query>query().params({
       code: selectedRow.sourceCode,
       name: selectedRow.sourceName,
-      concept: selectedRow.conceptName === 'Unmapped' ? null : selectedRow.conceptName,
+      concept: selectedRow.conceptName === 'Unmapped' ? undefined : selectedRow.conceptName,
+      concept2: selectedRow.conceptName === 'Unmapped' ? null : selectedRow.conceptName
     })
     const indexQuery = indexParams
-      .filter((r: any, p: any) => r.sourceCode === p.code && r.sourceName === p.name && r.conceptId === p.concept)
+      .filter((r: any, p: any) => r.sourceCode === p.code && r.sourceName === p.name && (r.conceptId === p.concept || r.conceptId === p.concept2))
       .toObject()
     const rows = await mainTable.executeQueryAndReturnResults(indexQuery)
     const i = rows.indices[0]
