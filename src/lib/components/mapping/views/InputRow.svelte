@@ -59,17 +59,17 @@
     const existanceParams = <Query>query().params(params)
     const existanceQuery = existanceParams
       .filter((r: any, p: any) => {
-        r.concept_name === p.name &&
-          r.domain_id === p.domain &&
-          r.vocabulary_id === p.vocab &&
-          r.concept_class_id === p.class
-      })
+      r.concept_name === p.name &&
+        r.domain_id === p.domain &&
+        r.vocabulary_id === p.vocab &&
+        r.concept_class_id === p.class
+    })
       .toObject()
-    const existance = await customTable.executeQueryAndReturnResults(existanceQuery)
-    if (existance.indices.length) return
     const testRow = await customTable.getFullRow(0)
     if (testRow.domain_id === 'test') await customTable.deleteRows([0])
     await customTable.insertRows([concept])
+    inputRow =
+      originalIndex === 0 ? { ...renderedRow, ...{ vocabulary_id: $settings.vocabularyIdCustomConcept ?? '' } } : {}
   }
 
   const updateVocab = () => (inputRow.vocabulary_id = $settings.vocabularyIdCustomConcept)
