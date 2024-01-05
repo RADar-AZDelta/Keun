@@ -26,7 +26,6 @@ export async function addExtraFields(row: IUsagiRow, autoMap: boolean): Promise<
     'ADD_INFO:numberOfConcepts': null,
     'ADD_INFO:customConcept': null,
   }
-  if ((!row.statusSetBy || row.statusSetBy == author) && !autoMap) extra.mappingStatus = 'SEMI-APPROVED'
   if (row.createdBy && row.createdBy !== author) {
     extra.createdBy = author
     extra.createdOn = new Date().getTime()
@@ -40,7 +39,7 @@ export async function resetRow() {
   const reset: IUsagiAllExtra = additionalFields
   reset.conceptId = null
   reset.domainId = null
-  reset.vocabulary = null
+  reset.vocabularyId = null
   reset.conceptName = null
   delete reset.sourceAutoAssignedConceptIds
   return reset

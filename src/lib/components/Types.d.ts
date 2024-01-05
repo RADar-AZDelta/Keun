@@ -1,4 +1,4 @@
-import type { IDataTypeFunctionalities } from '@radar-azdelta/svelte-datatable/components/DataTable'
+import type { IDataTypeFunctionalities } from '@radar-azdelta/svelte-datatable'
 
 export interface IFileTemplate {
   file: File
@@ -76,6 +76,7 @@ export interface MappingEventDetail {
   originalRow: IUsagiRow
   row: IAthenaRow
   extra: IExtra
+  action: string
 }
 
 export interface CustomMappingInputEventDetail {
@@ -111,6 +112,7 @@ export interface UpdateErrorEventDetail {
 export interface ICustomEvents {
   autoComplete: AutoCompleteEventDetail
   autoCompleteShort: AutoCompleteShortEventDetail
+  showColumns: ShowColumnsEventDetail
 }
 
 export interface AutoCompleteEventDetail {
@@ -121,6 +123,10 @@ export interface AutoCompleteEventDetail {
 
 export interface AutoCompleteShortEventDetail {
   value: string
+}
+
+export interface ShowColumnsEventDetail {
+  columns: string[]
 }
 
 ////////////////////////////// Interfaces //////////////////////////////
@@ -154,6 +160,10 @@ export interface IUser {
 interface IExtra {
   comment: string
   reviewer: string
+}
+
+interface IMappedRows {
+  [key: number]: string
 }
 
 export interface IDataTypeFile extends IDataTypeFunctionalities {
@@ -245,6 +255,7 @@ export interface IUsagiRow extends IExtraUsagiCols, IUsagiMappedCols {
   sourceCode: string
   sourceFrequency: number
   sourceName: string
+  [key: string]: any
 }
 
 export type IUsagiAllExtra = IUsagiMappedCols & IExtraUsagiCols
@@ -253,7 +264,7 @@ export interface IUsagiMappedCols {
   conceptId?: number | null
   conceptName?: string | null
   domainId?: string | null
-  vocabulary?: string | null
+  vocabularyId?: string | null
   sourceAutoAssignedConceptIds?: string | null
 }
 

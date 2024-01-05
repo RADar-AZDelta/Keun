@@ -5,7 +5,7 @@ import type {
   ICustomStoreOptions,
   IStoredOptions,
   ITableOptions,
-} from '@radar-azdelta/svelte-datatable/components/DataTable'
+} from '@radar-azdelta/svelte-datatable'
 
 export default class FirebaseSaveImpl implements ICustomStoreOptions {
   storedOptions: ITableOptions
