@@ -31,6 +31,8 @@
     NavigateRowEventDetail,
   } from '$lib/components/Types'
 
+  // TODO: create editableCell for comments directly in the table
+
   // General variables
   let file: File | undefined = undefined,
     customConceptsFile: File | undefined = undefined,
@@ -78,18 +80,21 @@
   // When the mapping button in the Athena pop-up is clicked and the settins "Map to multiple concepts" is disabled
   async function singleMapping(event: CustomEvent<MappingEventDetail>): Promise<void> {
     if (dev) console.log('singleMapping: Single mapping for the row with sourceCode ', selectedRow.sourceCode)
+    const { originalRow, row, extra, action } = event.detail
     // Map the selected row with the selected concept
-    const { mappedIndex, mappedRow } = await rowMapping(event.detail.originalRow, event.detail.row)
-    // Add extra information like the number of concepts mapped for this row, and the last typed filter to the row
-    if (!mappedRow['ADD_INFO:numberOfConcepts']) mappedRow['ADD_INFO:numberOfConcepts'] = 1
-    mappedRow['ADD_INFO:lastAthenaFilter'] = lastTypedFilter ? lastTypedFilter : null
-    mappedRow.comment = event.detail.extra.comment
-    mappedRow.assignedReviewer = event.detail.extra.reviewer
-    mappedRow.statusSetBy = $user.name
-    mappedRow.statusSetOn = Date.now()
-    mappedRow.mappingStatus = 'SEMI-APPROVED'
-    mappedRow.vocabularyId = event.detail.row.vocabulary
-
+    const { mappedIndex, mappedRow } = await rowMapping(originalRow, row)
+    // Add extra information like the number of concepts mapped for this row, comments & the assigned reviewer to the row
+    const update = {
+      mappingStatus: action,
+      statusSetBy: author,
+      statusSetOn: Date.now(),
+      'ADD_INFO:lastAthenaFilter': lastTypedFilter ? lastTypedFilter : null,
+      'ADD_INFO:numberOfConcepts': 1,
+      comment: extra.comment,
+      assignedReviewer: extra.reviewer,
+      vocabularyId: row.vocabulary,
+    }
+    Object.assign(mappedRow, update)
     // Update the selected row to the updated row
     await dataTableMapping.updateRows(new Map([[mappedIndex, mappedRow]]))
   }
@@ -97,23 +102,23 @@
   // When the mapping button in the Athena pop-up is clicked and the settins "Map to multiple concepts" is enabled
   async function multipleMapping(event: CustomEvent<MappingEventDetail>): Promise<void> {
     if (dev) console.log('multipleMapping: Multiple mapping for the row with sourceCode ', selectedRow.sourceCode)
-    const { mappedRow } = await rowMapping(event.detail.originalRow!, event.detail.row)
+    const { originalRow, row, extra, action } = event.detail
+    const { mappedRow } = await rowMapping(originalRow!, row)
     const mappedParams = <Query>query().params({ code: mappedRow.sourceCode })
     const mappedQuery = mappedParams.filter((r: any, p: any) => r.sourceCode === p.code).toObject()
     const mapped = await dataTableMapping.executeQueryAndReturnResults(mappedQuery)
-
     // Add extra information like the number of concepts mapped for this row, comments & the assigned reviewer to the row
     const update = {
-      mappingStatus: 'SEMI-APPROVED',
+      mappingStatus: action,
       statusSetBy: author,
       statusSetOn: Date.now(),
       'ADD_INFO:lastAthenaFilter': lastTypedFilter ? lastTypedFilter : null,
       'ADD_INFO:numberOfConcepts': 1,
-      comment: event.detail.extra.comment,
-      assignedReviewer: event.detail.extra.reviewer,
+      comment: extra.comment,
+      assignedReviewer: extra.reviewer,
+      vocabularyId: row.vocabulary,
     }
     Object.assign(mappedRow, update)
-
     // This is the first concepts mapped to the row and the current row wil be updated
     if (mapped.queriedData.length === 1 && !mapped.queriedData[0].conceptId)
       await dataTableMapping.updateRows(new Map([[mapped.indices[0], mappedRow]]))
@@ -139,13 +144,14 @@
 
   // When the button to automap a single row is clicked, automap the row
   async function autoMapSingleRow(event: CustomEvent<AutoMapRowEventDetail>): Promise<void> {
-    if (dev) console.log('autoMapSingleRow: automap the row with index ', event.detail.index)
+    const { index } = event.detail
+    if (dev) console.log('autoMapSingleRow: automap the row with index ', index)
     if (autoMappingPromise) autoMappingAbortController.abort()
     autoMappingAbortController = new AbortController()
     const signal = autoMappingAbortController.signal
     autoMappingPromise = new Promise(async (resolve, reject): Promise<void> => {
-      const row = await dataTableMapping.getFullRow(event.detail.index)
-      await autoMapRow(signal, row as IUsagiRow, event.detail.index)
+      const row = await dataTableMapping.getFullRow(index)
+      await autoMapRow(signal, row as IUsagiRow, index)
     })
   }
 
@@ -361,9 +367,10 @@
   // Select the new navigated row to open in the search dialog
   async function selectRow(event: CustomEvent<RowSelectionEventDetail>) {
     if (autoMappingPromise) autoMappingAbortController.abort()
-    selectedRow = event.detail.row
-    selectedRowIndex = event.detail.index
-    const sourceName = event.detail.row.sourceName
+    const { row, index } = event.detail
+    selectedRow = row
+    selectedRowIndex = index
+    const sourceName = row.sourceName
     const translation = await translate(sourceName)
     globalAthenaFilter.filter = typeof translation == 'string' ? translation : sourceName
     search.showDialog()

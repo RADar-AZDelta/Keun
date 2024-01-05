@@ -76,6 +76,7 @@ export interface MappingEventDetail {
   originalRow: IUsagiRow
   row: IAthenaRow
   extra: IExtra
+  action: string
 }
 
 export interface CustomMappingInputEventDetail {
@@ -154,6 +155,10 @@ export interface IUser {
 interface IExtra {
   comment: string
   reviewer: string
+}
+
+interface IMappedRows {
+  [key: number]: string
 }
 
 export interface IDataTypeFile extends IDataTypeFunctionalities {

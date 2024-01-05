@@ -18,6 +18,7 @@
   import type {
     IAthenaRow,
     IMappedRow,
+    IMappedRows,
     IUsagiAllExtra,
     IUsagiRow,
     MappingEvents,
@@ -36,6 +37,8 @@
     customTable: DataTable,
     globalAthenaFilter: { column: string; filter: string | undefined }
 
+  // TODO: add possibility to add columns to the top view of the current selected row (for ex. I want to see the ADD_INFO:X column)
+
   const dispatch = createEventDispatcher<MappingEvents>()
   const views: IView[] = [
     { name: 'custom concept', value: 'custom', viewSlot: 1 },
@@ -48,24 +51,26 @@
     comment: string = '',
     equivalence: string = 'EQUAL'
   let activatedAthenaFilters = new Map<string, string[]>([['standardConcept', ['Standard']]])
-  let mappedToConceptIds: number[] = []
+  let mappedToConceptIds: IMappedRows = {}
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // EVENTS
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
   // A method that catches the event for single mapping and throws an event to the parent
-  async function singleMapping(row: IAthenaRow): Promise<void> {
+  async function singleMapping(row: IAthenaRow, action: string): Promise<void> {
     row.equivalence = equivalence
-    mappedToConceptIds = [row.id]
-    dispatch('singleMapping', { originalRow: selectedRow, row, extra: { comment, reviewer } })
+    selectedRow.mappingStatus = action
+    mappedToConceptIds = { [row.id]: action }
+    dispatch('singleMapping', { originalRow: selectedRow, row, extra: { comment, reviewer }, action })
   }
 
   // A method that catches the event for multiple mapping and throws an event to the parent
-  async function multipleMapping(row: IAthenaRow): Promise<void> {
+  async function multipleMapping(row: IAthenaRow, action: string): Promise<void> {
     row.equivalence = equivalence
-    mappedToConceptIds = [...mappedToConceptIds, row.id]
-    dispatch('multipleMapping', { originalRow: selectedRow, row, extra: { comment, reviewer } })
+    selectedRow.mappingStatus = action
+    if(!mappedToConceptIds[row.id]) Object.assign(mappedToConceptIds, { [row.id]: action })
+    dispatch('multipleMapping', { originalRow: selectedRow, row, extra: { comment, reviewer }, action })
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -113,12 +118,13 @@
   // Map a new custom concept to a row
   async function customMapping(e: CustomEvent<CustomMappingInputEventDetail>) {
     if (dev) console.log('mapCustmoRow: Map a row to a custom concept')
+    const { row } = e.detail
     if ($settings.mapToMultipleConcepts) {
-      mappedData = [...mappedData, e.detail.row]
-      mappedToConceptIds = [...mappedToConceptIds, e.detail.row.conceptId]
+      mappedData = [...mappedData, row]
+      Object.assign(mappedToConceptIds, { [row.conceptId]: 'SEMI-APPROVED'})
     } else {
-      mappedData = [e.detail.row]
-      mappedToConceptIds = [e.detail.row.conceptId]
+      mappedData = [row]
+      Object.assign(mappedToConceptIds, { [row.conceptId]: 'SEMI-APPROVED'})
     }
     const customConcept = e.detail.row
     let mappedRow = await addExtraFields(selectedRow, false)
@@ -133,9 +139,8 @@
       'ADD_INFO:customConcept': true,
     }
     Object.assign(mappedRow, update)
-    if (!$settings || !$settings.mapToMultipleConcepts) {
+    if (!$settings || !$settings.mapToMultipleConcepts)
       return await mainTable.updateRows(new Map([[selectedRowIndex, mappedRow]]))
-    }
 
     const conceptsParams = <Query>query().params({ code: mappedRow.sourceCode })
     const conceptsQuery = conceptsParams.filter((r: any, p: any) => r.sourceCode === p.code).toObject()
@@ -160,9 +165,7 @@
     await mainTable.updateRows(rows)
   }
 
-  async function equivalenceChange(e: CustomEvent<EquivalenceChangeEventDetail>) {
-    equivalence = e.detail.equivalence
-  }
+  const equivalenceChange = (e: CustomEvent<EquivalenceChangeEventDetail>) => (equivalence = e.detail.equivalence)
 
   ///////////////////////////// ATHENA ROW METHODS /////////////////////////////
 
@@ -171,16 +174,16 @@
     window.open(encodeURI(referUrl), '_blank')?.focus()
   }
 
-  async function onClickMapping(renderedRow: IAthenaRow) {
-    if ($settings.mapToMultipleConcepts) multipleMapping(renderedRow)
-    else singleMapping(renderedRow)
+  async function mapRow(renderedRow: IAthenaRow, action: string) {
+    if ($settings.mapToMultipleConcepts) multipleMapping(renderedRow, action)
+    else singleMapping(renderedRow, action)
     selectedRow.conceptId = renderedRow.id
-    const mappedRow = {
+    const mappedRow: IMappedRow = {
       sourceCode: selectedRow.sourceCode,
       sourceName: selectedRow.sourceName,
       conceptId: renderedRow.id,
       conceptName: renderedRow.name,
-      customConcept: renderedRow.id === 0 ? true : false,
+      customConcept: false,
     }
     if ($settings.mapToMultipleConcepts) mappedData = [...mappedData, mappedRow]
     else mappedData = [mappedRow]
@@ -191,7 +194,8 @@
     const params = <Query>query().params({ code: selectedRow.sourceCode })
     const rowsQuery = params.filter((r: any, p: any) => r.sourceCode === p.code).toObject()
     const rows = await mainTable.executeQueryAndReturnResults(rowsQuery)
-    mappedToConceptIds = rows.queriedData.map((r: IUsagiRow) => r.conceptId)
+    mappedToConceptIds = {}
+    for(const row of rows.queriedData) Object.assign(mappedToConceptIds, { [row.conceptId]: row.mappingStatus })
   }
 
   ///////////////////////////// MAPPED TABLE METHODS /////////////////////////////
@@ -220,15 +224,11 @@
 
   ///////////////////////////// HEAD METHODS /////////////////////////////
 
-  async function onNavigateRow(e: CustomEvent<NavigateRowEventDetail>) {
-    dispatch('navigateRow', { ...e.detail })
-  }
+  const onNavigateRow = (e: CustomEvent<NavigateRowEventDetail>) => dispatch('navigateRow', { ...e.detail })
 
   ///////////////////////////// DIALOG METHODS /////////////////////////////
 
-  async function closeDialog(): Promise<void> {
-    dialog.close()
-  }
+  const closeDialog = () => dialog.close()
 
   export async function showDialog(): Promise<void> {
     dialog.showModal()
@@ -237,18 +237,19 @@
     reviewer = ''
   }
 
+  function EscapeListener(e: KeyboardEvent) {
+    if (e.key === 'Escape') closeDialog()
+  }
+
+  const addKeyListener = () => dialog.addEventListener('keydown', EscapeListener)
+
   onMount(() => {
     const savedFilters = localStorageGetter('AthenaFilters')
-    activatedAthenaFilters = savedFilters
-      ? savedFilters
-      : new Map<string, string[]>([['standardConcept', ['Standard']]])
+    activatedAthenaFilters = savedFilters ?? new Map<string, string[]>([['standardConcept', ['Standard']]])
   })
 
   $: {
-    if (dialog)
-      dialog.addEventListener('keydown', function (e) {
-        if (e.key === 'Escape') closeDialog()
-      })
+    if (dialog) addKeyListener
   }
 
   $: {
@@ -263,13 +264,41 @@
     <button class="close-dialog" on:click={closeDialog}><SvgIcon id="x" /></button>
     <section class="search-container">
       <Search {views} bind:globalFilter={globalAthenaFilter}>
-        <div slot="action-athena" let:renderedRow>
-          {#if mappedToConceptIds.includes(renderedRow.id) && (selectedRow.mappingStatus === 'APPROVED' || selectedRow.mappingStatus === 'SEMI-APPROVED')}
-            <button title="Map to row" style="background-color: greenyellow;"><SvgIcon id="check" /></button>
-          {:else}
-            <button on:click={() => onClickMapping(renderedRow)}><SvgIcon id="plus" /></button>
-          {/if}
-          <button on:click={() => referToAthena(renderedRow.id)}><SvgIcon id="link" /></button>
+        <div slot="action-athena" let:renderedRow class="actions-grid">
+            {#if mappedToConceptIds[renderedRow.id] === 'APPROVED'}
+              <button title="Mapped to row" style="background-color: hsl(156, 100%, 35%);">
+                <SvgIcon id="plus" width="10px" height="10px" />
+              </button>
+            {:else if mappedToConceptIds[renderedRow.id] === 'SEMI-APPROVED'}
+              <button title="Mapped to row" style="background-color: hsl(84, 100%, 70%);">
+                <SvgIcon id="plus" width="10px" height="10px" />
+              </button>
+            {:else}
+              <button title="Map to row" on:click={() => mapRow(renderedRow, 'SEMI-APPROVED')}>
+                <SvgIcon id="plus" width="10px" height="10px" />
+              </button>
+            {/if}
+            {#if mappedToConceptIds[renderedRow.id] === 'FLAGGED'}
+              <button title="Flagged row" style="background-color: hsl(54, 89%, 64%);">
+                <SvgIcon id="flag" width="10px" height="10px" />
+              </button>
+            {:else}
+              <button title="Flag row" on:click={() => mapRow(renderedRow, 'FLAGGED')}>
+                <SvgIcon id="flag" width="10px" height="10px" />
+              </button>
+            {/if}
+            {#if mappedToConceptIds[renderedRow.id] === 'UNAPPROVED'}
+              <button title="Unapproved row" style="background-color: hsl(8, 100%, 59%);">
+                <SvgIcon id="x" width="10px" height="10px" />
+              </button>
+            {:else}
+              <button title="Unapprove row" on:click={() => mapRow(renderedRow, 'UNAPPROVED')}>
+                <SvgIcon id="x" width="10px" height="10px" />
+              </button>
+            {/if}
+          <button on:click={() => referToAthena(renderedRow.id)}>
+            <SvgIcon id="link" width="10px" height="10px" />
+          </button>
         </div>
         <div slot="upperSlot">
           <SearchHead {selectedRow} {mainTable} on:navigateRow={onNavigateRow} />
@@ -289,6 +318,19 @@
 </dialog>
 
 <style>
+  .actions-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    height: max-content;
+    max-width: 100%;
+  }
+
+  button {
+    padding: 0 5px;
+    font-size: 10px;
+  }
+
   .athena-dialog {
     width: 90%;
     height: 90%;
