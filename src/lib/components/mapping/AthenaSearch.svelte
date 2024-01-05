@@ -37,8 +37,6 @@
     customTable: DataTable,
     globalAthenaFilter: { column: string; filter: string | undefined }
 
-  // TODO: add possibility to add columns to the top view of the current selected row (for ex. I want to see the ADD_INFO:X column)
-
   const dispatch = createEventDispatcher<MappingEvents>()
   const views: IView[] = [
     { name: 'custom concept', value: 'custom', viewSlot: 1 },

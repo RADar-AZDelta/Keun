@@ -112,6 +112,7 @@ export interface UpdateErrorEventDetail {
 export interface ICustomEvents {
   autoComplete: AutoCompleteEventDetail
   autoCompleteShort: AutoCompleteShortEventDetail
+  showColumns: ShowColumnsEventDetail
 }
 
 export interface AutoCompleteEventDetail {
@@ -122,6 +123,10 @@ export interface AutoCompleteEventDetail {
 
 export interface AutoCompleteShortEventDetail {
   value: string
+}
+
+export interface ShowColumnsEventDetail {
+  columns: string[]
 }
 
 ////////////////////////////// Interfaces //////////////////////////////
@@ -250,6 +255,7 @@ export interface IUsagiRow extends IExtraUsagiCols, IUsagiMappedCols {
   sourceCode: string
   sourceFrequency: number
   sourceName: string
+  [key: string]: any
 }
 
 export type IUsagiAllExtra = IUsagiMappedCols & IExtraUsagiCols
