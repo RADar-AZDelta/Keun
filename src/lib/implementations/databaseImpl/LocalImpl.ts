@@ -98,7 +98,8 @@ export default class LocalImpl implements IUpdatedFunctionalityImpl {
     if (!fileInfo || !fileInfo.content) return console.error('getFile: File not found in IndexedDB')
     const blob = await stringToBlob(fileInfo.content)
     const file = new File([blob], fileInfo.name, { type: 'text/csv' })
-    const updatedName = file.name.split('.')[0] + '_usagi.csv'
+    const needsPrefix = !file.name.endsWith('_usagi.csv')
+    const updatedName = needsPrefix ? file.name.split('.')[0] + '_usagi.csv' : file.name
     await this.download(updatedName, file)
     await this.downloadCustomFile(fileInfo.id)
     await this.deleteFile(id)
