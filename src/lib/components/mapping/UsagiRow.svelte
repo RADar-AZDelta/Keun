@@ -6,8 +6,8 @@
   import { user } from '$lib/store'
   import { reformatDate } from '$lib/obsolete/utils'
   import { resetRow } from '$lib/mappingUtils'
+  import { EditableCell, type IColumnMetaData } from '@radar-azdelta/svelte-datatable'
   import type DataTable from '@radar-azdelta/svelte-datatable'
-  import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
   import type Query from 'arquero/dist/types/query/query'
   import type { IUsagiRow, MappingEvents } from '$lib/components/Types'
 
@@ -128,6 +128,11 @@
     color = await getColors()
   }
 
+  async function updateValue(e: CustomEvent, column: string) {
+    renderedRow[column] = e.detail
+    await table.updateRows(new Map([[index, renderedRow]]))
+  }
+
   $: {
     renderedRow, index
     setPreset()
@@ -149,6 +154,8 @@
   <td on:dblclick={mapRow} style={`background-color: ${color}`} title={renderedRow[column.id]}>
     {#if ['statusSetOn', 'createdOn', 'ADD_INFO:approvedOn'].includes(column.id)}
       <p>{reformatDate(renderedRow[column.id])}</p>
+    {:else if ['comment'].includes(column.id)}
+      <EditableCell value={renderedRow[column.id]} on:valueChanged={e => updateValue(e, column.id)} />
     {:else}
       <p>{renderedRow[column.id] ?? ''}</p>
     {/if}

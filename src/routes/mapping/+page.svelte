@@ -31,8 +31,6 @@
     NavigateRowEventDetail,
   } from '$lib/components/Types'
 
-  // TODO: create editableCell for comments directly in the table
-
   // General variables
   let file: File | undefined = undefined,
     customConceptsFile: File | undefined = undefined,
