@@ -14,10 +14,7 @@ import {
 import type { IAuthImpl, ISettings, ISettingsImpl, IUpdatedFunctionalityImpl, IUser } from '$lib/components/Types'
 // @ts-expect-error Typescript issue that the package does not export .d.ts files
 import type { LatencyOptimisedTranslator } from '@browsermt/bergamot-translator/translator.js'
-import type {
-  ICustomStoreOptions,
-  IDataTypeFunctionalities,
-} from '@radar-azdelta/svelte-datatable/components/DataTable'
+import type { ICustomStoreOptions, IDataTypeFunctionalities } from '@radar-azdelta/svelte-datatable'
 import type { User } from 'firebase/auth'
 
 export const settings = writable<ISettings>({

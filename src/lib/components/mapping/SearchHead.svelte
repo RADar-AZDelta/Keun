@@ -2,13 +2,16 @@
   import { createEventDispatcher } from 'svelte'
   import { query } from 'arquero'
   import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
-  import type DataTable from '@radar-azdelta/svelte-datatable'
+  import ShowColumnsDialog from '$lib/components/mapping/ShowColumnsDialog.svelte'
   import type Query from 'arquero/dist/types/query/query'
-  import type { ITablePagination, IUsagiRow, MappingEvents } from '$lib/components/Types'
+  import type DataTable from '@radar-azdelta/svelte-datatable'
+  import type { ITablePagination, IUsagiRow, MappingEvents, ShowColumnsEventDetail } from '$lib/components/Types'
 
   export let selectedRow: IUsagiRow, mainTable: DataTable
 
   const dispatch = createEventDispatcher<MappingEvents>()
+  let dialog: HTMLDialogElement
+  let shownColumns: string[] = ['sourceCode', 'sourceName', 'sourceFrequency']
 
   async function navigateRows(up: boolean) {
     let pag: ITablePagination = await mainTable.getTablePagination()
@@ -16,10 +19,10 @@
     const indexParams = <Query>query().params({
       code: selectedRow.sourceCode,
       name: selectedRow.sourceName,
-      concept: selectedRow.conceptName === 'Unmapped' ? undefined : selectedRow.conceptName,
+      concept: selectedRow.conceptName === 'Unmapped' ? null : selectedRow.conceptName,
     })
     const indexQuery = indexParams
-      .filter((r: any, p: any) => r.sourceCode === p.code && r.sourceName === p.name && r.conceptName === p.concept)
+      .filter((r: any, p: any) => r.sourceCode === p.code && r.sourceName === p.name && r.conceptId === p.concept)
       .toObject()
     const rows = await mainTable.executeQueryAndReturnResults(indexQuery)
     const i = rows.indices[0]
@@ -28,27 +31,38 @@
     if (pag.currentPage !== page) mainTable.changePagination({ currentPage: page })
     dispatch('navigateRow', { row, index })
   }
+
+  const showDialogColumns = () => dialog.showModal()
+
+  const showColumns = (e: CustomEvent<ShowColumnsEventDetail>) => (shownColumns = e.detail.columns)
+
+  $: columns = selectedRow ? Object.keys(selectedRow) : []
 </script>
+
+<ShowColumnsDialog bind:dialog {columns} {shownColumns} on:showColumns={showColumns} />
 
 <div class="table-head">
   <div class="currentRow">
     <button class="arrow-button" title="Previous row" id="left" on:click={() => navigateRows(false)}>
       <SvgIcon id="arrow-left" width="24px" height="24px" />
     </button>
-    <table>
-      <tr>
-        <th>sourceCode</th>
-        <th>sourceName</th>
-        <th>sourceFrequency</th>
-      </tr>
-      <tr>
-        {#if selectedRow != undefined}
-          <td title={selectedRow.sourceCode}>{selectedRow.sourceCode}</td>
-          <td title={selectedRow.sourceName}>{selectedRow.sourceName}</td>
-          <td title={selectedRow.sourceFrequency.toString()}>{selectedRow.sourceFrequency}</td>
-        {/if}
-      </tr>
-    </table>
+    <div class="center">
+      <table class="table">
+        <tr>
+          {#each shownColumns as column}
+            <th>{column}</th>
+          {/each}
+        </tr>
+        <tr>
+          {#if selectedRow != undefined}
+            {#each shownColumns as column}
+              <td title={selectedRow[column]}>{selectedRow[column]}</td>
+            {/each}
+          {/if}
+        </tr>
+      </table>
+      <button class="settings" on:click={showDialogColumns}><SvgIcon id="settings" /></button>
+    </div>
     <button class="arrow-button" title="Next row" id="right" on:click={() => navigateRows(true)}>
       <SvgIcon id="arrow-right" width="24px" height="24px" />
     </button>
@@ -63,6 +77,23 @@
     justify-content: space-between;
     align-items: center;
     padding: 0.5rem 0 0 0;
+  }
+
+  .center {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .table {
+    max-width: 60%;
+    overflow-x: auto;
+  }
+
+  .settings {
+    background-color: transparent;
+    border: none;
+    cursor: pointer;
   }
 
   .currentRow {

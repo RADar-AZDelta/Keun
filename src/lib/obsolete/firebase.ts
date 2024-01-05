@@ -1,41 +1,17 @@
-import { getApp, getApps, initializeApp } from '@firebase/app'
-import { OAuthProvider, getAuth, onAuthStateChanged, signInWithPopup, signOut } from '@firebase/auth'
-import {
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  getDocs,
-  getFirestore,
-  query,
-  setDoc,
-  updateDoc,
-} from '@firebase/firestore'
-import {
-  deleteObject,
-  getBlob,
-  getMetadata,
-  getStorage,
-  listAll,
-  ref,
-  uploadBytes,
-  type FirebaseStorage,
-  type UploadMetadata,
-} from '@firebase/storage'
+import { getApps, getApp, initializeApp } from 'firebase/app'
+import { collection, endAt, getFirestore, orderBy, query, startAt } from 'firebase/firestore'
+import { getBlob, getMetadata, getStorage, ref, uploadBytes, listAll } from 'firebase/storage'
+import { deleteDoc, doc, getDoc, getDocs, setDoc, updateDoc } from 'firebase/firestore'
+import { getAuth, signInWithPopup, signOut, onAuthStateChanged, OAuthProvider } from 'firebase/auth'
+import { deleteObject, type FirebaseStorage, type UploadMetadata } from 'firebase/storage'
 import { writable } from 'svelte/store'
-import {
-  PUBLIC_FIREBASE_API_KEY,
-  PUBLIC_FIREBASE_APP_ID,
-  PUBLIC_FIREBASE_AUTH_DOMAIN,
-  PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
-  PUBLIC_FIREBASE_PROJECT_ID,
-  PUBLIC_FIREBASE_STORAGE_BUCKET,
-  PUBLIC_TENANT_ID,
-} from '$env/static/public'
-import { sleep } from '$lib/obsolete/utils'
-import type { FirebaseApp, FirebaseOptions } from '@firebase/app'
-import type { Auth, ParsedToken, User, UserCredential } from '@firebase/auth'
-import type { Firestore, QueryFieldFilterConstraint } from '@firebase/firestore'
+import { PUBLIC_FIREBASE_API_KEY, PUBLIC_FIREBASE_AUTH_DOMAIN, PUBLIC_FIREBASE_PROJECT_ID } from '$env/static/public'
+import { PUBLIC_FIREBASE_STORAGE_BUCKET, PUBLIC_FIREBASE_APP_ID, PUBLIC_TENANT_ID } from '$env/static/public'
+import { PUBLIC_FIREBASE_MESSAGING_SENDER_ID } from '$env/static/public'
+import { sleep } from './utils'
+import type { Auth, ParsedToken, User, UserCredential } from 'firebase/auth'
+import type { Firestore, QueryFieldFilterConstraint as Constraint } from 'firebase/firestore'
+import type { FirebaseApp, FirebaseOptions } from 'firebase/app'
 import type { UserSession } from '../../app'
 
 const firebaseConfig: FirebaseOptions = {
@@ -129,7 +105,7 @@ async function updateToFirestore(collection: string, id: string, data: any) {
 
 async function readFirestore(collection: string, id: string) {
   const refer = doc(firestore, collection, id)
-  const docSnap = await getDoc(refer)
+  const docSnap = await getDoc(refer).catch(e => e)
   return docSnap.data()
 }
 
@@ -139,14 +115,26 @@ async function readFirestoreCollection(coll: string) {
   return querySnapshot.docs.map(doc => doc.data())
 }
 
-async function executeFilterQueryFirestore(coll: string, filter: QueryFieldFilterConstraint) {
-  const q = query(collection(firestore, coll), filter)
-  const querySnapshot = await getDocs(q)
-  const queriedData: Record<string, any> = {}
-  querySnapshot.forEach(doc => {
-    queriedData[doc.id as keyof object] = doc.data()
+async function executeFilterQueryFirestore(coll: string, filter: Constraint): Promise<Record<string, any>> {
+  return new Promise(async (resolve, reject) => {
+    const q = query(collection(firestore, coll), filter)
+    const querySnapshot = await getDocs(q).catch(e => reject({ ...e }))
+    const queriedData: Record<string, any> = {}
+    if (!querySnapshot) return resolve(queriedData)
+    querySnapshot.forEach(doc => (queriedData[doc.id as keyof object] = doc.data()))
+    return resolve(queriedData)
   })
-  return queriedData
+}
+
+async function readFirestoreIndexes(coll: string, orderCol: string, start: number, end: number) {
+  return new Promise(async (resolve, reject) => {
+    const q = query(collection(firestore, coll), orderBy(orderCol), startAt(start), endAt(end))
+    const querySnapshot = await getDocs(q).catch(e => reject({ ...e }))
+    if (!querySnapshot) return resolve({})
+    const queriedData: Record<string, any> = {}
+    querySnapshot.forEach(doc => (queriedData[doc.id as keyof object] = doc.data()))
+    return resolve(queriedData)
+  })
 }
 
 async function deleteDocumentFirestore(coll: string, id: string) {
@@ -158,7 +146,7 @@ async function deleteDocumentFirestore(coll: string, id: string) {
 
 async function uploadFileStorage(reference: string, file: File, metadata?: UploadMetadata) {
   const storageReference = ref(storage, reference)
-  uploadBytes(storageReference, file, metadata).catch(e => console.error(`ERROR FOR STORAGE: `, e))
+  uploadBytes(storageReference, file, metadata).catch(e => console.error(e))
 }
 
 async function readFileStorage(reference: string) {
@@ -198,19 +186,20 @@ async function deleteFileStorage(reference: string) {
 }
 
 export {
-  deleteDocumentFirestore,
-  deleteFileStorage,
-  executeFilterQueryFirestore,
-  getFilesFromRef,
   logIn,
   logOut,
-  readFileStorage,
+  onlyReadableUserSessionStore as userSessionStore,
+  userSessionInitialized,
+  writeToFirestore,
+  updateToFirestore,
   readFirestore,
   readFirestoreCollection,
-  readMetaData,
-  updateToFirestore,
+  executeFilterQueryFirestore,
+  readFirestoreIndexes,
+  deleteDocumentFirestore,
   uploadFileStorage,
-  userSessionInitialized,
-  onlyReadableUserSessionStore as userSessionStore,
-  writeToFirestore,
+  readFileStorage,
+  readMetaData,
+  getFilesFromRef,
+  deleteFileStorage,
 }

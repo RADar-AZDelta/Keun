@@ -9,7 +9,7 @@ import {
   settingsImpl,
 } from '$lib/store'
 import type { IAuthImpl, ISettingsImpl, IUpdatedFunctionalityImpl } from '$lib/components/Types'
-import type { ICustomStoreOptions } from '@radar-azdelta/svelte-datatable/components/DataTable'
+import type { ICustomStoreOptions } from '@radar-azdelta/svelte-datatable'
 
 export async function loadImplementationDB(): Promise<IUpdatedFunctionalityImpl> {
   return new Promise(async resolve => {

@@ -21,7 +21,8 @@
 
   const dispatch = createEventDispatcher<MappingEvents>()
 
-  let inputRow: Record<string, any> = originalIndex === 0 ? renderedRow : {}
+  let inputRow: Record<string, any> =
+    originalIndex === 0 ? { ...renderedRow, ...{ vocabulary_id: $settings.vocabularyIdCustomConcept ?? '' } } : {}
   let showMappingButton: boolean = true
 
   async function saveToRow(e: CustomEvent<any>) {
@@ -69,6 +70,13 @@
     const testRow = await customTable.getFullRow(0)
     if (testRow.domain_id === 'test') await customTable.deleteRows([0])
     await customTable.insertRows([concept])
+  }
+
+  const updateVocab = () => (inputRow.vocabulary_id = $settings.vocabularyIdCustomConcept)
+
+  $: {
+    $settings.vocabularyIdCustomConcept
+    updateVocab()
   }
 </script>
 

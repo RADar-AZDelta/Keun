@@ -1,14 +1,14 @@
-import { DataTypeCommonBase } from '@radar-azdelta/svelte-datatable/components/datatable/data/DataTypeCommonBase'
 import { dev } from '$app/environment'
-import type { TFilter } from '@radar-azdelta/svelte-datatable'
+import { DataTypeCommonBase } from '@radar-azdelta/svelte-datatable'
 import type {
+  TFilter,
+  IDataTypeFunctionalities,
   FetchDataFunc,
   IColumnMetaData,
-  IDataTypeFunctionalities,
-  IDataTypeInfo,
-  IRender,
   SortDirection,
-} from '@radar-azdelta/svelte-datatable/components/DataTable'
+  IRender,
+  IDataTypeInfo,
+} from '@radar-azdelta/svelte-datatable'
 
 export class AthenaDataTypeImpl extends DataTypeCommonBase implements IDataTypeFunctionalities {
   async setData(data: IDataTypeInfo): Promise<void> {
