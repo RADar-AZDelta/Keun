@@ -75,7 +75,7 @@ async function createTable() {
 }
 
 async function checkTableExistance() {
-  const query = 'SELECT name FROM sqlite_master WHERE type = \'table\' AND name= \'file\''
+  const query = "SELECT name FROM sqlite_master WHERE type = 'table' AND name= 'file'"
   const stmnt = db.prepare(query)
   const res = stmnt.get()
   return res ? true : false

@@ -18,3 +18,4 @@ public
 .firebase
 errorLogs.txt
 *.sqlite3
+/public
