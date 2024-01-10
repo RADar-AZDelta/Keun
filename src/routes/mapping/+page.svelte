@@ -169,10 +169,8 @@
   // Check if a translator exists and if not, make one
   async function createTranslator(): Promise<LatencyOptimisedTranslator> {
     if ($translator) return $translator
-    $translator = new LatencyOptimisedTranslator(
-      { workers: 1, batchSize: 1, registryUrl: 'bergamot/registry.json', html: true },
-      undefined,
-    )
+    const registryUrl = dev ? 'bergamot/dev-registry.json' : '/Keun/bergamot/registry.json'
+    $translator = new LatencyOptimisedTranslator({ workers: 1, batchSize: 1, registryUrl, html: true }, undefined)
     return $translator
   }
 
