@@ -235,7 +235,7 @@
   async function extractCustomConcepts(): Promise<void | boolean> {
     if (dev) console.log('exractCustomConcepts: start extracting the already mapped custom concepts from the table')
     const customQuery = query()
-      .filter((r: any) => r['ADD_INFO:customConcept'] === true && r.conceptId === 0)
+      .filter((r: any) => r['ADD_INFO:customConcept'] === true && !r.conceptId)
       .toObject()
     const concepts = await dataTableMapping.executeQueryAndReturnResults(customQuery)
     if (!concepts?.indices?.length) return (customsExtracted = true)
