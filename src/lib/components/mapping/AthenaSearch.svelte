@@ -66,8 +66,9 @@
   // A method that catches the event for multiple mapping and throws an event to the parent
   async function multipleMapping(row: IAthenaRow, action: string): Promise<void> {
     row.equivalence = equivalence
-    selectedRow.mappingStatus = action
-    if (!mappedToConceptIds[row.id]) Object.assign(mappedToConceptIds, { [row.id]: action })
+    // If the row and the action are the same, return to prevent duplicates
+    if (mappedToConceptIds[row.id] && mappedToConceptIds[row.id] === action) return
+    Object.assign(mappedToConceptIds, { [row.id]: action })
     dispatch('multipleMapping', { originalRow: selectedRow, row, extra: { comment, reviewer }, action })
   }
 
@@ -92,13 +93,11 @@
     const params = <Query>query().params({ code: selectedRow.sourceCode })
     const conceptsQuery = params.filter((r: any, p: any) => r.sourceCode === p.code).toObject()
     const concepts = await mainTable.executeQueryAndReturnResults(conceptsQuery)
-    console.log(concepts)
     if (!concepts.indices.length) return
     if (concepts.indices.length > 1) {
       const rowListIndex = concepts.queriedData.findIndex(
         (r: any) => r.conceptId === conceptId && r.conceptName === conceptName,
       )
-      debugger
       const originalIndex = concepts.indices[rowListIndex]
       const extraIndices = concepts.indices.filter((i: number) => i !== originalIndex)
       const updatedRows = new Map<number, Record<string, any>>()
@@ -175,7 +174,6 @@
   async function mapRow(renderedRow: IAthenaRow, action: string) {
     if ($settings.mapToMultipleConcepts) multipleMapping(renderedRow, action)
     else singleMapping(renderedRow, action)
-    selectedRow.conceptId = renderedRow.id
     const mappedRow: IMappedRow = {
       sourceCode: selectedRow.sourceCode,
       sourceName: selectedRow.sourceName,
@@ -183,8 +181,11 @@
       conceptName: renderedRow.name,
       customConcept: false,
     }
-    if ($settings.mapToMultipleConcepts) mappedData = [...mappedData, mappedRow]
-    else mappedData = [mappedRow]
+    if ($settings.mapToMultipleConcepts) {
+      const rowCopyIndex = mappedData.findIndex((value: any) => value.conceptId === mappedRow.conceptId)
+      if (rowCopyIndex >= 0) mappedData[rowCopyIndex] = mappedRow
+      else mappedData = [...mappedData, mappedRow]
+    } else mappedData = [mappedRow]
   }
 
   async function getAllMappedToConcepts() {
@@ -278,7 +279,7 @@
             <button title="Mapped to row" style="background-color: hsl(156, 100%, 35%);">
               <SvgIcon id="check" width="10px" height="10px" />
             </button>
-          {:else if mappedToConceptIds[renderedRow.id] === 'SEMI-APPROVED' && renderedRow.statusSetBy !== $user.name}
+          {:else if mappedToConceptIds[renderedRow.id] === 'SEMI-APPROVED' && selectedRow.statusSetBy !== $user.name}
             <button
               on:click={() => approveRow(renderedRow)}
               title="Approve mapping"

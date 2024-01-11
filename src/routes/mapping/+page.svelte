@@ -101,8 +101,7 @@
   async function multipleMapping(event: CustomEvent<MappingEventDetail>): Promise<void> {
     if (dev) console.log('multipleMapping: Multiple mapping for the row with sourceCode ', selectedRow.sourceCode)
     const { originalRow, row, extra, action } = event.detail
-    const { mappedRow } = await rowMapping(originalRow!, row)
-    const mappedParams = <Query>query().params({ code: mappedRow.sourceCode })
+    const mappedParams = <Query>query().params({ code: originalRow.sourceCode })
     const mappedQuery = mappedParams.filter((r: any, p: any) => r.sourceCode === p.code).toObject()
     const mapped = await dataTableMapping.executeQueryAndReturnResults(mappedQuery)
     // Add extra information like the number of concepts mapped for this row, comments & the assigned reviewer to the row
@@ -116,11 +115,18 @@
       assignedReviewer: extra.reviewer,
       vocabularyId: row.vocabulary,
     }
-    Object.assign(mappedRow, update)
     // This is the first concepts mapped to the row and the current row wil be updated
-    if (mapped.queriedData.length === 1 && !mapped.queriedData[0].conceptId)
+    if (mapped.queriedData.length === 1 && !mapped.queriedData[0].conceptId) {
+      const { mappedRow } = await rowMapping(originalRow!, row)
+      Object.assign(mappedRow, update)
       await dataTableMapping.updateRows(new Map([[mapped.indices[0], mappedRow]]))
-    else {
+    } else {
+      const existingRow = (<any[]>mapped.queriedData).findIndex((r: any) => r.conceptId === row.id)
+      const { mappedRow } = await rowMapping(originalRow!, row, false, mapped.indices[existingRow])
+      Object.assign(mappedRow, update)
+      mappedRow['ADD_INFO:numberOfConcepts'] = mapped.queriedData.length
+      if (existingRow >= 0)
+        return await dataTableMapping.updateRows(new Map([[mapped.indices[existingRow], mappedRow]]))
       // This is not the first concept mapped to the row and the current row will be added to the table and the others will be updated
       mappedRow['ADD_INFO:numberOfConcepts'] = mapped.queriedData.length + 1
       const rowsToUpdate = new Map()
@@ -219,8 +225,9 @@
     index?: number,
   ): Promise<IMapRow> {
     let rowIndex: number = index ? index : selectedRowIndex
+    const row = await dataTableMapping.getFullRow(rowIndex)
     if (dev) console.log('rowMapping: Start mapping row with index ', rowIndex)
-    let mappedUsagiRow: IUsagiRow = usagiRow
+    let mappedUsagiRow: IUsagiRow = <IUsagiRow>row ?? usagiRow
     if (!mappedUsagiRow) return { mappedIndex: rowIndex, mappedRow: mappedUsagiRow }
     // Map the import columns that are given from Athena
     mappedUsagiRow.conceptId = athenaRow.id
