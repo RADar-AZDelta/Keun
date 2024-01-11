@@ -4,7 +4,7 @@
   import { query } from 'arquero'
   import clickOutside from '$lib/obsolete/clickOutside'
   import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
-  import { settings } from '$lib/store'
+  import { settings, user } from '$lib/store'
   import { localStorageGetter } from '$lib/obsolete/utils'
   import type Query from 'arquero/dist/types/query/query'
   import { Search } from '@radar-azdelta/svelte-athena-search'
@@ -67,7 +67,7 @@
   async function multipleMapping(row: IAthenaRow, action: string): Promise<void> {
     row.equivalence = equivalence
     selectedRow.mappingStatus = action
-    if(!mappedToConceptIds[row.id]) Object.assign(mappedToConceptIds, { [row.id]: action })
+    if (!mappedToConceptIds[row.id]) Object.assign(mappedToConceptIds, { [row.id]: action })
     dispatch('multipleMapping', { originalRow: selectedRow, row, extra: { comment, reviewer }, action })
   }
 
@@ -119,10 +119,10 @@
     const { row } = e.detail
     if ($settings.mapToMultipleConcepts) {
       mappedData = [...mappedData, row]
-      Object.assign(mappedToConceptIds, { [row.conceptId]: 'SEMI-APPROVED'})
+      Object.assign(mappedToConceptIds, { [row.conceptId]: 'SEMI-APPROVED' })
     } else {
       mappedData = [row]
-      Object.assign(mappedToConceptIds, { [row.conceptId]: 'SEMI-APPROVED'})
+      Object.assign(mappedToConceptIds, { [row.conceptId]: 'SEMI-APPROVED' })
     }
     const customConcept = e.detail.row
     let mappedRow = await addExtraFields(selectedRow, false)
@@ -188,12 +188,23 @@
   }
 
   async function getAllMappedToConcepts() {
-    if (!$settings.mapToMultipleConcepts || !selectedRow?.sourceCode) return
+    if (!selectedRow?.sourceCode) return
     const params = <Query>query().params({ code: selectedRow.sourceCode })
     const rowsQuery = params.filter((r: any, p: any) => r.sourceCode === p.code).toObject()
     const rows = await mainTable.executeQueryAndReturnResults(rowsQuery)
     mappedToConceptIds = {}
-    for(const row of rows.queriedData) Object.assign(mappedToConceptIds, { [row.conceptId]: row.mappingStatus })
+    for (const row of rows.queriedData) Object.assign(mappedToConceptIds, { [row.conceptId]: row.mappingStatus })
+  }
+
+  async function approveRow(renderedRow: IAthenaRow) {
+    if (!selectedRow?.sourceCode || selectedRow.mappingStatus !== 'SEMI-APPROVED') return
+    const update = {
+      statusSetBy: $user.name,
+      statusSetOn: new Date(),
+      mappingStatus: 'APPROVED',
+    }
+    mappedToConceptIds[renderedRow.id] = 'APPROVED'
+    await mainTable.updateRows(new Map([[selectedRowIndex, update]]))
   }
 
   ///////////////////////////// MAPPED TABLE METHODS /////////////////////////////
@@ -263,37 +274,45 @@
     <section class="search-container">
       <Search {views} bind:globalFilter={globalAthenaFilter}>
         <div slot="action-athena" let:renderedRow class="actions-grid">
-            {#if mappedToConceptIds[renderedRow.id] === 'APPROVED'}
-              <button title="Mapped to row" style="background-color: hsl(156, 100%, 35%);">
-                <SvgIcon id="plus" width="10px" height="10px" />
-              </button>
-            {:else if mappedToConceptIds[renderedRow.id] === 'SEMI-APPROVED'}
-              <button title="Mapped to row" style="background-color: hsl(84, 100%, 70%);">
-                <SvgIcon id="plus" width="10px" height="10px" />
-              </button>
-            {:else}
-              <button title="Map to row" on:click={() => mapRow(renderedRow, 'SEMI-APPROVED')}>
-                <SvgIcon id="plus" width="10px" height="10px" />
-              </button>
-            {/if}
-            {#if mappedToConceptIds[renderedRow.id] === 'FLAGGED'}
-              <button title="Flagged row" style="background-color: hsl(54, 89%, 64%);">
-                <SvgIcon id="flag" width="10px" height="10px" />
-              </button>
-            {:else}
-              <button title="Flag row" on:click={() => mapRow(renderedRow, 'FLAGGED')}>
-                <SvgIcon id="flag" width="10px" height="10px" />
-              </button>
-            {/if}
-            {#if mappedToConceptIds[renderedRow.id] === 'UNAPPROVED'}
-              <button title="Unapproved row" style="background-color: hsl(8, 100%, 59%);">
-                <SvgIcon id="x" width="10px" height="10px" />
-              </button>
-            {:else}
-              <button title="Unapprove row" on:click={() => mapRow(renderedRow, 'UNAPPROVED')}>
-                <SvgIcon id="x" width="10px" height="10px" />
-              </button>
-            {/if}
+          {#if mappedToConceptIds[renderedRow.id] === 'APPROVED'}
+            <button title="Mapped to row" style="background-color: hsl(156, 100%, 35%);">
+              <SvgIcon id="check" width="10px" height="10px" />
+            </button>
+          {:else if mappedToConceptIds[renderedRow.id] === 'SEMI-APPROVED' && renderedRow.statusSetBy !== $user.name}
+            <button
+              on:click={() => approveRow(renderedRow)}
+              title="Approve mapping"
+              style="background-color: hsl(84, 100%, 70%);"
+            >
+              <SvgIcon id="check" width="10px" height="10px" />
+            </button>
+          {:else if mappedToConceptIds[renderedRow.id] === 'SEMI-APPROVED'}
+            <button title="Mapped to row" style="background-color: hsl(84, 100%, 70%);">
+              <SvgIcon id="plus" width="10px" height="10px" />
+            </button>
+          {:else}
+            <button title="Map to row" on:click={() => mapRow(renderedRow, 'SEMI-APPROVED')}>
+              <SvgIcon id="plus" width="10px" height="10px" />
+            </button>
+          {/if}
+          {#if mappedToConceptIds[renderedRow.id] === 'FLAGGED'}
+            <button title="Flagged row" style="background-color: hsl(54, 89%, 64%);">
+              <SvgIcon id="flag" width="10px" height="10px" />
+            </button>
+          {:else}
+            <button title="Flag row" on:click={() => mapRow(renderedRow, 'FLAGGED')}>
+              <SvgIcon id="flag" width="10px" height="10px" />
+            </button>
+          {/if}
+          {#if mappedToConceptIds[renderedRow.id] === 'UNAPPROVED'}
+            <button title="Unapproved row" style="background-color: hsl(8, 100%, 59%);">
+              <SvgIcon id="x" width="10px" height="10px" />
+            </button>
+          {:else}
+            <button title="Unapprove row" on:click={() => mapRow(renderedRow, 'UNAPPROVED')}>
+              <SvgIcon id="x" width="10px" height="10px" />
+            </button>
+          {/if}
           <button on:click={() => referToAthena(renderedRow.id)}>
             <SvgIcon id="link" width="10px" height="10px" />
           </button>
