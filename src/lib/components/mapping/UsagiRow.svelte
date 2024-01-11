@@ -151,7 +151,7 @@
   </div>
 </td>
 {#each columns || [] as column, _}
-  <td on:dblclick={mapRow} style={`background-color: ${color}`} title={renderedRow[column.id]}>
+  <td on:dblclick={mapRow} class="cell" style={`background-color: ${color}`} title={renderedRow[column.id]}>
     {#if ['statusSetOn', 'createdOn', 'ADD_INFO:approvedOn'].includes(column.id)}
       <p>{reformatDate(renderedRow[column.id])}</p>
     {:else if ['comment'].includes(column.id)}
@@ -163,6 +163,10 @@
 {/each}
 
 <style>
+  .cell {
+    height: 25px;
+  }
+
   .actions-cell {
     height: 100%;
   }
