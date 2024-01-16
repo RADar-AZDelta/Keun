@@ -50,33 +50,17 @@
   async function addCustomConcept() {
     if (!$settings.mapToMultipleConcepts) await checkForPreviousCustomConcept()
     const concept = inputRow
-    const params = {
-      name: concept.concept_name,
-      domain: concept.domain_id,
-      vocab: concept.vocabulary_id,
-      class: concept.concept_class_id,
-    }
-    const existanceParams = <Query>query().params(params)
-    const existanceQuery = existanceParams
-      .filter((r: any, p: any) => {
-      r.concept_name === p.name &&
-        r.domain_id === p.domain &&
-        r.vocabulary_id === p.vocab &&
-        r.concept_class_id === p.class
-    })
-      .toObject()
     const testRow = await customTable.getFullRow(0)
-    if (testRow.domain_id === 'test') await customTable.deleteRows([0])
+    if (!testRow.domain_id) await customTable.deleteRows([0])
     await customTable.insertRows([concept])
-    inputRow =
-      originalIndex === 0 ? { ...renderedRow, ...{ vocabulary_id: $settings.vocabularyIdCustomConcept ?? '' } } : {}
+    inputRow = originalIndex === 0 ? { ...renderedRow } : {}
+    updateVocab()
   }
 
-  const updateVocab = () => (inputRow.vocabulary_id = $settings.vocabularyIdCustomConcept)
+  const updateVocab = () => (inputRow.vocabulary_id = $settings.vocabularyIdCustomConcept ?? '')
 
   $: {
-    $settings.vocabularyIdCustomConcept
-    updateVocab()
+    if ($settings.vocabularyIdCustomConcept) updateVocab()
   }
 </script>
 

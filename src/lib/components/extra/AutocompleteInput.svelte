@@ -63,7 +63,7 @@
   }
 </script>
 
-<div>
+<div class="input-container">
   <input
     title={id}
     type="text"
@@ -90,6 +90,10 @@
 </div>
 
 <style>
+  .input-container {
+    position: relative;
+  }
+
   input {
     min-width: 140px;
     width: 140px;

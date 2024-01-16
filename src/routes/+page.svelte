@@ -21,13 +21,13 @@
   import { databaseImpl, databaseImplementation, selectedFileId, user } from '$lib/store'
   import type { SvelteComponent } from 'svelte'
 
-  let files: IFile[] = [],
-    file: File,
-    cols: string[] = [],
-    missing: Record<string, string> = {},
-    authorizedAuthors: string[],
-    processing: boolean = false,
-    selected: string
+  let files: IFile[] = []
+  let file: File
+  let cols: string[] = []
+  let missing: Record<string, string> = {}
+  let authorizedAuthors: string[]
+  let processing: boolean = false
+  let selected: string
 
   let fileInputDialog: SvelteComponent,
     authorsDialog: SvelteComponent,
@@ -50,9 +50,7 @@
   }
 
   // Open the input pop-up to add a file
-  async function openFileInputDialog(): Promise<void> {
-    fileInputDialog.showDialog()
-  }
+  const openFileInputDialog = async () => fileInputDialog.showDialog()
 
   // Open the pop-up to change missing columns to the correct name
   async function openColumnDialog(e: CustomEvent<ColumnsDialogShowEventDetail>): Promise<void> {
