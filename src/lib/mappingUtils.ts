@@ -11,7 +11,7 @@ import type {
 const additionalFields: IExtraUsagiCols = additionalColumns
 
 // A method to fill in the additional fields of a row
-export async function addExtraFields(row: IUsagiRow, autoMap: boolean): Promise<IUsagiRow> {
+export async function addExtraFields(row: IUsagiRow): Promise<IUsagiRow> {
   let author: string | null | undefined = ''
   user.subscribe(user => (author = user.name))
   const extra: IExtraUsagiCols = {
