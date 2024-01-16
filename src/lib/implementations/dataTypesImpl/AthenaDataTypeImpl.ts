@@ -1,5 +1,5 @@
-import { dev } from '$app/environment'
 import { DataTypeCommonBase } from '@radar-azdelta/svelte-datatable'
+import { dev } from '$app/environment'
 import type {
   TFilter,
   IDataTypeFunctionalities,
