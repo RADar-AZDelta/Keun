@@ -18,7 +18,7 @@ const login = async (page: Page, name: string = 'John Doe', onboarding: boolean 
 
 const importFile = async (page: Page, filePath: string) => {
   // Import a file from the specified path
-  await page.setInputFiles("input[type='file']", filePath)
+  await page.setInputFiles('input[type=\'file\']', filePath)
 }
 
 const enableSettings = async (
@@ -29,28 +29,28 @@ const enableSettings = async (
   // Click the settings button
   await page.getByTitle('Settings-Keun').click()
   switch (setting) {
-    case 'autoMapping':
-      // Click the automapping slider
-      await page.locator('#settings label').nth(1).click()
-      break
-    case 'mapToMultiple':
-      // Click the mapToMultiple slider
-      await page.locator('#settings label').nth(0).click()
-      break
-    case 'lang':
-      // Click the language dropdown
-      await page.locator('#settings select').click()
-      // Click the language option
-      if (settingValue !== undefined) await page.locator('#language').selectOption(settingValue)
-      break
-    case 'defaultVocab':
-      // Fill the defaultVocab input
-      if (settingValue !== undefined) await page.locator('#settings input').nth(1).fill(settingValue.toString())
-      break
-    case 'fontSize':
-      // Fill the font input
-      if (settingValue !== undefined) await page.locator('#settings input').nth(2).fill(settingValue.toString())
-      break
+  case 'autoMapping':
+    // Click the automapping slider
+    await page.locator('#settings label').nth(1).click()
+    break
+  case 'mapToMultiple':
+    // Click the mapToMultiple slider
+    await page.locator('#settings label').nth(0).click()
+    break
+  case 'lang':
+    // Click the language dropdown
+    await page.locator('#settings select').click()
+    // Click the language option
+    if (settingValue !== undefined) await page.locator('#language').selectOption(settingValue)
+    break
+  case 'defaultVocab':
+    // Fill the defaultVocab input
+    if (settingValue !== undefined) await page.locator('#settings input').nth(1).fill(settingValue.toString())
+    break
+  case 'fontSize':
+    // Fill the font input
+    if (settingValue !== undefined) await page.locator('#settings input').nth(2).fill(settingValue.toString())
+    break
   }
   // Close the dialog
   await page.getByRole('dialog').getByRole('button').click()
