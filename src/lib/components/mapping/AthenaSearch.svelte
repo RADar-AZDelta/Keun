@@ -142,7 +142,6 @@
     const conceptsParams = <Query>query().params({ code: mappedRow.sourceCode })
     const conceptsQuery = conceptsParams.filter((r: any, p: any) => r.sourceCode === p.code).toObject()
     const concepts = await mainTable.executeQueryAndReturnResults(conceptsQuery)
-    // Update the test row if it is still in there
     if (concepts.queriedData.length === 1 && !concepts.queriedData[0].conceptName)
       return await mainTable.updateRows(new Map([[selectedRowIndex, mappedRow]]))
 
