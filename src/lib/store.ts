@@ -12,8 +12,6 @@ import {
   loadImplementationSettings,
 } from '$lib/implementations/implementation'
 import type { IAuthImpl, ISettings, ISettingsImpl, IUpdatedFunctionalityImpl, IUser } from '$lib/components/Types'
-// @ts-expect-error Typescript issue that the package does not export .d.ts files
-import type { LatencyOptimisedTranslator } from '@browsermt/bergamot-translator/translator.js'
 import type { ICustomStoreOptions, IDataTypeFunctionalities } from '@radar-azdelta/svelte-datatable'
 import type { User } from 'firebase/auth'
 
@@ -45,8 +43,6 @@ export const customFileTypeImpl = writable<IDataTypeFunctionalities | undefined>
 export const selectedFileId = writable<string>()
 
 export const abortAutoMapping = writable<boolean>(false)
-
-export const translator = writable<LatencyOptimisedTranslator>()
 
 loadImplementationDB()
 loadImplementationAuth()

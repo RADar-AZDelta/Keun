@@ -108,8 +108,8 @@ export default class LocalImpl implements IUpdatedFunctionalityImpl {
   private async downloadCustomFile(fileId: string) {
     await this.openCustomDatabase()
     const customFileInfo = await this.customDb?.get(fileId, true, true)
-    if (!customFileInfo || !customFileInfo.content) return
-    if (customFileInfo.content.includes('0,test,test,test,test,S,123')) return
+    if (!customFileInfo?.content) return
+    if (customFileInfo.content.includes(',,,,,,,,,')) return
     const customBlob = await stringToBlob(customFileInfo.content)
     const customFile = new File([customBlob], customFileInfo.name, { type: 'text/csv' })
     const updatedName = customFile.name.split('.')[0] + '_concept.csv'

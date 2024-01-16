@@ -3,17 +3,17 @@
   import { base } from '$app/paths'
   import { page } from '$app/stores'
   import { beforeNavigate, goto } from '$app/navigation'
-  import { browser, dev } from '$app/environment'
+  import { dev } from '$app/environment'
   import { query } from 'arquero'
   import type Query from 'arquero/dist/types/query/query'
   import type { IColumnMetaData, ITableOptions } from '@radar-azdelta/svelte-datatable'
   import DataTable from '@radar-azdelta/svelte-datatable'
-  // @ts-ignore
-  import { LatencyOptimisedTranslator } from '@browsermt/bergamot-translator/translator.js'
   import { reformatDate } from '$lib/obsolete/utils'
+  import { BergamotTranslator } from '$lib/helperClasses/BergamotTranslator'
   import { addExtraFields } from '$lib/mappingUtils'
+  import options from '$lib/data/tableOptions.json'
   import { abortAutoMapping, customFileTypeImpl, databaseImpl, fileTypeImpl, saveImpl } from '$lib/store'
-  import { selectedFileId, settings, translator, triggerAutoMapping, user } from '$lib/store'
+  import { selectedFileId, settings, triggerAutoMapping, user } from '$lib/store'
   import {
     loadImplementationDB,
     loadImplementationDataType,
@@ -31,54 +31,37 @@
     NavigateRowEventDetail,
   } from '$lib/components/Types'
 
-  // General variables
-  let file: File | undefined = undefined,
-    customConceptsFile: File | undefined = undefined,
-    customTableOptions: ITableOptions = { id: 'customConceptsTable', saveOptions: false },
-    disabled: boolean = false,
-    customsExtracted: boolean = false
-
-  let tableOptions: ITableOptions = {
-    id: $page.url.searchParams.get('id') ? $page.url.searchParams.get('id')! : '',
-    rowsPerPage: 15,
-    rowsPerPageOptions: [5, 10, 15, 20, 50, 70, 100],
-    actionColumn: true,
-    paginationOnTop: true,
-    saveOptions: false,
-  }
-
-  let search: SvelteComponent
-
-  setupDataTable()
-
-  // Athena related variables
-  let mappingUrl: string = import.meta.env.VITE_MAPPINGDATA_PATH,
-    lastTypedFilter: string,
-    globalAthenaFilter: { column: string; filter: string | undefined } = { column: 'all', filter: undefined }
-
-  // Table related variables
-  let currentVisibleRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>(),
-    selectedRow: IUsagiRow,
-    selectedRowIndex: number,
-    previousPage: number
-
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // DATA
   ///////////////////////////////////////////////////////////////////////////////////////////////
-
-  let dataTableMapping: DataTable,
-    dataTableCustomConcepts: DataTable,
-    autoMappingAbortController: AbortController,
-    autoMappingPromise: Promise<void> | undefined
+  // Files & generals
+  let file: File | undefined, customConceptsFile: File | undefined
+  let customTableOptions: ITableOptions = { id: 'customConceptsTable', saveOptions: false }
+  let disabled: boolean = false
+  let customsExtracted: boolean = false
+  let translator: BergamotTranslator = new BergamotTranslator()
+  // Tables
+  let dataTableMapping: DataTable, dataTableCustomConcepts: DataTable
+  let tableOptions: ITableOptions = { ...options, id: $page.url.searchParams.get('id') ?? '' }
+  // Automapping
+  let autoMappingAbortController: AbortController, autoMappingPromise: Promise<void> | undefined
+  // Table related variables
+  let currentVisibleRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>()
+  let selectedRow: IUsagiRow, selectedRowIndex: number, previousPage: number
+  // Athena related variables
+  let search: SvelteComponent
+  const mappingUrl: string = import.meta.env.VITE_MAPPINGDATA_PATH
+  let lastTypedFilter: string
+  let globalAthenaFilter: { column: string; filter: string | undefined } = { column: 'all', filter: undefined }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // EVENTS
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
   // When the mapping button in the Athena pop-up is clicked and the settins "Map to multiple concepts" is disabled
-  async function singleMapping(event: CustomEvent<MappingEventDetail>): Promise<void> {
+  async function singleMapping(e: CustomEvent<MappingEventDetail>): Promise<void> {
     if (dev) console.log('singleMapping: Single mapping for the row with sourceCode ', selectedRow.sourceCode)
-    const { originalRow, row, extra, action } = event.detail
+    const { originalRow, row, extra, action } = e.detail
     // Map the selected row with the selected concept
     const { mappedIndex, mappedRow } = await rowMapping(originalRow, row)
     // Add extra information like the number of concepts mapped for this row, comments & the assigned reviewer to the row
@@ -98,9 +81,9 @@
   }
 
   // When the mapping button in the Athena pop-up is clicked and the settins "Map to multiple concepts" is enabled
-  async function multipleMapping(event: CustomEvent<MappingEventDetail>): Promise<void> {
+  async function multipleMapping(e: CustomEvent<MappingEventDetail>): Promise<void> {
     if (dev) console.log('multipleMapping: Multiple mapping for the row with sourceCode ', selectedRow.sourceCode)
-    const { originalRow, row, extra, action } = event.detail
+    const { originalRow, row, extra, action } = e.detail
     const mappedParams = <Query>query().params({ code: originalRow.sourceCode })
     const mappedQuery = mappedParams.filter((r: any, p: any) => r.sourceCode === p.code).toObject()
     const mapped = await dataTableMapping.executeQueryAndReturnResults(mappedQuery)
@@ -122,7 +105,7 @@
       await dataTableMapping.updateRows(new Map([[mapped.indices[0], mappedRow]]))
     } else {
       const existingRow = (<any[]>mapped.queriedData).findIndex((r: any) => r.conceptId === row.id)
-      const { mappedRow } = await rowMapping(originalRow!, row, false, mapped.indices[existingRow])
+      const { mappedRow } = await rowMapping(originalRow!, row, mapped.indices[existingRow])
       Object.assign(mappedRow, update)
       mappedRow['ADD_INFO:numberOfConcepts'] = mapped.queriedData.length
       if (existingRow >= 0)
@@ -138,8 +121,8 @@
     }
   }
 
-  async function navigateRow(event: CustomEvent<NavigateRowEventDetail>) {
-    const { row, index } = event.detail
+  async function navigateRow(e: CustomEvent<NavigateRowEventDetail>) {
+    const { row, index } = e.detail
     selectedRowIndex = index
     selectedRow = row
     const translation = await translate(selectedRow.sourceName)
@@ -147,8 +130,8 @@
   }
 
   // When the button to automap a single row is clicked, automap the row
-  async function autoMapSingleRow(event: CustomEvent<AutoMapRowEventDetail>): Promise<void> {
-    const { index } = event.detail
+  async function autoMapSingleRow(e: CustomEvent<AutoMapRowEventDetail>): Promise<void> {
+    const { index } = e.detail
     if (dev) console.log('autoMapSingleRow: automap the row with index ', index)
     if (autoMappingPromise) autoMappingAbortController.abort()
     autoMappingAbortController = new AbortController()
@@ -157,6 +140,16 @@
       const row = await dataTableMapping.getFullRow(index)
       await autoMapRow(signal, row as IUsagiRow, index)
     })
+  }
+
+  // Select the new navigated row to open in the search dialog
+  async function selectRow(e: CustomEvent<RowSelectionEventDetail>) {
+    if (autoMappingPromise) autoMappingAbortController.abort()
+    const { row, index } = e.detail
+    selectedRow = row
+    selectedRowIndex = index
+    globalAthenaFilter.filter = await translate(row.sourceName)
+    search.showDialog()
   }
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
@@ -172,23 +165,7 @@
     if ($customFileTypeImpl) customTableOptions.dataTypeImpl = $customFileTypeImpl
   }
 
-  // Check if a translator exists and if not, make one
-  async function createTranslator(): Promise<LatencyOptimisedTranslator> {
-    if ($translator) return $translator
-    const registryUrl = dev ? 'bergamot/dev-registry.json' : '/Keun/bergamot/registry.json'
-    $translator = new LatencyOptimisedTranslator({ workers: 1, batchSize: 1, registryUrl, html: true }, undefined)
-    return $translator
-  }
-
-  // A method to translate text
-  async function translate(text: string): Promise<string | undefined> {
-    if (!browser) return undefined
-    // Check the settings and if the language set is not english, translate the text
-    if (!$settings?.language || $settings.language === 'en') return text
-    const translator = await createTranslator()
-    let translation = await translator.translate({ from: $settings!.language, to: 'en', text: text, html: true })
-    return translation.target.text
-  }
+  const translate = async (text: string) => await translator.translate(text, $settings.language)
 
   // A method to automatically map a given row
   async function autoMapRow(signal: AbortSignal, row: IUsagiRow, index: number): Promise<void> {
@@ -209,7 +186,7 @@
     const conceptsData = await conceptsResult.json()
     if (!conceptsData.content?.length) return console.error('autoMapRow: Could not get the concepts from the API')
     // Map the row with the first result
-    const { mappedIndex, mappedRow } = await rowMapping(row, conceptsData.content[0], true, index)
+    const { mappedIndex, mappedRow } = await rowMapping(row, conceptsData.content[0], index)
     mappedRow['ADD_INFO:numberOfConcepts'] = row['ADD_INFO:numberOfConcepts']
     mappedRow['ADD_INFO:lastAthenaFilter'] = filter ? filter : null
     if (signal.aborted) return
@@ -218,23 +195,20 @@
   }
 
   // A method to map a certain row to a given Athena concept
-  async function rowMapping(
-    usagiRow: IUsagiRow,
-    athenaRow: IAthenaRow,
-    autoMap = false,
-    index?: number,
-  ): Promise<IMapRow> {
-    let rowIndex: number = index ? index : selectedRowIndex
+  async function rowMapping(usagi: IUsagiRow, athena: IAthenaRow, index?: number): Promise<IMapRow> {
+    // Check if index is undefined because if !index --> row with index 0 won't be automapped
+    let rowIndex: number = index !== undefined ? index : selectedRowIndex
     const row = await dataTableMapping.getFullRow(rowIndex)
     if (dev) console.log('rowMapping: Start mapping row with index ', rowIndex)
-    let mappedUsagiRow: IUsagiRow = <IUsagiRow>row ?? usagiRow
+    let mappedUsagiRow: IUsagiRow = <IUsagiRow>row ?? usagi
     if (!mappedUsagiRow) return { mappedIndex: rowIndex, mappedRow: mappedUsagiRow }
     // Map the import columns that are given from Athena
-    mappedUsagiRow.conceptId = athenaRow.id
-    mappedUsagiRow.conceptName = athenaRow.name
-    mappedUsagiRow.domainId = athenaRow.domain
-    mappedUsagiRow.vocabularyId = athenaRow.vocabulary
-    mappedUsagiRow = await addExtraFields(mappedUsagiRow, autoMap)
+    const { id, name, domain, vocabulary } = athena
+    mappedUsagiRow.conceptId = id
+    mappedUsagiRow.conceptName = name
+    mappedUsagiRow.domainId = domain
+    mappedUsagiRow.vocabularyId = vocabulary
+    mappedUsagiRow = await addExtraFields(mappedUsagiRow)
     if (dev) console.log('rowMapping: Finished mapping row with index ', rowIndex)
     return { mappedIndex: rowIndex, mappedRow: mappedUsagiRow }
   }
@@ -249,13 +223,14 @@
     const testRow = await dataTableCustomConcepts.getFullRow(0)
     if (testRow?.domain_id === 'test') await dataTableCustomConcepts.deleteRows([0])
     for (let concept of concepts.queriedData) {
+      const { conceptId, sourceName, conceptName, className, domainId, vocabularyId } = concept
       const custom: ICustomConceptInput = {
-        concept_id: concept.conceptId,
-        concept_code: concept.sourceName,
-        concept_name: concept.conceptName,
-        concept_class_id: concept.className,
-        domain_id: concept.domainId,
-        vocabulary_id: concept.vocabularyId,
+        concept_id: conceptId,
+        concept_code: sourceName,
+        concept_name: conceptName,
+        concept_class_id: className,
+        domain_id: domainId,
+        vocabulary_id: vocabularyId,
         standard_concept: '',
         valid_start_date: reformatDate(),
         valid_end_date: '2099-12-31',
@@ -270,8 +245,7 @@
   async function abortAutoMap(): Promise<void> {
     if (dev) console.log('abortAutoMap: Aborting auto mapping')
     // Enable the interaction with the DataTable
-    disabled = false
-    dataTableMapping.setDisabled(false)
+    disabled = dataTableMapping.setDisabled(false)
     if (autoMappingPromise) autoMappingAbortController.abort()
     $abortAutoMapping = false
     // Check previous page and current page
@@ -290,21 +264,23 @@
     autoMappingAbortController = new AbortController()
     const signal = autoMappingAbortController.signal
     autoMappingPromise = autoMapPromise(signal).then(() => {
-      disabled = false
+      disabled = dataTableMapping.setDisabled(false)
     })
   }
 
   // Automap all the rows that are visible
   async function autoMapPromise(signal: AbortSignal) {
     const pag = dataTableMapping.getTablePagination()
-    if (!pag.currentPage || !pag.rowsPerPage) return
+    const { currentPage, rowsPerPage } = pag
+    if (!currentPage || !rowsPerPage) return
     // Get the rows that are visible for the user
-    previousPage = pag.currentPage
-    const startIndex = pag.rowsPerPage * (pag.currentPage - 1)
-    const endingIndex = pag.rowsPerPage * pag.currentPage
+    previousPage = currentPage
+    const startIndex = rowsPerPage * (currentPage - 1)
+    const endingIndex = rowsPerPage * currentPage
+    console.log("START ", startIndex)
     const conceptsQuery = query().slice(startIndex, endingIndex).toObject()
     const concepts = await dataTableMapping.executeQueryAndReturnResults(conceptsQuery)
-    if (concepts.queriedData.length) disabled = true
+    if (concepts.queriedData.length) disabled = dataTableMapping.setDisabled(true)
     for (let i = 0; i < concepts.queriedData.length; i++) {
       if (signal.aborted) return Promise.resolve()
       const row = concepts.queriedData[i]
@@ -364,19 +340,6 @@
     if (!urlId) return goto(`${base}/`)
     $selectedFileId = urlId
     readFile()
-    // setupWatch()
-  }
-
-  // Select the new navigated row to open in the search dialog
-  async function selectRow(event: CustomEvent<RowSelectionEventDetail>) {
-    if (autoMappingPromise) autoMappingAbortController.abort()
-    const { row, index } = event.detail
-    selectedRow = row
-    selectedRowIndex = index
-    const sourceName = row.sourceName
-    const translation = await translate(sourceName)
-    globalAthenaFilter.filter = typeof translation == 'string' ? translation : sourceName
-    search.showDialog()
   }
 
   // Sync the file to the cloud implementation
@@ -450,6 +413,8 @@
   // Sync the file to the database implementation before leaving the page
   // Note: this does not always work so for that reason, there is a save button provided
   beforeNavigate(async () => await syncFile())
+
+  setupDataTable()
 </script>
 
 <svelte:head>
