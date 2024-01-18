@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   '@radar-azdelta/svelte-athena-search':
-    specifier: ^0.0.24
-    version: 0.0.24(@sveltejs/vite-plugin-svelte@3.0.1)(svelte@4.2.8)(vite@5.0.10)
+    specifier: ^0.0.29
+    version: 0.0.29(@sveltejs/vite-plugin-svelte@3.0.1)(svelte@4.2.8)(vite@5.0.10)
   '@radar-azdelta/svelte-datatable':
     specifier: ^0.0.67
     version: 0.0.67(svelte@4.2.8)
@@ -948,12 +948,12 @@ packages:
     resolution: {integrity: sha512-Vvn3zZrhQZkkBE8LSuW3em98c0FwgO4nxzv6OdSxPKJIEKY2bGbHn+mhGIPerzI4twdxaP8/0+06HBpwf345Lw==}
     dev: false
 
-  /@radar-azdelta/svelte-athena-search@0.0.24(@sveltejs/vite-plugin-svelte@3.0.1)(svelte@4.2.8)(vite@5.0.10):
-    resolution: {integrity: sha512-Ht5qtcu3nuqf5oIPcIjZyCj/CI1AwKxz6rQlRA6jJpgmK3ss/OYd4moSVe8F3cCgDks05rGyDd+YaM86MroiFw==}
+  /@radar-azdelta/svelte-athena-search@0.0.29(@sveltejs/vite-plugin-svelte@3.0.1)(svelte@4.2.8)(vite@5.0.10):
+    resolution: {integrity: sha512-vMpdcstOZK21GskHHGI3t6v/vhddzqNf5fknjMlJRL0/XTE1KRHOOooOSHxVhKf3JC2xjehlHlTN0ZYX6aOIPA==}
     peerDependencies:
       svelte: ^4.0.0
     dependencies:
-      '@radar-azdelta/svelte-datatable': 0.0.66(svelte@4.2.8)
+      '@radar-azdelta/svelte-datatable': 0.0.67(svelte@4.2.8)
       '@sveltejs/kit': 2.0.6(@sveltejs/vite-plugin-svelte@3.0.1)(svelte@4.2.8)(vite@5.0.10)
       lodash.debounce: 4.0.8
       svelte: 4.2.8
@@ -961,21 +961,6 @@ packages:
       - '@sveltejs/vite-plugin-svelte'
       - encoding
       - vite
-    dev: false
-
-  /@radar-azdelta/svelte-datatable@0.0.66(svelte@4.2.8):
-    resolution: {integrity: sha512-LeXntlGIper9iYGlTEjXaQ1TNEYKqsf3+TSDfhA9o29TgJmgx4JFNizEeZqLotcVIXnqK58eee0vw15MKQRPpA==}
-    peerDependencies:
-      svelte: ^4.0.0
-    dependencies:
-      arquero: 5.4.0
-      comlink: 4.4.1
-      esm-env: 1.0.0
-      lodash.debounce: 4.0.8
-      lodash.isequal: 4.5.0
-      svelte: 4.2.8
-    transitivePeerDependencies:
-      - encoding
     dev: false
 
   /@radar-azdelta/svelte-datatable@0.0.67(svelte@4.2.8):
