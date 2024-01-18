@@ -23,8 +23,6 @@
 
   let color: string = 'inherit'
 
-  currentVisibleRows.set(index, renderedRow)
-
   // Send a request to the parent that a row is selected to map
   async function mapRow(): Promise<void> {
     if (dev) console.log(`mapRow: ${index}`)
@@ -135,6 +133,7 @@
 
   $: {
     renderedRow, index
+    currentVisibleRows.set(index, renderedRow)
     setPreset()
   }
 </script>
