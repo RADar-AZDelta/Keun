@@ -95,6 +95,7 @@
     cursor: pointer;
     border: none;
   }
+  
   .sidebar-left {
     height: 100%;
     border-left: 1px solid #cecece;
@@ -105,6 +106,7 @@
     height: 100%;
     display: flex;
     flex-direction: column;
+    justify-content: start;
     gap: 1rem;
     cursor: pointer;
     border: none;
