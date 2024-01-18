@@ -189,7 +189,6 @@
     const { mappedIndex, mappedRow } = await rowMapping(row, conceptsData.content[0], index)
     mappedRow['ADD_INFO:numberOfConcepts'] = row['ADD_INFO:numberOfConcepts']
     mappedRow['ADD_INFO:lastAthenaFilter'] = filter ? filter : null
-    mappedRow.conceptId = 0
     if (signal.aborted) return
     await dataTableMapping.updateRows(new Map([[mappedIndex, mappedRow]]))
     if (dev) console.log('autoMapRow: Finished automapping row with index ', index)
