@@ -124,7 +124,7 @@
       Object.assign(mappedToConceptIds, { [row.conceptId]: 'SEMI-APPROVED' })
     }
     const customConcept = e.detail.row
-    let mappedRow = await addExtraFields(selectedRow, false)
+    let mappedRow = await addExtraFields(selectedRow)
     const update: IUsagiAllExtra = {
       conceptId: customConcept.conceptId,
       conceptName: customConcept.conceptName,

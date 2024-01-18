@@ -189,6 +189,7 @@
     const { mappedIndex, mappedRow } = await rowMapping(row, conceptsData.content[0], index)
     mappedRow['ADD_INFO:numberOfConcepts'] = row['ADD_INFO:numberOfConcepts']
     mappedRow['ADD_INFO:lastAthenaFilter'] = filter ? filter : null
+    mappedRow.conceptId = 0
     if (signal.aborted) return
     await dataTableMapping.updateRows(new Map([[mappedIndex, mappedRow]]))
     if (dev) console.log('autoMapRow: Finished automapping row with index ', index)
@@ -277,7 +278,6 @@
     previousPage = currentPage
     const startIndex = rowsPerPage * (currentPage - 1)
     const endingIndex = rowsPerPage * currentPage
-    console.log("START ", startIndex)
     const conceptsQuery = query().slice(startIndex, endingIndex).toObject()
     const concepts = await dataTableMapping.executeQueryAndReturnResults(conceptsQuery)
     if (concepts.queriedData.length) disabled = dataTableMapping.setDisabled(true)
