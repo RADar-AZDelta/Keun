@@ -124,7 +124,7 @@
       Object.assign(mappedToConceptIds, { [row.conceptId]: 'SEMI-APPROVED' })
     }
     const customConcept = e.detail.row
-    let mappedRow = await addExtraFields(selectedRow, false)
+    let mappedRow = await addExtraFields(selectedRow)
     const update: IUsagiAllExtra = {
       conceptId: customConcept.conceptId,
       conceptName: customConcept.conceptName,
@@ -272,7 +272,7 @@
   <div class="dialog-container" use:clickOutside on:outClick={closeDialog}>
     <button class="close-dialog" on:click={closeDialog}><SvgIcon id="x" /></button>
     <section class="search-container">
-      <Search {views} bind:globalFilter={globalAthenaFilter}>
+      <Search {views} bind:globalFilter={globalAthenaFilter} showFilters={true}>
         <div slot="action-athena" let:renderedRow class="actions-grid">
           {#if mappedToConceptIds[renderedRow.id] === 'APPROVED'}
             <button title="Mapped to row" style="background-color: hsl(156, 100%, 35%);">
