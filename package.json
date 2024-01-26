@@ -43,7 +43,7 @@
   },
   "type": "module",
   "dependencies": {
-    "@radar-azdelta/svelte-athena-search": "^0.0.29",
+    "@radar-azdelta/svelte-athena-search": "^0.0.31",
     "@radar-azdelta/svelte-datatable": "^0.0.67",
     "arquero": "^5.2.0",
     "better-sqlite3": "^9.1.1",
