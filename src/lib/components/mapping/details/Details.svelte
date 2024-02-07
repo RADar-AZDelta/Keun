@@ -11,9 +11,9 @@
   const dispatch = createEventDispatcher<MappingEvents>()
 
   let show: boolean = false
-  let reviewer: string = usagiRow.assignedReviewer ?? ''
-  let comments: string = usagiRow.comment ?? ''
-  let equivalence: string = usagiRow.equivalence ?? 'EQUAL'
+  let reviewer: string = usagiRow?.assignedReviewer ?? ''
+  let comments: string = usagiRow?.comment ?? ''
+  let equivalence: string = usagiRow?.equivalence ?? 'EQUAL'
 
   const showDetail = (value: boolean) => (show = value)
 
