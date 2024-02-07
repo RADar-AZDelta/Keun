@@ -180,6 +180,8 @@
       conceptName: renderedRow.name,
       customConcept: false,
     }
+    selectedRow.conceptName = renderedRow.name
+    selectedRow.conceptId = renderedRow.id
     if ($settings.mapToMultipleConcepts) {
       const rowCopyIndex = mappedData.findIndex((value: any) => value.conceptId === mappedRow.conceptId)
       if (rowCopyIndex >= 0) mappedData[rowCopyIndex] = mappedRow
