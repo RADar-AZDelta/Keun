@@ -329,7 +329,7 @@
           <MappedView {mappedData} on:removeMapping={removeMapping} />
         </div>
         <div slot="rightSlot">
-          <Details on:updateDetails={onUpdateDetails} on:equivalenceChange={equivalenceChange} />
+          <Details usagiRow={selectedRow} on:updateDetails={onUpdateDetails} on:equivalenceChange={equivalenceChange} />
         </div>
       </Search>
     </section>
