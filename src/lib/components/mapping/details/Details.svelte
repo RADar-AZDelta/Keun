@@ -4,14 +4,16 @@
   import debounce from 'lodash.debounce'
   import Equivalence from '$lib/components/mapping/details/Equivalence.svelte'
   import AutocompleteInputSettings from '$lib/components/extra/AutocompleteInputSettings.svelte'
-  import type { AutoCompleteShortEventDetail, EquivalenceChangeEventDetail, MappingEvents } from '$lib/components/Types'
+  import type { AutoCompleteShortEventDetail, EquivalenceChangeEventDetail, IUsagiRow, MappingEvents } from '$lib/components/Types'
+
+  export let usagiRow: IUsagiRow
 
   const dispatch = createEventDispatcher<MappingEvents>()
 
   let show: boolean = false
-  let reviewer: string = ''
-  let comments: string = ''
-  let equivalence: string = 'EQUAL'
+  let reviewer: string = usagiRow.assignedReviewer ?? ''
+  let comments: string = usagiRow.comment ?? ''
+  let equivalence: string = usagiRow.equivalence ?? 'EQUAL'
 
   const showDetail = (value: boolean) => (show = value)
 
@@ -95,7 +97,7 @@
     cursor: pointer;
     border: none;
   }
-  
+
   .sidebar-left {
     height: 100%;
     border-left: 1px solid #cecece;
