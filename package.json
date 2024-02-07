@@ -18,7 +18,7 @@
     "@playwright/test": "^1.39.0",
     "@sveltejs/adapter-auto": "^3.0.0",
     "@sveltejs/adapter-static": "^3.0.0",
-    "@sveltejs/kit": "^2.0.0",
+    "@sveltejs/kit": "^2.4.3",
     "@sveltejs/package": "^2.2.2",
     "@sveltejs/vite-plugin-svelte": "^3.0.0",
     "@types/better-sqlite3": "^7.6.7",
