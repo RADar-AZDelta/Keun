@@ -19,7 +19,7 @@
     const indexParams = <Query>query().params({
       code: selectedRow.sourceCode,
       name: selectedRow.sourceName,
-      concept: selectedRow.conceptName === 'Unmapped' ? undefined : selectedRow.conceptName,
+      concept: selectedRow.conceptName === 'Unmapped' ? undefined : selectedRow.conceptName ?? undefined,
       concept2: selectedRow.conceptName === 'Unmapped' ? null : selectedRow.conceptName,
     })
     const indexQuery = indexParams
