@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   '@radar-azdelta/svelte-athena-search':
-    specifier: ^0.0.31
-    version: 0.0.31(@sveltejs/vite-plugin-svelte@3.0.1)(svelte@4.2.8)(vite@5.0.10)
+    specifier: ^0.0.32
+    version: 0.0.32(@sveltejs/vite-plugin-svelte@3.0.1)(svelte@4.2.8)(vite@5.0.10)
   '@radar-azdelta/svelte-datatable':
     specifier: ^0.0.67
     version: 0.0.67(svelte@4.2.8)
@@ -948,8 +948,8 @@ packages:
     resolution: {integrity: sha512-Vvn3zZrhQZkkBE8LSuW3em98c0FwgO4nxzv6OdSxPKJIEKY2bGbHn+mhGIPerzI4twdxaP8/0+06HBpwf345Lw==}
     dev: false
 
-  /@radar-azdelta/svelte-athena-search@0.0.31(@sveltejs/vite-plugin-svelte@3.0.1)(svelte@4.2.8)(vite@5.0.10):
-    resolution: {integrity: sha512-7cGi8eUCQ2lhZ40Q3KgEkxY0DLUIvHCWkfAeuGuTpgaZEVKAs2/u1pFqlCPETgIvmKofK4BEUe6WCt2XCpy2BQ==}
+  /@radar-azdelta/svelte-athena-search@0.0.32(@sveltejs/vite-plugin-svelte@3.0.1)(svelte@4.2.8)(vite@5.0.10):
+    resolution: {integrity: sha512-lIddVMav0hmnWOUVkAjocMwHpx57GXqk+A7lQ+PwZvW+JSqO7rNoHZ9y6b99UCbr60VlqvWXXpqdiZhGW43WWw==}
     peerDependencies:
       svelte: ^4.0.0
     dependencies:
