@@ -2,7 +2,7 @@
   import { beforeNavigate } from '$app/navigation'
   import { base } from '$app/paths'
   import { page } from '$app/stores'
-  import Manual from '$lib/obsolete/Manual.svelte'
+  import Manual from '$lib/components/extra/Manual.svelte'
   import Header from '$lib/components/extra/Header.svelte'
   import Settings from '$lib/components/extra/Settings.svelte'
   import User from '$lib/components/extra/User.svelte'

@@ -2,14 +2,14 @@
   import { createEventDispatcher } from 'svelte'
   import DataTable, { type ITableOptions } from '@radar-azdelta/svelte-datatable'
   import { query } from 'arquero'
-  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
   import { settings } from '$lib/store'
-  import { reformatDate } from '$lib/obsolete/utils'
+  import { reformatDate } from '@radar-azdelta/radar-utils'
   import customColumns from '$lib/data/columnsCustomConcept.json'
   import InputRow from '$lib/components/mapping/views/InputRow.svelte'
   import type Query from 'arquero/dist/types/query/query'
   import type { ICustomConceptInput, IUsagiRow, MappingEvents } from '$lib/components/Types'
   import type { CustomMappingInputEventDetail, UpdateErrorEventDetail } from '$lib/components/Types'
+  import { SvgIcon } from '@radar-azdelta/radar-svelte-components'
 
   export let selectedRow: IUsagiRow, customTable: DataTable
 

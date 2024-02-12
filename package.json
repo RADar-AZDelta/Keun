@@ -11,7 +11,8 @@
     "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
     "check:watch": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json --watch",
     "lint": "pnpm format && prettier . --check . && eslint . --fix",
-    "format": "prettier . --write ."
+    "format": "prettier . --write .",
+    "artifactregistry-login": "npx google-artifactregistry-auth"
   },
   "devDependencies": {
     "@browsermt/bergamot-translator": "^0.4.9",
@@ -43,6 +44,9 @@
   },
   "type": "module",
   "dependencies": {
+    "@radar-azdelta/radar-firebase-utils": "^0.0.14",
+    "@radar-azdelta/radar-svelte-components": "^0.0.13",
+    "@radar-azdelta/radar-utils": "^0.0.6",
     "@radar-azdelta/svelte-athena-search": "^0.0.32",
     "@radar-azdelta/svelte-datatable": "^0.0.67",
     "arquero": "^5.2.0",

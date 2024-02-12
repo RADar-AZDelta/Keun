@@ -17,8 +17,8 @@
   import FirebaseImpl from '$lib/components/menu/FirebaseImpl.svelte'
   import LocalImpl from '$lib/components/menu/LocalImpl.svelte'
   import { loadImplementationDB } from '$lib/implementations/implementation'
-  import Spinner from '$lib/obsolete/Spinner.svelte'
   import { databaseImpl, databaseImplementation, selectedFileId, user } from '$lib/store'
+  import { Spinner } from '@radar-azdelta/radar-svelte-components'
   import type { SvelteComponent } from 'svelte'
 
   let files: IFile[] = []

@@ -1,11 +1,11 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
   import { query } from 'arquero'
-  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
   import ShowColumnsDialog from '$lib/components/mapping/ShowColumnsDialog.svelte'
   import type Query from 'arquero/dist/types/query/query'
   import type DataTable from '@radar-azdelta/svelte-datatable'
   import type { ITablePagination, IUsagiRow, MappingEvents, ShowColumnsEventDetail } from '$lib/components/Types'
+  import { SvgIcon } from '@radar-azdelta/radar-svelte-components'
 
   export let selectedRow: IUsagiRow, mainTable: DataTable
 

@@ -1,7 +1,7 @@
+import { blobToString, downloadWithUrl, fileToBlob, stringToFile } from '@radar-azdelta/radar-utils'
 import { dev } from '$app/environment'
 import { base } from '$app/paths'
 import initial from '$lib/data/customBlobInitial.json'
-import { blobToString, downloadWithUrl, fileToBlob, stringToFile } from '$lib/obsolete/utils'
 import type { IConceptFiles, IFile, IMessage, IUpdatedFunctionalityImpl } from '$lib/components/Types'
 
 export default class SQLiteImpl implements IUpdatedFunctionalityImpl {

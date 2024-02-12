@@ -3,9 +3,9 @@
   import { goto } from '$app/navigation'
   import { base } from '$app/paths'
   import { createEventDispatcher } from 'svelte'
-  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
   import { selectedFileId } from '$lib/store'
   import type { IFile, PageEvents } from '$lib/components/Types'
+  import { SvgIcon } from '@radar-azdelta/radar-svelte-components'
 
   export let files: IFile[]
 

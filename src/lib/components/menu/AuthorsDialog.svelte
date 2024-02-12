@@ -1,8 +1,8 @@
 <script lang="ts">
   import { dev } from '$app/environment'
-  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
   import { authImpl, databaseImpl } from '$lib/store'
   import { loadImplementationDB } from '$lib/implementations/implementation'
+  import { SvgIcon } from '@radar-azdelta/radar-svelte-components'
 
   export let processing: boolean, selected: string
 

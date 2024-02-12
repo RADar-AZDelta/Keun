@@ -2,7 +2,6 @@
   import { createEventDispatcher } from 'svelte'
   import type DataTable from '@radar-azdelta/svelte-datatable'
   import { query } from 'arquero'
-  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
   import { settings } from '$lib/store'
   import suggestions from '$lib/data/customConceptInfo.json'
   import { transformFromCustomRowToUsagiRow } from '$lib/mappingUtils'
@@ -10,6 +9,7 @@
   import type Query from 'arquero/dist/types/query/query'
   import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
   import type { ICustomConceptInput, MappingEvents } from '$lib/components/Types'
+  import { SvgIcon } from '@radar-azdelta/radar-svelte-components'
 
   export let renderedRow: Record<string, any>,
     columns: IColumnMetaData[] | undefined,

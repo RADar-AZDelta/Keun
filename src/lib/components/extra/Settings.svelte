@@ -1,6 +1,5 @@
 <script lang="ts">
-  import clickOutside from '$lib/obsolete/clickOutside'
-  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
+  import { SvgIcon, clickOutside } from '@radar-azdelta/radar-svelte-components'
   import { abortAutoMapping, settings, triggerAutoMapping } from '$lib/store'
 
   let savedAutomapping: boolean, possibleOutclick: boolean, settingsDialog: HTMLDialogElement

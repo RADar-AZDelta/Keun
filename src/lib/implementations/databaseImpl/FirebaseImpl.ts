@@ -1,3 +1,4 @@
+import { downloadWithUrl } from '@radar-azdelta/radar-utils'
 import { dev } from '$app/environment'
 import initial from '$lib/data/customBlobInitial.json'
 import {
@@ -10,7 +11,6 @@ import {
   uploadFileStorage,
   writeToFirestore,
 } from '$lib/obsolete/firebase'
-import { downloadWithUrl } from '$lib/obsolete/utils'
 import type { IConceptFiles, IFile, IUpdatedFunctionalityImpl } from '$lib/components/Types'
 
 /* Possible Firestore structure

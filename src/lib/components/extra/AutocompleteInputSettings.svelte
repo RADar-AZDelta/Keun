@@ -1,7 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
   import { settings } from '$lib/store'
-  import { localStorageSetter } from '$lib/obsolete/utils'
+  import { localStorageSetter } from '@radar-azdelta/radar-utils'
   import debounce from 'lodash.debounce'
   import type { ICustomEvents } from '$lib/components/Types'
 

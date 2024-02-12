@@ -1,30 +1,12 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import clickOutside from '$lib/obsolete/clickOutside'
-  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
+  import { SvgIcon, clickOutside } from '@radar-azdelta/radar-svelte-components'
   import { authImpl, authImplementation, user } from '$lib/store'
-  import type { IAuthImpl } from '$lib/components/Types'
+  import { loadImplementationAuth } from '$lib/implementations/implementation'
 
-  let userDialog: HTMLDialogElement,
-    author: string | undefined | null = undefined,
-    backupAuthor: string | undefined | null = undefined
-
-  async function loadImplementation(): Promise<IAuthImpl> {
-    return new Promise(async (resolve, reject) => {
-      if ($authImpl) return resolve($authImpl)
-      if (authImplementation === 'firebase') {
-        // await import('$lib/authImpl/FirebaseImpl').then(({ default: FirebaseImpl }) => {
-        //   $authImpl = new FirebaseImpl()
-        //   resolve($authImpl)
-        // })
-      } else {
-        import('$lib/implementations/authImpl/LocalImpl').then(({ default: LocalImpl }) => {
-          $authImpl = new LocalImpl()
-          resolve($authImpl)
-        })
-      }
-    })
-  }
+  let userDialog: HTMLDialogElement
+  let author: string | undefined | null = undefined
+  let backupAuthor: string | undefined | null = undefined
 
   // A method to close the dialog
   function closeDialog(): void {
@@ -41,7 +23,7 @@
   }
 
   async function login(): Promise<void> {
-    if (!$authImpl) await loadImplementation()
+    if (!$authImpl) await loadImplementationAuth()
     await $authImpl!.logIn(author ? author : undefined)
     backupAuthor = author
     closeDialog()
@@ -61,7 +43,7 @@
   }
 
   onMount(async () => {
-    if (!$authImpl) await loadImplementation()
+    if (!$authImpl) await loadImplementationAuth()
     if ($authImpl) return await $authImpl!.getAuthor()
   })
 </script>

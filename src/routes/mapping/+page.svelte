@@ -8,7 +8,7 @@
   import type Query from 'arquero/dist/types/query/query'
   import type { IColumnMetaData, ITableOptions } from '@radar-azdelta/svelte-datatable'
   import DataTable from '@radar-azdelta/svelte-datatable'
-  import { reformatDate } from '$lib/obsolete/utils'
+  import { reformatDate } from '@radar-azdelta/radar-utils'
   import { BergamotTranslator } from '$lib/helperClasses/BergamotTranslator'
   import { addExtraFields } from '$lib/mappingUtils'
   import options from '$lib/data/tableOptions.json'

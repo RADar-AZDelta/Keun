@@ -1,9 +1,7 @@
 <script lang="ts">
   import { dev } from '$app/environment'
   import { createEventDispatcher } from 'svelte'
-  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
-  import Spinner from '$lib/obsolete/Spinner.svelte'
-  import Drop from '$lib/obsolete/Drop.svelte'
+  import { Drop, SvgIcon, Spinner } from '@radar-azdelta/radar-svelte-components'
   import { authImpl, databaseImplementation } from '$lib/store'
   import type { FileDropEventDetail, PageEvents } from '$lib/components/Types'
 

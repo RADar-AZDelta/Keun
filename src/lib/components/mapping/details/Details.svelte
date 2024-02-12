@@ -1,10 +1,15 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
-  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
   import debounce from 'lodash.debounce'
   import Equivalence from '$lib/components/mapping/details/Equivalence.svelte'
   import AutocompleteInputSettings from '$lib/components/extra/AutocompleteInputSettings.svelte'
-  import type { AutoCompleteShortEventDetail, EquivalenceChangeEventDetail, IUsagiRow, MappingEvents } from '$lib/components/Types'
+  import type {
+    AutoCompleteShortEventDetail,
+    EquivalenceChangeEventDetail,
+    IUsagiRow,
+    MappingEvents,
+  } from '$lib/components/Types'
+  import { SvgIcon } from '@radar-azdelta/radar-svelte-components'
 
   export let usagiRow: IUsagiRow
 
