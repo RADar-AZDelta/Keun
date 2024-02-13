@@ -1,7 +1,8 @@
-import { blobToString, fileToBlob, logWhenDev, stringToFile } from '@radar-azdelta/radar-utils'
+import { FileHelper, blobToString, fileToBlob, logWhenDev, stringToFile } from '@radar-azdelta/radar-utils'
 import initial from '$lib/data/customBlobInitial.json'
 import { IndexedDB } from '@radar-azdelta/radar-utils'
 import type { IDatabaseImpl, IFile, IFileInformation } from '$lib/components/Types'
+import { databaseImpl } from '$lib/store'
 
 interface IDatabaseFile {
   id: string
@@ -32,12 +33,32 @@ export default class LocalImpl implements IDatabaseImpl {
   private async getFileFromDatabase(database: IndexedDB | undefined, id: string) {
     if (!database) return
     const fileInfo: undefined | IDatabaseFile = await database.get(id, true, true)
-    console.log('RES ', fileInfo, ' WITH ID ', id)
     if (!fileInfo || !fileInfo.content) return undefined
     const { name, content, customId } = fileInfo
     const file = await stringToFile(content, name)
     const fileObj: IFile = { id, name: name, file, customId }
     return fileObj
+  }
+
+  async downloadFiles(id: string): Promise<void> {
+    await this.openDatabase()
+    const file = await this.getFileFromDatabase(this.db, id)
+    if (!file || !file.file) return
+    await FileHelper.downloadFile(file.file)
+    const isCustomFileNotEmpty = await this.checkIfCustomFileIsNotEmpty(file.customId)
+    if (!isCustomFileNotEmpty) return
+    const customFile = await this.getFileFromDatabase(this.customDb, id)
+    if (!customFile || !customFile.file) return
+    await FileHelper.downloadFile(customFile.file)
+  }
+
+  private async checkIfCustomFileIsNotEmpty(id: string) {
+    await this.openCustomDatabase()
+    const fileInfo: undefined | IDatabaseFile = await this.customDb?.get(id, true)
+    if (!fileInfo) return false
+    const content = fileInfo.content
+    if (!content || content.includes(',,,,,,,,,')) return false
+    return true
   }
 
   async checkFileExistance(id: string) {
@@ -83,8 +104,9 @@ export default class LocalImpl implements IDatabaseImpl {
     await this.openDatabase()
     const fileInfo = await this.db?.get(id, true)
     if (!fileInfo) return
+    const { customId, custom, name } = fileInfo
     const fileString = await blobToString(blob)
-    const fileContent = { id, name: fileInfo.name, content: fileString }
+    const fileContent: IDatabaseFile = { id, name, content: fileString, customId, custom }
     await this.db?.set(fileContent, id, true)
   }
 

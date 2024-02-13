@@ -10,6 +10,7 @@ import type { IDatabaseImpl, IFile, IFileInformation, IUser } from '$lib/compone
 import { FirebaseFirestore, FirebaseStorage, type FirebaseOptions } from '@radar-azdelta/radar-firebase-utils'
 import { user } from '$lib/store'
 import initial from '$lib/data/customBlobInitial.json'
+import { FileHelper } from '@radar-azdelta/radar-utils'
 
 // TODO: implement this in the program & check if all the functionalities work before removing the firebase file
 
@@ -77,6 +78,15 @@ export default class FirebaseImpl implements IDatabaseImpl {
     return new File([blob], name, { type: 'text/csv' })
   }
 
+  async downloadFiles(id: string): Promise<void> {
+    const file = await this.readFileFromCollection(id, this.storageCollection)
+    if (!file || !file.file) return
+    await FileHelper.downloadFile(file.file)
+    const customFile = await this.readFileFromCollection(file.customId, this.storageCustomColl)
+    if (!customFile || !customFile.file) return
+    await FileHelper.downloadFile(customFile.file)
+  }
+
   async checkFileExistance(id: string): Promise<boolean> {
     const existance = await this.storage.checkIfFileExists(`${this.storageCollection}/${id}`)
     return existance
@@ -88,7 +98,7 @@ export default class FirebaseImpl implements IDatabaseImpl {
     const fileNames = []
     for (let fileId of fileIds) {
       const fileInfo = await this.getFileNameFromStorage(fileId)
-      if (fileInfo) fileNames.push({ id: fileId, name: fileInfo.fileName, customId: fileInfo.customId })
+      if (fileInfo) fileNames.push({ id: fileId, name: fileInfo.fileName, customId: fileInfo.customId, custom: '' })
     }
     return fileNames
   }

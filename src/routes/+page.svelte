@@ -19,7 +19,6 @@
   import { databaseImpl, databaseImplementation, selectedFileId, user } from '$lib/store'
   import { Spinner } from '@radar-azdelta/radar-svelte-components'
   import type { SvelteComponent } from 'svelte'
-  import { FileHelper } from '@radar-azdelta/radar-utils'
   import type { FileUploadEventDetail } from '$lib/components/Types'
 
   let files: IFileInformation[] = []
@@ -84,12 +83,7 @@
   async function downloadFiles(e: CustomEvent<DownloadFilesEventDetail>): Promise<void> {
     if (!$databaseImpl) await loadImplementationDB()
     const { id } = e.detail
-    const keunFile = await $databaseImpl!.getKeunFile(id)
-    if (!keunFile || !keunFile.file) return
-    FileHelper.downloadFile(keunFile.file)
-    const customfile = await $databaseImpl?.getCustomKeunFile(keunFile.customId)
-    if (!customfile || !customfile.file) return
-    FileHelper.downloadFile(customfile.file)
+    await $databaseImpl?.downloadFiles(id)
     await getFiles()
   }
 

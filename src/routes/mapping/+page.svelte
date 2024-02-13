@@ -31,7 +31,6 @@
     RowSelectionEventDetail,
     NavigateRowEventDetail,
   } from '$lib/components/Types'
-  import { FileHelper } from '@radar-azdelta/radar-utils'
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // DATA
@@ -322,10 +321,7 @@
     if (!$databaseImpl) await loadImplementationDB()
     await $databaseImpl?.editKeunFile($selectedFileId, blob)
     if (customBlob) await $databaseImpl?.editCustomKeunFile($selectedCustomFileId, customBlob)
-    const keunFile = await $databaseImpl?.getKeunFile($selectedFileId)
-    const customKeunFile = await $databaseImpl?.getCustomKeunFile($selectedCustomFileId)
-    if (keunFile && keunFile.file) await FileHelper.downloadFile(keunFile.file)
-    if (customKeunFile && customKeunFile.file) await FileHelper.downloadFile(customKeunFile.file)
+    await $databaseImpl?.downloadFiles($selectedFileId)
     goto(`${base}/`)
   }
 
@@ -335,7 +331,6 @@
     if (!$selectedFileId) return
     if (!$databaseImpl) await loadImplementationDB()
     const keunFile = await $databaseImpl!.getKeunFile($selectedFileId)
-  console.log("KEUN ", keunFile)
     const customKeunFile = await $databaseImpl?.getCustomKeunFile($selectedCustomFileId)
     if (keunFile && keunFile?.file) file = keunFile.file
     if (customKeunFile && customKeunFile?.file) customConceptsFile = customKeunFile.file
@@ -425,6 +420,10 @@
   beforeNavigate(async () => await syncFile())
 
   setupDataTable()
+
+  $: {
+    console.log("TESTING ", dataTableCustomConcepts, " AND ", customConceptsFile)
+  }
 </script>
 
 <svelte:head>

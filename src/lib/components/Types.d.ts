@@ -219,6 +219,7 @@ export interface IFile {
   name: string
   file?: File
   customId: string
+  content?: string
 }
 
 export interface IUserRestriction {
@@ -322,6 +323,7 @@ export interface IFileInformation {
 export interface IDatabaseImpl {
   getKeunFile(id: string): Promise<IFile | undefined>
   getCustomKeunFile(id: string): Promise<IFile | undefined>
+  downloadFiles(id: string): Promise<void>
   checkFileExistance(id: string): Promise<boolean>
   getFilesList(): Promise<IFileInformation[]>
   uploadKeunFile(file: File, authors: string[]): Promise<void>
