@@ -3,18 +3,19 @@
   import { goto } from '$app/navigation'
   import { base } from '$app/paths'
   import { createEventDispatcher } from 'svelte'
-  import { selectedFileId } from '$lib/store'
-  import type { IFile, PageEvents } from '$lib/components/Types'
+  import { selectedCustomFileId, selectedFileId } from '$lib/store'
+  import type { IFile, IFileInformation, PageEvents } from '$lib/components/Types'
   import { SvgIcon } from '@radar-azdelta/radar-svelte-components'
 
-  export let files: IFile[]
+  export let files: IFileInformation[]
 
   const dispatch = createEventDispatcher<PageEvents>()
 
   // A method to go to the mapping route without updating the file in IndexedDB for local mapping (the cached version is still in IndexedDB)
-  async function mapCachedFile(id: string): Promise<void> {
+  async function mapCachedFile(id: string, customId: string): Promise<void> {
     if (dev) console.log(`mapCachedFile: Go to the route "/mapping" to map the file: ${id}`)
     $selectedFileId = id
+    $selectedCustomFileId = customId
     goto(`${base}/mapping?id=${id}`)
   }
 
@@ -32,7 +33,7 @@
 </script>
 
 {#each files as file, _}
-  <button class="file-card" on:click={() => mapCachedFile(file.id)}>
+  <button class="file-card" on:click={() => mapCachedFile(file.name, file.custom)}>
     <div class="file-name-container">
       <SvgIcon id="excel" width="40px" height="40px" />
       <p class="file-name">{file.name}</p>

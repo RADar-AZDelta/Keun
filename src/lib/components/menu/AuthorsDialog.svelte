@@ -1,6 +1,6 @@
 <script lang="ts">
   import { dev } from '$app/environment'
-  import { authImpl, databaseImpl } from '$lib/store'
+  import { databaseImpl } from '$lib/store'
   import { loadImplementationDB } from '$lib/implementations/implementation'
   import { SvgIcon } from '@radar-azdelta/radar-svelte-components'
 
@@ -16,7 +16,7 @@
   async function editFile(id: string): Promise<void> {
     if (dev) console.log('editFile: The file authors are being updated')
     if (!$databaseImpl) await loadImplementationDB()
-    await $databaseImpl!.editFileAuthors(id, authorizedAuthors)
+    await $databaseImpl!.editKeunFileAuthors(id, authorizedAuthors)
     closeDialog()
     if (dev) console.log('editFile: The file authors were updated')
   }
@@ -27,24 +27,18 @@
     <button on:click={closeDialog} class="close-dialog" disabled={processing}><SvgIcon id="x" /></button>
     <h1 class="title">Update the authorized authors</h1>
     <ul class="list">
-      {#await $authImpl?.getAllAuthors() then users}
-        {#if users}
-          {#each users as user, _}
-            {#if user.id}
-              <li>
-                <label class="option">
-                  <input
-                    type="checkbox"
-                    checked={user.fileIds ? Object.values(user.fileIds).includes(selected) : false}
-                    bind:group={authorizedAuthors}
-                    value={user.id}
-                  />
-                  {user.name}
-                </label>
-              </li>
-            {/if}
-          {/each}
-        {/if}
+      {#await $databaseImpl?.getAllPossibleAuthors() then users}
+        {#each users ?? [] as user, _}
+          {#if user.id}
+            {@const checked = user.files ? Object.values(user.files).includes(selected) : false}
+            <li>
+              <label class="option">
+                <input type="checkbox" {checked} bind:group={authorizedAuthors} value={user.id} />
+                {user.name}
+              </label>
+            </li>
+          {/if}
+        {/each}
       {/await}
     </ul>
     <button on:click={() => editFile(selected)}>Update</button>

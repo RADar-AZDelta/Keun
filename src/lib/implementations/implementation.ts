@@ -8,10 +8,10 @@ import {
   saveImplementation,
   settingsImpl,
 } from '$lib/store'
-import type { IAuthImpl, ISettingsImpl, IUpdatedFunctionalityImpl } from '$lib/components/Types'
+import type { IAuthImpl, IDatabaseImpl, ISettingsImpl, IUpdatedFunctionalityImpl } from '$lib/components/Types'
 import type { ICustomStoreOptions } from '@radar-azdelta/svelte-datatable'
 
-export async function loadImplementationDB(): Promise<IUpdatedFunctionalityImpl> {
+export async function loadImplementationDB(): Promise<IDatabaseImpl> {
   return new Promise(async resolve => {
     databaseImpl.subscribe(async impl => {
       if (impl) return resolve(impl)

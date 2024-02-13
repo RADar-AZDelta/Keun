@@ -5,9 +5,9 @@
   import { createEventDispatcher } from 'svelte'
   import { selectedFileId, user } from '$lib/store'
   import { SvgIcon, Spinner } from '@radar-azdelta/radar-svelte-components'
-  import type { PageEvents, IFile } from '$lib/components/Types'
+  import type { PageEvents, IFileInformation } from '$lib/components/Types'
 
-  export let files: IFile[]
+  export let files: IFileInformation[]
 
   const dispatch = createEventDispatcher<PageEvents>()
 

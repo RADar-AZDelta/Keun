@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { SvelteComponent } from 'svelte'
+  import '@radar-azdelta/svelte-datatable/style'
   import { base } from '$app/paths'
   import { page } from '$app/stores'
   import { beforeNavigate, goto } from '$app/navigation'
@@ -13,7 +14,7 @@
   import { addExtraFields } from '$lib/mappingUtils'
   import options from '$lib/data/tableOptions.json'
   import { abortAutoMapping, customFileTypeImpl, databaseImpl, fileTypeImpl, saveImpl } from '$lib/store'
-  import { selectedFileId, settings, triggerAutoMapping, user } from '$lib/store'
+  import { selectedFileId, selectedCustomFileId, settings, triggerAutoMapping, user } from '$lib/store'
   import {
     loadImplementationDB,
     loadImplementationDataType,
@@ -30,6 +31,7 @@
     RowSelectionEventDetail,
     NavigateRowEventDetail,
   } from '$lib/components/Types'
+  import { FileHelper } from '@radar-azdelta/radar-utils'
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // DATA
@@ -318,8 +320,12 @@
     const blob = await dataTableMapping.getBlob()
     const customBlob = dataTableCustomConcepts ? await dataTableCustomConcepts.getBlob() : undefined
     if (!$databaseImpl) await loadImplementationDB()
-    await $databaseImpl!.editFile($selectedFileId, blob, customBlob)
-    await $databaseImpl!.downloadFile($selectedFileId)
+    await $databaseImpl?.editKeunFile($selectedFileId, blob)
+    if (customBlob) await $databaseImpl?.editCustomKeunFile($selectedCustomFileId, customBlob)
+    const keunFile = await $databaseImpl?.getKeunFile($selectedFileId)
+    const customKeunFile = await $databaseImpl?.getCustomKeunFile($selectedCustomFileId)
+    if (keunFile && keunFile.file) await FileHelper.downloadFile(keunFile.file)
+    if (customKeunFile && customKeunFile.file) await FileHelper.downloadFile(customKeunFile.file)
     goto(`${base}/`)
   }
 
@@ -328,9 +334,11 @@
     if (dev) console.log(`readFile: reading the file with id: ${$selectedFileId}`)
     if (!$selectedFileId) return
     if (!$databaseImpl) await loadImplementationDB()
-    const res = await $databaseImpl!.getFile($selectedFileId)
-    if (res && res?.file) file = res.file.file
-    if (res && res?.customFile) customConceptsFile = res.customFile.file
+    const keunFile = await $databaseImpl!.getKeunFile($selectedFileId)
+  console.log("KEUN ", keunFile)
+    const customKeunFile = await $databaseImpl?.getCustomKeunFile($selectedCustomFileId)
+    if (keunFile && keunFile?.file) file = keunFile.file
+    if (customKeunFile && customKeunFile?.file) customConceptsFile = customKeunFile.file
   }
 
   // Load the file to start mapping
@@ -345,10 +353,13 @@
   async function syncFile() {
     if (!dataTableMapping) return
     const blob = await dataTableMapping.getBlob()
+    console.log("BLOB ", blob)
+    console.log("CUSTOM ", customConceptsFile)
     if (!blob) return
     const customBlob = dataTableCustomConcepts ? await dataTableCustomConcepts.getBlob() : undefined
     if (!$databaseImpl) await loadImplementationDB()
-    await $databaseImpl!.editFile($selectedFileId, blob, customBlob)
+    await $databaseImpl?.editKeunFile($selectedFileId, blob)
+    if(customBlob) await $databaseImpl?.editCustomKeunFile($selectedCustomFileId, customBlob)
   }
 
   // A method to create the meta data per column

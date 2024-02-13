@@ -2,7 +2,7 @@
   import { dev } from '$app/environment'
   import { createEventDispatcher } from 'svelte'
   import { Drop, SvgIcon, Spinner } from '@radar-azdelta/radar-svelte-components'
-  import { authImpl, databaseImplementation } from '$lib/store'
+  import { authImpl, databaseImpl, databaseImplementation } from '$lib/store'
   import type { FileDropEventDetail, PageEvents } from '$lib/components/Types'
 
   export let processing: boolean
@@ -97,7 +97,7 @@
       <h2 class="authors-title">Select the authors that have permission to this file:</h2>
       <input class="authors-input" type="text" placeholder="search for an user" bind:value={userFilter} />
       <ul class="authors-list">
-        {#await $authImpl?.getAllAuthors() then users}
+        {#await $databaseImpl?.getAllAuthors() then users}
           {#if users}
             {#each users as user, _}
               <li class="author-option">

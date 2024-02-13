@@ -7,8 +7,7 @@
     DownloadFilesEventDetail,
     EditRightsEventDetail,
     FileUpdatedColumnsEventDetail,
-    FileUploadEventDetail,
-    IFile,
+    IFileInformation,
   } from '$lib/components/Types'
   import AuthorsDialog from '$lib/components/menu/AuthorsDialog.svelte'
   import ColumnsDialog from '$lib/components/menu/ColumnsDialog.svelte'
@@ -20,8 +19,10 @@
   import { databaseImpl, databaseImplementation, selectedFileId, user } from '$lib/store'
   import { Spinner } from '@radar-azdelta/radar-svelte-components'
   import type { SvelteComponent } from 'svelte'
+  import { FileHelper } from '@radar-azdelta/radar-utils'
+  import type { FileUploadEventDetail } from '$lib/components/Types'
 
-  let files: IFile[] = []
+  let files: IFileInformation[] = []
   let file: File
   let cols: string[] = []
   let missing: Record<string, string> = {}
@@ -38,7 +39,7 @@
   async function uploadFile(): Promise<void> {
     if (dev) console.log('uploadFile: Uploading a file')
     if (!$databaseImpl) await loadImplementationDB()
-    await $databaseImpl!.uploadFile(file, authorizedAuthors)
+    await $databaseImpl!.uploadKeunFile(file, authorizedAuthors)
     await getFiles()
     fileInputDialog.closeDialog()
   }
@@ -75,14 +76,20 @@
   async function getFiles(): Promise<void> {
     if (dev) console.log('getFiles: Get all the files in the database')
     if (!$databaseImpl) await loadImplementationDB()
-    const getFilesRes = await $databaseImpl?.getFiles($user.uid ?? undefined, $user.roles ?? [])
+    const getFilesRes = await $databaseImpl?.getFilesList()
     if (getFilesRes) files = getFilesRes
   }
 
   // Download the file & eventual custom concepts file
   async function downloadFiles(e: CustomEvent<DownloadFilesEventDetail>): Promise<void> {
     if (!$databaseImpl) await loadImplementationDB()
-    await $databaseImpl!.downloadFile(e.detail.id)
+    const { id } = e.detail
+    const keunFile = await $databaseImpl!.getKeunFile(id)
+    if (!keunFile || !keunFile.file) return
+    FileHelper.downloadFile(keunFile.file)
+    const customfile = await $databaseImpl?.getCustomKeunFile(keunFile.customId)
+    if (!customfile || !customfile.file) return
+    FileHelper.downloadFile(customfile.file)
     await getFiles()
   }
 
@@ -91,7 +98,7 @@
     if (dev) console.log('deleteFile: Deleting a file')
     processing = true
     if (!$databaseImpl) await loadImplementationDB()
-    await $databaseImpl!.deleteFile(e.detail.id)
+    await $databaseImpl!.deleteKeunFile(e.detail.id)
     await getFiles()
     processing = false
     if (dev) console.log('deleteFile: File has been deleted')

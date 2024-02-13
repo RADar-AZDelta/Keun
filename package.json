@@ -46,9 +46,9 @@
   "dependencies": {
     "@radar-azdelta/radar-firebase-utils": "^0.0.16",
     "@radar-azdelta/radar-svelte-components": "^0.0.13",
-    "@radar-azdelta/radar-utils": "^0.0.6",
-    "@radar-azdelta/svelte-athena-search": "^0.0.32",
-    "@radar-azdelta/svelte-datatable": "^0.0.67",
+    "@radar-azdelta/radar-utils": "^0.0.7",
+    "@radar-azdelta/svelte-athena-search": "^0.0.33",
+    "@radar-azdelta/svelte-datatable": "^0.0.69",
     "arquero": "^5.2.0",
     "better-sqlite3": "^9.1.1",
     "firebase": "^10.7.1",

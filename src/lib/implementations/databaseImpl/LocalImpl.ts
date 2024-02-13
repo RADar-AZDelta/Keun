@@ -1,137 +1,125 @@
-import { blobToString, downloadWithUrl, fileToBlob, stringToBlob, stringToFile } from '@radar-azdelta/radar-utils'
-import { dev } from '$app/environment'
+import { blobToString, fileToBlob, logWhenDev, stringToFile } from '@radar-azdelta/radar-utils'
 import initial from '$lib/data/customBlobInitial.json'
-import { IndexedDB } from '$lib/helperClasses/IndexedDB'
-import type { IConceptFiles, IFile, IUpdatedFunctionalityImpl, IUserRestriction } from '$lib/components/Types'
+import { IndexedDB } from '@radar-azdelta/radar-utils'
+import type { IDatabaseImpl, IFile, IFileInformation } from '$lib/components/Types'
 
-export default class LocalImpl implements IUpdatedFunctionalityImpl {
+interface IDatabaseFile {
+  id: string
+  name: string
+  content: string
+  custom: string
+  customId: string
+}
+
+export default class LocalImpl implements IDatabaseImpl {
   db: IndexedDB | undefined
   customDb: IndexedDB | undefined
 
-  async getFile(id: string): Promise<IConceptFiles | void> {
-    if (dev) console.log(`getFile: Get file with id ${id} in IndexedDB`)
+  async getKeunFile(id: string): Promise<IFile | undefined> {
+    logWhenDev(`getKeunFile: Get file with id ${id} in IndexedDB`)
     await this.openDatabase()
-    const fileInfo = await this.db?.get(id, true, true)
-    if (!fileInfo || !fileInfo.content) return console.error('getFile: File not found in IndexedDB')
+    const file = await this.getFileFromDatabase(this.db, id)
+    return file
+  }
+
+  async getCustomKeunFile(id: string): Promise<IFile | undefined> {
+    logWhenDev(`getCustomKeunFile: Get file with id ${id} in IndexedDB`)
     await this.openCustomDatabase()
-    const customFileInfo = await this.customDb!.get(id, true, true)
-    const file = await stringToFile(fileInfo.content, fileInfo.name)
-    const fileObj: IFile = { id: fileInfo.id, name: fileInfo.name, file }
-    const customFile = customFileInfo ? await stringToFile(customFileInfo.content, customFileInfo.name) : undefined
-    const customFileObj: IFile = {
-      id: customFileInfo?.id ?? undefined,
-      name: customFileInfo?.name ?? undefined,
-      file: customFile ?? undefined,
-    }
-    return { file: fileObj, customFile: customFileObj }
+    const file = await this.getFileFromDatabase(this.customDb, id)
+    return file
   }
 
-  async checkFileExistance(fileName: string): Promise<boolean | string | void> {
-    if (dev) console.log(`checkFileExistence: Check if the file with name ${fileName} exists`)
-    await this.openDatabase()
-    const files = await this.getFiles()
-    if (!files) return false
-    for (const file of files) if (file.name === fileName) return file.id
+  private async getFileFromDatabase(database: IndexedDB | undefined, id: string) {
+    if (!database) return
+    const fileInfo: undefined | IDatabaseFile = await database.get(id, true, true)
+    console.log('RES ', fileInfo, ' WITH ID ', id)
+    if (!fileInfo || !fileInfo.content) return undefined
+    const { name, content, customId } = fileInfo
+    const file = await stringToFile(content, name)
+    const fileObj: IFile = { id, name: name, file, customId }
+    return fileObj
   }
 
-  async getFiles(): Promise<IFile[]> {
-    if (dev) console.log('getFiles: Get files in IndexedDB')
+  async checkFileExistance(id: string) {
+    logWhenDev(`checkFileExistance: Check if the file with id ${id} exists`)
     await this.openDatabase()
-    const blobs = await this.db!.getAll(true)
-    const files: IFile[] = []
-    for (const blob of blobs)
-      files.push({ id: blob.id, name: blob.name, file: await stringToFile(blob.content, blob.name) })
-    return files
+    const file: undefined | IDatabaseFile = await this.db?.get(id, true)
+    if (!file) return false
+    return true
   }
 
-  async uploadFile(file: File): Promise<string[] | void> {
-    if (dev) console.log('uploadFile: Uploading file to IndexedDB')
+  async getFilesList(): Promise<IFileInformation[]> {
+    logWhenDev('getFiles: Get files in IndexedDB')
     await this.openDatabase()
-    const blob = await fileToBlob(file)
-    const fileString = await blobToString(blob)
-    const fileId = crypto.randomUUID()
-    const fileContent = { id: fileId, name: file.name, content: fileString }
-    await this.db!.set(fileContent, fileId, true)
+    const files: undefined | IDatabaseFile[] = await this.db!.getAll(true)
+    if (!files) return []
+    return files.map(file => ({ id: file.id, name: file.name, customId: file.customId, custom: file.custom }))
+  }
+
+  async uploadKeunFile(file: File, authors: string[]) {
+    logWhenDev('uploadKeunFile: Uploading file to IndexedDB')
+    await this.openDatabase()
+    const customName = `${file.name.split('.')[0]}_concepts.csv`
+    const customId = crypto.randomUUID()
+    const fileString = await this.transformFileToString(file)
+    const id = crypto.randomUUID()
+    const fileContent: IDatabaseFile = { id, name: file.name, content: fileString, custom: customName, customId }
+    await this.db!.set(fileContent, file.name, true)
     const customBlob = new Blob([initial.initial])
     const customFileString = await blobToString(customBlob)
-    const customFileContent = {
-      id: fileId,
-      name: `${file.name.split('.')[0]}_concepts.csv`,
-      content: customFileString,
-    }
+    const customFileContent = { id: customId, name: customName, content: customFileString }
     await this.openCustomDatabase()
-    await this.customDb!.set(customFileContent, fileId, true)
-    // goto(`${base}/mapping&id=${fileId}`)
+    await this.customDb!.set(customFileContent, customName, true)
   }
 
-  async editFile(id: string, blob: Blob, customBlob?: Blob): Promise<void> {
-    if (dev) console.log(`editFile: Editing the file with id ${id}`)
+  private async transformFileToString(file: File) {
+    const blob = await fileToBlob(file)
+    const fileString = await blobToString(blob)
+    return fileString
+  }
+
+  async editKeunFile(id: string, blob: Blob) {
+    logWhenDev(`editKeunFile: Editing the file with id ${id}`)
     await this.openDatabase()
     const fileInfo = await this.db?.get(id, true)
-    if (!fileInfo) return console.error(`editFile: No file found with id ${id}`)
+    if (!fileInfo) return
     const fileString = await blobToString(blob)
     const fileContent = { id, name: fileInfo.name, content: fileString }
     await this.db?.set(fileContent, id, true)
-    if (!customBlob) return
+  }
+
+  async editCustomKeunFile(id: string, blob: Blob) {
     await this.openCustomDatabase()
-    const customFileInfo: IFile | undefined = await this.customDb?.get(id, true)
-    if (!customFileInfo) return console.error(`editFile: No custom file foun with id ${id}`)
-    const customFileString = await blobToString(customBlob)
+    const fileInfo = await this.customDb?.get(id, true)
+    if (!fileInfo) return
+    const customFileString = await blobToString(blob)
     const customFileContent = { id, name: fileInfo.name, content: customFileString }
     await this.customDb?.set(customFileContent, id, true)
   }
 
-  async editFileAuthors(): Promise<void> {}
+  async editKeunFileAuthors(id: string, authors: string[]) {}
 
-  async deleteFile(id: string): Promise<void> {
-    if (dev) console.log(`deleteFile: Delete the file with id ${id} in IndexedDB`)
+  async deleteKeunFile(id: string) {
+    logWhenDev(`deleteKeunFile: Delete the file with id ${id} in IndexedDB`)
     await this.openDatabase()
     await this.db!.remove(id, true)
     await this.openCustomDatabase()
     await this.customDb!.remove(id, true)
   }
 
-  async downloadFile(id: string): Promise<void> {
-    if (dev) console.log('downloadFile: Download the file & the custom concepts')
-    await this.openDatabase()
-    const fileInfo = await this.db?.get(id, true, true)
-    if (!fileInfo || !fileInfo.content) return console.error('getFile: File not found in IndexedDB')
-    const blob = await stringToBlob(fileInfo.content)
-    const file = new File([blob], fileInfo.name, { type: 'text/csv' })
-    const needsPrefix = !file.name.endsWith('_usagi.csv')
-    const updatedName = needsPrefix ? file.name.split('.')[0] + '_usagi.csv' : file.name
-    await this.download(updatedName, file)
-    await this.downloadCustomFile(fileInfo.id)
-    await this.deleteFile(id)
+  async getAllPossibleAuthors() {
+    return []
   }
 
-  private async downloadCustomFile(fileId: string) {
-    await this.openCustomDatabase()
-    const customFileInfo = await this.customDb?.get(fileId, true, true)
-    if (!customFileInfo?.content) return
-    if (customFileInfo.content.includes(',,,,,,,,,')) return
-    const customBlob = await stringToBlob(customFileInfo.content)
-    const customFile = new File([customBlob], customFileInfo.name, { type: 'text/csv' })
-    const updatedName = customFile.name.split('.')[0] + '_concept.csv'
-    await this.download(updatedName, customFile)
-  }
-
-  async getAllAuthors(): Promise<void | IUserRestriction> {}
-
-  private async openDatabase(): Promise<void> {
+  private async openDatabase() {
     if ((await this.isOpen(this.db)) == false) this.db = new IndexedDB('localMapping', 'localMapping')
   }
 
-  private async openCustomDatabase(): Promise<void> {
+  private async openCustomDatabase() {
     if ((await this.isOpen(this.customDb)) == false) this.customDb = new IndexedDB('customMapping', 'customMapping')
   }
 
   private async isOpen(db: IndexedDB | undefined) {
     return db instanceof IDBDatabase && !db.hasOwnProperty('_secret_did_close')
-  }
-
-  private async download(name: string, file: File) {
-    const url = URL.createObjectURL(file)
-    await downloadWithUrl(url, name)
   }
 }

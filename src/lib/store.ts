@@ -11,7 +11,7 @@ import {
   loadImplementationSave,
   loadImplementationSettings,
 } from '$lib/implementations/implementation'
-import type { IAuthImpl, ISettings, ISettingsImpl, IUpdatedFunctionalityImpl, IUser } from '$lib/components/Types'
+import type { IAuthImpl, IDatabaseImpl, ISettings, ISettingsImpl, IUser } from '$lib/components/Types'
 import type { ICustomStoreOptions, IDataTypeFunctionalities } from '@radar-azdelta/svelte-datatable'
 import type { User } from 'firebase/auth'
 
@@ -33,7 +33,7 @@ export const databaseImplementation = PUBLIC_CLOUD_DATABASE_IMPLEMENTATION || 'n
 export const authImplementation = PUBLIC_CLOUD_AUTH_IMPLEMENTATION || 'none'
 export const saveImplementation = PUBLIC_CLOUD_SAVE_IMPLEMENTATION || 'none'
 
-export const databaseImpl = writable<IUpdatedFunctionalityImpl | undefined>(undefined)
+export const databaseImpl = writable<IDatabaseImpl | undefined>(undefined)
 export const authImpl = writable<IAuthImpl | undefined>(undefined)
 export const saveImpl = writable<ICustomStoreOptions | undefined>(undefined)
 export const settingsImpl = writable<ISettingsImpl | undefined>(undefined)
@@ -41,6 +41,7 @@ export const fileTypeImpl = writable<IDataTypeFunctionalities | undefined>(undef
 export const customFileTypeImpl = writable<IDataTypeFunctionalities | undefined>(undefined)
 
 export const selectedFileId = writable<string>()
+export const selectedCustomFileId = writable<string>()
 
 export const abortAutoMapping = writable<boolean>(false)
 
