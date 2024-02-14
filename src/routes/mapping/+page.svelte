@@ -348,13 +348,11 @@
   async function syncFile() {
     if (!dataTableMapping) return
     const blob = await dataTableMapping.getBlob()
-    console.log("BLOB ", blob)
-    console.log("CUSTOM ", customConceptsFile)
     if (!blob) return
     const customBlob = dataTableCustomConcepts ? await dataTableCustomConcepts.getBlob() : undefined
     if (!$databaseImpl) await loadImplementationDB()
     await $databaseImpl?.editKeunFile($selectedFileId, blob)
-    if(customBlob) await $databaseImpl?.editCustomKeunFile($selectedCustomFileId, customBlob)
+    if (customBlob) await $databaseImpl?.editCustomKeunFile($selectedCustomFileId, customBlob)
   }
 
   // A method to create the meta data per column
@@ -422,7 +420,7 @@
   setupDataTable()
 
   $: {
-    console.log("TESTING ", dataTableCustomConcepts, " AND ", customConceptsFile)
+    console.log('TESTING ', dataTableCustomConcepts, ' AND ', customConceptsFile)
   }
 </script>
 

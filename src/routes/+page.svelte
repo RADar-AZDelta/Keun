@@ -16,7 +16,7 @@
   import FirebaseImpl from '$lib/components/menu/FirebaseImpl.svelte'
   import LocalImpl from '$lib/components/menu/LocalImpl.svelte'
   import { loadImplementationDB } from '$lib/implementations/implementation'
-  import { databaseImpl, databaseImplementation, selectedFileId, user } from '$lib/store'
+  import { databaseImpl, databaseImplementation, selectedCustomFileId, selectedFileId, user } from '$lib/store'
   import { Spinner } from '@radar-azdelta/radar-svelte-components'
   import type { SvelteComponent } from 'svelte'
   import type { FileUploadEventDetail } from '$lib/components/Types'
@@ -66,8 +66,10 @@
     if (!$databaseImpl) await loadImplementationDB()
     file = e.detail.file
     const cached = await $databaseImpl!.checkFileExistance(e.detail.file.name)
+    fileInputDialog.closeDialog()
     if (!cached) return await uploadFile()
-    $selectedFileId = cached.toString()
+    $selectedFileId = cached.id
+    $selectedCustomFileId = cached.customId
     locationDialog.showDialog()
   }
 
@@ -100,8 +102,8 @@
 
   // When choosing to delete the cache & upload the file with the same name again
   async function reUploadFile(e: CustomEvent<FileUploadEventDetail>): Promise<void> {
-    deleteFiles(e)
-    uploadFile()
+    await deleteFiles(e)
+    await uploadFile()
   }
 
   // Update the columns to the correct name in a file

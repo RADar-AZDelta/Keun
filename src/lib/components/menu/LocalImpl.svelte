@@ -39,8 +39,8 @@
       <p class="file-name">{file.name}</p>
     </div>
     <div>
-      <button class="download-file" on:click={e => downloadFiles(e, file.id)}><SvgIcon id="download" /></button>
-      <button class="delete-file" on:click={e => deleteFiles(e, file.id)}><SvgIcon id="x" /></button>
+      <button class="download-file" on:click={e => downloadFiles(e, file.name)}><SvgIcon id="download" /></button>
+      <button class="delete-file" on:click={e => deleteFiles(e, file.name)}><SvgIcon id="x" /></button>
     </div>
   </button>
 {/each}

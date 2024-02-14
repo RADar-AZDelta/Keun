@@ -4,7 +4,7 @@ import { IndexedDB } from '@radar-azdelta/radar-utils'
 import type { IDatabaseImpl, IFile, IFileInformation } from '$lib/components/Types'
 import { databaseImpl } from '$lib/store'
 
-interface IDatabaseFile {
+export interface IDatabaseFile {
   id: string
   name: string
   content: string
@@ -46,8 +46,9 @@ export default class LocalImpl implements IDatabaseImpl {
     if (!file || !file.file) return
     await FileHelper.downloadFile(file.file)
     const isCustomFileNotEmpty = await this.checkIfCustomFileIsNotEmpty(file.customId)
+    console.log('EMPTY ', isCustomFileNotEmpty)
     if (!isCustomFileNotEmpty) return
-    const customFile = await this.getFileFromDatabase(this.customDb, id)
+    const customFile = await this.getFileFromDatabase(this.customDb, file.customId)
     if (!customFile || !customFile.file) return
     await FileHelper.downloadFile(customFile.file)
   }
@@ -55,6 +56,7 @@ export default class LocalImpl implements IDatabaseImpl {
   private async checkIfCustomFileIsNotEmpty(id: string) {
     await this.openCustomDatabase()
     const fileInfo: undefined | IDatabaseFile = await this.customDb?.get(id, true)
+    console.log('INFO ', fileInfo, ' FOR ID ', id)
     if (!fileInfo) return false
     const content = fileInfo.content
     if (!content || content.includes(',,,,,,,,,')) return false
@@ -65,8 +67,8 @@ export default class LocalImpl implements IDatabaseImpl {
     logWhenDev(`checkFileExistance: Check if the file with id ${id} exists`)
     await this.openDatabase()
     const file: undefined | IDatabaseFile = await this.db?.get(id, true)
-    if (!file) return false
-    return true
+    if (!file || !file.id) return undefined
+    return { id: file.id, customId: file.customId }
   }
 
   async getFilesList(): Promise<IFileInformation[]> {
@@ -74,18 +76,19 @@ export default class LocalImpl implements IDatabaseImpl {
     await this.openDatabase()
     const files: undefined | IDatabaseFile[] = await this.db!.getAll(true)
     if (!files) return []
-    return files.map(file => ({ id: file.id, name: file.name, customId: file.customId, custom: file.custom }))
+    return files.map(file => ({ id: file.id, name: file.name, customId: file.custom, custom: file.custom }))
   }
 
   async uploadKeunFile(file: File, authors: string[]) {
     logWhenDev('uploadKeunFile: Uploading file to IndexedDB')
     await this.openDatabase()
-    const customName = `${file.name.split('.')[0]}_concepts.csv`
+    const { name } = file
+    const customName = `${name.split('.')[0]}_concepts.csv`
     const customId = crypto.randomUUID()
     const fileString = await this.transformFileToString(file)
     const id = crypto.randomUUID()
-    const fileContent: IDatabaseFile = { id, name: file.name, content: fileString, custom: customName, customId }
-    await this.db!.set(fileContent, file.name, true)
+    const fileContent: IDatabaseFile = { id, name, content: fileString, custom: customName, customId: customName }
+    await this.db!.set(fileContent, name, true)
     const customBlob = new Blob([initial.initial])
     const customFileString = await blobToString(customBlob)
     const customFileContent = { id: customId, name: customName, content: customFileString }
@@ -124,9 +127,15 @@ export default class LocalImpl implements IDatabaseImpl {
   async deleteKeunFile(id: string) {
     logWhenDev(`deleteKeunFile: Delete the file with id ${id} in IndexedDB`)
     await this.openDatabase()
+    const file: undefined | IDatabaseFile = await this.db?.get(id, true)
+    console.log('FILE ', file, ' AND CUSTOM ', file?.customId)
+    if (!file || !file.customId) return
     await this.db!.remove(id, true)
+    console.log('NORMAL REMOVED')
     await this.openCustomDatabase()
-    await this.customDb!.remove(id, true)
+    // TODO: get the correct id of the custom file
+    await this.customDb!.remove(file.customId, true)
+    console.log('CUSTOM REMOVED')
   }
 
   async getAllPossibleAuthors() {

@@ -31,6 +31,7 @@
     const reader = new FileReader()
     reader.onload = checkForMissingColumns
     // There will only be one file, split the name from the extension
+    if(!inputFiles[0]) return
     const extension = inputFiles[0].name.split('.').pop()
     // Check if the extension is allowed, check the file for missing columns
     if (!extension || !allowedExtensions.includes(extension)) return
@@ -97,7 +98,7 @@
       <h2 class="authors-title">Select the authors that have permission to this file:</h2>
       <input class="authors-input" type="text" placeholder="search for an user" bind:value={userFilter} />
       <ul class="authors-list">
-        {#await $databaseImpl?.getAllAuthors() then users}
+        {#await $databaseImpl?.getAllPossibleAuthors() then users}
           {#if users}
             {#each users as user, _}
               <li class="author-option">

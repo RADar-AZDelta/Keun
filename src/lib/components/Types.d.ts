@@ -1,4 +1,5 @@
 import type { IFirestoreUser } from '$lib/implementations/databaseImpl/FirebaseImpl2'
+import type { IDatabaseFile } from '$lib/implementations/databaseImpl/LocalImpl'
 import type { IDataTypeFunctionalities } from '@radar-azdelta/svelte-datatable'
 
 export interface IFileTemplate {
@@ -320,11 +321,16 @@ export interface IFileInformation {
   custom: string
 }
 
+export interface IFileIds {
+  id: string
+  customId: string
+}
+
 export interface IDatabaseImpl {
   getKeunFile(id: string): Promise<IFile | undefined>
   getCustomKeunFile(id: string): Promise<IFile | undefined>
   downloadFiles(id: string): Promise<void>
-  checkFileExistance(id: string): Promise<boolean>
+  checkFileExistance(id: string): Promise<undefined | IFileIds>
   getFilesList(): Promise<IFileInformation[]>
   uploadKeunFile(file: File, authors: string[]): Promise<void>
   editKeunFile(id: string, blob: Blob): Promise<void>

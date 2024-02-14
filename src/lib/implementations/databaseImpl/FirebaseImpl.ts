@@ -87,9 +87,10 @@ export default class FirebaseImpl implements IDatabaseImpl {
     await FileHelper.downloadFile(customFile.file)
   }
 
-  async checkFileExistance(id: string): Promise<boolean> {
+  async checkFileExistance(id: string) {
     const existance = await this.storage.checkIfFileExists(`${this.storageCollection}/${id}`)
-    return existance
+    if (!existance) return
+    return id
   }
 
   async getFilesList(): Promise<IFileInformation[]> {

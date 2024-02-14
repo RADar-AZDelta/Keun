@@ -1,10 +1,9 @@
 <script lang="ts">
-  import { dev } from '$app/environment'
-  import { goto } from '$app/navigation'
   import { createEventDispatcher } from 'svelte'
   import { selectedFileId } from '$lib/store'
   import type { PageEvents } from '$lib/components/Types'
   import { SvgIcon } from '@radar-azdelta/radar-svelte-components'
+  import { logWhenDev } from '@radar-azdelta/radar-utils'
 
   export let processing: boolean
 
@@ -17,13 +16,13 @@
 
   // Go to the mapping page of the current uploaded file
   async function mapCachedFile(): Promise<void> {
-    if (dev) console.log(`mapCachedFile: Go to the route "/mapping" to map the file: ${$selectedFileId}`)
-    goto(`/mapping?id=${$selectedFileId}`)
+    logWhenDev(`mapCachedFile: Keep the file with id: ${$selectedFileId}`)
+    closeDialog()
   }
 
   // Send a request to the parent to rewrite the current uploaded file with the new file that is inserted
   async function uploadFile(): Promise<void> {
-    if (dev) console.log(`uploadFile: Upload the file instead of using the cached version.`)
+    logWhenDev(`uploadFile: Upload the file instead of using the cached version.`)
     dispatch('fileUpload', { id: $selectedFileId })
     closeDialog()
   }
