@@ -17,7 +17,7 @@
   import LocalImpl from '$lib/components/menu/LocalImpl.svelte'
   import { loadImplementationDB } from '$lib/implementations/implementation'
   import { databaseImpl, databaseImplementation, selectedCustomFileId, selectedFileId, user } from '$lib/store'
-  import { Spinner } from '@radar-azdelta/radar-svelte-components'
+  import { Spinner } from '@radar-azdelta-int/radar-svelte-components'
   import type { SvelteComponent } from 'svelte'
   import type { FileUploadEventDetail } from '$lib/components/Types'
 

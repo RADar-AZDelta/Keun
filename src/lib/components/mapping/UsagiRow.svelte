@@ -3,13 +3,13 @@
   import { createEventDispatcher } from 'svelte'
   import { query } from 'arquero'
   import { user } from '$lib/store'
-  import { reformatDate } from '@radar-azdelta/radar-utils'
+  import { reformatDate } from '@radar-azdelta-int/radar-utils'
   import { resetRow } from '$lib/mappingUtils'
   import { EditableCell, type IColumnMetaData } from '@radar-azdelta/svelte-datatable'
   import type DataTable from '@radar-azdelta/svelte-datatable'
   import type Query from 'arquero/dist/types/query/query'
   import type { IUsagiRow, MappingEvents } from '$lib/components/Types'
-  import { SvgIcon } from '@radar-azdelta/radar-svelte-components'
+  import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
 
   export let renderedRow: Record<string, any>,
     columns: IColumnMetaData[] | undefined,

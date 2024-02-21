@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { SvgIcon, clickOutside } from '@radar-azdelta/radar-svelte-components'
+  import { SvgIcon, clickOutside } from '@radar-azdelta-int/radar-svelte-components'
   import { authImpl, authImplementation, user } from '$lib/store'
   import { loadImplementationAuth } from '$lib/implementations/implementation'
 

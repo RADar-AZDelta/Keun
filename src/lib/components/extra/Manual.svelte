@@ -1,6 +1,6 @@
 <script lang="ts">
   import SvelteMarkDown from 'svelte-markdown'
-  import { Dialog, SvgIcon } from '@radar-azdelta/radar-svelte-components'
+  import { Dialog, SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
 
   export let href: string
 

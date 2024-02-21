@@ -1,7 +1,7 @@
 <script lang="ts">
   import { dev } from '$app/environment'
   import { createEventDispatcher } from 'svelte'
-  import { Drop, SvgIcon, Spinner } from '@radar-azdelta/radar-svelte-components'
+  import { Drop, SvgIcon, Spinner } from '@radar-azdelta-int/radar-svelte-components'
   import { authImpl, databaseImpl, databaseImplementation } from '$lib/store'
   import type { FileDropEventDetail, PageEvents } from '$lib/components/Types'
 
@@ -31,7 +31,7 @@
     const reader = new FileReader()
     reader.onload = checkForMissingColumns
     // There will only be one file, split the name from the extension
-    if(!inputFiles[0]) return
+    if (!inputFiles[0]) return
     const extension = inputFiles[0].name.split('.').pop()
     // Check if the extension is allowed, check the file for missing columns
     if (!extension || !allowedExtensions.includes(extension)) return

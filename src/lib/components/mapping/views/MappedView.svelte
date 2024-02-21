@@ -3,7 +3,7 @@
   import DataTable, { type ITableOptions } from '@radar-azdelta/svelte-datatable'
   import columns from '$lib/data/columnsMapped.json'
   import type { IMappedRow, MappingEvents } from '$lib/components/Types'
-  import { SvgIcon } from '@radar-azdelta/radar-svelte-components'
+  import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
 
   export let mappedData: (IMappedRow | object)[]
 

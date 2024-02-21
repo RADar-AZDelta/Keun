@@ -9,7 +9,7 @@
   import type Query from 'arquero/dist/types/query/query'
   import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
   import type { ICustomConceptInput, MappingEvents } from '$lib/components/Types'
-  import { SvgIcon } from '@radar-azdelta/radar-svelte-components'
+  import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
 
   export let renderedRow: Record<string, any>,
     columns: IColumnMetaData[] | undefined,

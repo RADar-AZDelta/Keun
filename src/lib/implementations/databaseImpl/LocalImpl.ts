@@ -1,6 +1,6 @@
-import { FileHelper, blobToString, fileToBlob, logWhenDev, stringToFile } from '@radar-azdelta/radar-utils'
+import { FileHelper, blobToString, fileToBlob, logWhenDev, stringToFile } from '@radar-azdelta-int/radar-utils'
 import initial from '$lib/data/customBlobInitial.json'
-import { IndexedDB } from '@radar-azdelta/radar-utils'
+import { IndexedDB } from '@radar-azdelta-int/radar-utils'
 import type { IDatabaseImpl, IFile, IFileInformation } from '$lib/components/Types'
 import { databaseImpl } from '$lib/store'
 
@@ -67,7 +67,7 @@ export default class LocalImpl implements IDatabaseImpl {
     logWhenDev(`checkFileExistance: Check if the file with id ${id} exists`)
     await this.openDatabase()
     const file: undefined | IDatabaseFile = await this.db?.get(id, true)
-    if (!file || !file.id) return undefined
+    if (!file || !file.id) return
     return { id: file.id, customId: file.customId }
   }
 

@@ -9,7 +9,7 @@
     IUsagiRow,
     MappingEvents,
   } from '$lib/components/Types'
-  import { SvgIcon } from '@radar-azdelta/radar-svelte-components'
+  import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
 
   export let usagiRow: IUsagiRow
 

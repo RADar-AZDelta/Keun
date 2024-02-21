@@ -7,10 +7,10 @@ import {
   PUBLIC_FIREBASE_STORAGE_BUCKET,
 } from '$env/static/public'
 import type { IDatabaseImpl, IFile, IFileInformation, IUser } from '$lib/components/Types'
-import { FirebaseFirestore, FirebaseStorage, type FirebaseOptions } from '@radar-azdelta/radar-firebase-utils'
+import { FirebaseFirestore, FirebaseStorage, type FirebaseOptions } from '@radar-azdelta-int/radar-firebase-utils'
 import { user } from '$lib/store'
 import initial from '$lib/data/customBlobInitial.json'
-import { FileHelper } from '@radar-azdelta/radar-utils'
+import { FileHelper } from '@radar-azdelta-int/radar-utils'
 
 // TODO: implement this in the program & check if all the functionalities work before removing the firebase file
 
@@ -88,9 +88,9 @@ export default class FirebaseImpl implements IDatabaseImpl {
   }
 
   async checkFileExistance(id: string) {
-    const existance = await this.storage.checkIfFileExists(`${this.storageCollection}/${id}`)
+    const existance = await this.storage.readFileStorage(`${this.storageCollection}/${id}`)
     if (!existance) return
-    return id
+    return { id, customId: existance.meta?.customMetadata?.customId ?? '' }
   }
 
   async getFilesList(): Promise<IFileInformation[]> {

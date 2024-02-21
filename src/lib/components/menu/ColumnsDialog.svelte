@@ -3,7 +3,7 @@
   import { createEventDispatcher } from 'svelte'
   import { user } from '$lib/store'
   import type { PageEvents } from '$lib/components/Types'
-  import { SvgIcon } from '@radar-azdelta/radar-svelte-components'
+  import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
 
   export let missing: Record<string, string>, cols: string[], file: File
 

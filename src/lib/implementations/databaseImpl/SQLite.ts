@@ -1,4 +1,4 @@
-import { blobToString, downloadWithUrl, fileToBlob, logWhenDev, stringToFile } from '@radar-azdelta/radar-utils'
+import { blobToString, downloadWithUrl, fileToBlob, logWhenDev, stringToFile } from '@radar-azdelta-int/radar-utils'
 import { dev } from '$app/environment'
 import { base } from '$app/paths'
 import initial from '$lib/data/customBlobInitial.json'

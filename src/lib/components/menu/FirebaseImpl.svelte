@@ -4,7 +4,7 @@
   import { base } from '$app/paths'
   import { createEventDispatcher } from 'svelte'
   import { selectedFileId, user } from '$lib/store'
-  import { SvgIcon, Spinner } from '@radar-azdelta/radar-svelte-components'
+  import { SvgIcon, Spinner } from '@radar-azdelta-int/radar-svelte-components'
   import type { PageEvents, IFileInformation } from '$lib/components/Types'
 
   export let files: IFileInformation[]

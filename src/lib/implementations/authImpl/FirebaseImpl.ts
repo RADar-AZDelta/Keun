@@ -1,5 +1,5 @@
-import { logWhenDev } from '@radar-azdelta/radar-utils'
-import { FirebaseAuth, userSessionStore } from '@radar-azdelta/radar-firebase-utils'
+import { logWhenDev } from '@radar-azdelta-int/radar-utils'
+import { FirebaseAuth, userSessionStore } from '@radar-azdelta-int/radar-firebase-utils'
 import { user } from '$lib/store'
 import {
   PUBLIC_FIREBASE_API_KEY,
@@ -11,7 +11,7 @@ import {
   PUBLIC_TENANT_ID,
 } from '$env/static/public'
 import type { IAuthImpl } from '$lib/components/Types'
-import type { FirebaseOptions, UserSession } from '@radar-azdelta/radar-firebase-utils'
+import type { FirebaseOptions, UserSession } from '@radar-azdelta-int/radar-firebase-utils'
 
 const firebaseConfig: FirebaseOptions = {
   apiKey: PUBLIC_FIREBASE_API_KEY,
@@ -29,6 +29,8 @@ export default class LocalImpl implements IAuthImpl {
     logWhenDev('logIn: Logging in via Firebase')
     await this.auth.logIn('microsoft')
     const loggedInUser = await this.getUser()
+    console.log("LOGGED ", loggedInUser)
+    userSessionStore.subscribe(user => console.log("USER" , user))
     const { uid, name, roles } = loggedInUser
     user.set({ uid, name, roles })
   }

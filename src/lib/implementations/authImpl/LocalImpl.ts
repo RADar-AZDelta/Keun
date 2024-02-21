@@ -1,5 +1,5 @@
 import { user } from '$lib/store'
-import { logWhenDev } from '@radar-azdelta/radar-utils'
+import { logWhenDev } from '@radar-azdelta-int/radar-utils'
 import type { IAuthImpl } from '$lib/components/Types'
 
 export default class LocalImpl implements IAuthImpl {

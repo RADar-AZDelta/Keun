@@ -9,7 +9,7 @@
   import type Query from 'arquero/dist/types/query/query'
   import type { IColumnMetaData, ITableOptions } from '@radar-azdelta/svelte-datatable'
   import DataTable from '@radar-azdelta/svelte-datatable'
-  import { reformatDate } from '@radar-azdelta/radar-utils'
+  import { reformatDate } from '@radar-azdelta-int/radar-utils'
   import { BergamotTranslator } from '$lib/helperClasses/BergamotTranslator'
   import { addExtraFields } from '$lib/mappingUtils'
   import options from '$lib/data/tableOptions.json'
@@ -418,10 +418,6 @@
   beforeNavigate(async () => await syncFile())
 
   setupDataTable()
-
-  $: {
-    console.log('TESTING ', dataTableCustomConcepts, ' AND ', customConceptsFile)
-  }
 </script>
 
 <svelte:head>

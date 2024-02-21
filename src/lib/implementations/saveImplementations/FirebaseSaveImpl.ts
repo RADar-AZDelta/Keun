@@ -1,5 +1,14 @@
 import { dev } from '$app/environment'
-import { readFirestore, userSessionStore, writeToFirestore } from '$lib/obsolete/firebase'
+import {
+  PUBLIC_FIREBASE_API_KEY,
+  PUBLIC_FIREBASE_APP_ID,
+  PUBLIC_FIREBASE_AUTH_DOMAIN,
+  PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  PUBLIC_FIREBASE_PROJECT_ID,
+  PUBLIC_FIREBASE_STORAGE_BUCKET,
+} from '$env/static/public'
+import { user } from '$lib/store'
+import { FirebaseFirestore, type FirebaseOptions } from '@radar-azdelta-int/radar-firebase-utils'
 import type {
   IColumnMetaData,
   ICustomStoreOptions,
@@ -7,7 +16,17 @@ import type {
   ITableOptions,
 } from '@radar-azdelta/svelte-datatable'
 
+const firebaseConfig: FirebaseOptions = {
+  apiKey: PUBLIC_FIREBASE_API_KEY,
+  authDomain: PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: PUBLIC_FIREBASE_APP_ID,
+}
+
 export default class FirebaseSaveImpl implements ICustomStoreOptions {
+  firestore: FirebaseFirestore = new FirebaseFirestore(firebaseConfig)
   storedOptions: ITableOptions
   storedColumns: IColumnMetaData[] | undefined
   collection: string = 'users'
@@ -62,7 +81,7 @@ export default class FirebaseSaveImpl implements ICustomStoreOptions {
     delete file.options.saveImpl
     delete file.options.dataTypeImpl
     file = { options: file.options, columns: file.columns, id: file.options.id }
-    await writeToFirestore(this.collection, uid, userOpts)
+    await this.firestore.writeToFirestore(this.collection, uid, userOpts)
   }
 
   private async deleteFromFirestore(fileId?: string) {
@@ -71,20 +90,22 @@ export default class FirebaseSaveImpl implements ICustomStoreOptions {
     const { userOpts, file, uid } = result
     delete file.options
     delete file.columns
-    await writeToFirestore(this.collection, uid, userOpts)
+    await this.firestore.writeToFirestore(this.collection, uid, userOpts)
   }
 
   private async getCurrentFile(fileId?: string) {
-    if (!fileId) return undefined
+    if (!fileId) return
     const uid = await this.getUserId()
-    if (!uid) return undefined
-    const userOpts = await readFirestore(this.collection, uid)
+    if (!uid) return
+    const userOptsDocument = await this.firestore.readFirestore(this.collection, uid)
+    if (!userOptsDocument) return
+    const userOpts = userOptsDocument.data()
     if (!userOpts) return undefined
     const file = userOpts.files.find((f: any) => f.id === fileId)
     return { userOpts, file, uid }
   }
 
-  private async getUserId(): Promise<string | undefined> {
-    return new Promise(resolve => userSessionStore.subscribe(user => resolve(user.uid))())
+  private async getUserId(): Promise<string | undefined | null> {
+    return new Promise(resolve => user.subscribe(user => resolve(user.uid))())
   }
 }

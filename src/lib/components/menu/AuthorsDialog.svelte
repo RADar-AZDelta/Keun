@@ -2,7 +2,7 @@
   import { dev } from '$app/environment'
   import { databaseImpl } from '$lib/store'
   import { loadImplementationDB } from '$lib/implementations/implementation'
-  import { SvgIcon } from '@radar-azdelta/radar-svelte-components'
+  import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
 
   export let processing: boolean, selected: string
 

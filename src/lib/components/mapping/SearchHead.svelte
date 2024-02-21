@@ -5,7 +5,7 @@
   import type Query from 'arquero/dist/types/query/query'
   import type DataTable from '@radar-azdelta/svelte-datatable'
   import type { ITablePagination, IUsagiRow, MappingEvents, ShowColumnsEventDetail } from '$lib/components/Types'
-  import { SvgIcon } from '@radar-azdelta/radar-svelte-components'
+  import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
 
   export let selectedRow: IUsagiRow, mainTable: DataTable
 

@@ -2,8 +2,8 @@
   import { createEventDispatcher } from 'svelte'
   import { selectedFileId } from '$lib/store'
   import type { PageEvents } from '$lib/components/Types'
-  import { SvgIcon } from '@radar-azdelta/radar-svelte-components'
-  import { logWhenDev } from '@radar-azdelta/radar-utils'
+  import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
+  import { logWhenDev } from '@radar-azdelta-int/radar-utils'
 
   export let processing: boolean
 

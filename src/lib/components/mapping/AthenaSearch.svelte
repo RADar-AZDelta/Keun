@@ -3,7 +3,7 @@
   import { dev } from '$app/environment'
   import { query } from 'arquero'
   import { settings, user } from '$lib/store'
-  import { localStorageGetter } from '@radar-azdelta/radar-utils'
+  import { localStorageGetter } from '@radar-azdelta-int/radar-utils'
   import type Query from 'arquero/dist/types/query/query'
   import { Search } from '@radar-azdelta/svelte-athena-search'
   import { addExtraFields, resetRow } from '$lib/mappingUtils'
@@ -28,7 +28,7 @@
     RemoveMappingEventDetail,
     UpdateDetailsEventDetail,
   } from '$lib/components/Types'
-  import { SvgIcon, clickOutside } from '@radar-azdelta/radar-svelte-components'
+  import { SvgIcon, clickOutside } from '@radar-azdelta-int/radar-svelte-components'
 
   export let selectedRow: IUsagiRow,
     selectedRowIndex: number,
