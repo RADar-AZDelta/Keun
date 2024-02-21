@@ -203,11 +203,12 @@
     let mappedUsagiRow: IUsagiRow = <IUsagiRow>row ?? usagi
     if (!mappedUsagiRow) return { mappedIndex: rowIndex, mappedRow: mappedUsagiRow }
     // Map the import columns that are given from Athena
-    const { id, name, domain, vocabulary } = athena
+    const { id, name, domain, vocabulary, className } = athena
     mappedUsagiRow.conceptId = id
     mappedUsagiRow.conceptName = name
     mappedUsagiRow.domainId = domain
     mappedUsagiRow.vocabularyId = vocabulary
+    mappedUsagiRow.className = className
     mappedUsagiRow = await addExtraFields(mappedUsagiRow)
     if (dev) console.log('rowMapping: Finished mapping row with index ', rowIndex)
     return { mappedIndex: rowIndex, mappedRow: mappedUsagiRow }
@@ -216,17 +217,16 @@
   async function extractCustomConcepts(): Promise<void | boolean> {
     if (dev) console.log('exractCustomConcepts: start extracting the already mapped custom concepts from the table')
     const customQuery = query()
-      .filter((r: any) => r['ADD_INFO:customConcept'] === true && !r.conceptId)
+      .filter((r: any) => r['ADD_INFO:customConcept'] === true)
       .toObject()
     const concepts = await dataTableMapping.executeQueryAndReturnResults(customQuery)
     if (!concepts?.indices?.length) return (customsExtracted = true)
-    const testRow = await dataTableCustomConcepts.getFullRow(0)
-    if (testRow?.domain_id === 'test') await dataTableCustomConcepts.deleteRows([0])
+    await dataTableCustomConcepts.deleteRows([0])
     for (let concept of concepts.queriedData) {
-      const { conceptId, sourceName, conceptName, className, domainId, vocabularyId } = concept
+      const { conceptId, sourceCode, conceptName, className, domainId, vocabularyId } = concept
       const custom: ICustomConceptInput = {
         concept_id: conceptId,
-        concept_code: sourceName,
+        concept_code: sourceCode,
         concept_name: conceptName,
         concept_class_id: className,
         domain_id: domainId,
@@ -238,6 +238,9 @@
       }
       await dataTableCustomConcepts.insertRows([custom])
     }
+    const blob = await dataTableMapping.getBlob()
+    const customBlob = dataTableCustomConcepts ? await dataTableCustomConcepts.getBlob() : undefined
+    await $databaseImpl!.editFile($selectedFileId, blob, customBlob)
     customsExtracted = true
   }
 

@@ -102,7 +102,7 @@ export default class LocalImpl implements IUpdatedFunctionalityImpl {
     const updatedName = needsPrefix ? file.name.split('.')[0] + '_usagi.csv' : file.name
     await this.download(updatedName, file)
     await this.downloadCustomFile(fileInfo.id)
-    await this.deleteFile(id)
+    // await this.deleteFile(id)
   }
 
   private async downloadCustomFile(fileId: string) {
