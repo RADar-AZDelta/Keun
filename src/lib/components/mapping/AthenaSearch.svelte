@@ -130,6 +130,7 @@
       conceptName: customConcept.conceptName,
       domainId: customConcept.domainId,
       vocabularyId: customConcept.vocabularyId,
+      className: customConcept.conceptClassId,
       comment,
       assignedReviewer: reviewer,
       mappingStatus: 'SEMI-APPROVED',
