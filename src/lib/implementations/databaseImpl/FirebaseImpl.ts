@@ -7,11 +7,13 @@ import {
   PUBLIC_FIREBASE_STORAGE_BUCKET,
 } from '$env/static/public'
 import type { IDatabaseImpl, IFile, IFileInformation, IUser } from '$lib/components/Types'
-import { FirebaseFirestore, FirebaseStorage, type FirebaseOptions } from '@radar-azdelta-int/radar-firebase-utils'
 import { user } from '$lib/store'
 import initial from '$lib/data/customBlobInitial.json'
 import { FileHelper } from '@radar-azdelta-int/radar-utils'
-import { arrayUnion } from 'firebase/firestore'
+import { arrayRemove, arrayUnion } from 'firebase/firestore'
+import FirebaseFirestore from '$lib/firebase/FirebaseFirestore'
+import FirebaseStorage from '$lib/firebase/FirebaseStorage'
+import type { FirebaseOptions } from 'firebase/app'
 
 // TODO: implement this in the program & check if all the functionalities work before removing the firebase file
 
@@ -97,9 +99,11 @@ export default class FirebaseImpl implements IDatabaseImpl {
   async getFilesList(): Promise<IFileInformation[]> {
     // Return the file id & the name
     const fileIds = await this.getFileIdsForUser()
+    console.log("IDS ", fileIds)
     const fileNames = []
     for (let fileId of fileIds) {
       const fileInfo = await this.getFileNameFromStorage(fileId)
+      console.log("FILE INFO ", fileInfo)
       if (fileInfo) fileNames.push({ id: fileId, name: fileInfo.fileName, customId: fileInfo.customId, custom: '' })
     }
     return fileNames
@@ -118,6 +122,7 @@ export default class FirebaseImpl implements IDatabaseImpl {
 
   private async getFileNameFromStorage(id: string) {
     const fileInfo = await this.storage.readMetaData(`${this.storageCollection}/${id}`)
+    console.log("META ", fileInfo)
     if (!fileInfo || !fileInfo.customMetadata) return
     const fileName = (<IStorageMetadata>fileInfo.customMetadata).name
     const customId = (<IStorageMetadata>fileInfo.customMetadata).customId
@@ -138,18 +143,19 @@ export default class FirebaseImpl implements IDatabaseImpl {
     const customMetaData: IStorageCustomMetadata = { customMetadata: { name: customName, customId: customFileId } }
     await this.storage.uploadFileStorage(`${this.storageCustomColl}/${customFileId}`, customFile, customMetaData)
     const fileData = { name: file.name, authors, customId: customFileId, custom: customName }
-    await this.firestore.writeToFirestore(this.firestoreFileColl, fileId, fileData)
+    await this.firestore.updateToFirestoreIfNotExist(this.firestoreFileColl, fileId, fileData)
     for (let author of authors) {
-      await this.firestore.writeToFirestore(this.firestoreUserColl, author, { files: arrayUnion(fileId) })
+      await this.firestore.updateToFirestoreIfNotExist(this.firestoreUserColl, author, { files: arrayUnion(fileId) })
     }
   }
 
   async editKeunFile(id: string, blob: Blob): Promise<void> {
     const fileData = await this.getFileDataFromFirestore(id)
     if (!fileData) return
-    const { name } = fileData
+    const { name, customId } = fileData
     const file = await this.blobToFile(blob, name)
-    await this.storage.uploadFileStorage(`${this.storageCollection}/${id}`, file)
+    const metaData: IStorageCustomMetadata = { customMetadata: { name: file.name, customId } }
+    await this.storage.uploadFileStorage(`${this.storageCollection}/${id}`, file, metaData)
   }
 
   async editCustomKeunFile(id: string, blob: Blob): Promise<void> {
@@ -174,6 +180,14 @@ export default class FirebaseImpl implements IDatabaseImpl {
 
   async deleteKeunFile(id: string): Promise<void> {
     const customId = await this.retrieveCustomFileId(id)
+    const fileSnapshot = await this.firestore.readFirestore(this.firestoreFileColl, id)
+    if (!fileSnapshot || !fileSnapshot.data()) return
+    const fileInfo = fileSnapshot.data()
+    if (!fileInfo) return
+    const { authors } = fileInfo
+    for(let author of authors) {
+      await this.firestore.updateToFirestore(this.firestoreUserColl, author, { files: arrayRemove(id) })
+    }
     await this.storage.deleteFileStorage(`${this.storageCollection}/${id}`)
     await this.firestore.deleteDocumentFirestore(this.firestoreFileColl, id)
     if (customId) await this.storage.deleteFileStorage(`${this.storageCustomColl}/${customId}`)
@@ -199,6 +213,6 @@ export default class FirebaseImpl implements IDatabaseImpl {
     const { uid, name } = user
     if (!uid || !name) return
     const userConfig = { uid, name }
-    await this.firestore.updateToFirestore(this.firestoreUserColl, uid, userConfig)
+    await this.firestore.updateToFirestoreIfNotExist(this.firestoreUserColl, uid, userConfig)
   }
 }

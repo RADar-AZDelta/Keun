@@ -3,7 +3,7 @@
   import { goto } from '$app/navigation'
   import { base } from '$app/paths'
   import { createEventDispatcher } from 'svelte'
-  import { selectedFileId, user } from '$lib/store'
+  import { databaseImpl, selectedCustomFileId, selectedFileId, user } from '$lib/store'
   import { SvgIcon, Spinner } from '@radar-azdelta-int/radar-svelte-components'
   import type { PageEvents, IFileInformation } from '$lib/components/Types'
 
@@ -14,7 +14,10 @@
   // A method to send the user to the mappingtool
   async function openMappingTool(fileId: string): Promise<void> {
     if (dev) console.log('openMappingTool: Navigating to the mapping tool')
+    const cached = await $databaseImpl!.checkFileExistance(fileId)
+    if (!cached) return
     $selectedFileId = fileId
+    $selectedCustomFileId = cached.customId
     goto(`${base}/mapping?impl=firebase&id=${fileId}`)
   }
 

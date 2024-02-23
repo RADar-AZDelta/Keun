@@ -93,18 +93,20 @@
     <h1 class="file-input-title">Upload a new file</h1>
     <button on:click={closeDialog} class="close-dialog" disabled={processing}><SvgIcon id="x" /></button>
     <!-- <Drop extensions={['csv']} on:fileDrop={fileDrop}> -->
-    <Drop extensions={['csv']} on:drop={fileDrop}>
-      <label class="upload-file">
-        {#if file}
-          <SvgIcon id="excel" width="40px" height="40px" />
-          <p>{file.name}</p>
-        {:else}
-          <SvgIcon id="upload" width="24px" height="24px" />
-          <p>Drag or click to upload a file</p>
-        {/if}
-        <input class="file-input" type="file" name="file" id="file" accept=".csv" on:input={onFileInputChange} />
-      </label>
-    </Drop>
+    <div class="drop-container">
+      <Drop extensions={['csv']} on:drop={fileDrop}>
+        <label class="upload-file">
+          {#if file}
+            <SvgIcon id="excel" width="40px" height="40px" />
+            <p>{file.name}</p>
+          {:else}
+            <SvgIcon id="upload" width="24px" height="24px" />
+            <p>Drag or click to upload a file</p>
+          {/if}
+          <input class="file-input" type="file" name="file" id="file" accept=".csv" on:input={onFileInputChange} />
+        </label>
+      </Drop>
+    </div>
     {#if databaseImplementation === 'firebase'}
       <h2 class="authors-title">Select the authors that have permission to this file:</h2>
       <input class="authors-input" type="text" placeholder="search for an user" bind:value={userFilter} />
@@ -112,8 +114,8 @@
         {#each allUsers as user, _}
           <li class="author-option">
             <label class="author-label">
-              <input type="checkbox" id={user.name} bind:group={authorizedAuthors} value={user.id} />
-              {user.name}
+              <input type="checkbox" id={user.name} bind:group={authorizedAuthors} value={user.uid} />
+              {user.name} - {user.uid}
             </label>
           </li>
         {/each}
@@ -141,6 +143,11 @@
     height: 100%;
     margin: 0;
     padding: 0;
+  }
+
+  .drop-container {
+    max-height: 50%;
+    flex: 1 1 auto;
   }
 
   .file-input-title {

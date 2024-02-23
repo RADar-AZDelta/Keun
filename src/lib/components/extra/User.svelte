@@ -22,9 +22,10 @@
     userDialog.showModal()
   }
 
-  async function login(): Promise<void> {
+  async function login(provider: string): Promise<void> {
     if (!$authImpl) await loadImplementationAuth()
-    await $authImpl!.logIn(author ? author : undefined)
+    // await $authImpl!.logIn(author ? author : undefined)
+    await $authImpl?.logIn(provider)
     await $databaseImpl?.saveUserConfig($user)
     backupAuthor = author
     closeDialog()
@@ -61,7 +62,8 @@
     </button>
     {#if authImplementation == 'firebase'}
       <section class="author">
-        <button on:click={login}>Microsoft</button>
+        <button on:click={() => login('microsoft')}>Microsoft</button>
+        <button on:click={() => login('google')}>Google</button>
       </section>
     {:else}
       <section class="author">
@@ -69,7 +71,7 @@
         <input id="author" type="text" placeholder="John Wick" bind:value={author} />
         <div class="buttons-container">
           <button class="cancel" on:click={cancelLogIn} disabled={author == undefined ? true : false}> Cancel </button>
-          <button class="save" on:click={login} disabled={author == undefined ? true : false}> Save </button>
+          <button class="save" on:click={() => login('')} disabled={author == undefined ? true : false}> Save </button>
         </div>
       </section>
     {/if}

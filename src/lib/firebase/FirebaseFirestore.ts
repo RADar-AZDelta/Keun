@@ -21,6 +21,13 @@ export default class FirebaseFirestore extends Firebase {
     await updateDoc(doc(this.firestore, collection, id), data).catch(this.logErrorAndReturn)
   }
 
+  async updateToFirestoreIfNotExist(collection: string, id: string, data: object) {
+    const refer = doc(this.firestore, collection, id)
+    const docSnap = await getDoc(refer).catch(() => {})
+    if(!docSnap || !docSnap?.data()) return await this.writeToFirestore(collection, id, data)
+    await this.updateToFirestore(collection, id, data)
+  }
+
   async readFirestore(collection: string, id: string) {
     const refer = doc(this.firestore, collection, id)
     const docSnap: DocumentSnapshot | void = await getDoc(refer).catch(this.logErrorAndReturn)

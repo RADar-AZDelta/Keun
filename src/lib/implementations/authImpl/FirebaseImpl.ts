@@ -26,15 +26,15 @@ const firebaseConfig: FirebaseOptions = {
 export default class LocalImpl implements IAuthImpl {
   auth: FirebaseAuth = new FirebaseAuth(firebaseConfig, PUBLIC_TENANT_ID)
 
-  async logIn(): Promise<void> {
+  async logIn(provider: string): Promise<void> {
     logWhenDev('logIn: Logging in via Firebase')
-    await this.auth.logIn('microsoft')
+    await this.auth.logIn(provider ?? 'microsoft')
     const loggedInUser = await this.getUser()
-    if(!loggedInUser) return
+    if (!loggedInUser) return
     const { uid, name, roles } = loggedInUser
     user.set({ uid, name, roles })
   }
-  
+
   async logOut(): Promise<void> {
     logWhenDev('logOut: Logging out via Firebase')
     await this.auth.logOut()
@@ -45,7 +45,7 @@ export default class LocalImpl implements IAuthImpl {
     logWhenDev('getAuthor: Get the saved author via Firebase')
     await this.auth.userSessionInitialized
     const retrievedUser = await this.getUser()
-    if(!retrievedUser) return null
+    if (!retrievedUser) return null
     const { uid, name, roles } = retrievedUser
     user.set({ uid, name, roles })
     return retrievedUser.name ?? null

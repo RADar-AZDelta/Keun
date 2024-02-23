@@ -69,7 +69,7 @@ service cloud.firestore {
 				// The user must be logged in through Microsoft, has the role "user" || "admin" & is reading his own user info
         allow read: if isSignedIn() && ((checkId() && getRole('user')) || getRole('admin')) && checkProvider();
         // The user must be logged in through Microsoft & has the role "admin"
-        allow write: if isSignedIn() && checkId() && getRole('admin') && checkProvider();
+        allow write: if isSignedIn() && ((checkId() && getRole('user')) || getRole('admin')) && checkProvider();
     }
 
     match /roles/{mail} {
