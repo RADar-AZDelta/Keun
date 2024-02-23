@@ -42,9 +42,9 @@
     <button class="file-card" on:click={() => openMappingTool(file.id)}>
       <div class="file-name-container">
         <SvgIcon id="excel" width="40px" height="40px" />
-        <p class="file-name">{file}</p>
+        <p class="file-name">{file?.name}</p>
       </div>
-      {#if $user.roles?.includes('Admin')}
+      {#if $user.roles?.includes('admin')}
         <div>
           <button class="download-file" on:click={e => downloadFiles(e, file.id)}><SvgIcon id="download" /></button>
           <button class="edit-file" on:click={e => editRights(e, file.id)}><SvgIcon id="edit" /></button>
@@ -68,6 +68,11 @@
     padding: 1rem;
     border: none;
     background-color: inherit;
+  }
+
+  .file-card:hover,
+  .file-card:focus {
+    background-color: lightgray;
   }
 
   .file-name-container {

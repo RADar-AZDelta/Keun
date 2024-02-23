@@ -11,6 +11,7 @@ import { FirebaseFirestore, FirebaseStorage, type FirebaseOptions } from '@radar
 import { user } from '$lib/store'
 import initial from '$lib/data/customBlobInitial.json'
 import { FileHelper } from '@radar-azdelta-int/radar-utils'
+import { arrayUnion } from 'firebase/firestore'
 
 // TODO: implement this in the program & check if all the functionalities work before removing the firebase file
 
@@ -88,8 +89,8 @@ export default class FirebaseImpl implements IDatabaseImpl {
   }
 
   async checkFileExistance(id: string) {
-    const existance = await this.storage.readFileStorage(`${this.storageCollection}/${id}`)
-    if (!existance) return
+    const existance = await this.storage.readFileStorage(`${this.storageCollection}/${id}`).catch(() => false)
+    if (typeof existance === 'boolean') return
     return { id, customId: existance.meta?.customMetadata?.customId ?? '' }
   }
 
@@ -138,6 +139,9 @@ export default class FirebaseImpl implements IDatabaseImpl {
     await this.storage.uploadFileStorage(`${this.storageCustomColl}/${customFileId}`, customFile, customMetaData)
     const fileData = { name: file.name, authors, customId: customFileId, custom: customName }
     await this.firestore.writeToFirestore(this.firestoreFileColl, fileId, fileData)
+    for (let author of authors) {
+      await this.firestore.writeToFirestore(this.firestoreUserColl, author, { files: arrayUnion(fileId) })
+    }
   }
 
   async editKeunFile(id: string, blob: Blob): Promise<void> {
@@ -188,5 +192,13 @@ export default class FirebaseImpl implements IDatabaseImpl {
     if (!usersList) return []
     const userListData = usersList.docs.map(doc => doc.data())
     return <IFirestoreUser[]>userListData
+  }
+
+  async saveUserConfig(user: IUser | undefined): Promise<void> {
+    if (!user) return
+    const { uid, name } = user
+    if (!uid || !name) return
+    const userConfig = { uid, name }
+    await this.firestore.updateToFirestore(this.firestoreUserColl, uid, userConfig)
   }
 }

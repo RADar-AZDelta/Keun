@@ -1,7 +1,7 @@
 import { FileHelper, blobToString, fileToBlob, logWhenDev, stringToFile } from '@radar-azdelta-int/radar-utils'
 import initial from '$lib/data/customBlobInitial.json'
 import { IndexedDB } from '@radar-azdelta-int/radar-utils'
-import type { IDatabaseImpl, IFile, IFileInformation } from '$lib/components/Types'
+import type { IDatabaseImpl, IFile, IFileInformation, IUser } from '$lib/components/Types'
 import { databaseImpl } from '$lib/store'
 
 export interface IDatabaseFile {
@@ -141,6 +141,8 @@ export default class LocalImpl implements IDatabaseImpl {
   async getAllPossibleAuthors() {
     return []
   }
+
+  async saveUserConfig(user: IUser | undefined): Promise<void> {}
 
   private async openDatabase() {
     if ((await this.isOpen(this.db)) == false) this.db = new IndexedDB('localMapping', 'localMapping')

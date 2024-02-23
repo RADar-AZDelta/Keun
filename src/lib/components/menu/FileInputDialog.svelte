@@ -2,14 +2,16 @@
   import { dev } from '$app/environment'
   import { createEventDispatcher } from 'svelte'
   import { Drop, SvgIcon, Spinner } from '@radar-azdelta-int/radar-svelte-components'
-  import { authImpl, databaseImpl, databaseImplementation } from '$lib/store'
+  import { databaseImpl, databaseImplementation, user } from '$lib/store'
   import type { FileDropEventDetail, PageEvents } from '$lib/components/Types'
 
   export let processing: boolean
 
   const dispatch = createEventDispatcher<PageEvents>()
 
-  let dialog: HTMLDialogElement, file: File | undefined, userFilter: string, authorizedAuthors: string[]
+  let dialog: HTMLDialogElement, file: File | undefined, userFilter: string
+  let authorizedAuthors: string[] = []
+  let allUsers: any[] = []
   let currentColumns: string[] = []
   let missingColumns: Record<string, string> = {}
 
@@ -72,8 +74,17 @@
 
   // Send a request to the parent to check if there already is a file with the same name
   async function checkForCache() {
-    if (!file) return
-    dispatch('checkForCache', { file })
+    if (!file || !$user.uid) return
+    if (!authorizedAuthors.includes($user.uid)) authorizedAuthors.push($user.uid)
+    dispatch('checkForCache', { file, authorizedAuthors })
+  }
+
+  async function retrieveAllUsers() {
+    allUsers = (await $databaseImpl?.getAllPossibleAuthors()) ?? []
+  }
+
+  $: {
+    if ($user?.uid && $databaseImpl) retrieveAllUsers()
   }
 </script>
 
@@ -98,18 +109,14 @@
       <h2 class="authors-title">Select the authors that have permission to this file:</h2>
       <input class="authors-input" type="text" placeholder="search for an user" bind:value={userFilter} />
       <ul class="authors-list">
-        {#await $databaseImpl?.getAllPossibleAuthors() then users}
-          {#if users}
-            {#each users as user, _}
-              <li class="author-option">
-                <label class="author-label">
-                  <input type="checkbox" id={user.name} bind:group={authorizedAuthors} value={user.id} />
-                  {user.name}
-                </label>
-              </li>
-            {/each}
-          {/if}
-        {/await}
+        {#each allUsers as user, _}
+          <li class="author-option">
+            <label class="author-label">
+              <input type="checkbox" id={user.name} bind:group={authorizedAuthors} value={user.id} />
+              {user.name}
+            </label>
+          </li>
+        {/each}
       </ul>
     {/if}
     <button class="upload" on:click={checkForCache} disabled={file ? false : true || processing}>Upload</button>

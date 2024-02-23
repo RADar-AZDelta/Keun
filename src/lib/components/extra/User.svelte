@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { SvgIcon, clickOutside } from '@radar-azdelta-int/radar-svelte-components'
-  import { authImpl, authImplementation, user } from '$lib/store'
+  import { authImpl, authImplementation, databaseImpl, user } from '$lib/store'
   import { loadImplementationAuth } from '$lib/implementations/implementation'
 
   let userDialog: HTMLDialogElement
@@ -25,6 +25,7 @@
   async function login(): Promise<void> {
     if (!$authImpl) await loadImplementationAuth()
     await $authImpl!.logIn(author ? author : undefined)
+    await $databaseImpl?.saveUserConfig($user)
     backupAuthor = author
     closeDialog()
   }
@@ -35,11 +36,11 @@
 
   // If the userdialog is closed and there has not been an author set yet, open the dialog
   $: {
-    if (userDialog?.attributes.getNamedItem('open') === null && !$user) userDialog.showModal()
+    if (!$user?.uid && userDialog) userDialog.showModal()
   }
 
   $: {
-    if ($user && userDialog?.attributes.getNamedItem('open')) userDialog.close()
+    if ($user?.uid) userDialog.close()
   }
 
   onMount(async () => {

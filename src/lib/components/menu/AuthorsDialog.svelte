@@ -1,12 +1,14 @@
 <script lang="ts">
   import { dev } from '$app/environment'
-  import { databaseImpl } from '$lib/store'
+  import { databaseImpl, user } from '$lib/store'
   import { loadImplementationDB } from '$lib/implementations/implementation'
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
 
   export let processing: boolean, selected: string
 
-  let dialog: HTMLDialogElement, authorizedAuthors: string[]
+  let dialog: HTMLDialogElement
+  let authorizedAuthors: string[] = []
+  let allUsers: any[] = []
 
   export const showDialog = () => dialog.showModal()
 
@@ -20,6 +22,14 @@
     closeDialog()
     if (dev) console.log('editFile: The file authors were updated')
   }
+
+  async function retrieveAllUsers() {
+    allUsers = (await $databaseImpl?.getAllPossibleAuthors()) ?? []
+  }
+
+  $: {
+    if ($user?.uid && $databaseImpl) retrieveAllUsers()
+  }
 </script>
 
 <dialog bind:this={dialog} class="authors-dialog">
@@ -27,19 +37,17 @@
     <button on:click={closeDialog} class="close-dialog" disabled={processing}><SvgIcon id="x" /></button>
     <h1 class="title">Update the authorized authors</h1>
     <ul class="list">
-      {#await $databaseImpl?.getAllPossibleAuthors() then users}
-        {#each users ?? [] as user, _}
-          {#if user.id}
-            {@const checked = user.files ? Object.values(user.files).includes(selected) : false}
-            <li>
-              <label class="option">
-                <input type="checkbox" {checked} bind:group={authorizedAuthors} value={user.id} />
-                {user.name}
-              </label>
-            </li>
-          {/if}
-        {/each}
-      {/await}
+      {#each allUsers as user, _}
+        {#if user.id}
+          {@const checked = user.files ? Object.values(user.files).includes(selected) : false}
+          <li>
+            <label class="option">
+              <input type="checkbox" {checked} bind:group={authorizedAuthors} value={user.id} />
+              {user.name}
+            </label>
+          </li>
+        {/if}
+      {/each}
     </ul>
     <button on:click={() => editFile(selected)}>Update</button>
   </div>

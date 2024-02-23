@@ -25,7 +25,7 @@
   let file: File
   let cols: string[] = []
   let missing: Record<string, string> = {}
-  let authorizedAuthors: string[]
+  let authorizedAuthors: string[] = []
   let processing: boolean = false
   let selected: string
 
@@ -64,8 +64,8 @@
   async function checkForCache(e: CustomEvent<CheckForCacheEventDetail>): Promise<void> {
     if (dev) console.log('checkForCache: Checking for cache')
     if (!$databaseImpl) await loadImplementationDB()
-    file = e.detail.file
-    const cached = await $databaseImpl!.checkFileExistance(e.detail.file.name)
+    ;({ file, authorizedAuthors } = e.detail)
+    const cached = await $databaseImpl!.checkFileExistance(file.name)
     fileInputDialog.closeDialog()
     if (!cached) return await uploadFile()
     $selectedFileId = cached.id

@@ -4,6 +4,7 @@ import type { IDataTypeFunctionalities } from '@radar-azdelta/svelte-datatable'
 
 export interface IFileTemplate {
   file: File
+  authorizedAuthors: string[]
 }
 
 export interface IFileIdTemplate {
@@ -338,6 +339,7 @@ export interface IDatabaseImpl {
   editKeunFileAuthors(id: string, authors: string[]): Promise<void>
   deleteKeunFile(id: string): Promise<void>
   getAllPossibleAuthors(): Promise<IFirestoreUser[]>
+  saveUserConfig(user: IUser | undefined): Promise<void>
 }
 
 export interface IAuthImpl {

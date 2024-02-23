@@ -1,5 +1,6 @@
 import { logWhenDev } from '@radar-azdelta-int/radar-utils'
-import { FirebaseAuth, userSessionStore } from '@radar-azdelta-int/radar-firebase-utils'
+// import { FirebaseAuth, userSessionStore } from '@radar-azdelta-int/radar-firebase-utils'
+import FirebaseAuth, { onlyReadableUserSessionStore as userSessionStore } from '$lib/firebase/FirebaseAuth'
 import { user } from '$lib/store'
 import {
   PUBLIC_FIREBASE_API_KEY,
@@ -29,8 +30,7 @@ export default class LocalImpl implements IAuthImpl {
     logWhenDev('logIn: Logging in via Firebase')
     await this.auth.logIn('microsoft')
     const loggedInUser = await this.getUser()
-    console.log("LOGGED ", loggedInUser)
-    userSessionStore.subscribe(user => console.log("USER" , user))
+    if(!loggedInUser) return
     const { uid, name, roles } = loggedInUser
     user.set({ uid, name, roles })
   }
@@ -43,8 +43,12 @@ export default class LocalImpl implements IAuthImpl {
 
   async getAuthor(): Promise<string | null | void> {
     logWhenDev('getAuthor: Get the saved author via Firebase')
-    const user = await this.getUser()
-    return user.name ?? null
+    await this.auth.userSessionInitialized
+    const retrievedUser = await this.getUser()
+    if(!retrievedUser) return null
+    const { uid, name, roles } = retrievedUser
+    user.set({ uid, name, roles })
+    return retrievedUser.name ?? null
   }
 
   private async getUser(): Promise<UserSession> {
