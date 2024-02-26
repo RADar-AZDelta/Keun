@@ -122,7 +122,6 @@ export default class FirebaseImpl implements IDatabaseImpl {
 
   private async getFileNameFromStorage(id: string) {
     const fileInfo = await this.storage.readMetaData(`${this.storageCollection}/${id}`)
-    console.log("META ", fileInfo)
     if (!fileInfo || !fileInfo.customMetadata) return
     const fileName = (<IStorageMetadata>fileInfo.customMetadata).name
     const customId = (<IStorageMetadata>fileInfo.customMetadata).customId
