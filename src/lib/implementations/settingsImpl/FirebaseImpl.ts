@@ -1,6 +1,5 @@
 import { dev } from '$app/environment'
-import type { ISettings, ISettingsImpl } from '$lib/components/Types'
-import { FirebaseFirestore, type FirebaseOptions } from '@radar-azdelta-int/radar-firebase-utils'
+import type { ISettings, ISettingsImpl, IUser } from '$lib/components/Types'
 import {
   PUBLIC_FIREBASE_API_KEY,
   PUBLIC_FIREBASE_APP_ID,
@@ -10,6 +9,8 @@ import {
   PUBLIC_FIREBASE_STORAGE_BUCKET,
 } from '$env/static/public'
 import { user } from '$lib/store'
+import type { FirebaseOptions } from 'firebase/app'
+import FirebaseFirestore from '$lib/firebase/FirebaseFirestore'
 
 const defaultSettings: ISettings = {
   mapToMultipleConcepts: false,
@@ -34,24 +35,24 @@ export default class FirebaseImpl implements ISettingsImpl {
   collection: string = 'settings'
 
   async getSettings(): Promise<ISettings> {
-    return new Promise(resolve => {
-      if (dev) console.log('getSettings: Reading the settings from Firestore')
-      user.subscribe(async user => {
-        if (!user?.uid) return defaultSettings
-        const userInfoDocument = await this.firestore.readFirestore(this.collection, user.uid)
-        if (!userInfoDocument) return defaultSettings
-        const userInfo = userInfoDocument.data()
-        if (!userInfo) return defaultSettings
-        resolve(userInfo.settings)
-      })()
-    })
+    if (dev) console.log('getSettings: Reading the settings from Firestore')
+    const retrievedUser = await this.getUser()
+    if (!retrievedUser?.uid) return defaultSettings
+    const userInfoDocument = await this.firestore.readFirestore(this.collection, retrievedUser.uid)
+    if (!userInfoDocument) return defaultSettings
+    const userInfo = userInfoDocument.data()
+    if (!userInfo) return defaultSettings
+    return userInfo as ISettings
   }
 
   async updateSettings(settings: ISettings): Promise<void> {
     if (dev) console.log('updateSettings: Updating the settings to the Firestore')
-    user.subscribe(async user => {
-      if (!user?.uid) return
-      await this.firestore.updateToFirestore(this.collection, user.uid, settings)
-    })()
+    const retrievedUser = await this.getUser()
+    if (!retrievedUser?.uid) return
+    await this.firestore.updateToFirestoreIfNotExist(this.collection, retrievedUser.uid, settings)
+  }
+
+  private async getUser(): Promise<IUser> {
+    return new Promise(resolve => user.subscribe(user => resolve(user))())
   }
 }

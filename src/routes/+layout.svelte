@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { beforeNavigate } from '$app/navigation'
   import { base } from '$app/paths'
   import { page } from '$app/stores'
   import Manual from '$lib/components/extra/Manual.svelte'
@@ -10,20 +9,16 @@
   import { authImplementation, settings, settingsImpl, user } from '$lib/store'
   import '$lib/table.scss'
   // import '@radar-azdelta/svelte-datatable/dist/styles/data-table.scss'
-  import { onMount } from 'svelte'
 
-  // TODO: set up Firebase project for internal use in AZD (Firebase impl)
-
-  beforeNavigate(async ({ from, to, cancel }): Promise<void> => {
-    if (!$settingsImpl) loadImplementationSettings()
-    $settingsImpl?.updateSettings($settings)
-  })
-
-  onMount(async () => {
+  async function retrieveSettings() {
     if (!$settingsImpl) await loadImplementationSettings()
     const storedSettings = await $settingsImpl?.getSettings()
     if (storedSettings) $settings = storedSettings
-  })
+  }
+
+  $: {
+    if($user) retrieveSettings()
+  }
 </script>
 
 <main>

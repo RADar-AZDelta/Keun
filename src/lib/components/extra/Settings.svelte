@@ -1,6 +1,7 @@
 <script lang="ts">
   import { SvgIcon, clickOutside } from '@radar-azdelta-int/radar-svelte-components'
-  import { abortAutoMapping, settings, triggerAutoMapping } from '$lib/store'
+  import { abortAutoMapping, settings, settingsImpl, triggerAutoMapping } from '$lib/store'
+  import { loadImplementationSettings } from '$lib/implementations/implementation'
 
   let savedAutomapping: boolean, possibleOutclick: boolean, settingsDialog: HTMLDialogElement
   let languages: Record<string, string> = {
@@ -23,6 +24,8 @@
 
   // A method to set the settings in the localstorage
   async function saveSettings(): Promise<void> {
+    if (!$settingsImpl) loadImplementationSettings()
+    await $settingsImpl?.updateSettings($settings)
     if ($settings.autoMap && savedAutomapping !== $settings.autoMap) {
       triggerAutoMapping.set(true)
       savedAutomapping = true
