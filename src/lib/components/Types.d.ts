@@ -52,6 +52,8 @@ export interface MappingEvents {
   updateDetails: UpdateDetailsEventDetail
   equivalenceChange: EquivalenceChangeEventDetail
   updateError: UpdateErrorEventDetail
+  customConceptAdded: CustomConceptAddedEventDetail
+  mapCustomConcept: MapCustomConceptEventDetail
 }
 
 export interface RowSelectionEventDetail {
@@ -84,7 +86,6 @@ export interface MappingEventDetail {
 
 export interface CustomMappingInputEventDetail {
   row: ICustomConcept
-  originalRow: ICustomConceptInput
 }
 
 export interface RemoveMappingEventDetail {
@@ -108,6 +109,14 @@ export interface EquivalenceChangeEventDetail {
 
 export interface UpdateErrorEventDetail {
   error: string
+}
+
+export interface CustomConceptAddedEventDetail {
+  concept: ICustomConceptCompact
+}
+
+export interface MapCustomConceptEventDetail {
+  concept: ICustomConcept
 }
 
 ////////////////////////////// Events for extra components //////////////////////////////
@@ -190,6 +199,13 @@ export interface ICustomConceptInput {
   valid_start_date: string
   valid_end_date: string
   invalid_reason: string
+}
+
+export interface ICustomConceptCompact {
+  concept_name: string
+  concept_class_id: string
+  domain_id: string
+  vocabulary_id: string
 }
 
 export interface ICustomConcept {
@@ -340,6 +356,8 @@ export interface IDatabaseImpl {
   deleteKeunFile(id: string): Promise<void>
   getAllPossibleAuthors(): Promise<IFirestoreUser[]>
   saveUserConfig(user: IUser | undefined): Promise<void>
+  getCustomConcepts(): Promise<any>
+  addCustomConcept(customConcept: ICustomConceptCompact): Promise<any>
 }
 
 export interface IAuthImpl {

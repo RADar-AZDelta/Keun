@@ -6,7 +6,7 @@ import {
   PUBLIC_FIREBASE_PROJECT_ID,
   PUBLIC_FIREBASE_STORAGE_BUCKET,
 } from '$env/static/public'
-import type { IDatabaseImpl, IFile, IFileInformation, IUser } from '$lib/components/Types'
+import type { ICustomConceptCompact, IDatabaseImpl, IFile, IFileInformation, IUser } from '$lib/components/Types'
 import { user } from '$lib/store'
 import initial from '$lib/data/customBlobInitial.json'
 import { FileHelper } from '@radar-azdelta-int/radar-utils'
@@ -56,6 +56,7 @@ export default class FirebaseImpl implements IDatabaseImpl {
   storageCustomColl: string = 'Keun-custom-files'
   firestoreFileColl: string = 'files'
   firestoreUserColl: string = 'users'
+  firestoreCustomConceptsColl: string = 'customConcepts'
 
   async getKeunFile(id: string): Promise<IFile | undefined> {
     const file = await this.readFileFromCollection(id, this.storageCollection)
@@ -213,5 +214,16 @@ export default class FirebaseImpl implements IDatabaseImpl {
     if (!uid || !name) return
     const userConfig = { uid, name }
     await this.firestore.updateToFirestoreIfNotExist(this.firestoreUserColl, uid, userConfig)
+  }
+
+  async getCustomConcepts(): Promise<any> {
+    const concepts = await this.firestore.readFirestoreCollection(this.firestoreCustomConceptsColl)
+    if(!concepts) return []
+    const customConcepts = concepts.docs.map(doc => doc.data())
+    return customConcepts
+  }
+
+  async addCustomConcept(customConcept: ICustomConceptCompact) {
+    await this.firestore.writeToFirestore(this.firestoreCustomConceptsColl, customConcept.concept_name, customConcept)
   }
 }

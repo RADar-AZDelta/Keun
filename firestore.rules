@@ -104,6 +104,33 @@ service cloud.firestore {
       allow read, write: if isSignedIn() && checkId() && checkProvider() && (getRole('user') || getRole('admin'));
     }
 
+    match /customConcepts/{conceptId} {
+      function isSignedIn() {
+        // Check if the user is logged in
+        return request.auth != null;
+      }
+
+      function getRole(expectedRole) {
+        // Check the role set in the Firestore collection "roles"
+        let roles = get(/databases/$(database)/documents/roles/$(request.auth.token.email)).data.roles;
+        return expectedRole in roles;
+      }
+
+      // function getRoleClaims(arr) {
+        // Check the roles through the custom claims in the auth
+        // return request.auth.token.role in arr;
+      // }
+      
+      function checkProvider() {
+        // All the users must be logged in through OAuth of Microsoft
+        // Microsoft is not an option here so we'll check if the user is not logged in anonymous
+        return request.auth.token.firebase.sign_in_provider != "anonymous"
+      }
+
+      // The user must be logged in through Microsoft & has the role "user" || "admin"
+      allow read, write: if isSignedIn() && checkProvider() && (getRole('user') || getRole('admin'));
+    }
+
     match /roles/{mail} {
         function isSignedIn() {
           // The user must be logged in
