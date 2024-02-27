@@ -1,76 +1,41 @@
 <script lang="ts">
   import { dev } from '$app/environment'
-  import { createEventDispatcher } from 'svelte'
+  import { createEventDispatcher, onMount } from 'svelte'
   import { query } from 'arquero'
   import { user } from '$lib/store'
-  import { reformatDate } from '@radar-azdelta-int/radar-utils'
+  import { logWhenDev, reformatDate } from '@radar-azdelta-int/radar-utils'
   import { resetRow } from '$lib/mappingUtils'
   import { EditableCell, type IColumnMetaData } from '@radar-azdelta/svelte-datatable'
   import type DataTable from '@radar-azdelta/svelte-datatable'
   import type Query from 'arquero/dist/types/query/query'
   import type { IUsagiRow, MappingEvents } from '$lib/components/Types'
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
+  import UsagiLogic from '$lib/classes/UsagiLogic'
 
-  export let renderedRow: Record<string, any>,
-    columns: IColumnMetaData[] | undefined,
-    index: number,
-    currentVisibleRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>([]),
-    disabled: boolean,
-    table: DataTable,
-    customTable: DataTable
+  export let renderedRow: Record<string, any>, columns: IColumnMetaData[] | undefined, index: number
+  export let currentVisibleRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>([])
+  export let disabled: boolean, table: DataTable, customTable: DataTable
 
   const dispatch = createEventDispatcher<MappingEvents>()
-
+  let row: UsagiLogic
   let color: string = 'inherit'
-
-  // Send a request to the parent that a row is selected to map
-  async function mapRow(): Promise<void> {
-    if (dev) console.log(`mapRow: ${index}`)
-    dispatch('rowSelection', { row: renderedRow as IUsagiRow, index })
+  const width = '10px'
+  const height = '10px'
+  const dateCells = ['statusSetOn', 'createdOn', 'ADD_INFO:approvedOn']
+  const editableCells = ['comment']
+  const colors: Record<string, string | undefined> = {
+    APPROVED: 'hsl(156, 100%, 35%)',
+    FLAGGED: 'hsl(54, 89%, 64%)',
+    'SEMI-APPROVED': 'hsl(84, 100%, 70%)',
+    UNAPPROVED: 'hsl(8, 100%, 59%)',
   }
 
-  // A method to throw an event to the parent to approve a row
-  async function approveRow(): Promise<void> {
-    if (!$user) return
-    const currentState = renderedRow.mappingStatus
-    if ($user.name === renderedRow.statusSetBy && (currentState === 'SEMI-APPROVED' || currentState === 'APPROVED'))
-      return
-    let update = {}
-    if (currentState === 'SEMI-APPROVED')
-      update = { 'ADD_INFO:approvedBy': $user.name, 'ADD_INFO:approvedOn': Date.now(), mappingStatus: 'APPROVED' }
-    else if (currentState !== 'SEMI-APPROVED' && currentState !== 'APPROVED')
-      update = {
-        statusSetBy: $user.name,
-        statusSetOn: Date.now(),
-        mappingStatus: 'SEMI-APPROVED',
-        conceptId: renderedRow.conceptId ? renderedRow.conceptId : renderedRow.sourceAutoAssignedConceptIds,
-      }
-    await table.updateRows(new Map([[index, update]]))
-  }
+  const mapRow = () => dispatch('rowSelection', { row: renderedRow as IUsagiRow, index })
 
-  // A method to throw an event to the parent to flag a row
-  async function flagRow(): Promise<void> {
-    if (renderedRow.mappingStatus === 'FLAGGED') return
-    const update = {
-      statusSetBy: $user.name,
-      statusSetOn: new Date(),
-      mappingStatus: 'FLAGGED',
-    }
-    await table.updateRows(new Map([[index, update]]))
-  }
+  const approveRow = async () => await row.approveRow()
+  const flagRow = async () => await row.flagRow()
+  const unapproveRow = async () => await row.unapproveRow()
 
-  // A method to throw an event to the parent to unapprove a row
-  async function unapproveRow(): Promise<void> {
-    if (renderedRow.mappingStatus === 'UNAPPROVED') return
-    const update = {
-      statusSetBy: $user.name,
-      statusSetOn: new Date(),
-      mappingStatus: 'UNAPPROVED',
-    }
-    await table.updateRows(new Map([[index, update]]))
-  }
-
-  // A method to throw an event to the parent to delete a row
   async function deleteRow(): Promise<void> {
     // If there are not multiple concepts mapped to this row, reset the row, otherwise you can delete the row
     const conceptsNumber = renderedRow['ADD_INFO:numberOfConcepts']
@@ -103,19 +68,9 @@
   }
 
   async function getColors(): Promise<string> {
-    switch (renderedRow['mappingStatus']) {
-      case 'APPROVED':
-        if (renderedRow['ADD_INFO:approvedBy']) return 'hsl(156, 100%, 35%)'
-        else return 'hsl(112, 50%, 66%)'
-      case 'FLAGGED':
-        return 'hsl(54, 89%, 64%)'
-      case 'SEMI-APPROVED':
-        return 'hsl(84, 100%, 70%)'
-      case 'UNAPPROVED':
-        return 'hsl(8, 100%, 59%)'
-      default:
-        return 'inherit'
-    }
+    const color = colors[renderedRow.mappingStatus]
+    if (!color) return 'inherit'
+    return color
   }
 
   async function setPreset(): Promise<void> {
@@ -136,27 +91,33 @@
     currentVisibleRows.set(index, renderedRow)
     setPreset()
   }
+
+  onMount(() => {
+    row = new UsagiLogic(<IUsagiRow>renderedRow, index)
+  })
 </script>
 
 <td class="actions-cell" style={`background-color: ${color}`}>
   <div class="actions-grid">
-    <button on:click={mapRow} title="Map" {disabled}><SvgIcon id="search" width="10px" height="10px" /></button>
-    <button on:click={deleteRow} title="Delete" {disabled}><SvgIcon id="eraser" width="10px" height="10px" /></button>
+    <button on:click={mapRow} title="Map" {disabled}><SvgIcon id="search" {width} {height} /></button>
+    <button on:click={deleteRow} title="Delete" {disabled}><SvgIcon id="eraser" {width} {height} /></button>
     <button on:click={onClickAutoMap} title="Automap" {disabled}>AUTO</button>
     <p>{renderedRow['ADD_INFO:numberOfConcepts'] > 1 ? renderedRow['ADD_INFO:numberOfConcepts'] : ''}</p>
-    <button on:click={approveRow} title="Approve" {disabled}><SvgIcon id="check" width="10px" height="10px" /></button>
-    <button on:click={flagRow} title="Flag" {disabled}><SvgIcon id="flag" width="10px" height="10px" /></button>
-    <button on:click={unapproveRow} title="Unapprove" {disabled}><SvgIcon id="x" width="10px" height="10px" /></button>
+    <button on:click={approveRow} title="Approve" {disabled}><SvgIcon id="check" {width} {height} /></button>
+    <button on:click={flagRow} title="Flag" {disabled}><SvgIcon id="flag" {width} {height} /></button>
+    <button on:click={unapproveRow} title="Unapprove" {disabled}><SvgIcon id="x" {width} {height} /></button>
   </div>
 </td>
-{#each columns || [] as column, _}
-  <td on:dblclick={mapRow} class="cell" style={`background-color: ${color}`} title={renderedRow[column.id]}>
-    {#if ['statusSetOn', 'createdOn', 'ADD_INFO:approvedOn'].includes(column.id)}
-      <p>{reformatDate(renderedRow[column.id])}</p>
-    {:else if ['comment'].includes(column.id)}
-      <EditableCell value={renderedRow[column.id]} on:valueChanged={e => updateValue(e, column.id)} />
+{#each columns || [] as column (column.id)}
+  {@const { id } = column}
+  {@const value = renderedRow[id]}
+  <td on:dblclick={mapRow} class="cell" style={`background-color: ${color}`} title={value}>
+    {#if dateCells.includes(id)}
+      <p>{reformatDate(value)}</p>
+    {:else if editableCells.includes(id)}
+      <EditableCell {value} on:valueChanged={e => updateValue(e, id)} />
     {:else}
-      <p>{renderedRow[column.id] ?? ''}</p>
+      <p>{value ?? ''}</p>
     {/if}
   </td>
 {/each}

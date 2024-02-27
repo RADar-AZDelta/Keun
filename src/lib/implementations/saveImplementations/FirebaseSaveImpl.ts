@@ -85,6 +85,7 @@ export default class FirebaseSaveImpl implements ICustomStoreOptions {
   }
 
   private async deleteFromFirestore(fileId?: string) {
+    // TODO: fix this issue
     const result = await this.getCurrentFile(fileId)
     if (!result) return
     const { userOpts, file, uid } = result

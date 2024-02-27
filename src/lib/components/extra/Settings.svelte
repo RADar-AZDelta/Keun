@@ -1,7 +1,9 @@
 <script lang="ts">
-  import { SvgIcon, clickOutside } from '@radar-azdelta-int/radar-svelte-components'
+  import { SvgIcon, Switch, clickOutside } from '@radar-azdelta-int/radar-svelte-components'
   import { abortAutoMapping, settings, settingsImpl, triggerAutoMapping } from '$lib/store'
   import { loadImplementationSettings } from '$lib/implementations/implementation'
+
+  // TODO: update Switch component to only have the switch button & it needs to be able to bind to a label so pass the id
 
   let savedAutomapping: boolean, possibleOutclick: boolean, settingsDialog: HTMLDialogElement
   let languages: Record<string, string> = {
@@ -15,24 +17,20 @@
 
   const closeDialog = () => settingsDialog.close()
 
-  // A method to open the dialog if it was closed
-  async function openDialog(): Promise<void> {
+  async function openDialog() {
     savedAutomapping = $settings.autoMap
     settingsDialog.showModal()
     possibleOutclick = true
   }
 
-  // A method to set the settings in the localstorage
-  async function saveSettings(): Promise<void> {
-    if (!$settingsImpl) loadImplementationSettings()
+  async function saveSettings() {
+    if (!$settingsImpl) await loadImplementationSettings()
     await $settingsImpl?.updateSettings($settings)
-    if ($settings.autoMap && savedAutomapping !== $settings.autoMap) {
-      triggerAutoMapping.set(true)
-      savedAutomapping = true
-    }
+    const automappingChanged = $settings.autoMap && savedAutomapping !== $settings.autoMap
+    if(automappingChanged) $triggerAutoMapping = savedAutomapping = true
   }
 
-  async function abort(): Promise<void> {
+  async function abort() {
     if (!$settings.autoMap && savedAutomapping !== $settings.autoMap) abortAutoMapping.set(true)
   }
 

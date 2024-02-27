@@ -1,10 +1,10 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
   import debounce from 'lodash.debounce'
+  import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
   import Equivalence from '$lib/components/mapping/details/Equivalence.svelte'
   import AutocompleteInputSettings from '$lib/components/extra/AutocompleteInputSettings.svelte'
   import type { AutoCompleteShortED, EquivalenceChangeED, IUsagiRow, MappingEvents } from '$lib/components/Types'
-  import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
 
   export let usagiRow: IUsagiRow
 
@@ -13,33 +13,24 @@
   let show: boolean = false
   let reviewer: string = usagiRow?.assignedReviewer ?? ''
   let comments: string = usagiRow?.comment ?? ''
-  let equivalence: string = usagiRow?.equivalence ?? 'EQUAL'
 
-  const showDetail = (value: boolean) => (show = value)
-
-  async function onEquivalenceChange(e: CustomEvent<EquivalenceChangeED>) {
-    equivalence = e.detail.equivalence
-    dispatch('equivalenceChange', { equivalence })
-  }
-
-  const onInputComment = debounce(async (e: any): Promise<void> => {
-    updateDetails()
-  }, 500)
+  const onEquivalenceChange = (e: CustomEvent<EquivalenceChangeED>) => dispatch('equivalenceChange', { ...e.detail })
+  const onInputComment = debounce(async (e: any) => updateDetails(), 500)
 
   async function onReviewerChanged(e: CustomEvent<AutoCompleteShortED>) {
-    reviewer = e.detail.value
+    ;({ value: reviewer } = e.detail)
     updateDetails()
   }
 
-  async function updateDetails() {
-    dispatch('updateDetails', { reviewer, comments })
-  }
+  const updateDetails = () => dispatch('updateDetails', { reviewer, comments })
+  const hideDetail = () => (show = false)
+  const showDetail = () => (show = true)
 </script>
 
 {#if show}
   <section class="container">
     <div class="head">
-      <button class="button" on:click={() => showDetail(false)}>
+      <button class="button" on:click={hideDetail}>
         <SvgIcon id="chevrons-right" />
       </button>
       <h2 class="title">Detail</h2>
@@ -58,7 +49,7 @@
   </section>
 {:else}
   <div class="sidebar-left">
-    <button class="closed-bar" on:click={() => showDetail(true)}>
+    <button class="closed-bar" on:click={showDetail}>
       <SvgIcon id="chevrons-left" />
       {#each 'DETAIL' as letter, _}
         <p>{letter}</p>

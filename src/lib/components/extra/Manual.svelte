@@ -4,6 +4,8 @@
 
   export let href: string
 
+  // TODO: update manual
+
   let dialog: HTMLDialogElement, manualText: string
 
   // A method to open the dialog if it was closed and where the README from the Github repo is fetched

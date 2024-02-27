@@ -4,7 +4,7 @@
   import ShowColumnsDialog from '$lib/components/mapping/ShowColumnsDialog.svelte'
   import type Query from 'arquero/dist/types/query/query'
   import type DataTable from '@radar-azdelta/svelte-datatable'
-  import type { ITablePagination, IUsagiRow, MappingEvents, ShowColumnsED } from '$lib/components/Types'
+  import type { IQueryResult, ITablePagination, IUsagiRow, MappingEvents, ShowColumnsED } from '$lib/components/Types'
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
 
   export let selectedRow: IUsagiRow, mainTable: DataTable
@@ -13,34 +13,48 @@
   let dialog: HTMLDialogElement
   let shownColumns: string[] = ['sourceCode', 'sourceName', 'sourceFrequency']
 
-  async function navigateRows(up: boolean) {
+  async function getPagination() {
     let pag: ITablePagination = await mainTable.getTablePagination()
-    if (!pag.currentPage || !pag.rowsPerPage) return
-    const indexParams = <Query>query().params({
-      code: selectedRow.sourceCode,
-      name: selectedRow.sourceName,
-      concept: selectedRow.conceptName === 'Unmapped' ? undefined : selectedRow.conceptName ?? undefined,
-      concept2: selectedRow.conceptName === 'Unmapped' ? null : selectedRow.conceptName,
-    })
-    const indexQuery = indexParams
-      .filter(
-        (r: any, p: any) =>
-          r.sourceCode === p.code &&
-          r.sourceName === p.name &&
-          (r.conceptName === p.concept || r.conceptName === p.concept2),
-      )
-      .toObject()
-    const rows = await mainTable.executeQueryAndReturnResults(indexQuery)
-    const i = rows.indices[0]
-    const { row, index, page } = up ? await mainTable.getNextRow(i) : await mainTable.getPreviousRow(i)
+    const { currentPage } = pag
+    return currentPage ?? 0
+  }
+
+  function rowFilter(row: IUsagiRow, params: Record<string, string>) {
+    const sourceCodeEqual = row.sourceCode === params.sourceCode
+    const sourceNameEqual = row.sourceName === params.sourceName
+    const conceptNameEqual = row.conceptName === params.conceptName || row.conceptName === params.conceptName2
+    if (sourceCodeEqual && sourceNameEqual && conceptNameEqual) return true
+  }
+
+  async function getCurrentRowIndex() {
+    const { sourceCode, sourceName, conceptName: concept } = selectedRow
+    const conceptName = concept === 'Unmapped' ? undefined : concept
+    const conceptName2 = concept === 'Unmapped' ? null : concept
+    const params = { sourceCode, sourceName, conceptName, conceptName2 }
+    const indexQuery = (<Query>query().params(params)).filter(rowFilter).toObject()
+    const rows: IQueryResult = await mainTable.executeQueryAndReturnResults(indexQuery)
+    const index = rows.indices[0]
+    return index
+  }
+
+  async function getFollowingRow(up: boolean, currentRowIndex: number) {
+    const rowResult = up ? await mainTable.getNextRow(currentRowIndex) : await mainTable.getPreviousRow(currentRowIndex)
+    const { row, index, page } = rowResult
+    return { row, index, page }
+  }
+
+  async function navigateRows(up: boolean) {
+    const rowIndex = await getCurrentRowIndex()
+    const { row, index, page } = await getFollowingRow(up, rowIndex)
     if (!row.sourceCode) return
-    if (pag.currentPage !== page) mainTable.changePagination({ currentPage: page })
+    const currentPage = await getPagination()
+    if (currentPage !== page) mainTable.changePagination({ currentPage: page })
     dispatch('navigateRow', { row, index })
   }
 
   const showDialogColumns = () => dialog.showModal()
 
-  const showColumns = (e: CustomEvent<ShowColumnsED>) => (shownColumns = e.detail.columns)
+  const showColumns = (e: CustomEvent<ShowColumnsED>) => ({ columns: shownColumns } = e.detail)
 
   $: columns = selectedRow ? Object.keys(selectedRow) : []
 </script>
@@ -60,7 +74,7 @@
           {/each}
         </tr>
         <tr>
-          {#if selectedRow != undefined}
+          {#if selectedRow}
             {#each shownColumns as column}
               <td title={selectedRow[column]}>{selectedRow[column]}</td>
             {/each}

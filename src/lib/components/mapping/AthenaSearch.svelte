@@ -117,10 +117,10 @@
     const { row, action } = e.detail
     if ($settings.mapToMultipleConcepts) {
       mappedData = [...mappedData, row]
-      Object.assign(mappedToConceptIds, { [row.conceptId]: action })
+      Object.assign(mappedToConceptIds, { [row.conceptId]: 'SEMI-APPROVED' })
     } else {
       mappedData = [row]
-      Object.assign(mappedToConceptIds, { [row.conceptId]: action })
+      Object.assign(mappedToConceptIds, { [row.conceptId]: 'SEMI-APPROVED' })
     }
     const customConcept = e.detail.row
     let mappedRow = await addExtraFields(selectedRow)
@@ -131,7 +131,7 @@
       vocabularyId: customConcept.vocabularyId,
       comment,
       assignedReviewer: reviewer,
-      mappingStatus: action,
+      mappingStatus: 'SEMI-APPROVED',
       'ADD_INFO:customConcept': true,
     }
     Object.assign(mappedRow, update)

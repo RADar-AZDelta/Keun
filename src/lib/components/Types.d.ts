@@ -11,6 +11,11 @@ export interface IFileIdTemplate {
   id: string
 }
 
+export interface IQueryResult {
+  indices: number[]
+  queriedData: IUsagiRow[]
+}
+
 ////////////////////////////// Events for the menu page //////////////////////////////
 
 export interface PageEvents {

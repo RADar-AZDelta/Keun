@@ -9,7 +9,8 @@
 
   function showColumns(e: Event, column: string) {
     const show = (<any>e.target).checked
-    if (show && !shownColumns.includes(column)) shownColumns.push(column)
+    const columnAlreadyShown = shownColumns.includes(column)
+    if (show && !columnAlreadyShown) shownColumns.push(column)
     else shownColumns = shownColumns.filter(col => col !== column)
     dispatch('showColumns', { columns: shownColumns })
   }
@@ -18,14 +19,9 @@
 <Dialog bind:dialog width="40%" height="40%" title="Show/hide columns">
   <div class="container">
     {#each columns as column}
+      {@const checked = shownColumns.includes(column)}
       <div class="column">
-        <input
-          type="checkbox"
-          name="columns"
-          id={column}
-          checked={shownColumns.includes(column)}
-          on:change={e => showColumns(e, column)}
-        />
+        <input type="checkbox" name="columns" id={column} {checked} on:change={e => showColumns(e, column)} />
         <label for={column}>{column}</label>
       </div>
     {/each}

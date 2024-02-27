@@ -5,9 +5,7 @@
 
   const dispatch = createEventDispatcher<MappingEvents>()
 
-  async function equivalenceChange(e: Event) {
-    dispatch('equivalenceChange', { equivalence: (<any>e.target).value })
-  }
+  const equivalenceChange = (e: Event) => dispatch('equivalenceChange', { equivalence: (<any>e.target).value })
 </script>
 
 <div class="equivalence">

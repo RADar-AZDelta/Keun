@@ -1,6 +1,5 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
-  import type DataTable from '@radar-azdelta/svelte-datatable'
   import { databaseImpl, settings } from '$lib/store'
   import suggestions from '$lib/data/customConceptInfo.json'
   import AutocompleteInput from '$lib/components/extra/AutocompleteInput.svelte'
@@ -16,6 +15,7 @@
 
   const inputAvailableColumns = ['concept_name', 'concept_class_id', 'domain_id', 'vocabulary_id']
   const colSuggestions: Record<string, Record<string, string>> = suggestions
+  let action: string | undefined = undefined
 
   const dispatch = createEventDispatcher<MappingEvents>()
 
@@ -65,6 +65,7 @@
       validEndDate: '2099-12-31',
       invalidReason: '',
     }
+    action = 'SEMI-APPROVED'
     dispatch('mapCustomConcept', { concept, action: 'SEMI-APPROVED' })
   }
 
@@ -83,6 +84,7 @@
       validEndDate: '2099-12-31',
       invalidReason: '',
     }
+    action = 'FLAGGED'
     dispatch('mapCustomConcept', { concept, action: 'FLAGGED' })
   }
   async function unapproveRow() {
@@ -100,6 +102,7 @@
       validEndDate: '2099-12-31',
       invalidReason: '',
     }
+    action = 'UNAPPROVED'
     dispatch('mapCustomConcept', { concept, action: 'UNAPPROVED' })
   }
 
@@ -133,7 +136,13 @@
   {:else}
     <td class="actions-cell">
       <div class="actions-grid">
-        <button on:click={mapRow} title="Approve"><SvgIcon id="check" width="10px" height="10px" /></button>
+        {#if action === 'SEMI-APPROVED'}
+          <button title="Approved" style="background-color: hsl(84, 100%, 70%);">
+            <SvgIcon id="check" width="10px" height="10px" />
+          </button>
+        {:else}
+          <button on:click={mapRow} title="Approve"><SvgIcon id="check" width="10px" height="10px" /></button>
+        {/if}
         <button on:click={flagRow} title="Flag"><SvgIcon id="flag" width="10px" height="10px" /></button>
         <button on:click={unapproveRow} title="Unapprove"><SvgIcon id="x" width="10px" height="10px" /></button>
       </div>

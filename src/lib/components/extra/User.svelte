@@ -8,16 +8,12 @@
   let author: string | undefined | null = undefined
   let backupAuthor: string | undefined | null = undefined
 
-  // A method to close the dialog
   function closeDialog(): void {
-    // Check if the author is filled in and if the dialog was open in first instance
-    if (!$user || !userDialog.attributes.getNamedItem('open')) return
+    if (!$user) return
     userDialog.close()
   }
 
-  // A method to open the dialog
   function openDialog(): void {
-    // Check if the dialog is not already open
     if (authImplementation === 'none' || !authImplementation) author = backupAuthor = $user.name
     userDialog.showModal()
   }
@@ -31,17 +27,11 @@
     closeDialog()
   }
 
-  async function cancelLogIn(): Promise<void> {
-    closeDialog()
-  }
+  const cancelLogIn = closeDialog
 
-  // If the userdialog is closed and there has not been an author set yet, open the dialog
   $: {
     if (!$user?.name && userDialog) userDialog.showModal()
-  }
-
-  $: {
-    if ($user?.name) userDialog.close()
+    else if ($user?.name) userDialog.close()
   }
 
   onMount(async () => {
@@ -51,7 +41,7 @@
 </script>
 
 <button title="Author" aria-label="User button" on:click={openDialog} class="header-button">
-  <p>{$user && $user.name ? $user.name : ''}</p>
+  <p>{$user?.name ?? ''}</p>
   <SvgIcon id="user" />
 </button>
 
