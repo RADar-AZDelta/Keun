@@ -336,11 +336,19 @@
     if (customKeunFile && customKeunFile?.file) customConceptsFile = customKeunFile.file
   }
 
+  async function getCustomFileId() {
+    if (!$databaseImpl) await loadImplementationDB()
+    const cached = await $databaseImpl!.checkFileExistance($selectedFileId)
+    if (!cached) return
+    $selectedCustomFileId = cached.customId
+  }
+
   // Load the file to start mapping
   async function load(): Promise<void> {
     const urlId = $page.url.searchParams.get('id')
     if (!urlId) return goto(`${base}/`)
     $selectedFileId = urlId
+    if (!$selectedCustomFileId) await getCustomFileId()
     readFile()
   }
 

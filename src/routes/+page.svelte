@@ -16,7 +16,7 @@
   import FirebaseImpl from '$lib/components/menu/FirebaseImpl.svelte'
   import LocalImpl from '$lib/components/menu/LocalImpl.svelte'
   import { loadImplementationDB } from '$lib/implementations/implementation'
-  import { databaseImpl, databaseImplementation, selectedCustomFileId, selectedFileId, user } from '$lib/store'
+  import { databaseImpl, databaseImplementation, user } from '$lib/store'
   import { Spinner } from '@radar-azdelta-int/radar-svelte-components'
   import type { SvelteComponent } from 'svelte'
   import type { FileUploadEventDetail } from '$lib/components/Types'
@@ -68,8 +68,6 @@
     const cached = await $databaseImpl!.checkFileExistance(file.name)
     fileInputDialog.closeDialog()
     if (!cached) return await uploadFile()
-    $selectedFileId = cached.id
-    $selectedCustomFileId = cached.customId
     locationDialog.showDialog()
   }
 

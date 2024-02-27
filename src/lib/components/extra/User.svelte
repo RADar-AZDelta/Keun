@@ -37,11 +37,11 @@
 
   // If the userdialog is closed and there has not been an author set yet, open the dialog
   $: {
-    if (!$user?.uid && userDialog) userDialog.showModal()
+    if (!$user?.name && userDialog) userDialog.showModal()
   }
 
   $: {
-    if ($user?.uid) userDialog.close()
+    if ($user?.name) userDialog.close()
   }
 
   onMount(async () => {

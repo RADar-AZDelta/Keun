@@ -1,85 +1,63 @@
 import {
   authImpl,
   authImplementation,
-  databaseImpl,
+  databaseImpl as dbImpl,
   databaseImplementation,
   fileTypeImpl,
   saveImpl,
   saveImplementation,
   settingsImpl,
 } from '$lib/store'
-import type { IAuthImpl, IDatabaseImpl, ISettingsImpl, IUpdatedFunctionalityImpl } from '$lib/components/Types'
+import type { IAuthImpl, IDatabaseImpl, ISettingsImpl } from '$lib/components/Types'
 import type { ICustomStoreOptions } from '@radar-azdelta/svelte-datatable'
 
-export async function loadImplementationDB(): Promise<IDatabaseImpl> {
+export async function loadImplementationDB() {
   return new Promise(async resolve => {
-    databaseImpl.subscribe(async impl => {
+    dbImpl.subscribe(async impl => {
       if (impl) return resolve(impl)
-      if (databaseImplementation === 'firebase')
-        await import('$lib/implementations/databaseImpl/FirebaseImpl').then(({ default: FirebaseImpl }) =>
-          databaseImpl.set(new FirebaseImpl()),
-        )
-      else if (databaseImplementation === 'sqlite')
-        await import('$lib/implementations/databaseImpl/SQLite').then(({ default: SQLiteImpl }) =>
-          databaseImpl.set(new SQLiteImpl()),
-        )
-      else
-        await import('$lib/implementations/databaseImpl/LocalImpl').then(({ default: LocalImpl }) =>
-          databaseImpl.set(new LocalImpl()),
-        )
-    })()
+    })
+    if (databaseImplementation === 'firebase')
+      await import('$lib/implementations/databaseImpl/FirebaseImpl').then(({ default: Impl }) => dbImpl.set(new Impl()))
+    else await import('$lib/implementations/databaseImpl/LocalImpl').then(({ default: Impl }) => dbImpl.set(new Impl()))
   })
 }
 
-export async function loadImplementationAuth(): Promise<IAuthImpl> {
-  return new Promise(async resolve => {
+export async function loadImplementationAuth() {
+  return new Promise(resolve => {
     authImpl.subscribe(async impl => {
       if (impl) return resolve(impl)
-      if (authImplementation === 'firebase') {
-        import('$lib/implementations/authImpl/FirebaseImpl').then(({ default: FirebaseImpl }) => {
-          authImpl.set(new FirebaseImpl())
-          return authImpl
-        })
-      } else
-        import('$lib/implementations/authImpl/LocalImpl').then(({ default: LocalImpl }) => {
-          authImpl.set(new LocalImpl())
-          return authImpl
-        })
     })
+    if (authImplementation === 'firebase') {
+      import('$lib/implementations/authImpl/FirebaseImpl').then(({ default: Impl }) => authImpl.set(new Impl()))
+    } else import('$lib/implementations/authImpl/LocalImpl').then(({ default: Impl }) => authImpl.set(new Impl()))
   })
 }
 
-export async function loadImplementationSave(): Promise<ICustomStoreOptions> {
+export async function loadImplementationSave() {
   return new Promise(async resolve => {
     saveImpl.subscribe(async impl => {
       if (impl) return resolve(impl)
-      if (saveImplementation === 'firebase') {
-        await import('$lib/implementations/saveImplementations/FirebaseSaveImpl').then(
-          ({ default: FirebaseSaveImpl }) => {
-            saveImpl.set(new FirebaseSaveImpl())
-            return saveImpl
-          },
-        )
-      } else return impl
     })
+    if (saveImplementation === 'firebase')
+      await import('$lib/implementations/saveImplementations/FirebaseSaveImpl').then(({ default: Impl }) =>
+        saveImpl.set(new Impl()),
+      )
   })
 }
 
-export async function loadImplementationSettings(): Promise<ISettingsImpl> {
+export async function loadImplementationSettings() {
   return new Promise(async resolve => {
     settingsImpl.subscribe(async impl => {
       if (impl) return resolve(impl)
-      if (databaseImplementation === 'firebase') {
-        await import('$lib/implementations/settingsImpl/FirebaseImpl').then(({ default: FirebaseSettingsImpl }) => {
-          settingsImpl.set(new FirebaseSettingsImpl())
-          return settingsImpl
-        })
-      } else
-        await import('$lib/implementations/settingsImpl/localImpl').then(({ default: LocalSettingsImpl }) => {
-          settingsImpl.set(new LocalSettingsImpl())
-          return settingsImpl
-        })
     })
+    if (databaseImplementation === 'firebase') {
+      await import('$lib/implementations/settingsImpl/FirebaseImpl').then(({ default: Impl }) =>
+        settingsImpl.set(new Impl()),
+      )
+    } else
+      await import('$lib/implementations/settingsImpl/localImpl').then(({ default: Impl }) =>
+        settingsImpl.set(new Impl()),
+      )
   })
 }
 

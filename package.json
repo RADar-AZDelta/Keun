@@ -48,7 +48,7 @@
     "@radar-azdelta-int/radar-svelte-components": "0.0.14",
     "@radar-azdelta-int/radar-utils": "0.0.8",
     "@radar-azdelta/svelte-athena-search": "^0.0.33",
-    "@radar-azdelta/svelte-datatable": "^0.0.69",
+    "@radar-azdelta/svelte-datatable": "^0.0.70",
     "arquero": "^5.2.0",
     "better-sqlite3": "^9.1.1",
     "firebase": "^10.7.1",
