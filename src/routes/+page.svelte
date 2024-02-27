@@ -1,12 +1,12 @@
 <script lang="ts">
   import { dev } from '$app/environment'
   import type {
-    CheckForCacheEventDetail,
-    ColumnsDialogShowEventDetail,
-    DeleteFilesEventDetail,
-    DownloadFilesEventDetail,
-    EditRightsEventDetail,
-    FileUpdatedColumnsEventDetail,
+    CheckForCacheED,
+    ColumnsDialogShowED,
+    DeleteFilesED,
+    DownloadFilesED,
+    EditRightsED,
+    FileUpdatedColumnsED,
     IFileInformation,
   } from '$lib/components/Types'
   import AuthorsDialog from '$lib/components/menu/AuthorsDialog.svelte'
@@ -19,7 +19,7 @@
   import { databaseImpl, databaseImplementation, user } from '$lib/store'
   import { Spinner } from '@radar-azdelta-int/radar-svelte-components'
   import type { SvelteComponent } from 'svelte'
-  import type { FileUploadEventDetail } from '$lib/components/Types'
+  import type { FileUploadED } from '$lib/components/Types'
 
   let files: IFileInformation[] = []
   let file: File
@@ -44,7 +44,7 @@
   }
 
   // Select the correct file & show a pop-up to change the authors
-  async function editRights(e: CustomEvent<EditRightsEventDetail>): Promise<void> {
+  async function editRights(e: CustomEvent<EditRightsED>): Promise<void> {
     selected = e.detail.id
     authorsDialog.showDialog()
   }
@@ -53,7 +53,7 @@
   const openFileInputDialog = async () => fileInputDialog.showDialog()
 
   // Open the pop-up to change missing columns to the correct name
-  async function openColumnDialog(e: CustomEvent<ColumnsDialogShowEventDetail>): Promise<void> {
+  async function openColumnDialog(e: CustomEvent<ColumnsDialogShowED>): Promise<void> {
     if (e.detail.file) file = e.detail.file
     missing = e.detail.missingColumns
     cols = e.detail.currentColumns
@@ -61,7 +61,7 @@
   }
 
   // A method to check if there is cache of files
-  async function checkForCache(e: CustomEvent<CheckForCacheEventDetail>): Promise<void> {
+  async function checkForCache(e: CustomEvent<CheckForCacheED>): Promise<void> {
     if (dev) console.log('checkForCache: Checking for cache')
     if (!$databaseImpl) await loadImplementationDB()
     ;({ file, authorizedAuthors } = e.detail)
@@ -80,7 +80,7 @@
   }
 
   // Download the file & eventual custom concepts file
-  async function downloadFiles(e: CustomEvent<DownloadFilesEventDetail>): Promise<void> {
+  async function downloadFiles(e: CustomEvent<DownloadFilesED>): Promise<void> {
     if (!$databaseImpl) await loadImplementationDB()
     const { id } = e.detail
     await $databaseImpl?.downloadFiles(id)
@@ -88,7 +88,7 @@
   }
 
   // Delete the files regarding the file name
-  async function deleteFiles(e: CustomEvent<DeleteFilesEventDetail>): Promise<void> {
+  async function deleteFiles(e: CustomEvent<DeleteFilesED>): Promise<void> {
     if (dev) console.log('deleteFile: Deleting a file')
     processing = true
     if (!$databaseImpl) await loadImplementationDB()
@@ -99,13 +99,13 @@
   }
 
   // When choosing to delete the cache & upload the file with the same name again
-  async function reUploadFile(e: CustomEvent<FileUploadEventDetail>): Promise<void> {
+  async function reUploadFile(e: CustomEvent<FileUploadED>): Promise<void> {
     await deleteFiles(e)
     await uploadFile()
   }
 
   // Update the columns to the correct name in a file
-  async function updateFileColumns(e: CustomEvent<FileUpdatedColumnsEventDetail>) {
+  async function updateFileColumns(e: CustomEvent<FileUpdatedColumnsED>) {
     file = e.detail.file
     uploadFile()
   }

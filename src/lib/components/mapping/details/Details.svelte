@@ -3,12 +3,7 @@
   import debounce from 'lodash.debounce'
   import Equivalence from '$lib/components/mapping/details/Equivalence.svelte'
   import AutocompleteInputSettings from '$lib/components/extra/AutocompleteInputSettings.svelte'
-  import type {
-    AutoCompleteShortEventDetail,
-    EquivalenceChangeEventDetail,
-    IUsagiRow,
-    MappingEvents,
-  } from '$lib/components/Types'
+  import type { AutoCompleteShortED, EquivalenceChangeED, IUsagiRow, MappingEvents } from '$lib/components/Types'
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
 
   export let usagiRow: IUsagiRow
@@ -22,7 +17,7 @@
 
   const showDetail = (value: boolean) => (show = value)
 
-  async function onEquivalenceChange(e: CustomEvent<EquivalenceChangeEventDetail>) {
+  async function onEquivalenceChange(e: CustomEvent<EquivalenceChangeED>) {
     equivalence = e.detail.equivalence
     dispatch('equivalenceChange', { equivalence })
   }
@@ -31,7 +26,7 @@
     updateDetails()
   }, 500)
 
-  async function onReviewerChanged(e: CustomEvent<AutoCompleteShortEventDetail>) {
+  async function onReviewerChanged(e: CustomEvent<AutoCompleteShortED>) {
     reviewer = e.detail.value
     updateDetails()
   }

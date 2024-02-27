@@ -4,7 +4,7 @@
   import ShowColumnsDialog from '$lib/components/mapping/ShowColumnsDialog.svelte'
   import type Query from 'arquero/dist/types/query/query'
   import type DataTable from '@radar-azdelta/svelte-datatable'
-  import type { ITablePagination, IUsagiRow, MappingEvents, ShowColumnsEventDetail } from '$lib/components/Types'
+  import type { ITablePagination, IUsagiRow, MappingEvents, ShowColumnsED } from '$lib/components/Types'
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
 
   export let selectedRow: IUsagiRow, mainTable: DataTable
@@ -40,7 +40,7 @@
 
   const showDialogColumns = () => dialog.showModal()
 
-  const showColumns = (e: CustomEvent<ShowColumnsEventDetail>) => (shownColumns = e.detail.columns)
+  const showColumns = (e: CustomEvent<ShowColumnsED>) => (shownColumns = e.detail.columns)
 
   $: columns = selectedRow ? Object.keys(selectedRow) : []
 </script>

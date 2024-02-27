@@ -3,7 +3,7 @@
   import { createEventDispatcher } from 'svelte'
   import { Drop, SvgIcon, Spinner } from '@radar-azdelta-int/radar-svelte-components'
   import { databaseImpl, databaseImplementation, user } from '$lib/store'
-  import type { FileDropEventDetail, PageEvents } from '$lib/components/Types'
+  import type { FileDropED, PageEvents } from '$lib/components/Types'
 
   export let processing: boolean
 
@@ -65,7 +65,7 @@
   }
 
   // When a file is dropped in the dropping field
-  async function fileDrop(e: CustomEvent<FileDropEventDetail>) {
+  async function fileDrop(e: CustomEvent<FileDropED>) {
     file = e.detail.file
     const reader = new FileReader()
     reader.onload = checkForMissingColumns

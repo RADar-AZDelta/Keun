@@ -10,7 +10,7 @@ const firestore: Firestore = getFirestore(app)
 
 async function assignRole(email: string, roles: string[]) {
   try {
-    console.log("MAIL ", email)
+    console.log('MAIL ', email)
     await assignRoleToUser(email, roles)
   } catch (e) {
     console.error(e)
@@ -19,7 +19,7 @@ async function assignRole(email: string, roles: string[]) {
 
 async function assignRoleToUser(email: string, roles: string[]) {
   const firestoreRoles = (await firestore.collection('roles').doc(email).get()).data()
-  console.log("CHECK ", firestoreRoles)
+  console.log('CHECK ', firestoreRoles)
   if (firestoreRoles?.roles !== roles) await firestore.collection('roles').doc(email).set({ roles })
 }
 

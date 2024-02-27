@@ -100,11 +100,11 @@ export default class FirebaseImpl implements IDatabaseImpl {
   async getFilesList(): Promise<IFileInformation[]> {
     // Return the file id & the name
     const fileIds = await this.getFileIdsForUser()
-    console.log("IDS ", fileIds)
+    console.log('IDS ', fileIds)
     const fileNames = []
     for (let fileId of fileIds) {
       const fileInfo = await this.getFileNameFromStorage(fileId)
-      console.log("FILE INFO ", fileInfo)
+      console.log('FILE INFO ', fileInfo)
       if (fileInfo) fileNames.push({ id: fileId, name: fileInfo.fileName, customId: fileInfo.customId, custom: '' })
     }
     return fileNames
@@ -185,7 +185,7 @@ export default class FirebaseImpl implements IDatabaseImpl {
     const fileInfo = fileSnapshot.data()
     if (!fileInfo) return
     const { authors } = fileInfo
-    for(let author of authors) {
+    for (let author of authors) {
       await this.firestore.updateToFirestore(this.firestoreUserColl, author, { files: arrayRemove(id) })
     }
     await this.storage.deleteFileStorage(`${this.storageCollection}/${id}`)
@@ -218,7 +218,7 @@ export default class FirebaseImpl implements IDatabaseImpl {
 
   async getCustomConcepts(): Promise<any> {
     const concepts = await this.firestore.readFirestoreCollection(this.firestoreCustomConceptsColl)
-    if(!concepts) return []
+    if (!concepts) return []
     const customConcepts = concepts.docs.map(doc => doc.data())
     return customConcepts
   }

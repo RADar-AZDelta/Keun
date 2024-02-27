@@ -17,7 +17,7 @@
   }
 
   $: {
-    if($user) retrieveSettings()
+    if ($user) retrieveSettings()
   }
 </script>
 

@@ -9,11 +9,10 @@
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
   import { reformatDate } from '@radar-azdelta-int/radar-utils'
 
-  export let renderedRow: Record<string, any>,
+  export let renderedRow: ICustomConceptCompact,
     columns: IColumnMetaData[] | undefined,
     originalIndex: number,
-    sourceCode: string,
-    customTable: DataTable
+    sourceCode: string
 
   const inputAvailableColumns = ['concept_name', 'concept_class_id', 'domain_id', 'vocabulary_id']
   const colSuggestions: Record<string, Record<string, string>> = suggestions
@@ -66,11 +65,43 @@
       validEndDate: '2099-12-31',
       invalidReason: '',
     }
-    dispatch('mapCustomConcept', { concept })
+    dispatch('mapCustomConcept', { concept, action: 'SEMI-APPROVED' })
   }
 
-  async function flagRow() {}
-  async function unapproveRow() {}
+  async function flagRow() {
+    const compactConcept = renderedRow as ICustomConceptCompact
+    const { concept_name, domain_id, vocabulary_id, concept_class_id } = compactConcept
+    const concept: ICustomConcept = {
+      conceptId: 0,
+      conceptName: concept_name,
+      domainId: domain_id,
+      vocabularyId: vocabulary_id,
+      conceptClassId: concept_class_id,
+      standardConcept: '',
+      conceptCode: sourceCode,
+      validStartDate: reformatDate(),
+      validEndDate: '2099-12-31',
+      invalidReason: '',
+    }
+    dispatch('mapCustomConcept', { concept, action: 'FLAGGED' })
+  }
+  async function unapproveRow() {
+    const compactConcept = renderedRow as ICustomConceptCompact
+    const { concept_name, domain_id, vocabulary_id, concept_class_id } = compactConcept
+    const concept: ICustomConcept = {
+      conceptId: 0,
+      conceptName: concept_name,
+      domainId: domain_id,
+      vocabularyId: vocabulary_id,
+      conceptClassId: concept_class_id,
+      standardConcept: '',
+      conceptCode: sourceCode,
+      validStartDate: reformatDate(),
+      validEndDate: '2099-12-31',
+      invalidReason: '',
+    }
+    dispatch('mapCustomConcept', { concept, action: 'UNAPPROVED' })
+  }
 
   $: {
     if ($settings.vocabularyIdCustomConcept) updateVocab()

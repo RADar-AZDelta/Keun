@@ -81,8 +81,8 @@ export default class FirebaseAuth extends Firebase {
       const { token, claims } = await user.getIdTokenResult(false)
       this.refreshTokenTrigger(user, claims, userSessionStore.set)
       // const roles = await this.getRoleFromFirestore(user).catch(err => ({roles: []}))
-      const roles = await this.getRoleFromFirestore(user).catch(err => console.log("ERR "))
-      console.log("ROLES ", roles)
+      const roles = await this.getRoleFromFirestore(user).catch(err => console.log('ERR '))
+      console.log('ROLES ', roles)
       userSessionStore.set(this.decodeToken(user, token, roles))
       await this.setToken(token, claims.exp)
       this._resolve()
@@ -90,11 +90,11 @@ export default class FirebaseAuth extends Firebase {
   }
 
   private async getRoleFromFirestore(user: User) {
-    console.log("IN GET ", user.email)
+    console.log('IN GET ', user.email)
     if (!user?.email) return { roles: [] }
     // For as long as the role is not in the custom claim of the user, it needs to be fetched from Firestore
     const roleSnapshot = await this.firestore.readFirestore('roles', user.email)
-    console.log("ROLE SNAPSHOT ", roleSnapshot)
+    console.log('ROLE SNAPSHOT ', roleSnapshot)
     const roles: IRole = roleSnapshot ? roleSnapshot.data() ?? { roles: [] } : { roles: [] }
     return roles
   }

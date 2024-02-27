@@ -14,7 +14,7 @@ async function checkRole(mail: string) {
 }
 
 function start() {
-  for(let mail of Object.keys(group)) checkRole(mail)
+  for (let mail of Object.keys(group)) checkRole(mail)
 }
 
 start()

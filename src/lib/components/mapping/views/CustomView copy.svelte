@@ -8,7 +8,7 @@
   import InputRow from '$lib/components/mapping/views/InputRow.svelte'
   import type Query from 'arquero/dist/types/query/query'
   import type { ICustomConceptInput, IUsagiRow, MappingEvents } from '$lib/components/Types'
-  import type { CustomMappingInputEventDetail, UpdateErrorEventDetail } from '$lib/components/Types'
+  import type { CustomMappingInputED, UpdateErrorED } from '$lib/components/Types'
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
 
   export let selectedRow: IUsagiRow, customTable: DataTable
@@ -25,7 +25,7 @@
     rowsPerPageOptions: [5, 10, 15],
   }
 
-  async function onClickMapping(e: CustomEvent<CustomMappingInputEventDetail>) {
+  async function onClickMapping(e: CustomEvent<CustomMappingInputED>) {
     dispatch('customMappingInput', { ...e.detail })
     data[0] = e.detail.originalRow
     await createInputRow()
@@ -35,7 +35,7 @@
 
   const deleteError = () => (errorMessage = '')
 
-  const updateError = (e: CustomEvent<UpdateErrorEventDetail>) => (errorMessage = e.detail.error)
+  const updateError = (e: CustomEvent<UpdateErrorED>) => (errorMessage = e.detail.error)
 
   async function getCustomsForRow() {
     const params = <Query>query().params({ code: selectedRow.sourceCode })

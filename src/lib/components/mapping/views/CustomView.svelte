@@ -1,25 +1,19 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte'
   import DataTable, { type IColumnMetaData, type ITableOptions } from '@radar-azdelta/svelte-datatable'
-  import { query } from 'arquero'
-  import { databaseImpl, settings } from '$lib/store'
-  import { reformatDate } from '@radar-azdelta-int/radar-utils'
-  import customColumns from '$lib/data/columnsCustomConcept.json'
-  import InputRow from '$lib/components/mapping/views/InputRow.svelte'
-  import type Query from 'arquero/dist/types/query/query'
+  import { databaseImpl } from '$lib/store'
   import type {
-    CustomConceptAddedEventDetail,
+    CustomConceptAddedED,
     ICustomConceptCompact,
-    ICustomConceptInput,
     IUsagiRow,
-    MapCustomConceptEventDetail,
+    MapCustomConceptED,
     MappingEvents,
   } from '$lib/components/Types'
-  import type { CustomMappingInputEventDetail, UpdateErrorEventDetail } from '$lib/components/Types'
-  import { Message, SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
+  import type { UpdateErrorED } from '$lib/components/Types'
+  import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
   import CustomRow from './CustomRow.svelte'
 
-  export let selectedRow: IUsagiRow, customTable: DataTable
+  export let selectedRow: IUsagiRow
 
   const dispatch = createEventDispatcher<MappingEvents>()
 
@@ -51,33 +45,22 @@
     rowsPerPageOptions: [5, 10, 15],
   }
 
-  async function mapCustomConcept(e: CustomEvent<MapCustomConceptEventDetail>) {
-    const { concept } = e.detail
-    dispatch('customMappingInput', { row: concept })
+  async function mapCustomConcept(e: CustomEvent<MapCustomConceptED>) {
+    const { concept, action } = e.detail
+    dispatch('customMappingInput', { row: concept, action })
   }
 
   const deleteError = () => (errorMessage = '')
 
-  const updateError = (e: CustomEvent<UpdateErrorEventDetail>) => (errorMessage = e.detail.error)
+  const updateError = (e: CustomEvent<UpdateErrorED>) => (errorMessage = e.detail.error)
 
   async function getAllCustomConcepts() {
     const customConcepts: ICustomConceptCompact[] = await $databaseImpl?.getCustomConcepts()
-    const inputRow: ICustomConceptInput = {
-      concept_id: 0,
-      concept_name: '',
-      domain_id: '',
-      vocabulary_id: '',
-      concept_class_id: '',
-      standard_concept: '',
-      concept_code: selectedRow.sourceCode,
-      valid_start_date: reformatDate(),
-      valid_end_date: '2099-12-31',
-      invalid_reason: '',
-    }
+    const inputRow = { concept_name: '', domain_id: '', vocabulary_id: '', concept_class_id: '' }
     data = [inputRow, ...customConcepts]
   }
 
-  async function addCustomConcept(e: CustomEvent<CustomConceptAddedEventDetail>) {
+  async function addCustomConcept(e: CustomEvent<CustomConceptAddedED>) {
     const { concept } = e.detail
     data = [...data, concept]
   }
@@ -99,7 +82,6 @@
       {columns}
       {originalIndex}
       sourceCode={selectedRow.sourceCode}
-      {customTable}
       on:updateError={updateError}
       on:customConceptAdded={addCustomConcept}
       on:mapCustomConcept={mapCustomConcept}

@@ -24,7 +24,7 @@ export default class FirebaseFirestore extends Firebase {
   async updateToFirestoreIfNotExist(collection: string, id: string, data: object) {
     const refer = doc(this.firestore, collection, id)
     const docSnap = await getDoc(refer).catch(() => {})
-    if(!docSnap || !docSnap?.data()) return await this.writeToFirestore(collection, id, data)
+    if (!docSnap || !docSnap?.data()) return await this.writeToFirestore(collection, id, data)
     await this.updateToFirestore(collection, id, data)
   }
 

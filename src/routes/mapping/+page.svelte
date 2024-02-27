@@ -25,12 +25,7 @@
   import AthenaSearch from '$lib/components/mapping/AthenaSearch.svelte'
   import UsagiRow from '$lib/components/mapping/UsagiRow.svelte'
   import type { IAthenaRow, ICustomConceptInput, IMapRow, IUsagiRow } from '$lib/components/Types'
-  import type {
-    MappingEventDetail,
-    AutoMapRowEventDetail,
-    RowSelectionEventDetail,
-    NavigateRowEventDetail,
-  } from '$lib/components/Types'
+  import type { MappingED, AutoMapRowED, RowSelectionED, NavigateRowED } from '$lib/components/Types'
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // DATA
@@ -60,7 +55,7 @@
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
   // When the mapping button in the Athena pop-up is clicked and the settins "Map to multiple concepts" is disabled
-  async function singleMapping(e: CustomEvent<MappingEventDetail>): Promise<void> {
+  async function singleMapping(e: CustomEvent<MappingED>): Promise<void> {
     if (dev) console.log('singleMapping: Single mapping for the row with sourceCode ', selectedRow.sourceCode)
     const { originalRow, row, extra, action } = e.detail
     // Map the selected row with the selected concept
@@ -82,7 +77,7 @@
   }
 
   // When the mapping button in the Athena pop-up is clicked and the settins "Map to multiple concepts" is enabled
-  async function multipleMapping(e: CustomEvent<MappingEventDetail>): Promise<void> {
+  async function multipleMapping(e: CustomEvent<MappingED>): Promise<void> {
     if (dev) console.log('multipleMapping: Multiple mapping for the row with sourceCode ', selectedRow.sourceCode)
     const { originalRow, row, extra, action } = e.detail
     const mappedParams = <Query>query().params({ code: originalRow.sourceCode })
@@ -122,7 +117,7 @@
     }
   }
 
-  async function navigateRow(e: CustomEvent<NavigateRowEventDetail>) {
+  async function navigateRow(e: CustomEvent<NavigateRowED>) {
     const { row, index } = e.detail
     selectedRowIndex = index
     selectedRow = row
@@ -131,7 +126,7 @@
   }
 
   // When the button to automap a single row is clicked, automap the row
-  async function autoMapSingleRow(e: CustomEvent<AutoMapRowEventDetail>): Promise<void> {
+  async function autoMapSingleRow(e: CustomEvent<AutoMapRowED>): Promise<void> {
     const { index } = e.detail
     if (dev) console.log('autoMapSingleRow: automap the row with index ', index)
     if (autoMappingPromise) autoMappingAbortController.abort()
@@ -144,7 +139,7 @@
   }
 
   // Select the new navigated row to open in the search dialog
-  async function selectRow(e: CustomEvent<RowSelectionEventDetail>) {
+  async function selectRow(e: CustomEvent<RowSelectionED>) {
     if (autoMappingPromise) autoMappingAbortController.abort()
     const { row, index } = e.detail
     selectedRow = row

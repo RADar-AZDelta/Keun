@@ -20,13 +20,13 @@
     IUsagiAllExtra,
     IUsagiRow,
     MappingEvents,
-    NavigateRowEventDetail,
+    NavigateRowED,
   } from '$lib/components/Types'
   import type {
-    CustomMappingInputEventDetail,
-    EquivalenceChangeEventDetail,
-    RemoveMappingEventDetail,
-    UpdateDetailsEventDetail,
+    CustomMappingInputED,
+    EquivalenceChangeED,
+    RemoveMappingED,
+    UpdateDetailsED,
   } from '$lib/components/Types'
   import { SvgIcon, clickOutside } from '@radar-azdelta-int/radar-svelte-components'
 
@@ -86,7 +86,7 @@
   }
 
   // Delete the mapping in the table & update the other rows if it has multiple concepts that are mapped to the row
-  async function removeMapping(e: CustomEvent<RemoveMappingEventDetail>): Promise<void> {
+  async function removeMapping(e: CustomEvent<RemoveMappingED>): Promise<void> {
     const { conceptId, conceptName } = e.detail
     if (conceptId === 0) removeFromCustomTable(conceptId, conceptName)
     const params = <Query>query().params({ code: selectedRow.sourceCode })
@@ -112,15 +112,15 @@
   }
 
   // Map a new custom concept to a row
-  async function customMapping(e: CustomEvent<CustomMappingInputEventDetail>) {
+  async function customMapping(e: CustomEvent<CustomMappingInputED>) {
     if (dev) console.log('mapCustmoRow: Map a row to a custom concept')
-    const { row } = e.detail
+    const { row, action } = e.detail
     if ($settings.mapToMultipleConcepts) {
       mappedData = [...mappedData, row]
-      Object.assign(mappedToConceptIds, { [row.conceptId]: 'SEMI-APPROVED' })
+      Object.assign(mappedToConceptIds, { [row.conceptId]: action })
     } else {
       mappedData = [row]
-      Object.assign(mappedToConceptIds, { [row.conceptId]: 'SEMI-APPROVED' })
+      Object.assign(mappedToConceptIds, { [row.conceptId]: action })
     }
     const customConcept = e.detail.row
     let mappedRow = await addExtraFields(selectedRow)
@@ -131,7 +131,7 @@
       vocabularyId: customConcept.vocabularyId,
       comment,
       assignedReviewer: reviewer,
-      mappingStatus: 'SEMI-APPROVED',
+      mappingStatus: action,
       'ADD_INFO:customConcept': true,
     }
     Object.assign(mappedRow, update)
@@ -155,12 +155,12 @@
 
   ///////////////////////////// DETAILS METHODS /////////////////////////////
 
-  async function onUpdateDetails(e: CustomEvent<UpdateDetailsEventDetail>) {
+  async function onUpdateDetails(e: CustomEvent<UpdateDetailsED>) {
     const rows = new Map([[selectedRowIndex, { comment: e.detail.comments, assignedReviewer: e.detail.reviewer }]])
     await mainTable.updateRows(rows)
   }
 
-  const equivalenceChange = (e: CustomEvent<EquivalenceChangeEventDetail>) => (equivalence = e.detail.equivalence)
+  const equivalenceChange = (e: CustomEvent<EquivalenceChangeED>) => (equivalence = e.detail.equivalence)
 
   ///////////////////////////// ATHENA ROW METHODS /////////////////////////////
 
@@ -235,7 +235,7 @@
 
   ///////////////////////////// HEAD METHODS /////////////////////////////
 
-  const onNavigateRow = (e: CustomEvent<NavigateRowEventDetail>) => dispatch('navigateRow', { ...e.detail })
+  const onNavigateRow = (e: CustomEvent<NavigateRowED>) => dispatch('navigateRow', { ...e.detail })
 
   ///////////////////////////// DIALOG METHODS /////////////////////////////
 
@@ -323,7 +323,7 @@
           <SearchHead {selectedRow} {mainTable} on:navigateRow={onNavigateRow} />
         </div>
         <div slot="slotView1">
-          <CustomView {selectedRow} {customTable} on:customMappingInput={customMapping} />
+          <CustomView {selectedRow} on:customMappingInput={customMapping} />
         </div>
         <div slot="slotView2">
           <MappedView {mappedData} on:removeMapping={removeMapping} />

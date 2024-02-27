@@ -9,7 +9,7 @@ export default class LocalImpl implements IAuthImpl {
     localStorage.setItem('author', name)
     user.set({ name })
   }
-  
+
   async logOut(): Promise<void> {}
 
   async getAuthor(): Promise<void> {

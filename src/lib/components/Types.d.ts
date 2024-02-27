@@ -14,130 +14,132 @@ export interface IFileIdTemplate {
 ////////////////////////////// Events for the menu page //////////////////////////////
 
 export interface PageEvents {
-  fileDrop: FileDropEventDetail
-  fileUpload: FileUploadEventDetail
-  columnsDialogShow: ColumnsDialogShowEventDetail
-  checkForCache: CheckForCacheEventDetail
-  fileUpdateColumns: FileUpdatedColumnsEventDetail
-  downloadFiles: DownloadFilesEventDetail
-  deleteFiles: DeleteFilesEventDetail
-  editRights: EditRightsEventDetail
+  fileDrop: FileDropED
+  fileUpload: FileUploadED
+  columnsDialogShow: ColumnsDialogShowED
+  checkForCache: CheckForCacheED
+  fileUpdateColumns: FileUpdatedColumnsED
+  downloadFiles: DownloadFilesED
+  deleteFiles: DeleteFilesED
+  editRights: EditRightsED
 }
 
-export type FileDropEventDetail = IFileTemplate
-export type FileUploadEventDetail = IFileIdTemplate
-export interface ColumnsDialogShowEventDetail {
+export type FileDropED = IFileTemplate
+export type FileUploadED = IFileIdTemplate
+export interface ColumnsDialogShowED {
   missingColumns: Record<string, string>
   currentColumns: string[]
   file: File | undefined
 }
-export type CheckForCacheEventDetail = IFileTemplate
-export type FileUpdatedColumnsEventDetail = IFileTemplate
-export type DownloadFilesEventDetail = IFileIdTemplate
-export type DeleteFilesEventDetail = IFileIdTemplate
-export type EditRightsEventDetail = IFileIdTemplate
+export type CheckForCacheED = IFileTemplate
+export type FileUpdatedColumnsED = IFileTemplate
+export type DownloadFilesED = IFileIdTemplate
+export type DeleteFilesED = IFileIdTemplate
+export type EditRightsED = IFileIdTemplate
 
 ////////////////////////////// Events for the mapping page //////////////////////////////
 
 export interface MappingEvents {
-  rowSelection: RowSelectionEventDetail
-  updateRow: UpdateRowEventDetail
-  autoMapRow: AutoMapRowEventDetail
-  deleteRow: DeleteRowEventDetail
-  singleMapping: MappingEventDetail
-  multipleMapping: MappingEventDetail
-  customMappingInput: CustomMappingInputEventDetail
-  removeMapping: RemoveMappingEventDetail
-  navigateRow: NavigateRowEventDetail
-  updateDetails: UpdateDetailsEventDetail
-  equivalenceChange: EquivalenceChangeEventDetail
-  updateError: UpdateErrorEventDetail
-  customConceptAdded: CustomConceptAddedEventDetail
-  mapCustomConcept: MapCustomConceptEventDetail
+  rowSelection: RowSelectionED
+  updateRow: UpdateRowED
+  autoMapRow: AutoMapRowED
+  deleteRow: DeleteRowED
+  singleMapping: MappingED
+  multipleMapping: MappingED
+  customMappingInput: CustomMappingInputED
+  removeMapping: RemoveMappingED
+  navigateRow: NavigateRowED
+  updateDetails: UpdateDetailsED
+  equivalenceChange: EquivalenceChangeED
+  updateError: UpdateErrorED
+  customConceptAdded: CustomConceptAddedED
+  mapCustomConcept: MapCustomConceptED
 }
 
-export interface RowSelectionEventDetail {
+export interface RowSelectionED {
   row: IUsagiRow
   index: number
 }
 
-export interface UpdateRowEventDetail {
+export interface UpdateRowED {
   index: number
   row: IUsagiRow
 }
 
-export interface AutoMapRowEventDetail {
+export interface AutoMapRowED {
   index: number
   sourceName: string
 }
 
-export interface DeleteRowEventDetail {
+export interface DeleteRowED {
   index: number
   sourceCode: string
   erase: boolean
 }
 
-export interface MappingEventDetail {
+export interface MappingED {
   originalRow: IUsagiRow
   row: IAthenaRow
   extra: IExtra
   action: string
 }
 
-export interface CustomMappingInputEventDetail {
+export interface CustomMappingInputED {
   row: ICustomConcept
+  action: string
 }
 
-export interface RemoveMappingEventDetail {
+export interface RemoveMappingED {
   conceptId: number
   conceptName: string
 }
 
-export interface NavigateRowEventDetail {
+export interface NavigateRowED {
   row: IUsagiRow
   index: number
 }
 
-export interface UpdateDetailsEventDetail {
+export interface UpdateDetailsED {
   comments: string
   reviewer: string
 }
 
-export interface EquivalenceChangeEventDetail {
+export interface EquivalenceChangeED {
   equivalence: string
 }
 
-export interface UpdateErrorEventDetail {
+export interface UpdateErrorED {
   error: string
 }
 
-export interface CustomConceptAddedEventDetail {
+export interface CustomConceptAddedED {
   concept: ICustomConceptCompact
 }
 
-export interface MapCustomConceptEventDetail {
+export interface MapCustomConceptED {
   concept: ICustomConcept
+  action: string
 }
 
 ////////////////////////////// Events for extra components //////////////////////////////
 
 export interface ICustomEvents {
-  autoComplete: AutoCompleteEventDetail
-  autoCompleteShort: AutoCompleteShortEventDetail
-  showColumns: ShowColumnsEventDetail
+  autoComplete: AutoCompleteED
+  autoCompleteShort: AutoCompleteShortED
+  showColumns: ShowColumnsED
 }
 
-export interface AutoCompleteEventDetail {
+export interface AutoCompleteED {
   id: string
   value: string | null
   key: string
 }
 
-export interface AutoCompleteShortEventDetail {
+export interface AutoCompleteShortED {
   value: string
 }
 
-export interface ShowColumnsEventDetail {
+export interface ShowColumnsED {
   columns: string[]
 }
 
@@ -206,6 +208,7 @@ export interface ICustomConceptCompact {
   concept_class_id: string
   domain_id: string
   vocabulary_id: string
+  [key: string]: string
 }
 
 export interface ICustomConcept {
