@@ -23,7 +23,7 @@
     const sourceCodeEqual = row.sourceCode === params.sourceCode
     const sourceNameEqual = row.sourceName === params.sourceName
     const conceptNameEqual = row.conceptName === params.conceptName || row.conceptName === params.conceptName2
-    if (sourceCodeEqual && sourceNameEqual && conceptNameEqual) return true
+    return sourceCodeEqual && sourceNameEqual && conceptNameEqual
   }
 
   async function getCurrentRowIndex() {

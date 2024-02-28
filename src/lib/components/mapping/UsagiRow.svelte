@@ -35,33 +35,7 @@
   const approveRow = async () => await rowActions.approveRow()
   const flagRow = async () => await rowActions.flagRow()
   const unapproveRow = async () => await rowActions.unapproveRow()
-
-  async function deleteRow(): Promise<void> {
-    // If there are not multiple concepts mapped to this row, reset the row, otherwise you can delete the row
-    const conceptsNumber = renderedRow['ADD_INFO:numberOfConcepts']
-    // If it's a custom concept, delete it from that table
-    if (renderedRow['ADD_INFO:customConcept']) {
-      const customExistanceParams = <Query>(
-        query().params({ name: renderedRow.conceptName, code: renderedRow.sourceCode })
-      )
-      const customExistanceQuery = customExistanceParams
-        .filter((r: any, p: any) => r.concept_name === p.name && r.concept_code === p.code)
-        .toObject()
-      const customExistance = await customTable.executeQueryAndReturnResults(customExistanceQuery)
-      if (customExistance.indices.length) await customTable.deleteRows([customExistance.indices[0]])
-    }
-    // if (!conceptsNumber || conceptsNumber < 2) return await table.updateRows(new Map([[index, await resetRow()]]))
-    if (!conceptsNumber || conceptsNumber < 2) return await rowLogic.resetRow()
-    const existanceQuery = (<Query>query().params({ source: renderedRow.sourceCode }))
-      .filter((r: any, params: any) => r.sourceCode === params.source)
-      .toObject()
-    await table.deleteRows([index])
-    const existance = await table.executeQueryAndReturnResults(existanceQuery)
-    if (!existance.queriedData.length) return
-    const rowsToUpdate = new Map()
-    for (let i of existance.indices) rowsToUpdate.set(i, { 'ADD_INFO:numberOfConcepts': existance.queriedData.length })
-    await table.updateRows(rowsToUpdate)
-  }
+  const deleteRow = async() => await rowLogic.deleteRow()
 
   async function onClickAutoMap(): Promise<void> {
     const sourceName = renderedRow['sourceName']

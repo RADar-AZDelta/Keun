@@ -10,7 +10,7 @@
   import type { IColumnMetaData, ITableOptions } from '@radar-azdelta/svelte-datatable'
   import DataTable from '@radar-azdelta/svelte-datatable'
   import { reformatDate } from '@radar-azdelta-int/radar-utils'
-  import { table } from '$lib/store'
+  import { customTable, table } from '$lib/store'
   import Table from '$lib/classes/TableLogic'
   import { BergamotTranslator } from '$lib/helperClasses/BergamotTranslator'
   import { addExtraFields } from '$lib/mappingUtils'
@@ -418,6 +418,7 @@
 
   $: {
     if (dataTableMapping && !$table) $table = new Table(dataTableMapping)
+    if (dataTableCustomConcepts && !$customTable) $customTable = new Table(dataTableCustomConcepts)
   }
 
   $: author = $user ? $user.name : null

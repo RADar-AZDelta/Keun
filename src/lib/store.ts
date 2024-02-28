@@ -42,6 +42,7 @@ export const settings = writable<ISettings>({
 })
 
 export const table = writable<TableLogic | undefined>(undefined)
+export const customTable = writable<TableLogic | undefined>(undefined)
 
 export const user = writable<IUser>()
 
