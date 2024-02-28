@@ -16,6 +16,12 @@ export interface IQueryResult {
   queriedData: IUsagiRow[]
 }
 
+export interface IUsagiActions {
+  approveRow(): Promise<void>
+  flagRow(): Promise<void>
+  unapproveRow(): Promise<void>
+}
+
 ////////////////////////////// Events for the menu page //////////////////////////////
 
 export interface PageEvents {
