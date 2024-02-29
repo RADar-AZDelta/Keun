@@ -27,7 +27,7 @@
     if (!$settingsImpl) await loadImplementationSettings()
     await $settingsImpl?.updateSettings($settings)
     const automappingChanged = $settings.autoMap && savedAutomapping !== $settings.autoMap
-    if(automappingChanged) $triggerAutoMapping = savedAutomapping = true
+    if (automappingChanged) $triggerAutoMapping = savedAutomapping = true
   }
 
   async function abort() {

@@ -3,7 +3,7 @@
   import { databaseImpl, settings } from '$lib/store'
   import AutocompleteInput from '$lib/components/extra/AutocompleteInput.svelte'
   import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
-  import type { ICustomConcept, ICustomConceptCompact, MappingEvents } from '$lib/components/Types'
+  import type { ICustomConcept, ICustomConceptCompact, IUsagiRow, MappingEvents } from '$lib/components/Types'
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
   import { reformatDate } from '@radar-azdelta-int/radar-utils'
   import { Config } from '$lib/helperClasses/Config'
@@ -11,6 +11,8 @@
   export let renderedRow: ICustomConceptCompact,
     columns: IColumnMetaData[] | undefined,
     originalIndex: number,
+    usagiRow: IUsagiRow,
+    usagiRowIndex: number,
     sourceCode: string
 
   const inputAvailableColumns = ['concept_name', 'concept_class_id', 'domain_id', 'vocabulary_id']
@@ -31,12 +33,7 @@
     // TODO: check if a custom concept with the same name doesn't already exist
     if (!$databaseImpl) return
     const { concept_name, concept_class_id, domain_id, vocabulary_id } = inputRow
-    const concept: ICustomConceptCompact = {
-      concept_name,
-      concept_class_id,
-      domain_id,
-      vocabulary_id,
-    }
+    const concept = { concept_name, concept_class_id, domain_id, vocabulary_id }
     $databaseImpl.addCustomConcept(concept)
     await resetInputRow()
     dispatch('customConceptAdded', { concept })

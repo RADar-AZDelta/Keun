@@ -264,6 +264,19 @@ export interface ICustomConcept {
   invalidReason: string
 }
 
+export interface ICustomConceptMappable {
+  id: number
+  name: string
+  domain: string
+  vocabulary: string
+  conceptClassId: string
+  standardConcept: string
+  conceptCode: string
+  validStartDate: string
+  validEndDate: string
+  invalidReason: string
+}
+
 export interface IMessage {
   result: string
   message: string
@@ -295,16 +308,29 @@ export interface IMapRow {
 }
 
 export interface IAthenaRow {
-  className: string
-  code: string
-  domain: string
-  equivalence: string
   id: number
-  invalidReason: string
   name: string
-  score: any
-  standardConcept: string
+  domain: string
   vocabulary: string
+  className: string
+  standardConcept: string
+  code: string
+  equivalence: string
+  invalidReason: string
+  score: any
+}
+
+export interface ICustomConceptMappable {
+  id: number
+  name: string
+  domain: string
+  vocabulary: string
+  className: string
+  standardConcept: string
+  code: string
+  validStartDate: string
+  validEndDate: string
+  invalidReason: string
 }
 
 export interface IMappedRow {
@@ -313,6 +339,7 @@ export interface IMappedRow {
   conceptId: number
   conceptName: string
   customConcept: boolean
+  [key: string]: string | number | boolean
 }
 
 export interface IUsagiRow extends IExtraUsagiCols, IUsagiMappedCols {

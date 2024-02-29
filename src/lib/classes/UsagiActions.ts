@@ -1,6 +1,5 @@
-import { table, user } from '$lib/store'
-import type { IUsagiActions, IUsagiRow, IUser } from '$lib/components/Types'
-import type DataTable from '@radar-azdelta/svelte-datatable'
+import type { IUsagiActions, IUsagiRow } from '$lib/components/Types'
+import StoreMethods from './StoreMethods'
 
 export default class UsagiActions implements IUsagiActions {
   row: IUsagiRow
@@ -16,7 +15,7 @@ export default class UsagiActions implements IUsagiActions {
   unapproveRow = async () => await this.performActionOnRow('UNAPPROVE')
 
   private async checkApprovalConditionsAndReturnUpdate() {
-    const user = await this.getUser()
+    const user = await StoreMethods.getUser()
     if (!user || !user.name) return {}
     const { mappingStatus, statusSetBy, conceptId: id, sourceAutoAssignedConceptIds } = this.row
     const semiApproval = mappingStatus === 'SEMI-APPROVED'
@@ -32,7 +31,7 @@ export default class UsagiActions implements IUsagiActions {
   }
 
   private async checkFlaggingConditionsAndReturnUpdate() {
-    const user = await this.getUser()
+    const user = await StoreMethods.getUser()
     if (!user || !user.name) return {}
     const { mappingStatus } = this.row
     const rowIsFlagged = mappingStatus === 'FLAGGED'
@@ -41,7 +40,7 @@ export default class UsagiActions implements IUsagiActions {
   }
 
   private async checkUnapprovalConditionsAndReturnUpdate() {
-    const user = await this.getUser()
+    const user = await StoreMethods.getUser()
     if (!user || !user.name) return {}
     const { mappingStatus } = this.row
     const rowIsUnapproved = mappingStatus === 'UNAPPROVED'
@@ -58,16 +57,8 @@ export default class UsagiActions implements IUsagiActions {
 
   private async performActionOnRow(action: string) {
     const updatedProperties = await this.getConditionMethod(action)
-    const table = await this.getTable()
+    const table = await StoreMethods.getTable()
     if (!table) return
     table.updateRows(new Map([[this.index, updatedProperties]]))
-  }
-
-  private getUser(): Promise<IUser> {
-    return new Promise(resolve => user.subscribe(user => resolve(user)))
-  }
-
-  private async getTable(): Promise<DataTable | undefined> {
-    return new Promise(resolve => table.subscribe(table => resolve(table)))
   }
 }

@@ -7,6 +7,7 @@ import customConceptInfo from '$lib/data/customConceptInfo.json'
 import equivalenceOptions from '$lib/data/equivalenceOptions.json'
 import filters from '$lib/data/filters.json'
 import tableOptions from '$lib/data/tableOptions.json'
+import config from '$lib/data/config.json'
 
 // TODO: put config & data combined in less files
 
@@ -20,4 +21,7 @@ export class Config {
   static equivalenceOptions = equivalenceOptions
   static filters = filters
   static tableOptions = tableOptions
+  static colors = config.colors
+  static usagiRowConfig = config.usagiRow
+  static athenaViews = config.athenaViews
 }

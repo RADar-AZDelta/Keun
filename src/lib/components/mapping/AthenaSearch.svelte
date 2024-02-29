@@ -1,44 +1,26 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte'
-  import { dev } from '$app/environment'
   import { query } from 'arquero'
-  import { customTable, settings, table } from '$lib/store'
+  import { table } from '$lib/store'
   import { localStorageGetter } from '@radar-azdelta-int/radar-utils'
   import type Query from 'arquero/dist/types/query/query'
   import { Search } from '@radar-azdelta/svelte-athena-search'
-  import { addExtraFields, resetRow } from '$lib/mappingUtils'
   import SearchHead from '$lib/components/mapping/SearchHead.svelte'
   import CustomView from '$lib/components/mapping/views/CustomView.svelte'
   import Details from '$lib/components/mapping/details/Details.svelte'
   import MappedView from '$lib/components/mapping/views/MappedView.svelte'
   import type { IView } from '@radar-azdelta/svelte-athena-search'
-  import type {
-    IAthenaRow,
-    IMappedRow,
-    IMappedRows,
-    IUsagiAllExtra,
-    IUsagiRow,
-    MappingEvents,
-    NavigateRowED,
-  } from '$lib/components/Types'
-  import type {
-    CustomMappingInputED,
-    EquivalenceChangeED,
-    RemoveMappingED,
-    UpdateDetailsED,
-  } from '$lib/components/Types'
+  import type { IMappedRow, IMappedRows, IUsagiRow, MappingEvents, NavigateRowED } from '$lib/components/Types'
+  import type { EquivalenceChangeED, UpdateDetailsED } from '$lib/components/Types'
   import { SvgIcon, clickOutside } from '@radar-azdelta-int/radar-svelte-components'
   import AthenaActions from './views/AthenaActions.svelte'
+  import { Config } from '$lib/helperClasses/Config'
 
-  export let selectedRow: IUsagiRow,
-    selectedRowIndex: number,
-    globalAthenaFilter: { column: string; filter: string | undefined }
+  export let selectedRow: IUsagiRow, selectedRowIndex: number
+  export let globalAthenaFilter: { column: string; filter: string | undefined }
 
   const dispatch = createEventDispatcher<MappingEvents>()
-  const views: IView[] = [
-    { name: 'custom concept', value: 'custom', viewSlot: 1 },
-    { name: 'mapped concepts', value: 'mapped', viewSlot: 2 },
-  ]
+  const views: IView[] = Config.athenaViews
 
   let dialog: HTMLDialogElement
   let mappedData: (IMappedRow | object)[] = [{}]
@@ -47,88 +29,6 @@
     equivalence: string = 'EQUAL'
   let activatedAthenaFilters = new Map<string, string[]>([['standardConcept', ['Standard']]])
   let mappedToConceptIds: IMappedRows = {}
-
-  ///////////////////////////////////////////////////////////////////////////////////////////////
-  // METHODS
-  ///////////////////////////////////////////////////////////////////////////////////////////////
-
-  // Delete a custom concept from the custom concept table
-  async function removeFromCustomTable(conceptId: number, conceptName: string) {
-    const params = <Query>query().params({ id: conceptId, name: conceptName })
-    const existanceQuery = params
-      .filter((r: any, p: any) => r.concept_id === p.id && r.concept_name === p.name)
-      .toObject()
-    const concepts = await $customTable.executeQueryAndReturnResults(existanceQuery)
-    if (concepts.indices.length) await $customTable.deleteRows(concepts.indices)
-  }
-
-  // Delete the mapping in the table & update the other rows if it has multiple concepts that are mapped to the row
-  async function removeMapping(e: CustomEvent<RemoveMappingED>): Promise<void> {
-    const { conceptId, conceptName } = e.detail
-    if (conceptId === 0) removeFromCustomTable(conceptId, conceptName)
-    const params = <Query>query().params({ code: selectedRow.sourceCode })
-    const conceptsQuery = params.filter((r: any, p: any) => r.sourceCode === p.code).toObject()
-    const concepts = await $table.executeQueryAndReturnResults(conceptsQuery)
-    if (!concepts.indices.length) return
-    if (concepts.indices.length > 1) {
-      const rowListIndex = concepts.queriedData.findIndex(
-        (r: any) => r.conceptId === conceptId && r.conceptName === conceptName,
-      )
-      const originalIndex = concepts.indices[rowListIndex]
-      const extraIndices = concepts.indices.filter((i: number) => i !== originalIndex)
-      const updatedRows = new Map<number, Record<string, any>>()
-      extraIndices.forEach((i: number) => updatedRows.set(i, { 'ADD_INFO:numberOfConcepts': extraIndices.length }))
-      await $table.updateRows(updatedRows)
-      await $table.deleteRows([originalIndex])
-    } else {
-      const index = concepts.indices[0]
-      const reset = await resetRow()
-      await $table.updateRows(new Map([[index, reset]]))
-    }
-    fillMappedTable()
-  }
-
-  // Map a new custom concept to a row
-  async function customMapping(e: CustomEvent<CustomMappingInputED>) {
-    if (dev) console.log('mapCustmoRow: Map a row to a custom concept')
-    const { row, action } = e.detail
-    if ($settings.mapToMultipleConcepts) {
-      mappedData = [...mappedData, row]
-      Object.assign(mappedToConceptIds, { [row.conceptId]: 'SEMI-APPROVED' })
-    } else {
-      mappedData = [row]
-      Object.assign(mappedToConceptIds, { [row.conceptId]: 'SEMI-APPROVED' })
-    }
-    const customConcept = e.detail.row
-    let mappedRow = await addExtraFields(selectedRow)
-    const update: IUsagiAllExtra = {
-      conceptId: customConcept.conceptId,
-      conceptName: customConcept.conceptName,
-      domainId: customConcept.domainId,
-      vocabularyId: customConcept.vocabularyId,
-      comment,
-      assignedReviewer: reviewer,
-      mappingStatus: 'SEMI-APPROVED',
-      'ADD_INFO:customConcept': true,
-    }
-    Object.assign(mappedRow, update)
-    if (!$settings || !$settings.mapToMultipleConcepts)
-      return await $table.updateRows(new Map([[selectedRowIndex, mappedRow]]))
-
-    const conceptsParams = <Query>query().params({ code: mappedRow.sourceCode })
-    const conceptsQuery = conceptsParams.filter((r: any, p: any) => r.sourceCode === p.code).toObject()
-    const concepts = await $table.executeQueryAndReturnResults(conceptsQuery)
-    if (concepts.queriedData.length === 1 && !concepts.queriedData[0].conceptName)
-      return await $table.updateRows(new Map([[selectedRowIndex, mappedRow]]))
-
-    mappedRow['ADD_INFO:numberOfConcepts'] = concepts.indices.length + 1
-    const rowsToUpdate = new Map()
-    concepts.indices.forEach((i: number) =>
-      rowsToUpdate.set(i, { 'ADD_INFO:numberOfConcepts': concepts.indices.length + 1 }),
-    )
-    await $table.updateRows(rowsToUpdate)
-    await $table.insertRows([mappedRow])
-  }
 
   ///////////////////////////// DETAILS METHODS /////////////////////////////
 
@@ -222,7 +122,6 @@
             {mappedToConceptIds}
             {selectedRow}
             {selectedRowIndex}
-            {mappedData}
             {equivalence}
             {comment}
             {reviewer}
@@ -232,10 +131,10 @@
           <SearchHead {selectedRow} on:navigateRow={onNavigateRow} />
         </div>
         <div slot="slotView1">
-          <CustomView {selectedRow} on:customMappingInput={customMapping} />
+          <CustomView {selectedRow} {selectedRowIndex} />
         </div>
         <div slot="slotView2">
-          <MappedView {mappedData} on:removeMapping={removeMapping} />
+          <MappedView {mappedData} {selectedRow} />
         </div>
         <div slot="rightSlot">
           <Details usagiRow={selectedRow} on:updateDetails={onUpdateDetails} on:equivalenceChange={equivalenceChange} />

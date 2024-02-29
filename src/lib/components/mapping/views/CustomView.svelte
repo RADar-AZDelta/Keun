@@ -13,7 +13,7 @@
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
   import CustomRow from './CustomRow.svelte'
 
-  export let selectedRow: IUsagiRow
+  export let selectedRow: IUsagiRow, selectedRowIndex: number
 
   const dispatch = createEventDispatcher<MappingEvents>()
 
@@ -81,6 +81,8 @@
       {renderedRow}
       {columns}
       {originalIndex}
+      usagiRow={selectedRow}
+      usagiRowIndex={selectedRowIndex}
       sourceCode={selectedRow.sourceCode}
       on:updateError={updateError}
       on:customConceptAdded={addCustomConcept}

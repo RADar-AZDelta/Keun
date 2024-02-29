@@ -1,6 +1,6 @@
-import { mappedToConceptIds, settings, table, user } from '$lib/store'
+import { customTable, mappedToConceptIds, settings, table, user } from '$lib/store'
 import type DataTable from '@radar-azdelta/svelte-datatable'
-import type { IMappedRows, ISettings, IUsagiRow, IUser } from '$lib/components/Types'
+import type { ICustomConcept, IMappedRows, ISettings, IUsagiRow, IUser } from '$lib/components/Types'
 
 export default class StoreMethods {
   static async getUser(): Promise<IUser> {
@@ -39,6 +39,15 @@ export default class StoreMethods {
     )
   }
 
+  static async getCustomTable(): Promise<DataTable> {
+    return new Promise(resolve =>
+      customTable.subscribe(table => {
+        if (!table) throw new Error('Custom table not found')
+        resolve(table)
+      }),
+    )
+  }
+
   static async getTableRow(index: number) {
     const table = await this.getTable()
     return <IUsagiRow>await table.getFullRow(index)
@@ -62,6 +71,11 @@ export default class StoreMethods {
   static async executeQueryOnTable(query: object) {
     const table = await this.getTable()
     return await table.executeQueryAndReturnResults(query)
+  }
+
+  static async insertCustomTableRow(row: ICustomConcept) {
+    const customTable = await this.getCustomTable()
+    await customTable.insertRows([row])
   }
 
   static async updateMappedConceptsBib(updatedConcept: object) {

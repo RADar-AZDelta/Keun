@@ -1,16 +1,18 @@
 <script lang="ts">
-  import AthenaActions from '$lib/classes/AthenaActions'
-  import type { IAthenaRow, IMappedRow, IMappedRows, IUsagiRow } from '$lib/components/Types'
-  import { user } from '$lib/store'
-  import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
   import { onMount } from 'svelte'
+  import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
+  import { user } from '$lib/store'
+  import { Config } from '$lib/helperClasses/Config'
+  import AthenaActions from '$lib/classes/AthenaActions'
+  import type { IAthenaRow, IMappedRows, IUsagiRow } from '$lib/components/Types'
 
   export let renderedRow: IAthenaRow, mappedToConceptIds: IMappedRows
   export let selectedRow: IUsagiRow, selectedRowIndex: number
-  export let mappedData: (IMappedRow | object)[]
   export let equivalence: string, comment: string, reviewer: string
 
   let rowActions: AthenaActions
+  const width = '10px'
+  const height = '10px'
 
   const approveRow = async () => await rowActions.approveRow()
   const mapRowApproved = async () => await rowActions.mapRowApproved({ equivalence, comment, reviewer })
@@ -28,40 +30,40 @@
 </script>
 
 {#if mappedToConceptIds[renderedRow.id] === 'APPROVED'}
-  <button title="Mapped to row" style="background-color: hsl(156, 100%, 35%);">
-    <SvgIcon id="check" width="10px" height="10px" />
+  <button title="Mapped to row" style="background-color: {Config.colors['APPROVED']};">
+    <SvgIcon id="check" {width} {height} />
   </button>
 {:else if mappedToConceptIds[renderedRow.id] === 'SEMI-APPROVED' && selectedRow.statusSetBy !== $user.name}
-  <button on:click={approveRow} title="Approve mapping" style="background-color: hsl(84, 100%, 70%);">
-    <SvgIcon id="check" width="10px" height="10px" />
+  <button on:click={approveRow} title="Approve mapping" style="background-color: {Config.colors['SEMI-APPROVED']};">
+    <SvgIcon id="check" {width} {height} />
   </button>
 {:else if mappedToConceptIds[renderedRow.id] === 'SEMI-APPROVED'}
-  <button title="Mapped to row" style="background-color: hsl(84, 100%, 70%);">
-    <SvgIcon id="plus" width="10px" height="10px" />
+  <button title="Mapped to row" style="background-color: {Config.colors['SEMI-APPROVED']};">
+    <SvgIcon id="plus" {width} {height} />
   </button>
 {:else}
   <button title="Map to row" on:click={mapRowApproved}>
-    <SvgIcon id="plus" width="10px" height="10px" />
+    <SvgIcon id="plus" {width} {height} />
   </button>
 {/if}
 {#if mappedToConceptIds[renderedRow.id] === 'FLAGGED'}
-  <button title="Flagged row" style="background-color: hsl(54, 89%, 64%);">
-    <SvgIcon id="flag" width="10px" height="10px" />
+  <button title="Flagged row" style="background-color: {Config.colors['FLAGGED']};">
+    <SvgIcon id="flag" {width} {height} />
   </button>
 {:else}
   <button title="Flag row" on:click={mapRowFlagged}>
-    <SvgIcon id="flag" width="10px" height="10px" />
+    <SvgIcon id="flag" {width} {height} />
   </button>
 {/if}
 {#if mappedToConceptIds[renderedRow.id] === 'UNAPPROVED'}
-  <button title="Unapproved row" style="background-color: hsl(8, 100%, 59%);">
-    <SvgIcon id="x" width="10px" height="10px" />
+  <button title="Unapproved row" style="background-color: {Config.colors['UNAPPROVED']};">
+    <SvgIcon id="x" {width} {height} />
   </button>
 {:else}
   <button title="Unapprove row" on:click={mapRowUnapproved}>
-    <SvgIcon id="x" width="10px" height="10px" />
+    <SvgIcon id="x" {width} {height} />
   </button>
 {/if}
 <button on:click={() => referToAthena(renderedRow.id)}>
-  <SvgIcon id="link" width="10px" height="10px" />
+  <SvgIcon id="link" {width} {height} />
 </button>

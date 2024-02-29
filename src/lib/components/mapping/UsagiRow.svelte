@@ -4,6 +4,7 @@
   import { EditableCell } from '@radar-azdelta/svelte-datatable'
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
   import UsagiLogic from '$lib/classes/UsagiLogic'
+  import { Config } from '$lib/helperClasses/Config'
   import UsagiActions from '$lib/classes/UsagiActions'
   import type { IUsagiRow, MappingEvents } from '$lib/components/Types'
   import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
@@ -13,19 +14,10 @@
   export let disabled: boolean
 
   const dispatch = createEventDispatcher<MappingEvents>()
-  let rowActions: UsagiActions
-  let rowLogic: UsagiLogic
+  let rowActions: UsagiActions, rowLogic: UsagiLogic
   let color: string = 'inherit'
   const width = '10px'
   const height = '10px'
-  const dateCells = ['statusSetOn', 'createdOn', 'ADD_INFO:approvedOn']
-  const editableCells = ['comment']
-  const colors: Record<string, string | undefined> = {
-    APPROVED: 'hsl(156, 100%, 35%)',
-    FLAGGED: 'hsl(54, 89%, 64%)',
-    'SEMI-APPROVED': 'hsl(84, 100%, 70%)',
-    UNAPPROVED: 'hsl(8, 100%, 59%)',
-  }
 
   const mapRow = () => dispatch('rowSelection', { row: renderedRow as IUsagiRow, index })
   const approveRow = async () => await rowActions.approveRow()
@@ -36,7 +28,7 @@
   const onClickAutoMap = async () => dispatch('autoMapRow', { index, sourceName: renderedRow.sourceName })
 
   async function getColors() {
-    const color = colors[renderedRow.mappingStatus]
+    const color = (<Record<string, string>>Config.colors)[renderedRow.mappingStatus]
     if (!color) return 'inherit'
     return color
   }
@@ -76,9 +68,9 @@
   {@const { id } = column}
   {@const value = renderedRow[id]}
   <td on:dblclick={mapRow} class="cell" style={`background-color: ${color}`} title={value}>
-    {#if dateCells.includes(id)}
+    {#if Config.usagiRowConfig.dateCells.includes(id)}
       <p>{reformatDate(value)}</p>
-    {:else if editableCells.includes(id)}
+    {:else if Config.usagiRowConfig.editableCells.includes(id)}
       <EditableCell {value} on:valueChanged={e => updateValue(e, id)} />
     {:else}
       <p>{value ?? ''}</p>
