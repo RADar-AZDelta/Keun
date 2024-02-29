@@ -1,13 +1,13 @@
 import { query } from 'arquero'
 import additionalColumns from '$lib/data/additionalColumns.json'
 import { customTable, table } from '$lib/store'
-import type TableLogic from '$lib/classes/TableLogic'
 import type Query from 'arquero/dist/types/query/query'
-import type { IExtraUsagiCols, IUsagiAllExtra, IUsagiRow } from '$lib/components/Types'
+import type DataTable from '@radar-azdelta/svelte-datatable'
+import type { IExtraUsagiCols, IUsagiAllExtra, IUsagiLogic, IUsagiRow } from '$lib/components/Types'
 
 const additionalFields: IExtraUsagiCols = additionalColumns
 
-export default class UsagiLogic {
+export default class UsagiLogic implements IUsagiLogic {
   row: IUsagiRow
   index: number
 
@@ -16,7 +16,14 @@ export default class UsagiLogic {
     this.index = index
   }
 
-  async deleteRow(): Promise<void> {
+  async updatePropertyValue(e: CustomEvent, column: string) {
+    const updatedProperty = { [column]: e.detail }
+    const table = await this.getTable()
+    if (!table) return
+    await table.updateRows(new Map([[this.index, updatedProperty]]))
+  }
+
+  async deleteRow() {
     if (this.row['ADD_INFO:customConcept']) await this.deleteCustomConcept()
     await this.determineToResetOrDeleteRow()
   }
@@ -45,8 +52,20 @@ export default class UsagiLogic {
     return equalSourceCode && equalConceptName
   }
 
+  private async getNumberOfConcepts() {
+    const params = { sourceCode: this.row.sourceCode }
+    const numberQuery = (<Query>query().params(params))
+      .filter((r: any, p: any) => r.sourceCode === p.sourceCode)
+      .toObject()
+    const table = await this.getTable()
+    if (!table) return 0
+    const queryResult = await table.executeQueryAndReturnResults(numberQuery)
+    if (!queryResult.indices.length) return 0
+    return queryResult.indices.length
+  }
+
   private async determineToResetOrDeleteRow() {
-    const conceptsNumber = this.row['ADD_INFO:numberOfConcepts']
+    const conceptsNumber = await this.getNumberOfConcepts()
     if (!conceptsNumber || conceptsNumber < 2) await this.resetRow()
     else {
       await this.deleteRowOnIndex()
@@ -101,11 +120,11 @@ export default class UsagiLogic {
     return equalSourceCode
   }
 
-  private async getTable(): Promise<TableLogic | undefined> {
+  private async getTable(): Promise<DataTable | undefined> {
     return new Promise(resolve => table.subscribe(table => resolve(table)))
   }
 
-  private async getCustomTable(): Promise<TableLogic | undefined> {
+  private async getCustomTable(): Promise<DataTable | undefined> {
     return new Promise(resolve => customTable.subscribe(table => resolve(table)))
   }
 }

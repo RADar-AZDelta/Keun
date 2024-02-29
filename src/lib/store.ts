@@ -17,11 +17,10 @@ import {
   loadImplementationSave,
   loadImplementationSettings,
 } from '$lib/implementations/implementation'
-import type { IAuthImpl, IDatabaseImpl, ISettings, ISettingsImpl, IUser } from '$lib/components/Types'
+import type { IAuthImpl, IDatabaseImpl, IMappedRows, ISettings, ISettingsImpl, IUser } from '$lib/components/Types'
 import type { ICustomStoreOptions, IDataTypeFunctionalities } from '@radar-azdelta/svelte-datatable'
-import type { User } from 'firebase/auth'
 import type { FirebaseOptions } from 'firebase/app'
-import TableLogic from './classes/TableLogic'
+import type DataTable from '@radar-azdelta/svelte-datatable'
 
 export const firebaseConfig: FirebaseOptions = {
   apiKey: PUBLIC_FIREBASE_API_KEY,
@@ -41,8 +40,9 @@ export const settings = writable<ISettings>({
   popupSidesShowed: { filters: true, details: true },
 })
 
-export const table = writable<TableLogic | undefined>(undefined)
-export const customTable = writable<TableLogic | undefined>(undefined)
+export const table = writable<DataTable>()
+export const customTable = writable<DataTable>()
+export const mappedToConceptIds = writable<IMappedRows>()
 
 export const user = writable<IUser>()
 

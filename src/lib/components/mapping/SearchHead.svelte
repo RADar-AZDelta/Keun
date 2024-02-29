@@ -3,18 +3,18 @@
   import { query } from 'arquero'
   import ShowColumnsDialog from '$lib/components/mapping/ShowColumnsDialog.svelte'
   import type Query from 'arquero/dist/types/query/query'
-  import type DataTable from '@radar-azdelta/svelte-datatable'
   import type { IQueryResult, ITablePagination, IUsagiRow, MappingEvents, ShowColumnsED } from '$lib/components/Types'
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
+  import { table } from '$lib/store'
 
-  export let selectedRow: IUsagiRow, mainTable: DataTable
+  export let selectedRow: IUsagiRow
 
   const dispatch = createEventDispatcher<MappingEvents>()
   let dialog: HTMLDialogElement
   let shownColumns: string[] = ['sourceCode', 'sourceName', 'sourceFrequency']
 
   async function getPagination() {
-    let pag: ITablePagination = await mainTable.getTablePagination()
+    let pag: ITablePagination = $table.getTablePagination()
     const { currentPage } = pag
     return currentPage ?? 0
   }
@@ -32,13 +32,13 @@
     const conceptName2 = concept === 'Unmapped' ? null : concept
     const params = { sourceCode, sourceName, conceptName, conceptName2 }
     const indexQuery = (<Query>query().params(params)).filter(rowFilter).toObject()
-    const rows: IQueryResult = await mainTable.executeQueryAndReturnResults(indexQuery)
+    const rows: IQueryResult = await $table.executeQueryAndReturnResults(indexQuery)
     const index = rows.indices[0]
     return index
   }
 
   async function getFollowingRow(up: boolean, currentRowIndex: number) {
-    const rowResult = up ? await mainTable.getNextRow(currentRowIndex) : await mainTable.getPreviousRow(currentRowIndex)
+    const rowResult = up ? await $table.getNextRow(currentRowIndex) : await $table.getPreviousRow(currentRowIndex)
     const { row, index, page } = rowResult
     return { row, index, page }
   }
@@ -48,7 +48,7 @@
     const { row, index, page } = await getFollowingRow(up, rowIndex)
     if (!row.sourceCode) return
     const currentPage = await getPagination()
-    if (currentPage !== page) mainTable.changePagination({ currentPage: page })
+    if (currentPage !== page) $table.changePagination({ currentPage: page })
     dispatch('navigateRow', { row, index })
   }
 

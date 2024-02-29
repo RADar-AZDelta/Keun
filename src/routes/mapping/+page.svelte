@@ -11,7 +11,6 @@
   import DataTable from '@radar-azdelta/svelte-datatable'
   import { reformatDate } from '@radar-azdelta-int/radar-utils'
   import { customTable, table } from '$lib/store'
-  import Table from '$lib/classes/TableLogic'
   import { BergamotTranslator } from '$lib/helperClasses/BergamotTranslator'
   import { addExtraFields } from '$lib/mappingUtils'
   import options from '$lib/data/tableOptions.json'
@@ -36,10 +35,11 @@
   let file: File | undefined, customConceptsFile: File | undefined
   let customTableOptions: ITableOptions = { id: 'customConceptsTable', saveOptions: false }
   let disabled: boolean = false
+  let tableRendered: boolean = false
   let customsExtracted: boolean = false
   let translator: BergamotTranslator = new BergamotTranslator()
   // Tables
-  let dataTableMapping: DataTable, dataTableCustomConcepts: DataTable
+  // let dataTableMapping: DataTable, dataTableCustomConcepts: DataTable
   let tableOptions: ITableOptions = { ...options, id: $page.url.searchParams.get('id') ?? '' }
   // Automapping
   let autoMappingAbortController: AbortController, autoMappingPromise: Promise<void> | undefined
@@ -55,69 +55,6 @@
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // EVENTS
   ///////////////////////////////////////////////////////////////////////////////////////////////
-
-  // When the mapping button in the Athena pop-up is clicked and the settins "Map to multiple concepts" is disabled
-  async function singleMapping(e: CustomEvent<MappingED>): Promise<void> {
-    if (dev) console.log('singleMapping: Single mapping for the row with sourceCode ', selectedRow.sourceCode)
-    const { originalRow, row, extra, action } = e.detail
-    // Map the selected row with the selected concept
-    const { mappedIndex, mappedRow } = await rowMapping(originalRow, row)
-    // Add extra information like the number of concepts mapped for this row, comments & the assigned reviewer to the row
-    const update = {
-      mappingStatus: action,
-      statusSetBy: author,
-      statusSetOn: Date.now(),
-      'ADD_INFO:lastAthenaFilter': lastTypedFilter ? lastTypedFilter : null,
-      'ADD_INFO:numberOfConcepts': 1,
-      comment: extra.comment,
-      assignedReviewer: extra.reviewer,
-      vocabularyId: row.vocabulary,
-    }
-    Object.assign(mappedRow, update)
-    // Update the selected row to the updated row
-    await dataTableMapping.updateRows(new Map([[mappedIndex, mappedRow]]))
-  }
-
-  // When the mapping button in the Athena pop-up is clicked and the settins "Map to multiple concepts" is enabled
-  async function multipleMapping(e: CustomEvent<MappingED>): Promise<void> {
-    if (dev) console.log('multipleMapping: Multiple mapping for the row with sourceCode ', selectedRow.sourceCode)
-    const { originalRow, row, extra, action } = e.detail
-    const mappedParams = <Query>query().params({ code: originalRow.sourceCode })
-    const mappedQuery = mappedParams.filter((r: any, p: any) => r.sourceCode === p.code).toObject()
-    const mapped = await dataTableMapping.executeQueryAndReturnResults(mappedQuery)
-    // Add extra information like the number of concepts mapped for this row, comments & the assigned reviewer to the row
-    const update = {
-      mappingStatus: action,
-      statusSetBy: author,
-      statusSetOn: Date.now(),
-      'ADD_INFO:lastAthenaFilter': lastTypedFilter ? lastTypedFilter : null,
-      'ADD_INFO:numberOfConcepts': 1,
-      comment: extra.comment,
-      assignedReviewer: extra.reviewer,
-      vocabularyId: row.vocabulary,
-    }
-    // This is the first concepts mapped to the row and the current row wil be updated
-    if (mapped.queriedData.length === 1 && !mapped.queriedData[0].conceptId) {
-      const { mappedRow } = await rowMapping(originalRow!, row)
-      Object.assign(mappedRow, update)
-      await dataTableMapping.updateRows(new Map([[mapped.indices[0], mappedRow]]))
-    } else {
-      const existingRow = (<any[]>mapped.queriedData).findIndex((r: any) => r.conceptId === row.id)
-      const { mappedRow } = await rowMapping(originalRow!, row, mapped.indices[existingRow])
-      Object.assign(mappedRow, update)
-      mappedRow['ADD_INFO:numberOfConcepts'] = mapped.queriedData.length
-      if (existingRow >= 0)
-        return await dataTableMapping.updateRows(new Map([[mapped.indices[existingRow], mappedRow]]))
-      // This is not the first concept mapped to the row and the current row will be added to the table and the others will be updated
-      mappedRow['ADD_INFO:numberOfConcepts'] = mapped.queriedData.length + 1
-      const rowsToUpdate = new Map()
-      // Update the number of concepts in the already mapped rows
-      for (let index of mapped.indices)
-        rowsToUpdate.set(index, { 'ADD_INFO:numberOfConcepts': mapped.queriedData.length + 1 })
-      await dataTableMapping.updateRows(rowsToUpdate)
-      await dataTableMapping.insertRows([mappedRow])
-    }
-  }
 
   async function navigateRow(e: CustomEvent<NavigateRowED>) {
     const { row, index } = e.detail
@@ -135,7 +72,7 @@
     autoMappingAbortController = new AbortController()
     const signal = autoMappingAbortController.signal
     autoMappingPromise = new Promise(async (resolve, reject): Promise<void> => {
-      const row = await dataTableMapping.getFullRow(index)
+      const row = await $table.getFullRow(index)
       await autoMapRow(signal, row as IUsagiRow, index)
     })
   }
@@ -188,7 +125,7 @@
     mappedRow['ADD_INFO:numberOfConcepts'] = row['ADD_INFO:numberOfConcepts']
     mappedRow['ADD_INFO:lastAthenaFilter'] = filter ? filter : null
     if (signal.aborted) return
-    await dataTableMapping.updateRows(new Map([[mappedIndex, mappedRow]]))
+    await $table.updateRows(new Map([[mappedIndex, mappedRow]]))
     if (dev) console.log('autoMapRow: Finished automapping row with index ', index)
   }
 
@@ -196,7 +133,7 @@
   async function rowMapping(usagi: IUsagiRow, athena: IAthenaRow, index?: number): Promise<IMapRow> {
     // Check if index is undefined because if !index --> row with index 0 won't be automapped
     let rowIndex: number = index !== undefined ? index : selectedRowIndex
-    const row = await dataTableMapping.getFullRow(rowIndex)
+    const row = await $table.getFullRow(rowIndex)
     if (dev) console.log('rowMapping: Start mapping row with index ', rowIndex)
     let mappedUsagiRow: IUsagiRow = <IUsagiRow>row ?? usagi
     if (!mappedUsagiRow) return { mappedIndex: rowIndex, mappedRow: mappedUsagiRow }
@@ -216,10 +153,10 @@
     const customQuery = query()
       .filter((r: any) => r['ADD_INFO:customConcept'] === true)
       .toObject()
-    const concepts = await dataTableMapping.executeQueryAndReturnResults(customQuery)
+    const concepts = await $table.executeQueryAndReturnResults(customQuery)
     if (!concepts?.indices?.length) return (customsExtracted = true)
-    const testRow = await dataTableCustomConcepts.getFullRow(0)
-    if (testRow?.domain_id === 'test') await dataTableCustomConcepts.deleteRows([0])
+    const testRow = await $customTable.getFullRow(0)
+    if (testRow?.domain_id === 'test') await $customTable.deleteRows([0])
     for (let concept of concepts.queriedData) {
       const { conceptId, sourceName, conceptName, className, domainId, vocabularyId } = concept
       const custom: ICustomConceptInput = {
@@ -234,7 +171,7 @@
         valid_end_date: '2099-12-31',
         invalid_reason: '',
       }
-      await dataTableCustomConcepts.insertRows([custom])
+      await $customTable.insertRows([custom])
     }
     customsExtracted = true
   }
@@ -243,16 +180,17 @@
   async function abortAutoMap(): Promise<void> {
     if (dev) console.log('abortAutoMap: Aborting auto mapping')
     // Enable the interaction with the DataTable
-    disabled = dataTableMapping.setDisabled(false)
+    disabled = $table.setDisabled(false)
     if (autoMappingPromise) autoMappingAbortController.abort()
     $abortAutoMapping = false
     // Check previous page and current page
-    const pag = dataTableMapping.getTablePagination()
+    const pag = $table.getTablePagination()
     if (previousPage !== pag.currentPage) currentVisibleRows = new Map<number, Record<string, any>>()
   }
 
   // Start the automapping of all the visible rows, but create an abortcontroller to be able to stop the automapping at any moment
   async function autoMapPage(): Promise<void> {
+    if (!tableRendered) tableRendered = true
     if (!customsExtracted) await extractCustomConcepts()
     if (!$settings?.autoMap) return
     if (dev) console.log('autoMapPage: Starting auto mapping')
@@ -262,13 +200,13 @@
     autoMappingAbortController = new AbortController()
     const signal = autoMappingAbortController.signal
     autoMappingPromise = autoMapPromise(signal).then(() => {
-      disabled = dataTableMapping.setDisabled(false)
+      disabled = $table.setDisabled(false)
     })
   }
 
   // Automap all the rows that are visible
   async function autoMapPromise(signal: AbortSignal) {
-    const pag = dataTableMapping.getTablePagination()
+    const pag = $table.getTablePagination()
     const { currentPage, rowsPerPage } = pag
     if (!currentPage || !rowsPerPage) return
     // Get the rows that are visible for the user
@@ -276,8 +214,8 @@
     const startIndex = rowsPerPage * (currentPage - 1)
     const endingIndex = rowsPerPage * currentPage
     const conceptsQuery = query().slice(startIndex, endingIndex).toObject()
-    const concepts = await dataTableMapping.executeQueryAndReturnResults(conceptsQuery)
-    if (concepts.queriedData.length) disabled = dataTableMapping.setDisabled(true)
+    const concepts = await $table.executeQueryAndReturnResults(conceptsQuery)
+    if (concepts.queriedData.length) disabled = $table.setDisabled(true)
     for (let i = 0; i < concepts.queriedData.length; i++) {
       if (signal.aborted) return Promise.resolve()
       const row = concepts.queriedData[i]
@@ -297,7 +235,7 @@
       const approvedRow = await approveRow(row)
       approveRows.set(index, approvedRow)
     }
-    await dataTableMapping.updateRows(approveRows)
+    await $table.updateRows(approveRows)
   }
 
   // Approve a row depending on circumstances SEMI-APPROVED or APPROVED
@@ -313,8 +251,8 @@
 
   // Sync the file with the database implementation & download it from the implementation
   async function downloadPage(): Promise<void> {
-    const blob = await dataTableMapping.getBlob()
-    const customBlob = dataTableCustomConcepts ? await dataTableCustomConcepts.getBlob() : undefined
+    const blob = await $table.getBlob()
+    const customBlob = $customTable ? await $customTable.getBlob() : undefined
     if (!$databaseImpl) await loadImplementationDB()
     await $databaseImpl?.editKeunFile($selectedFileId, blob)
     if (customBlob) await $databaseImpl?.editCustomKeunFile($selectedCustomFileId, customBlob)
@@ -346,15 +284,15 @@
     if (!urlId) return goto(`${base}/`)
     $selectedFileId = urlId
     if (!$selectedCustomFileId) await getCustomFileId()
-    readFile()
+    await readFile()
   }
 
   // Sync the file to the cloud implementation
   async function syncFile() {
-    if (!dataTableMapping) return
-    const blob = await dataTableMapping.getBlob()
+    if (!$table) return
+    const blob = await $table.getBlob()
     if (!blob) return
-    const customBlob = dataTableCustomConcepts ? await dataTableCustomConcepts.getBlob() : undefined
+    const customBlob = $customTable ? await $customTable.getBlob() : undefined
     if (!$databaseImpl) await loadImplementationDB()
     await $databaseImpl?.editKeunFile($selectedFileId, blob)
     if (customBlob) await $databaseImpl?.editCustomKeunFile($selectedCustomFileId, customBlob)
@@ -416,11 +354,6 @@
     load()
   }
 
-  $: {
-    if (dataTableMapping && !$table) $table = new Table(dataTableMapping)
-    if (dataTableCustomConcepts && !$customTable) $customTable = new Table(dataTableCustomConcepts)
-  }
-
   $: author = $user ? $user.name : null
 
   // Sync the file to the database implementation before leaving the page
@@ -444,7 +377,7 @@
   <button on:click={approvePage}>Approve page</button>
   <DataTable
     data={file}
-    bind:this={dataTableMapping}
+    bind:this={$table}
     options={tableOptions}
     on:rendering={abortAutoMap}
     on:renderingComplete={autoMapPage}
@@ -459,8 +392,6 @@
       {columns}
       index={originalIndex}
       {disabled}
-      table={dataTableMapping}
-      customTable={dataTableCustomConcepts}
       bind:currentVisibleRows
       on:rowSelection={selectRow}
       on:autoMapRow={autoMapSingleRow}
@@ -471,11 +402,7 @@
     <AthenaSearch
       {selectedRow}
       {selectedRowIndex}
-      mainTable={dataTableMapping}
-      customTable={dataTableCustomConcepts}
       bind:globalAthenaFilter
-      on:singleMapping={singleMapping}
-      on:multipleMapping={multipleMapping}
       on:navigateRow={navigateRow}
       bind:this={search}
     />
@@ -486,7 +413,7 @@
       data={customConceptsFile}
       options={customTableOptions}
       modifyColumnMetadata={modifyCustomConceptsColumnMetadata}
-      bind:this={dataTableCustomConcepts}
+      bind:this={$customTable}
     />
   </div>
 {/if}

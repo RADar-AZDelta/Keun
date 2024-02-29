@@ -22,6 +22,35 @@ export interface IUsagiActions {
   unapproveRow(): Promise<void>
 }
 
+export interface IUsagiLogic {
+  updatePropertyValue(e: CustomEvent, column: string): Promise<void>
+  deleteRow(): Promise<void>
+}
+
+export interface IStoreMethods {
+  getUser(): Promise<IUser>
+  getSettings(): Promise<ISettings>
+  getMappedConceptsBib(): Promise<IMappedRows>
+  getTableRow(index: number): Promise<IUsagiRow>
+  updateTableRow(index: number, updatedProperties: object): Promise<void>
+  updateTableRows(rows: Map<number, object>): Promise<void>
+  insertTableRow(row: IUsagiRow): Promise<void>
+  executeQueryOnTable(query: object): Promise<IQueryResult>
+  updateMappedConceptsBib(updatedConcept: object): Promise<void>
+}
+
+export interface IMappingInformation {
+  equivalence: string
+  comment: string
+  reviewer: string
+}
+
+export interface IRowMappingInformation {
+  athenaRow: IAthenaRow
+  usagiRow: IUsagiRow
+  usagiRowIndex: number
+}
+
 ////////////////////////////// Events for the menu page //////////////////////////////
 
 export interface PageEvents {

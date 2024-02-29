@@ -2,7 +2,7 @@
   import { createEventDispatcher, onMount } from 'svelte'
   import { dev } from '$app/environment'
   import { query } from 'arquero'
-  import { settings, user } from '$lib/store'
+  import { customTable, settings, table } from '$lib/store'
   import { localStorageGetter } from '@radar-azdelta-int/radar-utils'
   import type Query from 'arquero/dist/types/query/query'
   import { Search } from '@radar-azdelta/svelte-athena-search'
@@ -11,7 +11,6 @@
   import CustomView from '$lib/components/mapping/views/CustomView.svelte'
   import Details from '$lib/components/mapping/details/Details.svelte'
   import MappedView from '$lib/components/mapping/views/MappedView.svelte'
-  import type DataTable from '@radar-azdelta/svelte-datatable'
   import type { IView } from '@radar-azdelta/svelte-athena-search'
   import type {
     IAthenaRow,
@@ -29,11 +28,10 @@
     UpdateDetailsED,
   } from '$lib/components/Types'
   import { SvgIcon, clickOutside } from '@radar-azdelta-int/radar-svelte-components'
+  import AthenaActions from './views/AthenaActions.svelte'
 
   export let selectedRow: IUsagiRow,
     selectedRowIndex: number,
-    mainTable: DataTable,
-    customTable: DataTable,
     globalAthenaFilter: { column: string; filter: string | undefined }
 
   const dispatch = createEventDispatcher<MappingEvents>()
@@ -51,27 +49,6 @@
   let mappedToConceptIds: IMappedRows = {}
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
-  // EVENTS
-  ///////////////////////////////////////////////////////////////////////////////////////////////
-
-  // A method that catches the event for single mapping and throws an event to the parent
-  async function singleMapping(row: IAthenaRow, action: string): Promise<void> {
-    row.equivalence = equivalence
-    selectedRow.mappingStatus = action
-    mappedToConceptIds = { [row.id]: action }
-    dispatch('singleMapping', { originalRow: selectedRow, row, extra: { comment, reviewer }, action })
-  }
-
-  // A method that catches the event for multiple mapping and throws an event to the parent
-  async function multipleMapping(row: IAthenaRow, action: string): Promise<void> {
-    row.equivalence = equivalence
-    // If the row and the action are the same, return to prevent duplicates
-    if (mappedToConceptIds[row.id] && mappedToConceptIds[row.id] === action) return
-    Object.assign(mappedToConceptIds, { [row.id]: action })
-    dispatch('multipleMapping', { originalRow: selectedRow, row, extra: { comment, reviewer }, action })
-  }
-
-  ///////////////////////////////////////////////////////////////////////////////////////////////
   // METHODS
   ///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -81,8 +58,8 @@
     const existanceQuery = params
       .filter((r: any, p: any) => r.concept_id === p.id && r.concept_name === p.name)
       .toObject()
-    const concepts = await customTable.executeQueryAndReturnResults(existanceQuery)
-    if (concepts.indices.length) await customTable.deleteRows(concepts.indices)
+    const concepts = await $customTable.executeQueryAndReturnResults(existanceQuery)
+    if (concepts.indices.length) await $customTable.deleteRows(concepts.indices)
   }
 
   // Delete the mapping in the table & update the other rows if it has multiple concepts that are mapped to the row
@@ -91,7 +68,7 @@
     if (conceptId === 0) removeFromCustomTable(conceptId, conceptName)
     const params = <Query>query().params({ code: selectedRow.sourceCode })
     const conceptsQuery = params.filter((r: any, p: any) => r.sourceCode === p.code).toObject()
-    const concepts = await mainTable.executeQueryAndReturnResults(conceptsQuery)
+    const concepts = await $table.executeQueryAndReturnResults(conceptsQuery)
     if (!concepts.indices.length) return
     if (concepts.indices.length > 1) {
       const rowListIndex = concepts.queriedData.findIndex(
@@ -101,12 +78,12 @@
       const extraIndices = concepts.indices.filter((i: number) => i !== originalIndex)
       const updatedRows = new Map<number, Record<string, any>>()
       extraIndices.forEach((i: number) => updatedRows.set(i, { 'ADD_INFO:numberOfConcepts': extraIndices.length }))
-      await mainTable.updateRows(updatedRows)
-      await mainTable.deleteRows([originalIndex])
+      await $table.updateRows(updatedRows)
+      await $table.deleteRows([originalIndex])
     } else {
       const index = concepts.indices[0]
       const reset = await resetRow()
-      await mainTable.updateRows(new Map([[index, reset]]))
+      await $table.updateRows(new Map([[index, reset]]))
     }
     fillMappedTable()
   }
@@ -136,77 +113,41 @@
     }
     Object.assign(mappedRow, update)
     if (!$settings || !$settings.mapToMultipleConcepts)
-      return await mainTable.updateRows(new Map([[selectedRowIndex, mappedRow]]))
+      return await $table.updateRows(new Map([[selectedRowIndex, mappedRow]]))
 
     const conceptsParams = <Query>query().params({ code: mappedRow.sourceCode })
     const conceptsQuery = conceptsParams.filter((r: any, p: any) => r.sourceCode === p.code).toObject()
-    const concepts = await mainTable.executeQueryAndReturnResults(conceptsQuery)
+    const concepts = await $table.executeQueryAndReturnResults(conceptsQuery)
     if (concepts.queriedData.length === 1 && !concepts.queriedData[0].conceptName)
-      return await mainTable.updateRows(new Map([[selectedRowIndex, mappedRow]]))
+      return await $table.updateRows(new Map([[selectedRowIndex, mappedRow]]))
 
     mappedRow['ADD_INFO:numberOfConcepts'] = concepts.indices.length + 1
     const rowsToUpdate = new Map()
     concepts.indices.forEach((i: number) =>
       rowsToUpdate.set(i, { 'ADD_INFO:numberOfConcepts': concepts.indices.length + 1 }),
     )
-    await mainTable.updateRows(rowsToUpdate)
-    await mainTable.insertRows([mappedRow])
+    await $table.updateRows(rowsToUpdate)
+    await $table.insertRows([mappedRow])
   }
 
   ///////////////////////////// DETAILS METHODS /////////////////////////////
 
   async function onUpdateDetails(e: CustomEvent<UpdateDetailsED>) {
     const rows = new Map([[selectedRowIndex, { comment: e.detail.comments, assignedReviewer: e.detail.reviewer }]])
-    await mainTable.updateRows(rows)
+    await $table.updateRows(rows)
   }
 
   const equivalenceChange = (e: CustomEvent<EquivalenceChangeED>) => (equivalence = e.detail.equivalence)
 
   ///////////////////////////// ATHENA ROW METHODS /////////////////////////////
 
-  async function referToAthena(id: string) {
-    const referUrl = import.meta.env.VITE_ATHENA_DETAIL + id
-    window.open(encodeURI(referUrl), '_blank')?.focus()
-  }
-
-  async function mapRow(renderedRow: IAthenaRow, action: string) {
-    if ($settings.mapToMultipleConcepts) multipleMapping(renderedRow, action)
-    else singleMapping(renderedRow, action)
-    const mappedRow: IMappedRow = {
-      sourceCode: selectedRow.sourceCode,
-      sourceName: selectedRow.sourceName,
-      conceptId: renderedRow.id,
-      conceptName: renderedRow.name,
-      customConcept: false,
-    }
-    selectedRow.conceptName = renderedRow.name
-    selectedRow.conceptId = renderedRow.id
-    selectedRow.statusSetBy = $user.name
-    if ($settings.mapToMultipleConcepts) {
-      const rowCopyIndex = mappedData.findIndex((value: any) => value.conceptId === mappedRow.conceptId)
-      if (rowCopyIndex >= 0) mappedData[rowCopyIndex] = mappedRow
-      else mappedData = [...mappedData, mappedRow]
-    } else mappedData = [mappedRow]
-  }
-
   async function getAllMappedToConcepts() {
     if (!selectedRow?.sourceCode) return
     const params = <Query>query().params({ code: selectedRow.sourceCode })
     const rowsQuery = params.filter((r: any, p: any) => r.sourceCode === p.code).toObject()
-    const rows = await mainTable.executeQueryAndReturnResults(rowsQuery)
+    const rows = await $table.executeQueryAndReturnResults(rowsQuery)
     mappedToConceptIds = {}
     for (const row of rows.queriedData) Object.assign(mappedToConceptIds, { [row.conceptId]: row.mappingStatus })
-  }
-
-  async function approveRow(renderedRow: IAthenaRow) {
-    if (!selectedRow?.sourceCode || selectedRow.mappingStatus !== 'SEMI-APPROVED') return
-    const update = {
-      statusSetBy: $user.name,
-      statusSetOn: new Date(),
-      mappingStatus: 'APPROVED',
-    }
-    mappedToConceptIds[renderedRow.id] = 'APPROVED'
-    await mainTable.updateRows(new Map([[selectedRowIndex, update]]))
   }
 
   ///////////////////////////// MAPPED TABLE METHODS /////////////////////////////
@@ -217,7 +158,7 @@
     if (!selectedRow?.sourceCode) return
     const queryParams = <Query>query().params({ source: selectedRow.sourceCode })
     const conceptsQuery = queryParams.filter((d: any, p: any) => d.sourceCode === p.source && d.conceptName).toObject()
-    const concepts = await mainTable.executeQueryAndReturnResults(conceptsQuery)
+    const concepts = await $table.executeQueryAndReturnResults(conceptsQuery)
     if (!concepts.queriedData.length) return (mappedData = [{}])
     const newMappedData: (object | IMappedRow)[] = []
     for (let concept of concepts.queriedData) {
@@ -276,51 +217,19 @@
     <section class="search-container">
       <Search {views} bind:globalFilter={globalAthenaFilter} showFilters={true}>
         <div slot="action-athena" let:renderedRow class="actions-grid">
-          {#if mappedToConceptIds[renderedRow.id] === 'APPROVED'}
-            <button title="Mapped to row" style="background-color: hsl(156, 100%, 35%);">
-              <SvgIcon id="check" width="10px" height="10px" />
-            </button>
-          {:else if mappedToConceptIds[renderedRow.id] === 'SEMI-APPROVED' && selectedRow.statusSetBy !== $user.name}
-            <button
-              on:click={() => approveRow(renderedRow)}
-              title="Approve mapping"
-              style="background-color: hsl(84, 100%, 70%);"
-            >
-              <SvgIcon id="check" width="10px" height="10px" />
-            </button>
-          {:else if mappedToConceptIds[renderedRow.id] === 'SEMI-APPROVED'}
-            <button title="Mapped to row" style="background-color: hsl(84, 100%, 70%);">
-              <SvgIcon id="plus" width="10px" height="10px" />
-            </button>
-          {:else}
-            <button title="Map to row" on:click={() => mapRow(renderedRow, 'SEMI-APPROVED')}>
-              <SvgIcon id="plus" width="10px" height="10px" />
-            </button>
-          {/if}
-          {#if mappedToConceptIds[renderedRow.id] === 'FLAGGED'}
-            <button title="Flagged row" style="background-color: hsl(54, 89%, 64%);">
-              <SvgIcon id="flag" width="10px" height="10px" />
-            </button>
-          {:else}
-            <button title="Flag row" on:click={() => mapRow(renderedRow, 'FLAGGED')}>
-              <SvgIcon id="flag" width="10px" height="10px" />
-            </button>
-          {/if}
-          {#if mappedToConceptIds[renderedRow.id] === 'UNAPPROVED'}
-            <button title="Unapproved row" style="background-color: hsl(8, 100%, 59%);">
-              <SvgIcon id="x" width="10px" height="10px" />
-            </button>
-          {:else}
-            <button title="Unapprove row" on:click={() => mapRow(renderedRow, 'UNAPPROVED')}>
-              <SvgIcon id="x" width="10px" height="10px" />
-            </button>
-          {/if}
-          <button on:click={() => referToAthena(renderedRow.id)}>
-            <SvgIcon id="link" width="10px" height="10px" />
-          </button>
+          <AthenaActions
+            {renderedRow}
+            {mappedToConceptIds}
+            {selectedRow}
+            {selectedRowIndex}
+            {mappedData}
+            {equivalence}
+            {comment}
+            {reviewer}
+          />
         </div>
         <div slot="upperSlot">
-          <SearchHead {selectedRow} {mainTable} on:navigateRow={onNavigateRow} />
+          <SearchHead {selectedRow} on:navigateRow={onNavigateRow} />
         </div>
         <div slot="slotView1">
           <CustomView {selectedRow} on:customMappingInput={customMapping} />

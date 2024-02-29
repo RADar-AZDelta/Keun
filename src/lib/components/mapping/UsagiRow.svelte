@@ -1,19 +1,16 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte'
-  import { query } from 'arquero'
   import { reformatDate } from '@radar-azdelta-int/radar-utils'
-  import { resetRow } from '$lib/mappingUtils'
-  import { EditableCell, type IColumnMetaData } from '@radar-azdelta/svelte-datatable'
-  import type DataTable from '@radar-azdelta/svelte-datatable'
-  import type Query from 'arquero/dist/types/query/query'
-  import type { IUsagiRow, MappingEvents } from '$lib/components/Types'
+  import { EditableCell } from '@radar-azdelta/svelte-datatable'
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
-  import UsagiActions from '$lib/classes/UsagiActions'
   import UsagiLogic from '$lib/classes/UsagiLogic'
+  import UsagiActions from '$lib/classes/UsagiActions'
+  import type { IUsagiRow, MappingEvents } from '$lib/components/Types'
+  import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
 
   export let renderedRow: Record<string, any>, columns: IColumnMetaData[] | undefined, index: number
   export let currentVisibleRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>([])
-  export let disabled: boolean, table: DataTable, customTable: DataTable
+  export let disabled: boolean
 
   const dispatch = createEventDispatcher<MappingEvents>()
   let rowActions: UsagiActions
@@ -31,34 +28,25 @@
   }
 
   const mapRow = () => dispatch('rowSelection', { row: renderedRow as IUsagiRow, index })
-
   const approveRow = async () => await rowActions.approveRow()
   const flagRow = async () => await rowActions.flagRow()
   const unapproveRow = async () => await rowActions.unapproveRow()
-  const deleteRow = async() => await rowLogic.deleteRow()
+  const deleteRow = async () => await rowLogic.deleteRow()
+  const updateValue = async (e: CustomEvent, column: string) => await rowLogic.updatePropertyValue(e, column)
+  const onClickAutoMap = async () => dispatch('autoMapRow', { index, sourceName: renderedRow.sourceName })
 
-  async function onClickAutoMap(): Promise<void> {
-    const sourceName = renderedRow['sourceName']
-    dispatch('autoMapRow', { index, sourceName })
-  }
-
-  async function getColors(): Promise<string> {
+  async function getColors() {
     const color = colors[renderedRow.mappingStatus]
     if (!color) return 'inherit'
     return color
   }
 
-  async function setPreset(): Promise<void> {
+  async function setPreset() {
     if (!renderedRow.matchScore) renderedRow.matchScore = 0
     if (!renderedRow.mappingStatus) renderedRow.mappingStatus = 'UNCHECKED'
     if (!renderedRow.conceptName) renderedRow.conceptName = 'Unmapped'
     if (!renderedRow.conceptId) renderedRow.conceptId = 0
     color = await getColors()
-  }
-
-  async function updateValue(e: CustomEvent, column: string) {
-    renderedRow[column] = e.detail
-    await table.updateRows(new Map([[index, renderedRow]]))
   }
 
   $: {

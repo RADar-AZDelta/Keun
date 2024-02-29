@@ -1,6 +1,6 @@
 import { table, user } from '$lib/store'
-import type TableLogic from '$lib/classes/TableLogic'
 import type { IUsagiActions, IUsagiRow, IUser } from '$lib/components/Types'
+import type DataTable from '@radar-azdelta/svelte-datatable'
 
 export default class UsagiActions implements IUsagiActions {
   row: IUsagiRow
@@ -67,7 +67,7 @@ export default class UsagiActions implements IUsagiActions {
     return new Promise(resolve => user.subscribe(user => resolve(user)))
   }
 
-  private async getTable(): Promise<TableLogic | undefined> {
+  private async getTable(): Promise<DataTable | undefined> {
     return new Promise(resolve => table.subscribe(table => resolve(table)))
   }
 }
