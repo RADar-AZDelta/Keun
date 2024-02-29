@@ -3,13 +3,13 @@
   import type DataTable from '@radar-azdelta/svelte-datatable'
   import { query } from 'arquero'
   import { settings } from '$lib/store'
-  import suggestions from '$lib/data/customConceptInfo.json'
   import { transformFromCustomRowToUsagiRow } from '$lib/mappingUtils'
   import AutocompleteInput from '$lib/components/extra/AutocompleteInput.svelte'
   import type Query from 'arquero/dist/types/query/query'
   import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
   import type { ICustomConceptInput, MappingEvents } from '$lib/components/Types'
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
+  import { Config } from '$lib/helperClasses/Config'
 
   export let renderedRow: Record<string, any>,
     columns: IColumnMetaData[] | undefined,
@@ -17,7 +17,7 @@
     customTable: DataTable
 
   const inputAvailableColumns = ['concept_name', 'concept_class_id', 'domain_id', 'vocabulary_id']
-  const colSuggestions: Record<string, Record<string, string>> = suggestions
+  const colSuggestions: Record<string, Record<string, string>> = Config.customConceptInfo
 
   const dispatch = createEventDispatcher<MappingEvents>()
 

@@ -1,4 +1,3 @@
-import additionalColumns from '$lib/data/additionalColumns.json'
 import { user } from '$lib/store'
 import type {
   ICustomConcept,
@@ -7,8 +6,9 @@ import type {
   IUsagiAllExtra,
   IUsagiRow,
 } from '$lib/components/Types'
+import { Config } from './helperClasses/Config'
 
-const additionalFields: IExtraUsagiCols = additionalColumns
+const additionalFields: IExtraUsagiCols = Config.additionalColumns
 
 // A method to fill in the additional fields of a row
 export async function addExtraFields(row: IUsagiRow): Promise<IUsagiRow> {

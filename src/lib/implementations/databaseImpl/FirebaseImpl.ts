@@ -8,12 +8,12 @@ import {
 } from '$env/static/public'
 import type { ICustomConceptCompact, IDatabaseImpl, IFile, IFileInformation, IUser } from '$lib/components/Types'
 import { user } from '$lib/store'
-import initial from '$lib/data/customBlobInitial.json'
 import { FileHelper } from '@radar-azdelta-int/radar-utils'
 import { arrayRemove, arrayUnion } from 'firebase/firestore'
 import FirebaseFirestore from '$lib/firebase/FirebaseFirestore'
 import FirebaseStorage from '$lib/firebase/FirebaseStorage'
 import type { FirebaseOptions } from 'firebase/app'
+import { Config } from '$lib/helperClasses/Config'
 
 // TODO: implement this in the program & check if all the functionalities work before removing the firebase file
 
@@ -139,7 +139,7 @@ export default class FirebaseImpl implements IDatabaseImpl {
     const metaData: IStorageCustomMetadata = { customMetadata: { name: file.name, customId: customFileId } }
     await this.storage.uploadFileStorage(`${this.storageCollection}/${fileId}`, file, metaData)
     const customName = `${file.name.split('.')[0]}_concepts.csv`
-    const customFile = await this.blobToFile(new Blob([initial.initial]), customName)
+    const customFile = await this.blobToFile(new Blob([Config.customBlobInitial.initial]), customName)
     const customMetaData: IStorageCustomMetadata = { customMetadata: { name: customName, customId: customFileId } }
     await this.storage.uploadFileStorage(`${this.storageCustomColl}/${customFileId}`, customFile, customMetaData)
     const fileData = { name: file.name, authors, customId: customFileId, custom: customName }

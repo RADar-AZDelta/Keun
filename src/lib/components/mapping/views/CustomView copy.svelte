@@ -4,12 +4,12 @@
   import { query } from 'arquero'
   import { settings } from '$lib/store'
   import { reformatDate } from '@radar-azdelta-int/radar-utils'
-  import customColumns from '$lib/data/columnsCustomConcept.json'
   import InputRow from '$lib/components/mapping/views/InputRow.svelte'
   import type Query from 'arquero/dist/types/query/query'
   import type { ICustomConceptInput, IUsagiRow, MappingEvents } from '$lib/components/Types'
   import type { CustomMappingInputED, UpdateErrorED } from '$lib/components/Types'
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
+  import { Config } from '$lib/helperClasses/Config'
 
   export let selectedRow: IUsagiRow, customTable: DataTable
 
@@ -76,7 +76,7 @@
 
 <div class="custom-concept-container">
   <h2 class="custom-concept-title">Create a custom concept</h2>
-  <DataTable {data} columns={customColumns} {options}>
+  <DataTable {data} columns={Config.columnsCustomConcept} {options}>
     <InputRow
       slot="default"
       let:columns

@@ -1,8 +1,7 @@
 import { FileHelper, blobToString, fileToBlob, logWhenDev, stringToFile } from '@radar-azdelta-int/radar-utils'
-import initial from '$lib/data/customBlobInitial.json'
 import { IndexedDB } from '@radar-azdelta-int/radar-utils'
-import type { IDatabaseImpl, IFile, IFileInformation, IUser } from '$lib/components/Types'
-import { databaseImpl } from '$lib/store'
+import type { ICustomConceptCompact, IDatabaseImpl, IFile, IFileInformation, IUser } from '$lib/components/Types'
+import { Config } from '$lib/helperClasses/Config'
 
 export interface IDatabaseFile {
   id: string
@@ -13,6 +12,12 @@ export interface IDatabaseFile {
 }
 
 export default class LocalImpl implements IDatabaseImpl {
+  getCustomConcepts(): Promise<any> {
+    throw new Error('Method not implemented.')
+  }
+  addCustomConcept(customConcept: ICustomConceptCompact): Promise<any> {
+    throw new Error('Method not implemented.')
+  }
   db: IndexedDB | undefined
   customDb: IndexedDB | undefined
 
@@ -89,7 +94,7 @@ export default class LocalImpl implements IDatabaseImpl {
     const id = crypto.randomUUID()
     const fileContent: IDatabaseFile = { id, name, content: fileString, custom: customName, customId: customName }
     await this.db!.set(fileContent, name, true)
-    const customBlob = new Blob([initial.initial])
+    const customBlob = new Blob([Config.customBlobInitial.initial])
     const customFileString = await blobToString(customBlob)
     const customFileContent = { id: customId, name: customName, content: customFileString }
     await this.openCustomDatabase()

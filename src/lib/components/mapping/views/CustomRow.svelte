@@ -1,12 +1,12 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
   import { databaseImpl, settings } from '$lib/store'
-  import suggestions from '$lib/data/customConceptInfo.json'
   import AutocompleteInput from '$lib/components/extra/AutocompleteInput.svelte'
   import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
   import type { ICustomConcept, ICustomConceptCompact, MappingEvents } from '$lib/components/Types'
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
   import { reformatDate } from '@radar-azdelta-int/radar-utils'
+  import { Config } from '$lib/helperClasses/Config'
 
   export let renderedRow: ICustomConceptCompact,
     columns: IColumnMetaData[] | undefined,
@@ -14,7 +14,7 @@
     sourceCode: string
 
   const inputAvailableColumns = ['concept_name', 'concept_class_id', 'domain_id', 'vocabulary_id']
-  const colSuggestions: Record<string, Record<string, string>> = suggestions
+  const colSuggestions: Record<string, Record<string, string>> = Config.customConceptInfo
   let action: string | undefined = undefined
 
   const dispatch = createEventDispatcher<MappingEvents>()

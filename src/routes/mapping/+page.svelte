@@ -13,7 +13,6 @@
   import { customTable, table } from '$lib/store'
   import { BergamotTranslator } from '$lib/helperClasses/BergamotTranslator'
   import { addExtraFields } from '$lib/mappingUtils'
-  import options from '$lib/data/tableOptions.json'
   import { abortAutoMapping, customFileTypeImpl, databaseImpl, fileTypeImpl, saveImpl } from '$lib/store'
   import { selectedFileId, selectedCustomFileId, settings, triggerAutoMapping, user } from '$lib/store'
   import {
@@ -21,12 +20,11 @@
     loadImplementationDataType,
     loadImplementationSave,
   } from '$lib/implementations/implementation'
-  import columnsUsagi from '$lib/data/columnsUsagi.json'
-  import columnsCustomConcept from '$lib/data/columnsCustomConcept.json'
   import AthenaSearch from '$lib/components/mapping/AthenaSearch.svelte'
   import UsagiRow from '$lib/components/mapping/UsagiRow.svelte'
   import type { IAthenaRow, ICustomConceptInput, IMapRow, IUsagiRow } from '$lib/components/Types'
   import type { MappingED, AutoMapRowED, RowSelectionED, NavigateRowED } from '$lib/components/Types'
+  import { Config } from '$lib/helperClasses/Config'
 
   ///////////////////////////////////////////////////////////////////////////////////////////////
   // DATA
@@ -40,7 +38,7 @@
   let translator: BergamotTranslator = new BergamotTranslator()
   // Tables
   // let dataTableMapping: DataTable, dataTableCustomConcepts: DataTable
-  let tableOptions: ITableOptions = { ...options, id: $page.url.searchParams.get('id') ?? '' }
+  let tableOptions: ITableOptions = { ...Config.tableOptions, id: $page.url.searchParams.get('id') ?? '' }
   // Automapping
   let autoMappingAbortController: AbortController, autoMappingPromise: Promise<void> | undefined
   // Table related variables
@@ -300,7 +298,7 @@
 
   // A method to create the meta data per column
   function modifyUsagiColumnMetadata(columns: IColumnMetaData[]): IColumnMetaData[] {
-    const usagiColumnsMap = columnsUsagi.reduce((acc, cur) => {
+    const usagiColumnsMap = Config.columnsUsagi.reduce((acc, cur) => {
       acc.set(cur.id, cur)
       return acc
     }, new Map<string, IColumnMetaData>())
@@ -311,7 +309,7 @@
       else col.visible = false
       return col
     })
-    const addedColumns = columnsUsagi.reduce<IColumnMetaData[]>((acc, cur) => {
+    const addedColumns = Config.columnsUsagi.reduce<IColumnMetaData[]>((acc, cur) => {
       if (!columnIds.includes(cur.id)) acc.push(cur)
       return acc
     }, [])
@@ -320,7 +318,7 @@
 
   // A method to create the meta data per column for custom concepts
   function modifyCustomConceptsColumnMetadata(columns: IColumnMetaData[]): IColumnMetaData[] {
-    const customConceptsColumnMap = columnsCustomConcept.reduce((acc, cur) => {
+    const customConceptsColumnMap = Config.columnsCustomConcept.reduce((acc, cur) => {
       acc.set(cur.id, cur)
       return acc
     }, new Map<string, IColumnMetaData>())
@@ -331,7 +329,7 @@
       else col.visible = false
       return col
     })
-    const addedColumns = columnsCustomConcept.reduce<IColumnMetaData[]>((acc, cur) => {
+    const addedColumns = Config.columnsCustomConcept.reduce<IColumnMetaData[]>((acc, cur) => {
       if (!columnIds.includes(cur.id)) acc.push(cur)
       return acc
     }, [])

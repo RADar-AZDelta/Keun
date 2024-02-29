@@ -1,11 +1,11 @@
 import { query } from 'arquero'
-import additionalColumns from '$lib/data/additionalColumns.json'
+import { Config } from '$lib/helperClasses/Config'
 import { customTable, table } from '$lib/store'
 import type Query from 'arquero/dist/types/query/query'
 import type DataTable from '@radar-azdelta/svelte-datatable'
 import type { IExtraUsagiCols, IUsagiAllExtra, IUsagiLogic, IUsagiRow } from '$lib/components/Types'
 
-const additionalFields: IExtraUsagiCols = additionalColumns
+const additionalFields: IExtraUsagiCols = Config.additionalColumns
 
 export default class UsagiLogic implements IUsagiLogic {
   row: IUsagiRow

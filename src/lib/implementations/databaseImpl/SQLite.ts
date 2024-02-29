@@ -1,8 +1,8 @@
 import { blobToString, downloadWithUrl, fileToBlob, logWhenDev, stringToFile } from '@radar-azdelta-int/radar-utils'
 import { dev } from '$app/environment'
 import { base } from '$app/paths'
-import initial from '$lib/data/customBlobInitial.json'
 import type { IConceptFiles, IDatabaseImpl, IFile, IMessage, IUpdatedFunctionalityImpl } from '$lib/components/Types'
+import { Config } from '$lib/helperClasses/Config'
 
 export default class SQLiteImpl implements IDatabaseImpl {
   path = `${base}/api/sqlite/file`
@@ -45,7 +45,7 @@ export default class SQLiteImpl implements IDatabaseImpl {
 
   async uploadKeunFile(file: File, authors: string[]) {
     logWhenDev('uploadKeunFile: Uploading file to SQLite')
-    const customBlob = new Blob([initial.initial])
+    const customBlob = new Blob([Config.customBlobInitial.initial])
     const customFileString = await blobToString(customBlob)
     const customFileContent = {
       id: fileId,
