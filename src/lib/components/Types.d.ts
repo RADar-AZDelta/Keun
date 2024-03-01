@@ -45,6 +45,11 @@ export interface IMappingInformation {
   reviewer: string
 }
 
+export interface IMappingExtra {
+  comment: string
+  assignedReviewer: string
+}
+
 export interface IRowMappingInformation {
   athenaRow: IAthenaRow
   usagiRow: IUsagiRow
@@ -140,7 +145,7 @@ export interface NavigateRowED {
 }
 
 export interface UpdateDetailsED {
-  comments: string
+  comment: string
   reviewer: string
 }
 

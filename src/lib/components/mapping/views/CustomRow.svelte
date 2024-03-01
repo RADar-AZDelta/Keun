@@ -1,23 +1,24 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte'
+  import { createEventDispatcher, onMount } from 'svelte'
   import { databaseImpl, settings } from '$lib/store'
   import AutocompleteInput from '$lib/components/extra/AutocompleteInput.svelte'
   import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
-  import type { ICustomConcept, ICustomConceptCompact, IUsagiRow, MappingEvents } from '$lib/components/Types'
+  import type { ICustomConceptCompact, IUsagiRow, MappingEvents } from '$lib/components/Types'
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
-  import { reformatDate } from '@radar-azdelta-int/radar-utils'
   import { Config } from '$lib/helperClasses/Config'
+  import CustomRowActions from '$lib/classes/CustomRowActions'
 
   export let renderedRow: ICustomConceptCompact,
     columns: IColumnMetaData[] | undefined,
     originalIndex: number,
     usagiRow: IUsagiRow,
     usagiRowIndex: number,
-    sourceCode: string
+    equivalence: string
 
   const inputAvailableColumns = ['concept_name', 'concept_class_id', 'domain_id', 'vocabulary_id']
   const colSuggestions: Record<string, Record<string, string>> = Config.customConceptInfo
   let action: string | undefined = undefined
+  let row: CustomRowActions
 
   const dispatch = createEventDispatcher<MappingEvents>()
 
@@ -47,67 +48,18 @@
 
   const updateVocab = () => (inputRow.vocabulary_id = $settings.vocabularyIdCustomConcept ?? '')
 
-  async function mapRow() {
-    const compactConcept = renderedRow as ICustomConceptCompact
-    const { concept_name, domain_id, vocabulary_id, concept_class_id } = compactConcept
-    const concept: ICustomConcept = {
-      conceptId: 0,
-      conceptName: concept_name,
-      domainId: domain_id,
-      vocabularyId: vocabulary_id,
-      conceptClassId: concept_class_id,
-      standardConcept: '',
-      conceptCode: sourceCode,
-      validStartDate: reformatDate(),
-      validEndDate: '2099-12-31',
-      invalidReason: '',
-    }
-    action = 'SEMI-APPROVED'
-    dispatch('mapCustomConcept', { concept, action: 'SEMI-APPROVED' })
-  }
-
-  async function flagRow() {
-    const compactConcept = renderedRow as ICustomConceptCompact
-    const { concept_name, domain_id, vocabulary_id, concept_class_id } = compactConcept
-    const concept: ICustomConcept = {
-      conceptId: 0,
-      conceptName: concept_name,
-      domainId: domain_id,
-      vocabularyId: vocabulary_id,
-      conceptClassId: concept_class_id,
-      standardConcept: '',
-      conceptCode: sourceCode,
-      validStartDate: reformatDate(),
-      validEndDate: '2099-12-31',
-      invalidReason: '',
-    }
-    action = 'FLAGGED'
-    dispatch('mapCustomConcept', { concept, action: 'FLAGGED' })
-  }
-  async function unapproveRow() {
-    const compactConcept = renderedRow as ICustomConceptCompact
-    const { concept_name, domain_id, vocabulary_id, concept_class_id } = compactConcept
-    const concept: ICustomConcept = {
-      conceptId: 0,
-      conceptName: concept_name,
-      domainId: domain_id,
-      vocabularyId: vocabulary_id,
-      conceptClassId: concept_class_id,
-      standardConcept: '',
-      conceptCode: sourceCode,
-      validStartDate: reformatDate(),
-      validEndDate: '2099-12-31',
-      invalidReason: '',
-    }
-    action = 'UNAPPROVED'
-    dispatch('mapCustomConcept', { concept, action: 'UNAPPROVED' })
-  }
+  const mapRow = async () => await row.mapCustomConcept('SEMI-APPROVED', equivalence)
+  const flagRow = async () => await row.mapCustomConcept('FLAGGED', equivalence)
+  const unapproveRow = async () => await row.mapCustomConcept('UNAPPROVED', equivalence)
 
   $: {
     if ($settings.vocabularyIdCustomConcept) updateVocab()
   }
 
-  resetInputRow()
+  onMount(async () => {
+    await resetInputRow()
+    row = new CustomRowActions(renderedRow as ICustomConceptCompact, usagiRow, usagiRowIndex)
+  })
 </script>
 
 {#if columns}

@@ -12,7 +12,7 @@
 
   let show: boolean = false
   let reviewer: string = usagiRow?.assignedReviewer ?? ''
-  let comments: string = usagiRow?.comment ?? ''
+  let comment: string = usagiRow?.comment ?? ''
 
   const onEquivalenceChange = (e: CustomEvent<EquivalenceChangeED>) => dispatch('equivalenceChange', { ...e.detail })
   const onInputComment = debounce(async (e: any) => updateDetails(), 500)
@@ -22,7 +22,7 @@
     updateDetails()
   }
 
-  const updateDetails = () => dispatch('updateDetails', { reviewer, comments })
+  const updateDetails = () => dispatch('updateDetails', { reviewer, comment })
   const hideDetail = () => (show = false)
   const showDetail = () => (show = true)
 </script>
@@ -43,7 +43,7 @@
       </div>
       <div class="comments-container">
         <p class="comments-title">Comments</p>
-        <textarea title="Comments" name="Comments" cols="28" rows="6" on:input={onInputComment} bind:value={comments} />
+        <textarea title="Comments" name="Comments" cols="28" rows="6" on:input={onInputComment} bind:value={comment} />
       </div>
     </div>
   </section>

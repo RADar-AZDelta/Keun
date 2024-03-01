@@ -1,9 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte'
-  import { query } from 'arquero'
-  import { table } from '$lib/store'
   import { localStorageGetter } from '@radar-azdelta-int/radar-utils'
-  import type Query from 'arquero/dist/types/query/query'
   import { Search } from '@radar-azdelta/svelte-athena-search'
   import SearchHead from '$lib/components/mapping/SearchHead.svelte'
   import CustomView from '$lib/components/mapping/views/CustomView.svelte'
@@ -15,6 +12,7 @@
   import { SvgIcon, clickOutside } from '@radar-azdelta-int/radar-svelte-components'
   import AthenaActions from './views/AthenaActions.svelte'
   import { Config } from '$lib/helperClasses/Config'
+  import Mapping from '$lib/classes/Mapping'
 
   export let selectedRow: IUsagiRow, selectedRowIndex: number
   export let globalAthenaFilter: { column: string; filter: string | undefined }
@@ -33,52 +31,24 @@
   ///////////////////////////// DETAILS METHODS /////////////////////////////
 
   async function onUpdateDetails(e: CustomEvent<UpdateDetailsED>) {
-    const rows = new Map([[selectedRowIndex, { comment: e.detail.comments, assignedReviewer: e.detail.reviewer }]])
-    await $table.updateRows(rows)
+    const { comment, reviewer: assignedReviewer } = e.detail
+    const updatedProperties = { comment, assignedReviewer }
+    await Mapping.updateMappingInfo(selectedRowIndex, updatedProperties)
   }
 
   const equivalenceChange = (e: CustomEvent<EquivalenceChangeED>) => (equivalence = e.detail.equivalence)
 
-  ///////////////////////////// ATHENA ROW METHODS /////////////////////////////
-
   async function getAllMappedToConcepts() {
     if (!selectedRow?.sourceCode) return
-    const params = <Query>query().params({ code: selectedRow.sourceCode })
-    const rowsQuery = params.filter((r: any, p: any) => r.sourceCode === p.code).toObject()
-    const rows = await $table.executeQueryAndReturnResults(rowsQuery)
-    mappedToConceptIds = {}
-    for (const row of rows.queriedData) Object.assign(mappedToConceptIds, { [row.conceptId]: row.mappingStatus })
+    await Mapping.saveAllMappedConcepts(selectedRow.sourceCode)
   }
 
-  ///////////////////////////// MAPPED TABLE METHODS /////////////////////////////
-
-  // A method to fill the table with the already mapped concepts
   async function fillMappedTable() {
-    mappedData = []
     if (!selectedRow?.sourceCode) return
-    const queryParams = <Query>query().params({ source: selectedRow.sourceCode })
-    const conceptsQuery = queryParams.filter((d: any, p: any) => d.sourceCode === p.source && d.conceptName).toObject()
-    const concepts = await $table.executeQueryAndReturnResults(conceptsQuery)
-    if (!concepts.queriedData.length) return (mappedData = [{}])
-    const newMappedData: (object | IMappedRow)[] = []
-    for (let concept of concepts.queriedData) {
-      const con = {
-        sourceCode: concept.sourceCode,
-        sourceName: concept.sourceName,
-        conceptId: concept.conceptId,
-        conceptName: concept.conceptName,
-        customConcept: concept.conceptId === '0' ? true : false,
-      }
-      if (!newMappedData.includes(con)) newMappedData.push(con)
-    }
-    mappedData = newMappedData
+    mappedData = await Mapping.getAllMappedConcepts(selectedRow.sourceCode)
   }
-
-  ///////////////////////////// HEAD METHODS /////////////////////////////
 
   const onNavigateRow = (e: CustomEvent<NavigateRowED>) => dispatch('navigateRow', { ...e.detail })
-
-  ///////////////////////////// DIALOG METHODS /////////////////////////////
 
   const closeDialog = () => dialog.close()
 
@@ -117,21 +87,13 @@
     <section class="search-container">
       <Search {views} bind:globalFilter={globalAthenaFilter} showFilters={true}>
         <div slot="action-athena" let:renderedRow class="actions-grid">
-          <AthenaActions
-            {renderedRow}
-            {mappedToConceptIds}
-            {selectedRow}
-            {selectedRowIndex}
-            {equivalence}
-            {comment}
-            {reviewer}
-          />
+          <AthenaActions {renderedRow} {mappedToConceptIds} {selectedRow} {selectedRowIndex} {equivalence} />
         </div>
         <div slot="upperSlot">
           <SearchHead {selectedRow} on:navigateRow={onNavigateRow} />
         </div>
         <div slot="slotView1">
-          <CustomView {selectedRow} {selectedRowIndex} />
+          <CustomView {selectedRow} {selectedRowIndex} {equivalence} />
         </div>
         <div slot="slotView2">
           <MappedView {mappedData} {selectedRow} />

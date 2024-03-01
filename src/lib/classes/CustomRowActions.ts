@@ -1,34 +1,26 @@
-import type {
-  IAthenaRow,
-  ICustomConcept,
-  ICustomConceptCompact,
-  IMappingInformation,
-  IUsagiRow,
-} from '$lib/components/Types'
 import { reformatDate } from '@radar-azdelta-int/radar-utils'
 import Mapping from './Mapping'
 import StoreMethods from './StoreMethods'
+import type { IAthenaRow, ICustomConcept, ICustomConceptCompact, IUsagiRow } from '$lib/components/Types'
 
 export default class CustomRowActions {
   row: ICustomConceptCompact
-  index: number
   sourceCode: string
   usagiRow: IUsagiRow
   usagiRowIndex: number
 
-  constructor(row: ICustomConceptCompact, index: number, usagiRow: IUsagiRow, usagiRowIndex: number) {
+  constructor(row: ICustomConceptCompact, usagiRow: IUsagiRow, usagiRowIndex: number) {
     this.row = row
-    this.index = index
     this.sourceCode = usagiRow.sourceCode
     this.usagiRow = usagiRow
     this.usagiRowIndex = usagiRowIndex
   }
 
-  async mapCustomConcept(action: string, mappingInfo: IMappingInformation) {
+  async mapCustomConcept(action: string, equivalence: string) {
     const concept = await this.createCustomConcept()
-    const transformedConcept = await this.transformCustomConceptToAthenaFormat(concept, mappingInfo.equivalence)
+    const transformedConcept = await this.transformCustomConceptToAthenaFormat(concept, equivalence)
     const rowMappingInfo = { usagiRow: this.usagiRow, usagiRowIndex: this.usagiRowIndex, athenaRow: transformedConcept }
-    await Mapping.mapRow(rowMappingInfo, mappingInfo, action)
+    await Mapping.mapRow(rowMappingInfo, equivalence, action)
     await StoreMethods.insertCustomTableRow(concept)
   }
 

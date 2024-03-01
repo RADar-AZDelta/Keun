@@ -23,18 +23,18 @@ export default class AthenaActions {
     return true
   }
 
-  mapRowApproved = async (mappingInfo: IMappingInformation) => {
+  mapRowApproved = async (equivalence: string) => {
     const rowMappingInfo = { athenaRow: this.athenaRow, usagiRow: this.row, usagiRowIndex: this.rowIndex }
-    await Mapping.mapRow(rowMappingInfo, mappingInfo, 'SEMI-APPROVED')
+    await Mapping.mapRow(rowMappingInfo, equivalence, 'SEMI-APPROVED')
   }
-  mapRowFlagged = async (mappingInfo: IMappingInformation) => {
+  mapRowFlagged = async (equivalence: string) => {
     const rowMappingInfo = { athenaRow: this.athenaRow, usagiRow: this.row, usagiRowIndex: this.rowIndex }
-    await Mapping.mapRow(rowMappingInfo, mappingInfo, 'FLAGGED')
+    await Mapping.mapRow(rowMappingInfo, equivalence, 'FLAGGED')
   }
 
-  mapRowUnapproved = async (mappingInfo: IMappingInformation) => {
+  mapRowUnapproved = async (equivalence: string) => {
     const rowMappingInfo = { athenaRow: this.athenaRow, usagiRow: this.row, usagiRowIndex: this.rowIndex }
-    await Mapping.mapRow(rowMappingInfo, mappingInfo, 'UNAPPROVED')
+    await Mapping.mapRow(rowMappingInfo, equivalence, 'UNAPPROVED')
   }
 
   private getUser(): Promise<IUser> {

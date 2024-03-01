@@ -1,6 +1,6 @@
 import { customTable, mappedToConceptIds, settings, table, user } from '$lib/store'
 import type DataTable from '@radar-azdelta/svelte-datatable'
-import type { ICustomConcept, IMappedRows, ISettings, IUsagiRow, IUser } from '$lib/components/Types'
+import type { ICustomConcept, IMappedRows, IQueryResult, ISettings, IUsagiRow, IUser } from '$lib/components/Types'
 
 export default class StoreMethods {
   static async getUser(): Promise<IUser> {
@@ -68,7 +68,7 @@ export default class StoreMethods {
     await table.insertRows([row])
   }
 
-  static async executeQueryOnTable(query: object) {
+  static async executeQueryOnTable(query: object): Promise<IQueryResult> {
     const table = await this.getTable()
     return await table.executeQueryAndReturnResults(query)
   }

@@ -1,6 +1,7 @@
 import type {
   IAthenaRow,
-  IMappingInformation,
+  IMappedRow,
+  IMappingExtra,
   IQueryResult,
   IRowMappingInformation,
   IUsagiRow,
@@ -14,27 +15,70 @@ export default class Mapping {
   private static usagiRow?: IUsagiRow
   private static usagiRowIndex?: number
   private static action?: string
-  private static mappingInfo?: IMappingInformation
+  private static equivalence?: string
 
-  static async mapRow(rowMappingInfo: IRowMappingInformation, mappingInfo: IMappingInformation, action: string) {
-    await this.setVariables(rowMappingInfo, mappingInfo, action)
+  static async updateMappingInfo(index: number, mappingInfo: IMappingExtra) {
+    await StoreMethods.updateTableRow(index, mappingInfo)
+  }
+
+  static async saveAllMappedConcepts(sourceCode: string) {
+    const concepts = await this.getAllMappedConceptsToRow(sourceCode)
+    for (let concept of concepts.queriedData) await this.addConceptToMappedConceptsIfExists(concept)
+  }
+
+  private static async getAllMappedConceptsToRow(sourceCode: string) {
+    const params = { sourceCode }
+    const conceptsQuery = (<Query>query().params(params))
+      .filter((r: any, p: any) => r.sourceCode === p.sourceCode && r.conceptName)
+      .toObject()
+    const queryResult = await StoreMethods.executeQueryOnTable(conceptsQuery)
+    return queryResult
+  }
+
+  private static async addConceptToMappedConceptsIfExists(concept: IUsagiRow) {
+    if (!concept.conceptId) return
+    await StoreMethods.updateMappedConceptsBib({ [concept.conceptId]: concept.mappingStatus })
+  }
+
+  static async getAllMappedConcepts(sourceCode: string) {
+    const mappedConcepts = await this.getAllMappedConceptsToRow(sourceCode)
+    const mappedRows: (object | IMappedRow)[] = []
+    for (let mappedConcept of mappedConcepts.queriedData) {
+      if (!mappedConcept.conceptId) continue
+      const row = await this.transformConceptToRowFormat(mappedConcept)
+      if (!mappedRows.includes(row)) mappedRows.push(row)
+    }
+    return mappedRows
+  }
+
+  static async transformConceptToRowFormat(concept: IUsagiRow) {
+    const { sourceCode, sourceName, conceptId, conceptName } = concept
+    const customConcept = (concept.conceptId ?? 0) === 0
+    const row: IMappedRow = {
+      sourceCode,
+      sourceName,
+      conceptId: conceptId ?? 0,
+      conceptName: conceptName ?? '',
+      customConcept,
+    }
+    return row
+  }
+
+  static async mapRow(rowMappingInfo: IRowMappingInformation, equivalence: string, action: string) {
+    await this.setVariables(rowMappingInfo, equivalence, action)
     const settings = await StoreMethods.getSettings()
     const { mapToMultipleConcepts } = settings
     if (mapToMultipleConcepts) await this.multipleMapping()
     else await this.singleMapping()
   }
 
-  private static async setVariables(
-    rowMappingInfo: IRowMappingInformation,
-    mappingInfo: IMappingInformation,
-    action: string,
-  ) {
+  private static async setVariables(rowMappingInfo: IRowMappingInformation, equivalence: string, action: string) {
     const { athenaRow, usagiRow, usagiRowIndex } = rowMappingInfo
     this.athenaRow = athenaRow
     this.usagiRow = usagiRow
     this.usagiRowIndex = usagiRowIndex
     this.action = action
-    this.mappingInfo = mappingInfo
+    this.equivalence = equivalence
   }
 
   private static async multipleMapping() {
@@ -96,7 +140,6 @@ export default class Mapping {
 
   private static async assembleExtraInfoSingleMapping() {
     const user = await StoreMethods.getUser()
-    const { equivalence, comment, reviewer: assignedReviewer } = this.mappingInfo!
     const updatedProperties = {
       mappingStatus: this.action,
       statusSetBy: user.name,
@@ -105,9 +148,7 @@ export default class Mapping {
       createdOn: Date.now(),
       'ADD_INFO:lastAthenaFilter': null,
       'ADD_INFO:numberOfConcepts': 1,
-      comment,
-      assignedReviewer,
-      equivalence,
+      equivalence: this.equivalence,
       vocabularyId: this.athenaRow!.vocabulary,
       matchScore: 0,
       mappingType: null,

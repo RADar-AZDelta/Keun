@@ -7,17 +7,16 @@
   import type { IAthenaRow, IMappedRows, IUsagiRow } from '$lib/components/Types'
 
   export let renderedRow: IAthenaRow, mappedToConceptIds: IMappedRows
-  export let selectedRow: IUsagiRow, selectedRowIndex: number
-  export let equivalence: string, comment: string, reviewer: string
+  export let selectedRow: IUsagiRow, selectedRowIndex: number, equivalence: string
 
   let rowActions: AthenaActions
   const width = '10px'
   const height = '10px'
 
   const approveRow = async () => await rowActions.approveRow()
-  const mapRowApproved = async () => await rowActions.mapRowApproved({ equivalence, comment, reviewer })
-  const mapRowFlagged = async () => await rowActions.mapRowFlagged({ equivalence, comment, reviewer })
-  const mapRowUnapproved = async () => await rowActions.mapRowUnapproved({ equivalence, comment, reviewer })
+  const mapRowApproved = async () => await rowActions.mapRowApproved(equivalence)
+  const mapRowFlagged = async () => await rowActions.mapRowFlagged(equivalence)
+  const mapRowUnapproved = async () => await rowActions.mapRowUnapproved(equivalence)
 
   async function referToAthena(id: number) {
     const referUrl = import.meta.env.VITE_ATHENA_DETAIL + id.toString()
