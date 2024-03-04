@@ -129,7 +129,7 @@ export default class Mapping {
     if (!isTheFirstConceptUnmapped) return await this.singleMapping()
     const mappedRowIndex = await this.getRowIndexFromQueryData(alreadyMappedRows)
     await this.mapConceptOfMultiple(alreadyMappedRows, mappedRowIndex)
-    await this.updateNumberOfConcepts(alreadyMappedRows, mappedRowIndex)
+    await this.updateNumberOfConcepts(alreadyMappedRows)
   }
 
   private static async checkIfRowIsMapped(row: IUsagiRow) {
@@ -157,11 +157,19 @@ export default class Mapping {
     }
   }
 
-  private static async updateNumberOfConcepts(mapped: IQueryResult, index: number) {
-    const numberOfConcepts = mapped.indices.length + 1
+  private static async updateNumberOfConcepts(mapped: IQueryResult) {
+    const conceptWasMapped = await this.checkIfConceptWasMapped()
+    const numberOfConcepts = conceptWasMapped ? mapped.indices.length : mapped.indices.length + 1
     const rowsToUpdate = new Map()
     for (let rowIndex of mapped.indices) rowsToUpdate.set(rowIndex, { 'ADD_INFO:numberOfConcepts': numberOfConcepts })
     await StoreMethods.updateTableRows(rowsToUpdate)
+  }
+
+  private static async checkIfConceptWasMapped() {
+    const mappedConcepts = await StoreMethods.getMappedConceptsBib()
+    if (!this.usagiRow?.sourceCode || !this.athenaRow?.id) return
+    const action = mappedConcepts[this.usagiRow?.sourceCode]?.[this.athenaRow?.id]
+    return !!!action
   }
 
   private static async getRowIndexFromQueryData(data: IQueryResult) {
