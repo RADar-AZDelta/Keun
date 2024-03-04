@@ -59,6 +59,7 @@ export async function loadImpSettings() {
   })
 }
 
+// TODO: check if this can be removed
 export async function loadImplDataType() {
   return new Promise(async resolve => {
     fileTypeImpl.subscribe(async impl => {

@@ -25,9 +25,10 @@
     rowsPerPageOptions: [5, 10, 15],
   }
 
+  // TODO: work further on this
   async function onClickMapping(e: CustomEvent<CustomMappingInputED>) {
     dispatch('customMappingInput', { ...e.detail })
-    data[0] = e.detail.originalRow
+    data[0] = e.detail.row
     await createInputRow()
     data = data
     deleteError()

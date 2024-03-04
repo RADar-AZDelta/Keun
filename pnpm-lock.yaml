@@ -6,8 +6,8 @@ settings:
 
 dependencies:
   '@radar-azdelta-int/radar-firebase-utils':
-    specifier: ^0.0.20
-    version: 0.0.20(codemirror@6.0.1)(firebase@10.8.0)(svelte@4.2.11)
+    specifier: ^0.0.21
+    version: 0.0.21(codemirror@6.0.1)(firebase@10.8.0)(svelte@4.2.11)
   '@radar-azdelta-int/radar-svelte-components':
     specifier: 0.0.14
     version: 0.0.14(svelte@4.2.11)
@@ -142,8 +142,8 @@ packages:
     resolution: {integrity: sha512-bNuuCwM/JnsIYQCKXcYKFT4Qc5vLMoB8Nbvz8ReIgs7xzebK8Sa+R8iEK8mLvNBe/WaZ6zrPaUQilLsRT/ea8Q==}
     dev: true
 
-  /@codemirror/autocomplete@6.12.0(@codemirror/language@6.10.1)(@codemirror/state@6.4.1)(@codemirror/view@6.24.1)(@lezer/common@1.2.1):
-    resolution: {integrity: sha512-r4IjdYFthwbCQyvqnSlx0WBHRHi8nBvU+WjJxFUij81qsBfhNudf/XKKmmC2j3m0LaOYUQTf3qiEK1J8lO1sdg==}
+  /@codemirror/autocomplete@6.13.0(@codemirror/language@6.10.1)(@codemirror/state@6.4.1)(@codemirror/view@6.25.0)(@lezer/common@1.2.1):
+    resolution: {integrity: sha512-SuDrho1klTINfbcMPnyro1ZxU9xJtwDMtb62R8TjL/tOl71IoOsvBo1a9x+hDvHhIzkTcJHy2VC+rmpGgYkRSw==}
     peerDependencies:
       '@codemirror/language': ^6.0.0
       '@codemirror/state': ^6.0.0
@@ -152,7 +152,7 @@ packages:
     dependencies:
       '@codemirror/language': 6.10.1
       '@codemirror/state': 6.4.1
-      '@codemirror/view': 6.24.1
+      '@codemirror/view': 6.25.0
       '@lezer/common': 1.2.1
     dev: false
 
@@ -161,7 +161,7 @@ packages:
     dependencies:
       '@codemirror/language': 6.10.1
       '@codemirror/state': 6.4.1
-      '@codemirror/view': 6.24.1
+      '@codemirror/view': 6.25.0
       '@lezer/common': 1.2.1
     dev: false
 
@@ -176,18 +176,18 @@ packages:
     resolution: {integrity: sha512-5GrXzrhq6k+gL5fjkAwt90nYDmjlzTIJV8THnxNFtNKWotMIlzzN+CpqxqwXOECnUdOndmSeWntVrVcv5axWRQ==}
     dependencies:
       '@codemirror/state': 6.4.1
-      '@codemirror/view': 6.24.1
+      '@codemirror/view': 6.25.0
       '@lezer/common': 1.2.1
       '@lezer/highlight': 1.2.0
       '@lezer/lr': 1.4.0
-      style-mod: 4.1.0
+      style-mod: 4.1.2
     dev: false
 
   /@codemirror/lint@6.5.0:
     resolution: {integrity: sha512-+5YyicIaaAZKU8K43IQi8TBy6mF6giGeWAH7N96Z5LC30Wm5JMjqxOYIE9mxwMG1NbhT2mA3l9hA4uuKUM3E5g==}
     dependencies:
       '@codemirror/state': 6.4.1
-      '@codemirror/view': 6.24.1
+      '@codemirror/view': 6.25.0
       crelt: 1.0.6
     dev: false
 
@@ -195,7 +195,7 @@ packages:
     resolution: {integrity: sha512-rpMgcsh7o0GuCDUXKPvww+muLA1pDJaFrpq/CCHtpQJYz8xopu4D1hPcKRoDD0YlF8gZaqTNIRa4VRBWyhyy7Q==}
     dependencies:
       '@codemirror/state': 6.4.1
-      '@codemirror/view': 6.24.1
+      '@codemirror/view': 6.25.0
       crelt: 1.0.6
     dev: false
 
@@ -203,11 +203,11 @@ packages:
     resolution: {integrity: sha512-QkEyUiLhsJoZkbumGZlswmAhA7CBU02Wrz7zvH4SrcifbsqwlXShVXg65f3v/ts57W3dqyamEriMhij1Z3Zz4A==}
     dev: false
 
-  /@codemirror/view@6.24.1:
-    resolution: {integrity: sha512-sBfP4rniPBRQzNakwuQEqjEuiJDWJyF2kqLLqij4WXRoVwPPJfjx966Eq3F7+OPQxDtMt/Q9MWLoZLWjeveBlg==}
+  /@codemirror/view@6.25.0:
+    resolution: {integrity: sha512-XnMGOm6qXB8znzCko0N7k97qZayVdvqpA0JebxA5fHtgBjC/XlCPhH9TK92TahsoCKMPQlaTCUep06Dwj/+GXQ==}
     dependencies:
       '@codemirror/state': 6.4.1
-      style-mod: 4.1.0
+      style-mod: 4.1.2
       w3c-keyname: 2.2.8
     dev: false
 
@@ -1050,8 +1050,8 @@ packages:
     resolution: {integrity: sha512-Vvn3zZrhQZkkBE8LSuW3em98c0FwgO4nxzv6OdSxPKJIEKY2bGbHn+mhGIPerzI4twdxaP8/0+06HBpwf345Lw==}
     dev: false
 
-  /@radar-azdelta-int/radar-firebase-utils@0.0.20(codemirror@6.0.1)(firebase@10.8.0)(svelte@4.2.11):
-    resolution: {integrity: sha512-zVxLQy793NtftKpvcrBsZX7keRxWYQGCBoTKbU9SGJjqIB6De/kpkD+LxDHPC976of1NGz0aAsAfEjWoNIAjyA==, tarball: https://europe-west1-npm.pkg.dev/azd-dev-artifacts/azd-d-artifacts-art-euwe1-npmrepo/@radar-azdelta-int/radar-firebase-utils/-/@radar-azdelta-int/radar-firebase-utils-0.0.20.tgz}
+  /@radar-azdelta-int/radar-firebase-utils@0.0.21(codemirror@6.0.1)(firebase@10.8.0)(svelte@4.2.11):
+    resolution: {integrity: sha512-0KhahOSoB4ToRoc/mlgQ0VvqQmrKPONtm1F47iQZg9YqvDUBCCeIcsOcr2hWhx+PK7kZjIvFVxvhFC+W2zczgg==, tarball: https://europe-west1-npm.pkg.dev/azd-dev-artifacts/azd-d-artifacts-art-euwe1-npmrepo/@radar-azdelta-int/radar-firebase-utils/-/@radar-azdelta-int/radar-firebase-utils-0.0.21.tgz}
     peerDependencies:
       firebase: ^10.8.0
       svelte: ^4.0.0
@@ -1060,7 +1060,7 @@ packages:
       '@radar-azdelta-int/radar-utils': 0.0.8(svelte@4.2.11)
       firebase: 10.8.0
       svelte: 4.2.11
-      svelte-codemirror-editor: 1.2.0(codemirror@6.0.1)(svelte@4.2.11)
+      svelte-codemirror-editor: 1.3.0(codemirror@6.0.1)(svelte@4.2.11)
     transitivePeerDependencies:
       - codemirror
     dev: false
@@ -1902,13 +1902,13 @@ packages:
   /codemirror@6.0.1(@lezer/common@1.2.1):
     resolution: {integrity: sha512-J8j+nZ+CdWmIeFIGXEFbFPtpiYacFMDR8GlHK3IyHQJMCaVRfGx9NT+Hxivv1ckLWPvNdZqndbr/7lVhrf/Svg==}
     dependencies:
-      '@codemirror/autocomplete': 6.12.0(@codemirror/language@6.10.1)(@codemirror/state@6.4.1)(@codemirror/view@6.24.1)(@lezer/common@1.2.1)
+      '@codemirror/autocomplete': 6.13.0(@codemirror/language@6.10.1)(@codemirror/state@6.4.1)(@codemirror/view@6.25.0)(@lezer/common@1.2.1)
       '@codemirror/commands': 6.3.3
       '@codemirror/language': 6.10.1
       '@codemirror/lint': 6.5.0
       '@codemirror/search': 6.5.6
       '@codemirror/state': 6.4.1
-      '@codemirror/view': 6.24.1
+      '@codemirror/view': 6.25.0
     transitivePeerDependencies:
       - '@lezer/common'
     dev: false
@@ -3873,8 +3873,8 @@ packages:
       js-tokens: 8.0.3
     dev: true
 
-  /style-mod@4.1.0:
-    resolution: {integrity: sha512-Ca5ib8HrFn+f+0n4N4ScTIA9iTOQ7MaGS1ylHcoVqW9J7w2w8PzN6g9gKmTYgGEBH8e120+RCmhpje6jC5uGWA==}
+  /style-mod@4.1.2:
+    resolution: {integrity: sha512-wnD1HyVqpJUI2+eKZ+eo1UwghftP6yuFheBqqe+bWCotBjC2K1YnteJILRMs3SM4V/0dLEW1SC27MWP5y+mwmw==}
     dev: false
 
   /supports-color@7.2.0:
@@ -3915,8 +3915,8 @@ packages:
       - sugarss
     dev: true
 
-  /svelte-codemirror-editor@1.2.0(codemirror@6.0.1)(svelte@4.2.11):
-    resolution: {integrity: sha512-OEf52U4bBeyDFCMtPH+ZYCtYT+KdyjUw+l19V72Bxeadh2LdPOWC0WSEP+hXRleg/94VC5NgfgqHXf3DqoVZUA==}
+  /svelte-codemirror-editor@1.3.0(codemirror@6.0.1)(svelte@4.2.11):
+    resolution: {integrity: sha512-Y39m9CsL0d30gGYYjJURWjKwAMEyiH42FojYiAXVKneGQ9cntOwOlloEk2Rhyy9ay29rSYYncskbnhAYNokIqw==}
     peerDependencies:
       codemirror: ^6.0.0
       svelte: ^3.0.0 || ^4.0.0

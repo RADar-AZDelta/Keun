@@ -44,7 +44,7 @@
   },
   "type": "module",
   "dependencies": {
-    "@radar-azdelta-int/radar-firebase-utils": "^0.0.20",
+    "@radar-azdelta-int/radar-firebase-utils": "^0.0.21",
     "@radar-azdelta-int/radar-svelte-components": "0.0.14",
     "@radar-azdelta-int/radar-utils": "0.0.8",
     "@radar-azdelta/svelte-athena-search": "^0.0.33",

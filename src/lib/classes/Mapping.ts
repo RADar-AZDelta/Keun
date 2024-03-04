@@ -13,6 +13,8 @@ import { query } from 'arquero'
 import StoreMethods from './StoreMethods'
 import { reformatDate } from '@radar-azdelta-int/radar-utils'
 
+// TODO: put this logic in seperate classes
+
 export default class Mapping {
   private static athenaRow?: IAthenaRow
   private static usagiRow?: IUsagiRow

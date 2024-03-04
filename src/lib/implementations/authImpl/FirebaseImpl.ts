@@ -1,6 +1,4 @@
 import { logWhenDev } from '@radar-azdelta-int/radar-utils'
-// import { FirebaseAuth, userSessionStore } from '@radar-azdelta-int/radar-firebase-utils'
-import FirebaseAuth, { onlyReadableUserSessionStore as userSessionStore } from '$lib/firebase/FirebaseAuth'
 import { user } from '$lib/store'
 import {
   PUBLIC_FIREBASE_API_KEY,
@@ -12,7 +10,12 @@ import {
   PUBLIC_TENANT_ID,
 } from '$env/static/public'
 import type { IAuthImpl } from '$lib/components/Types'
-import type { FirebaseOptions, UserSession } from '@radar-azdelta-int/radar-firebase-utils'
+import {
+  FirebaseAuth,
+  userSessionStore,
+  type FirebaseOptions,
+  type UserSession,
+} from '@radar-azdelta-int/radar-firebase-utils'
 
 const firebaseConfig: FirebaseOptions = {
   apiKey: PUBLIC_FIREBASE_API_KEY,

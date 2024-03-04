@@ -1,8 +1,7 @@
 import { query } from 'arquero'
+import StoreMethods from './StoreMethods'
 import { Config } from '$lib/helperClasses/Config'
-import { customTable, table } from '$lib/store'
 import type Query from 'arquero/dist/types/query/query'
-import type DataTable from '@radar-azdelta/svelte-datatable'
 import type { IExtraUsagiCols, IUsagiAllExtra, IUsagiLogic, IUsagiRow } from '$lib/components/Types'
 
 const additionalFields: IExtraUsagiCols = Config.additionalColumns
@@ -18,7 +17,7 @@ export default class UsagiLogic implements IUsagiLogic {
 
   async updatePropertyValue(e: CustomEvent, column: string) {
     const updatedProperty = { [column]: e.detail }
-    const table = await this.getTable()
+    const table = await StoreMethods.getTable()
     if (!table) return
     await table.updateRows(new Map([[this.index, updatedProperty]]))
   }
@@ -31,7 +30,7 @@ export default class UsagiLogic implements IUsagiLogic {
   private async deleteCustomConcept() {
     const index = await this.getCustomConceptIndex()
     if (!index) return
-    const customTable = await this.getCustomTable()
+    const customTable = await StoreMethods.getCustomTable()
     if (!customTable) return
     await customTable.deleteRows([index])
   }
@@ -39,7 +38,7 @@ export default class UsagiLogic implements IUsagiLogic {
   private async getCustomConceptIndex(): Promise<number | undefined> {
     const params = { conceptName: this.row.concepName, sourceCode: this.row.sourceCode }
     const indexQuery = (<Query>query().params(params)).filter(this.customConceptFilter).toObject()
-    const customTable = await this.getCustomTable()
+    const customTable = await StoreMethods.getCustomTable()
     if (!customTable) return
     const queryResult = await customTable.executeQueryAndReturnResults(indexQuery)
     if (!queryResult.indices.length) return
@@ -57,7 +56,7 @@ export default class UsagiLogic implements IUsagiLogic {
     const numberQuery = (<Query>query().params(params))
       .filter((r: any, p: any) => r.sourceCode === p.sourceCode)
       .toObject()
-    const table = await this.getTable()
+    const table = await StoreMethods.getTable()
     if (!table) return 0
     const queryResult = await table.executeQueryAndReturnResults(numberQuery)
     if (!queryResult.indices.length) return 0
@@ -74,7 +73,7 @@ export default class UsagiLogic implements IUsagiLogic {
   }
 
   private async resetRow() {
-    const table = await this.getTable()
+    const table = await StoreMethods.getTable()
     if (!table) return
     const resetProperties = this.resetPropertiesOfRow()
     await table.updateRows(new Map([[this.index, resetProperties]]))
@@ -91,7 +90,7 @@ export default class UsagiLogic implements IUsagiLogic {
   }
 
   private async deleteRowOnIndex() {
-    const table = await this.getTable()
+    const table = await StoreMethods.getTable()
     if (!table) return
     await table.deleteRows([this.index])
   }
@@ -100,7 +99,7 @@ export default class UsagiLogic implements IUsagiLogic {
     const indices = await this.getConceptsIndices()
     const rowsToUpdate = new Map()
     for (let i of indices) rowsToUpdate.set(i, { 'ADD_INFO:numberOfConcepts': indices.length })
-    const table = await this.getTable()
+    const table = await StoreMethods.getTable()
     if (!table) return
     await table.updateRows(rowsToUpdate)
   }
@@ -108,7 +107,7 @@ export default class UsagiLogic implements IUsagiLogic {
   private async getConceptsIndices(): Promise<number[]> {
     const params = { sourceCode: this.row.sourceCode }
     const indexQuery = (<Query>query().params(params)).filter(this.conceptFilter).toObject()
-    const table = await this.getTable()
+    const table = await StoreMethods.getTable()
     if (!table) return []
     const queryResult = await table.executeQueryAndReturnResults(indexQuery)
     if (!queryResult.indices.length) return []
@@ -118,13 +117,5 @@ export default class UsagiLogic implements IUsagiLogic {
   private conceptFilter(row: IUsagiRow, params: Record<string, string>) {
     const equalSourceCode = row.sourceCode === params.sourceCode
     return equalSourceCode
-  }
-
-  private async getTable(): Promise<DataTable | undefined> {
-    return new Promise(resolve => table.subscribe(table => resolve(table)))
-  }
-
-  private async getCustomTable(): Promise<DataTable | undefined> {
-    return new Promise(resolve => customTable.subscribe(table => resolve(table)))
   }
 }

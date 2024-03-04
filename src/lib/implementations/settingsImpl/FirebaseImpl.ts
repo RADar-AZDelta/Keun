@@ -10,7 +10,7 @@ import {
 } from '$env/static/public'
 import { user } from '$lib/store'
 import type { FirebaseOptions } from 'firebase/app'
-import FirebaseFirestore from '$lib/firebase/FirebaseFirestore'
+import { FirebaseFirestore } from '@radar-azdelta-int/radar-firebase-utils'
 
 const defaultSettings: ISettings = {
   mapToMultipleConcepts: false,
