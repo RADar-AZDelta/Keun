@@ -1,10 +1,10 @@
-import { PUBLIC_MAPPINGDATA_PATH } from '$env/static/public'
 import { query } from 'arquero'
+import { PUBLIC_MAPPINGDATA_PATH } from '$env/static/public'
+import { abortAutoMapping, disableActions } from '$lib/store'
+import Mapping from './Mapping'
 import StoreMethods from './StoreMethods'
 import { BergamotTranslator } from '$lib/helperClasses/BergamotTranslator'
 import type { IAthenaRow, IQueryResult, IUsagiRow } from '$lib/components/Types'
-import Mapping from './Mapping'
-import { abortAutoMapping } from '$lib/store'
 
 export default class AutoMapping {
   private static autoMappingAbortController: AbortController
@@ -19,8 +19,15 @@ export default class AutoMapping {
     if (this.autoMappingPromise) this.autoMappingAbortController.abort()
     this.autoMappingAbortController = new AbortController()
     this.signal = this.autoMappingAbortController.signal
-    console.log("STARTING TO AUTOMAP")
-    this.autoMappingPromise = this.autoMapPageRows()
+    this.disableTable()
+    this.autoMappingPromise = this.autoMapPageRows().then(this.enableTable)
+  }
+
+  static async startAutoMappingRow(index: number) {
+    if (this.autoMappingPromise) this.autoMappingAbortController.abort()
+    this.autoMappingAbortController = new AbortController()
+    this.signal = this.autoMappingAbortController.signal
+    this.autoMappingPromise = this.autoMapSingleRow(index)
   }
 
   private static async autoMapPageRows() {
@@ -29,6 +36,7 @@ export default class AutoMapping {
     if (!currentPage || !rowsPerPage) return
     this.previousPage = currentPage
     const concepts = await this.getTableConcepts(rowsPerPage, currentPage)
+    if (concepts.indices.length) await StoreMethods.disableTable()
     for (let i = 0; i < concepts.queriedData.length; i++) await this.getConceptInfoForAutoMapping(concepts, i)
   }
 
@@ -37,7 +45,7 @@ export default class AutoMapping {
     const row = concepts.queriedData[index]
     const rowIndex = concepts.indices[index]
     if (row.conceptId || row.sourceAutoAssignedConceptIds || row.conceptName) return
-    await this.autoMapRow(row, index)
+    await this.autoMapRow(row, rowIndex)
   }
 
   private static async getTableConcepts(rowsPerPage: number, currentPage: number) {
@@ -46,13 +54,6 @@ export default class AutoMapping {
     const conceptsQuery = query().slice(startIndex, endingIndex).toObject()
     const concepts = await StoreMethods.executeQueryOnTable(conceptsQuery)
     return concepts
-  }
-
-  static async startAutoMappingRow(index: number) {
-    if (this.autoMappingPromise) this.autoMappingAbortController.abort()
-    this.autoMappingAbortController = new AbortController()
-    this.signal = this.autoMappingAbortController.signal
-    this.autoMappingPromise = this.autoMapSingleRow(index)
   }
 
   private static async autoMapSingleRow(index: number) {
@@ -65,6 +66,7 @@ export default class AutoMapping {
     const filter = await this.getTranslatedSourceName(row.sourceName)
     if (this.signal.aborted || !filter) return
     const concepts = await this.fetchFirstConcept(filter)
+    if (!concepts) return
     await Mapping.updateAthenaRow(concepts[0])
     const { mappedIndex, mappedRow } = await Mapping.rowMapping(index)
     mappedRow['ADD_INFO:lastAthenaFilter'] = filter ?? null
@@ -78,20 +80,29 @@ export default class AutoMapping {
     return translated
   }
 
-  private static async fetchFirstConcept(filter: string): Promise<IAthenaRow[]> {
+  private static async fetchFirstConcept(filter: string): Promise<IAthenaRow[] | undefined> {
     const url = encodeURI(this.mappingUrl + `&page=1&pageSize=1&standardConcept=Standard&query=${filter}`)
     const conceptsResult = await fetch(url)
     const conceptsData = await conceptsResult.json()
-    if (!conceptsData.content?.length) throw Error('An error occured while fetching the API of Athena')
+    if (!conceptsData.content?.length) return
     return conceptsData.content
   }
 
   static async abortAutoMap() {
-    await StoreMethods.enableTable()
     if (this.autoMappingPromise) this.autoMappingAbortController.abort()
     abortAutoMapping.set(false)
-    // Check previous page and current page
+    this.enableTable()
     const pag = await StoreMethods.getTablePagination()
     if (this.previousPage !== pag.currentPage) return new Map<number, Record<string, any>>()
+  }
+
+  private static enableTable() {
+    disableActions.set(false)
+    StoreMethods.enableTable()
+  }
+
+  private static disableTable() {
+    disableActions.set(true)
+    StoreMethods.disableTable()
   }
 }

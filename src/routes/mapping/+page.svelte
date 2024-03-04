@@ -7,7 +7,7 @@
   import { dev } from '$app/environment'
   import type { IColumnMetaData, ITableOptions } from '@radar-azdelta/svelte-datatable'
   import DataTable from '@radar-azdelta/svelte-datatable'
-  import { customTable, table } from '$lib/store'
+  import { customTable, table, disableActions } from '$lib/store'
   import { BergamotTranslator } from '$lib/helperClasses/BergamotTranslator'
   import { abortAutoMapping, customFileTypeImpl, databaseImpl, fileTypeImpl, saveImpl } from '$lib/store'
   import { selectedFileId, selectedCustomFileId, settings, triggerAutoMapping, user } from '$lib/store'
@@ -29,7 +29,6 @@
   // Files & generals
   let file: File | undefined, customConceptsFile: File | undefined
   let customTableOptions: ITableOptions = { id: 'customConceptsTable', saveOptions: false }
-  let disabled: boolean = false
   let tableRendered: boolean = false
   let customsExtracted: boolean = false
   // Tables
@@ -90,16 +89,14 @@
     customsExtracted = true
   }
 
-  async function abortAutoMap(): Promise<void> {
+  async function abortAutoMap() {
     const rows = await AutoMapping.abortAutoMap()
     if (rows) currentVisibleRows = rows
   }
 
-  // Start the automapping of all the visible rows, but create an abortcontroller to be able to stop the automapping at any moment
-  async function autoMapPage(): Promise<void> {
+  async function autoMapPage() {
     if (!tableRendered) tableRendered = true
     if (!customsExtracted) await extractCustomConcepts()
-    console.log("AUTOMAPPING PAGE")
     await AutoMapping.autoMapPage()
   }
 
@@ -267,7 +264,7 @@
       {renderedRow}
       {columns}
       index={originalIndex}
-      {disabled}
+      disabled={$disableActions}
       bind:currentVisibleRows
       on:rowSelection={selectRow}
       on:autoMapRow={autoMapSingleRow}
