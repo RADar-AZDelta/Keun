@@ -6,7 +6,7 @@
   import Settings from '$lib/components/extra/Settings.svelte'
   import User from '$lib/components/extra/User.svelte'
   import { loadImpSettings } from '$lib/implementations/implementation'
-  import { authImplementation, settings, settingsImpl, user } from '$lib/store'
+  import { settings, settingsImpl, user } from '$lib/store'
   import '$lib/table.scss'
   import '@radar-azdelta/svelte-datatable/style'
 
@@ -27,9 +27,6 @@
     <ul class="page-nav">
       {#if $page.url.pathname !== '/' && $page.url.pathname !== '/Keun'}
         <li><a href="{base}/">File selection</a></li>
-      {/if}
-      {#if $user && $user.roles?.includes('Admin') && authImplementation == 'firebase'}
-        <li><a href="{base}/register">Registration</a></li>
       {/if}
     </ul>
     {#if $page.url.pathname.substring($page.url.pathname.lastIndexOf('/')) !== 'registration'}

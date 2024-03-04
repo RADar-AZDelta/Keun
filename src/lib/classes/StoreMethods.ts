@@ -1,6 +1,14 @@
 import { customTable, mappedToConceptIds, settings, table, user } from '$lib/store'
 import type DataTable from '@radar-azdelta/svelte-datatable'
-import type { ICustomConcept, ICustomConceptInput, IMappedRows, IQueryResult, ISettings, IUsagiRow, IUser } from '$lib/components/Types'
+import type {
+  ICustomConceptInput,
+  IMappedRows,
+  IMappedRowsConcept,
+  IQueryResult,
+  ISettings,
+  IUsagiRow,
+  IUser,
+} from '$lib/components/Types'
 
 export default class StoreMethods {
   static async getUser(): Promise<IUser> {
@@ -88,8 +96,24 @@ export default class StoreMethods {
     await customTable.insertRows([row])
   }
 
-  static async updateMappedConceptsBib(updatedConcept: object) {
-    mappedToConceptIds.update(concepts => Object.assign(concepts, updatedConcept))
+  static async updateMappedConceptsBib(updatedConcept: IMappedRows) {
+    mappedToConceptIds.update(concepts => (concepts = this.addMappedConceptsToBib(concepts, updatedConcept)))
+  }
+
+  private static addMappedConceptsToBib(currentConcepts: IMappedRows, updatedConcepts: IMappedRows) {
+    for (let [sourceCode, conceptIds] of Object.entries(updatedConcepts))
+      currentConcepts = this.addMappedConceptToBib(currentConcepts, sourceCode, conceptIds)
+    return currentConcepts
+  }
+
+  private static addMappedConceptToBib(currentConcepts: IMappedRows, sourceCode: string, concepts: IMappedRowsConcept) {
+    if (!currentConcepts[sourceCode]) {
+      currentConcepts[sourceCode] = concepts
+      return currentConcepts
+    }
+    for (let [conceptId, mappingStatus] of Object.entries(concepts))
+      currentConcepts[sourceCode][Number(conceptId)] = mappingStatus
+    return currentConcepts
   }
 
   static async getLanguage() {

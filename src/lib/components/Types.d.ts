@@ -221,7 +221,11 @@ interface IExtra {
   reviewer: string
 }
 
-interface IMappedRows {
+export interface IMappedRows {
+  [key: string]: IMappedRowsConcept
+}
+
+export interface IMappedRowsConcept {
   [key: number]: string
 }
 

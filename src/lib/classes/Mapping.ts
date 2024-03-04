@@ -2,6 +2,7 @@ import type {
   IAthenaRow,
   ICustomConceptInput,
   IMappedRow,
+  IMappedRows,
   IMappingExtra,
   IQueryResult,
   IRowMappingInformation,
@@ -43,7 +44,12 @@ export default class Mapping {
 
   private static async addConceptToMappedConceptsIfExists(concept: IUsagiRow) {
     if (!concept.conceptId) return
-    await StoreMethods.updateMappedConceptsBib({ [concept.conceptId]: concept.mappingStatus })
+    const updatedConcepts: IMappedRows = {
+      [concept.sourceCode]: {
+        [concept.conceptId]: concept.mappingStatus ?? '',
+      },
+    }
+    await StoreMethods.updateMappedConceptsBib(updatedConcepts)
   }
 
   static async getAllMappedConcepts(sourceCode: string) {
@@ -119,15 +125,28 @@ export default class Mapping {
     const alreadyMapped = await this.checkIfRowIsNotAlreadyMapped()
     if (!alreadyMapped) return
     const alreadyMappedRows = await this.getAlreadyMappedRows()
-    if (alreadyMappedRows.indices.length === 1) return await this.singleMapping()
-    // Is this correct? If there are multiple concepts mapped to a Athena concept, this won't work
+    const isTheFirstConceptUnmapped = await this.checkIfRowIsMapped(alreadyMappedRows.queriedData[0])
+    if (!isTheFirstConceptUnmapped) return await this.singleMapping()
     const mappedRowIndex = await this.getRowIndexFromQueryData(alreadyMappedRows)
     await this.mapConceptOfMultiple(alreadyMappedRows, mappedRowIndex)
     await this.updateNumberOfConcepts(alreadyMappedRows, mappedRowIndex)
   }
 
+  private static async checkIfRowIsMapped(row: IUsagiRow) {
+    const customMapped = row['ADD_INFO:customConcept']
+    if (customMapped && row.conceptName) return true
+    else if (row.conceptId) return true
+    else return false
+  }
+
   private static async mapConceptOfMultiple(mapped: IQueryResult, index: number) {
-    await StoreMethods.updateMappedConceptsBib({ [this.athenaRow!.id]: this.action })
+    if (!this.usagiRow?.sourceCode || !this.athenaRow?.id) return
+    const updatedConcepts: IMappedRows = {
+      [this.usagiRow.sourceCode]: {
+        [this.athenaRow.id]: this.action ?? '',
+      },
+    }
+    await StoreMethods.updateMappedConceptsBib(updatedConcepts)
     const { mappedRow } = await this.rowMapping(index)
     if (index >= 0) {
       mappedRow['ADD_INFO:numberOfConcepts'] = mapped.indices.length
@@ -139,7 +158,7 @@ export default class Mapping {
   }
 
   private static async updateNumberOfConcepts(mapped: IQueryResult, index: number) {
-    const numberOfConcepts = index >= 0 ? mapped.indices.length + 1 : mapped.indices.length
+    const numberOfConcepts = mapped.indices.length + 1
     const rowsToUpdate = new Map()
     for (let rowIndex of mapped.indices) rowsToUpdate.set(rowIndex, { 'ADD_INFO:numberOfConcepts': numberOfConcepts })
     await StoreMethods.updateTableRows(rowsToUpdate)
@@ -152,7 +171,8 @@ export default class Mapping {
 
   private static async checkIfRowIsNotAlreadyMapped() {
     const mappedToConceptIds = await StoreMethods.getMappedConceptsBib()
-    const mappedConcept = mappedToConceptIds[this.athenaRow!.id]
+    if (!this.usagiRow?.sourceCode || !this.athenaRow?.id) return false
+    const mappedConcept = mappedToConceptIds[this.usagiRow.sourceCode]?.[this.athenaRow.id]
     return !mappedConcept || mappedConcept !== this.action
   }
 
@@ -166,7 +186,13 @@ export default class Mapping {
   }
 
   private static async singleMapping() {
-    await StoreMethods.updateMappedConceptsBib({ [this.athenaRow!.id]: this.action })
+    if (!this.usagiRow?.sourceCode || !this.athenaRow?.id) return
+    const updatedConcepts: IMappedRows = {
+      [this.usagiRow.sourceCode]: {
+        [this.athenaRow.id]: this.action ?? '',
+      },
+    }
+    await StoreMethods.updateMappedConceptsBib(updatedConcepts)
     const { mappedIndex, mappedRow } = await this.rowMapping()
     if (!mappedRow) return
     await StoreMethods.updateTableRow(mappedIndex, mappedRow)
