@@ -12,5 +12,9 @@
   "athenaViews": [
     { "name": "custom concept", "value": "custom", "viewSlot": 1 },
     { "name": "mapped concepts", "value": "mapped", "viewSlot": 2 }
-  ]
+  ],
+  "customTableOptions": {
+    "id": "customConceptsTable",
+    "saveOptions": false
+  }
 }

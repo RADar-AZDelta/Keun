@@ -1,7 +1,7 @@
 <script lang="ts">
   import { SvgIcon, Switch, clickOutside } from '@radar-azdelta-int/radar-svelte-components'
   import { abortAutoMapping, settings, settingsImpl, triggerAutoMapping } from '$lib/store'
-  import { loadImplementationSettings } from '$lib/implementations/implementation'
+  import { loadImpSettings } from '$lib/implementations/implementation'
 
   // TODO: update Switch component to only have the switch button & it needs to be able to bind to a label so pass the id
 
@@ -24,7 +24,7 @@
   }
 
   async function saveSettings() {
-    if (!$settingsImpl) await loadImplementationSettings()
+    if (!$settingsImpl) await loadImpSettings()
     await $settingsImpl?.updateSettings($settings)
     const automappingChanged = $settings.autoMap && savedAutomapping !== $settings.autoMap
     if (automappingChanged) $triggerAutoMapping = savedAutomapping = true

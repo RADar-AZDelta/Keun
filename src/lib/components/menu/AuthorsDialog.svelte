@@ -1,7 +1,7 @@
 <script lang="ts">
   import { dev } from '$app/environment'
   import { databaseImpl, user } from '$lib/store'
-  import { loadImplementationDB } from '$lib/implementations/implementation'
+  import { loadImplDB } from '$lib/implementations/implementation'
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
 
   export let processing: boolean, selected: string
@@ -17,7 +17,7 @@
   // A method to edit the authors that have access to a file
   async function editFile(id: string): Promise<void> {
     if (dev) console.log('editFile: The file authors are being updated')
-    if (!$databaseImpl) await loadImplementationDB()
+    if (!$databaseImpl) await loadImplDB()
     await $databaseImpl!.editKeunFileAuthors(id, authorizedAuthors)
     closeDialog()
     if (dev) console.log('editFile: The file authors were updated')

@@ -3,7 +3,7 @@
   import { settings, settingsImpl } from '$lib/store'
   import debounce from 'lodash.debounce'
   import type { ICustomEvents } from '$lib/components/Types'
-  import { loadImplementationSettings } from '$lib/implementations/implementation'
+  import { loadImpSettings } from '$lib/implementations/implementation'
 
   let inputValue: string, value: string
   let filteredValues: string[] = []
@@ -12,7 +12,7 @@
   const dispatch = createEventDispatcher<ICustomEvents>()
 
   async function updateSettings() {
-    if (!$settingsImpl) await loadImplementationSettings()
+    if (!$settingsImpl) await loadImpSettings()
     $settingsImpl?.updateSettings($settings)
   }
 

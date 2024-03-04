@@ -1,90 +1,58 @@
 <script lang="ts">
-  import type { SvelteComponent } from 'svelte'
-  import '@radar-azdelta/svelte-datatable/style'
   import { base } from '$app/paths'
   import { page } from '$app/stores'
   import { beforeNavigate, goto } from '$app/navigation'
-  import { dev } from '$app/environment'
-  import type { IColumnMetaData, ITableOptions } from '@radar-azdelta/svelte-datatable'
   import DataTable from '@radar-azdelta/svelte-datatable'
   import { customTable, table, disableActions } from '$lib/store'
   import { BergamotTranslator } from '$lib/helperClasses/BergamotTranslator'
-  import { abortAutoMapping, customFileTypeImpl, databaseImpl, fileTypeImpl, saveImpl } from '$lib/store'
   import { selectedFileId, selectedCustomFileId, settings, triggerAutoMapping, user } from '$lib/store'
-  import {
-    loadImplementationDB,
-    loadImplementationDataType,
-    loadImplementationSave,
-  } from '$lib/implementations/implementation'
-  import AthenaSearch from '$lib/components/mapping/AthenaSearch.svelte'
+  import { abortAutoMapping, customFileTypeImpl, databaseImpl, fileTypeImpl, saveImpl } from '$lib/store'
+  import { loadImplDB, loadImplDataType, loadImplSave } from '$lib/implementations/implementation'
   import UsagiRow from '$lib/components/mapping/UsagiRow.svelte'
-  import type { IUsagiRow, AutoMapRowED, RowSelectionED, NavigateRowED } from '$lib/components/Types'
-  import { Config } from '$lib/helperClasses/Config'
+  import AthenaSearch from '$lib/components/mapping/AthenaSearch.svelte'
+  import Table from '$lib/classes/Table'
   import Mapping from '$lib/classes/Mapping'
+  import UsagiActions from '$lib/classes/UsagiActions'
   import AutoMapping from '$lib/classes/AutoMapping'
+  import CustomTable from '$lib/classes/CustomTable'
+  import { Config } from '$lib/helperClasses/Config'
+  import type { SvelteComponent } from 'svelte'
+  import type { ITableOptions } from '@radar-azdelta/svelte-datatable'
+  import type { IUsagiRow, AutoMapRowED, RowSelectionED, NavigateRowED } from '$lib/components/Types'
 
-  ///////////////////////////////////////////////////////////////////////////////////////////////
-  // DATA
-  ///////////////////////////////////////////////////////////////////////////////////////////////
-  // Files & generals
   let file: File | undefined, customConceptsFile: File | undefined
-  let customTableOptions: ITableOptions = { id: 'customConceptsTable', saveOptions: false }
+  let customTableOptions: ITableOptions = Config.customTableOptions
   let tableRendered: boolean = false
   let customsExtracted: boolean = false
-  // Tables
-  // let dataTableMapping: DataTable, dataTableCustomConcepts: DataTable
   let tableOptions: ITableOptions = { ...Config.tableOptions, id: $page.url.searchParams.get('id') ?? '' }
-  // Table related variables
-  let currentVisibleRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>()
+  let currentVisibleRows: Map<number, IUsagiRow> = new Map<number, IUsagiRow>()
   let selectedRow: IUsagiRow, selectedRowIndex: number
-  // Athena related variables
   let search: SvelteComponent
   let globalAthenaFilter: { column: string; filter: string | undefined } = { column: 'all', filter: undefined }
 
-  ///////////////////////////////////////////////////////////////////////////////////////////////
-  // EVENTS
-  ///////////////////////////////////////////////////////////////////////////////////////////////
-
   async function navigateRow(e: CustomEvent<NavigateRowED>) {
-    const { row, index } = e.detail
-    selectedRowIndex = index
-    selectedRow = row
-    const translation = await translate(selectedRow.sourceName)
-    globalAthenaFilter.filter = typeof translation == 'string' ? translation : selectedRow.sourceName
+    ;({ row: selectedRow, index: selectedRowIndex } = e.detail)
+    globalAthenaFilter.filter = await translate(selectedRow.sourceName)
   }
 
-  // When the button to automap a single row is clicked, automap the row
-  async function autoMapSingleRow(e: CustomEvent<AutoMapRowED>): Promise<void> {
-    const { index } = e.detail
-    await AutoMapping.startAutoMappingRow(index)
-  }
+  const autoMapSingleRow = async (e: CustomEvent<AutoMapRowED>) => await AutoMapping.startAutoMappingRow(e.detail.index)
 
-  // Select the new navigated row to open in the search dialog
   async function selectRow(e: CustomEvent<RowSelectionED>) {
-    await AutoMapping.abortAutoMap()
-    const { row, index } = e.detail
-    selectedRow = row
-    selectedRowIndex = index
-    globalAthenaFilter.filter = await translate(row.sourceName)
+    await navigateRow(e)
     search.showDialog()
   }
 
-  ///////////////////////////////////////////////////////////////////////////////////////////////
-  // METHODS
-  ///////////////////////////////////////////////////////////////////////////////////////////////
-
-  // A method to set the saveImpl & dataTypeImpl of the general DataTable & the DataTable for custom concepts
-  async function setupDataTable(): Promise<void> {
-    if (!$saveImpl) await loadImplementationSave()
+  async function setupDataTable() {
+    if (!$saveImpl) await loadImplSave()
     if ($saveImpl) tableOptions.saveImpl = $saveImpl
-    if (!$fileTypeImpl) await loadImplementationDataType()
+    if (!$fileTypeImpl) await loadImplDataType()
     if ($fileTypeImpl) tableOptions.dataTypeImpl = $fileTypeImpl
     if ($customFileTypeImpl) customTableOptions.dataTypeImpl = $customFileTypeImpl
   }
 
   const translate = async (text: string) => await BergamotTranslator.translate(text, $settings.language)
 
-  async function extractCustomConcepts(): Promise<void | boolean> {
+  async function extractCustomConcepts() {
     await Mapping.extractCustomConcepts()
     customsExtracted = true
   }
@@ -98,46 +66,27 @@
     if (!tableRendered) tableRendered = true
     if (!customsExtracted) await extractCustomConcepts()
     await AutoMapping.autoMapPage()
+    $triggerAutoMapping = false
   }
 
-  // Approve all the visible rows on a page
-  async function approvePage(): Promise<void> {
-    if (dev) console.log('approvePage: Approving page')
-    let approveRows = new Map<number, Record<string, any>>()
-    for (let [index, row] of currentVisibleRows) {
-      const approvedRow = await approveRow(row)
-      approveRows.set(index, approvedRow)
-    }
-    await $table.updateRows(approveRows)
+  async function approvePage() {
+    for (let [index, row] of currentVisibleRows) await approveRow(row, index)
   }
 
-  // Approve a row depending on circumstances SEMI-APPROVED or APPROVED
-  async function approveRow(row: Record<string, any>): Promise<Record<string, any>> {
-    if (!row.conceptId) row.conceptId = row.sourceAutoAssignedConceptIds
-    const currentStatus = row.statusSetBy
-    let update = {}
-    if (currentStatus !== author && (row.mappingStatus === 'SEMI-APPROVED' || row.mappingStatus === 'APPROVED'))
-      update = { 'ADD_INFO:approvedBy': author, 'ADD_INFO:approvedOn': Date.now(), mappingStatus: 'APPROVED' }
-    else update = { statusSetBy: author, statusSetOn: Date.now(), mappingStatus: 'SEMI-APPROVED' }
-    return Object.assign(row, update)
+  async function approveRow(row: IUsagiRow, index: number) {
+    const usagiRow = new UsagiActions(row, index)
+    await usagiRow.approveRow()
   }
 
-  // Sync the file with the database implementation & download it from the implementation
-  async function downloadPage(): Promise<void> {
-    const blob = await $table.getBlob()
-    const customBlob = $customTable ? await $customTable.getBlob() : undefined
-    if (!$databaseImpl) await loadImplementationDB()
-    await $databaseImpl?.editKeunFile($selectedFileId, blob)
-    if (customBlob) await $databaseImpl?.editCustomKeunFile($selectedCustomFileId, customBlob)
+  async function downloadPage() {
+    await syncFile()
     await $databaseImpl?.downloadFiles($selectedFileId)
     goto(`${base}/`)
   }
 
-  // A method to get the file from the database implementation
-  async function readFile(): Promise<void> {
-    if (dev) console.log(`readFile: reading the file with id: ${$selectedFileId}`)
+  async function readFile() {
     if (!$selectedFileId) return
-    if (!$databaseImpl) await loadImplementationDB()
+    if (!$databaseImpl) await loadImplDB()
     const keunFile = await $databaseImpl!.getKeunFile($selectedFileId)
     const customKeunFile = await $databaseImpl?.getCustomKeunFile($selectedCustomFileId)
     if (keunFile && keunFile?.file) file = keunFile.file
@@ -145,14 +94,13 @@
   }
 
   async function getCustomFileId() {
-    if (!$databaseImpl) await loadImplementationDB()
+    if (!$databaseImpl) await loadImplDB()
     const cached = await $databaseImpl!.checkFileExistance($selectedFileId)
     if (!cached) return
     $selectedCustomFileId = cached.customId
   }
 
-  // Load the file to start mapping
-  async function load(): Promise<void> {
+  async function load() {
     const urlId = $page.url.searchParams.get('id')
     if (!urlId) return goto(`${base}/`)
     $selectedFileId = urlId
@@ -160,74 +108,27 @@
     await readFile()
   }
 
-  // Sync the file to the cloud implementation
   async function syncFile() {
     if (!$table) return
     const blob = await $table.getBlob()
     if (!blob) return
     const customBlob = $customTable ? await $customTable.getBlob() : undefined
-    if (!$databaseImpl) await loadImplementationDB()
+    if (!$databaseImpl) await loadImplDB()
     await $databaseImpl?.editKeunFile($selectedFileId, blob)
     if (customBlob) await $databaseImpl?.editCustomKeunFile($selectedCustomFileId, customBlob)
   }
 
-  // A method to create the meta data per column
-  function modifyUsagiColumnMetadata(columns: IColumnMetaData[]): IColumnMetaData[] {
-    const usagiColumnsMap = Config.columnsUsagi.reduce((acc, cur) => {
-      acc.set(cur.id, cur)
-      return acc
-    }, new Map<string, IColumnMetaData>())
-    const columnIds = columns.map(col => col.id)
-    const modifiedColumns = columns.map(col => {
-      const usagiColumn = usagiColumnsMap.get(col.id)
-      if (usagiColumn) Object.assign(col, usagiColumn)
-      else col.visible = false
-      return col
-    })
-    const addedColumns = Config.columnsUsagi.reduce<IColumnMetaData[]>((acc, cur) => {
-      if (!columnIds.includes(cur.id)) acc.push(cur)
-      return acc
-    }, [])
-    return modifiedColumns.concat(addedColumns)
-  }
-
-  // A method to create the meta data per column for custom concepts
-  function modifyCustomConceptsColumnMetadata(columns: IColumnMetaData[]): IColumnMetaData[] {
-    const customConceptsColumnMap = Config.columnsCustomConcept.reduce((acc, cur) => {
-      acc.set(cur.id, cur)
-      return acc
-    }, new Map<string, IColumnMetaData>())
-    const columnIds = columns.map(col => col.id)
-    const modifiedColumns = columns.map(col => {
-      const customConceptColumn = customConceptsColumnMap.get(col.id)
-      if (customConceptColumn) Object.assign(col, customConceptColumn)
-      else col.visible = false
-      return col
-    })
-    const addedColumns = Config.columnsCustomConcept.reduce<IColumnMetaData[]>((acc, cur) => {
-      if (!columnIds.includes(cur.id)) acc.push(cur)
-      return acc
-    }, [])
-    return modifiedColumns.concat(addedColumns)
+  $: {
+    if ($abortAutoMapping) abortAutoMap()
   }
 
   $: {
-    if ($abortAutoMapping == true) abortAutoMap()
+    if ($triggerAutoMapping) autoMapPage()
   }
 
   $: {
-    if ($triggerAutoMapping) {
-      autoMapPage()
-      $triggerAutoMapping = false
-    }
+    if ($selectedFileId) load()
   }
-
-  $: {
-    $selectedFileId
-    load()
-  }
-
-  $: author = $user ? $user.name : null
 
   // Sync the file to the database implementation before leaving the page
   // Note: this does not always work so for that reason, there is a save button provided
@@ -254,7 +155,7 @@
     options={tableOptions}
     on:rendering={abortAutoMap}
     on:renderingComplete={autoMapPage}
-    modifyColumnMetadata={modifyUsagiColumnMetadata}
+    modifyColumnMetadata={Table.modifyColumnMetadata}
   >
     <UsagiRow
       slot="default"
@@ -285,7 +186,7 @@
     <DataTable
       data={customConceptsFile}
       options={customTableOptions}
-      modifyColumnMetadata={modifyCustomConceptsColumnMetadata}
+      modifyColumnMetadata={CustomTable.modifyColumnMetadata}
       bind:this={$customTable}
     />
   </div>

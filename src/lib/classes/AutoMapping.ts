@@ -93,7 +93,7 @@ export default class AutoMapping {
     abortAutoMapping.set(false)
     this.enableTable()
     const pag = await StoreMethods.getTablePagination()
-    if (this.previousPage !== pag.currentPage) return new Map<number, Record<string, any>>()
+    if (this.previousPage !== pag.currentPage) return new Map<number, IUsagiRow>()
   }
 
   private static enableTable() {

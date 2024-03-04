@@ -2,7 +2,7 @@
   import { onMount } from 'svelte'
   import { SvgIcon, clickOutside } from '@radar-azdelta-int/radar-svelte-components'
   import { authImpl, authImplementation, databaseImpl, user } from '$lib/store'
-  import { loadImplementationAuth } from '$lib/implementations/implementation'
+  import { loadImplAuth } from '$lib/implementations/implementation'
 
   let userDialog: HTMLDialogElement
   let author: string | undefined | null = undefined
@@ -19,7 +19,7 @@
   }
 
   async function login(provider: string): Promise<void> {
-    if (!$authImpl) await loadImplementationAuth()
+    if (!$authImpl) await loadImplAuth()
     // await $authImpl!.logIn(author ? author : undefined)
     await $authImpl?.logIn(provider)
     await $databaseImpl?.saveUserConfig($user)
@@ -35,7 +35,7 @@
   }
 
   onMount(async () => {
-    if (!$authImpl) await loadImplementationAuth()
+    if (!$authImpl) await loadImplAuth()
     if ($authImpl) return await $authImpl!.getAuthor()
   })
 </script>

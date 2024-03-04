@@ -5,13 +5,13 @@
   import Header from '$lib/components/extra/Header.svelte'
   import Settings from '$lib/components/extra/Settings.svelte'
   import User from '$lib/components/extra/User.svelte'
-  import { loadImplementationSettings } from '$lib/implementations/implementation'
+  import { loadImpSettings } from '$lib/implementations/implementation'
   import { authImplementation, settings, settingsImpl, user } from '$lib/store'
   import '$lib/table.scss'
-  // import '@radar-azdelta/svelte-datatable/dist/styles/data-table.scss'
+  import '@radar-azdelta/svelte-datatable/style'
 
   async function retrieveSettings() {
-    if (!$settingsImpl) await loadImplementationSettings()
+    if (!$settingsImpl) await loadImpSettings()
     const storedSettings = await $settingsImpl?.getSettings()
     if (storedSettings) $settings = storedSettings
   }

@@ -8,6 +8,7 @@ import equivalenceOptions from '$lib/data/equivalenceOptions.json'
 import filters from '$lib/data/filters.json'
 import tableOptions from '$lib/data/tableOptions.json'
 import config from '$lib/data/config.json'
+import type { ITableOptions } from '@radar-azdelta/svelte-datatable'
 
 // TODO: put config & data combined in less files
 
@@ -24,4 +25,5 @@ export class Config {
   static colors = config.colors
   static usagiRowConfig = config.usagiRow
   static athenaViews = config.athenaViews
+  static customTableOptions: ITableOptions = config.customTableOptions
 }

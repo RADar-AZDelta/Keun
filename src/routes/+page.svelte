@@ -15,7 +15,7 @@
   import FileInputDialog from '$lib/components/menu/FileInputDialog.svelte'
   import FirebaseImpl from '$lib/components/menu/FirebaseImpl.svelte'
   import LocalImpl from '$lib/components/menu/LocalImpl.svelte'
-  import { loadImplementationDB } from '$lib/implementations/implementation'
+  import { loadImplDB } from '$lib/implementations/implementation'
   import { databaseImpl, databaseImplementation, user } from '$lib/store'
   import { Spinner } from '@radar-azdelta-int/radar-svelte-components'
   import type { SvelteComponent } from 'svelte'
@@ -37,7 +37,7 @@
   // A method to upload a file & refetch all the files
   async function uploadFile(): Promise<void> {
     if (dev) console.log('uploadFile: Uploading a file')
-    if (!$databaseImpl) await loadImplementationDB()
+    if (!$databaseImpl) await loadImplDB()
     await $databaseImpl!.uploadKeunFile(file, authorizedAuthors)
     await getFiles()
     fileInputDialog.closeDialog()
@@ -63,7 +63,7 @@
   // A method to check if there is cache of files
   async function checkForCache(e: CustomEvent<CheckForCacheED>): Promise<void> {
     if (dev) console.log('checkForCache: Checking for cache')
-    if (!$databaseImpl) await loadImplementationDB()
+    if (!$databaseImpl) await loadImplDB()
     ;({ file, authorizedAuthors } = e.detail)
     const cached = await $databaseImpl!.checkFileExistance(file.name)
     fileInputDialog.closeDialog()
@@ -74,7 +74,7 @@
   // A method to get all the files to map
   async function getFiles(): Promise<void> {
     if (dev) console.log('getFiles: Get all the files in the database')
-    if (!$databaseImpl) await loadImplementationDB()
+    if (!$databaseImpl) await loadImplDB()
     const getFilesRes = await $databaseImpl?.getFilesList()
     console.log('LIST ', getFilesRes)
     if (getFilesRes) files = getFilesRes
@@ -82,7 +82,7 @@
 
   // Download the file & eventual custom concepts file
   async function downloadFiles(e: CustomEvent<DownloadFilesED>): Promise<void> {
-    if (!$databaseImpl) await loadImplementationDB()
+    if (!$databaseImpl) await loadImplDB()
     const { id } = e.detail
     await $databaseImpl?.downloadFiles(id)
     await getFiles()
@@ -92,7 +92,7 @@
   async function deleteFiles(e: CustomEvent<DeleteFilesED>): Promise<void> {
     if (dev) console.log('deleteFile: Deleting a file')
     processing = true
-    if (!$databaseImpl) await loadImplementationDB()
+    if (!$databaseImpl) await loadImplDB()
     await $databaseImpl!.deleteKeunFile(e.detail.id)
     await getFiles()
     processing = false

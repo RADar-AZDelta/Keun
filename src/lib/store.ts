@@ -11,11 +11,11 @@ import {
   PUBLIC_FIREBASE_STORAGE_BUCKET,
 } from '$env/static/public'
 import {
-  loadImplementationAuth,
-  loadImplementationDB,
-  loadImplementationDataType,
-  loadImplementationSave,
-  loadImplementationSettings,
+  loadImplAuth,
+  loadImplDB,
+  loadImplDataType,
+  loadImplSave,
+  loadImpSettings,
 } from '$lib/implementations/implementation'
 import type { IAuthImpl, IDatabaseImpl, IMappedRows, ISettings, ISettingsImpl, IUser } from '$lib/components/Types'
 import type { ICustomStoreOptions, IDataTypeFunctionalities } from '@radar-azdelta/svelte-datatable'
@@ -65,8 +65,8 @@ export const selectedCustomFileId = writable<string>()
 
 export const abortAutoMapping = writable<boolean>(false)
 
-loadImplementationDB()
-loadImplementationAuth()
-loadImplementationSave()
-loadImplementationDataType()
-loadImplementationSettings()
+loadImplDB()
+loadImplAuth()
+loadImplSave()
+loadImplDataType()
+loadImpSettings()

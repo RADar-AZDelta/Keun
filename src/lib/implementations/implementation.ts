@@ -8,10 +8,8 @@ import {
   saveImplementation,
   settingsImpl,
 } from '$lib/store'
-import type { IAuthImpl, IDatabaseImpl, ISettingsImpl } from '$lib/components/Types'
-import type { ICustomStoreOptions } from '@radar-azdelta/svelte-datatable'
 
-export async function loadImplementationDB() {
+export async function loadImplDB() {
   return new Promise(async resolve => {
     dbImpl.subscribe(async impl => {
       if (impl) return resolve(impl)
@@ -22,7 +20,7 @@ export async function loadImplementationDB() {
   })
 }
 
-export async function loadImplementationAuth() {
+export async function loadImplAuth() {
   return new Promise(resolve => {
     authImpl.subscribe(async impl => {
       if (impl) return resolve(impl)
@@ -33,7 +31,7 @@ export async function loadImplementationAuth() {
   })
 }
 
-export async function loadImplementationSave() {
+export async function loadImplSave() {
   return new Promise(async resolve => {
     saveImpl.subscribe(async impl => {
       if (impl) return resolve(impl)
@@ -45,7 +43,7 @@ export async function loadImplementationSave() {
   })
 }
 
-export async function loadImplementationSettings() {
+export async function loadImpSettings() {
   return new Promise(async resolve => {
     settingsImpl.subscribe(async impl => {
       if (impl) return resolve(impl)
@@ -61,7 +59,7 @@ export async function loadImplementationSettings() {
   })
 }
 
-export async function loadImplementationDataType() {
+export async function loadImplDataType() {
   return new Promise(async resolve => {
     fileTypeImpl.subscribe(async impl => {
       return resolve(impl)
