@@ -1,5 +1,6 @@
 import type {
   IAthenaRow,
+  ICustomConceptInput,
   IMappedRow,
   IMappingExtra,
   IQueryResult,
@@ -9,6 +10,7 @@ import type {
 import type Query from 'arquero/dist/types/query/query'
 import { query } from 'arquero'
 import StoreMethods from './StoreMethods'
+import { reformatDate } from '@radar-azdelta-int/radar-utils'
 
 export default class Mapping {
   private static athenaRow?: IAthenaRow
@@ -19,6 +21,10 @@ export default class Mapping {
 
   static async updateMappingInfo(index: number, mappingInfo: IMappingExtra) {
     await StoreMethods.updateTableRow(index, mappingInfo)
+  }
+
+  static async updateAthenaRow(row: IAthenaRow) {
+    this.athenaRow = row
   }
 
   static async saveAllMappedConcepts(sourceCode: string) {
@@ -51,7 +57,7 @@ export default class Mapping {
     return mappedRows
   }
 
-  static async transformConceptToRowFormat(concept: IUsagiRow) {
+  private static async transformConceptToRowFormat(concept: IUsagiRow) {
     const { sourceCode, sourceName, conceptId, conceptName } = concept
     const customConcept = (concept.conceptId ?? 0) === 0
     const row: IMappedRow = {
@@ -62,6 +68,34 @@ export default class Mapping {
       customConcept,
     }
     return row
+  }
+
+  static async extractCustomConcepts() {
+    const customQuery = query()
+      .filter((r: any) => r['ADD_INFO:customConcept'] === true)
+      .toObject()
+    const concepts = await StoreMethods.executeQueryOnTable(customQuery)
+    if (!concepts?.indices?.length) return
+    const testRow = await StoreMethods.getCustomTableRow(0)
+    if (testRow?.domain_id === 'test') await StoreMethods.deleteCustomTableRows([0])
+    for (let concept of concepts.queriedData) await this.addCustomConceptToTable(concept)
+  }
+
+  private static async addCustomConceptToTable(concept: IUsagiRow) {
+    const { conceptId, sourceName, conceptName, className, domainId, vocabularyId } = concept
+    const custom: ICustomConceptInput = {
+      concept_id: conceptId ?? 0,
+      concept_code: sourceName,
+      concept_name: conceptName ?? '',
+      concept_class_id: className,
+      domain_id: domainId ?? '',
+      vocabulary_id: vocabularyId ?? '',
+      standard_concept: '',
+      valid_start_date: reformatDate(),
+      valid_end_date: '2099-12-31',
+      invalid_reason: '',
+    }
+    await StoreMethods.insertCustomTableRow(custom)
   }
 
   static async mapRow(rowMappingInfo: IRowMappingInformation, equivalence: string, action: string) {
@@ -165,7 +199,7 @@ export default class Mapping {
     return mappedProperties
   }
 
-  private static async rowMapping(index?: number) {
+  static async rowMapping(index?: number) {
     let rowIndex: number = index !== undefined ? index : this.usagiRowIndex!
     const mappedUsagiRow = await StoreMethods.getTableRow(rowIndex)
     const mappedProperties = await this.assembleAthenaInfo()

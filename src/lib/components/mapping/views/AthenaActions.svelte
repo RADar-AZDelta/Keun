@@ -1,68 +1,72 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
-  import { user } from '$lib/store'
+  import { mappedToConceptIds, user } from '$lib/store'
   import { Config } from '$lib/helperClasses/Config'
   import AthenaActions from '$lib/classes/AthenaActions'
-  import type { IAthenaRow, IMappedRows, IUsagiRow } from '$lib/components/Types'
+  import { PUBLIC_ATHENA_DETAIL } from '$env/static/public'
+  import type { IAthenaRow, IUsagiRow } from '$lib/components/Types'
 
-  export let renderedRow: IAthenaRow, mappedToConceptIds: IMappedRows
+  export let renderedRow: IAthenaRow
   export let selectedRow: IUsagiRow, selectedRowIndex: number, equivalence: string
 
   let rowActions: AthenaActions
-  const width = '10px'
-  const height = '10px'
-
+  
   const approveRow = async () => await rowActions.approveRow()
   const mapRowApproved = async () => await rowActions.mapRowApproved(equivalence)
   const mapRowFlagged = async () => await rowActions.mapRowFlagged(equivalence)
   const mapRowUnapproved = async () => await rowActions.mapRowUnapproved(equivalence)
 
   async function referToAthena(id: number) {
-    const referUrl = import.meta.env.VITE_ATHENA_DETAIL + id.toString()
+    const referUrl = PUBLIC_ATHENA_DETAIL + id.toString()
     window.open(encodeURI(referUrl), '_blank')?.focus()
   }
 
-  onMount(() => {
-    rowActions = new AthenaActions(renderedRow, selectedRow, selectedRowIndex)
-  })
+  async function updateRow() {
+    if (!rowActions) return (rowActions = new AthenaActions(renderedRow, selectedRow, selectedRowIndex))
+    return rowActions.updateSelectedRow(renderedRow, selectedRow, selectedRowIndex)
+  }
+
+  $: {
+    selectedRow, selectedRowIndex, renderedRow
+    updateRow()
+  }
 </script>
 
-{#if mappedToConceptIds[renderedRow.id] === 'APPROVED'}
+{#if $mappedToConceptIds[renderedRow.id] === 'APPROVED'}
   <button title="Mapped to row" style="background-color: {Config.colors['APPROVED']};">
-    <SvgIcon id="check" {width} {height} />
+    <SvgIcon id="check" width="10px" height="10px" />
   </button>
-{:else if mappedToConceptIds[renderedRow.id] === 'SEMI-APPROVED' && selectedRow.statusSetBy !== $user.name}
+{:else if $mappedToConceptIds[renderedRow.id] === 'SEMI-APPROVED' && selectedRow.statusSetBy !== $user.name}
   <button on:click={approveRow} title="Approve mapping" style="background-color: {Config.colors['SEMI-APPROVED']};">
-    <SvgIcon id="check" {width} {height} />
+    <SvgIcon id="check" width="10px" height="10px" />
   </button>
-{:else if mappedToConceptIds[renderedRow.id] === 'SEMI-APPROVED'}
+{:else if $mappedToConceptIds[renderedRow.id] === 'SEMI-APPROVED'}
   <button title="Mapped to row" style="background-color: {Config.colors['SEMI-APPROVED']};">
-    <SvgIcon id="plus" {width} {height} />
+    <SvgIcon id="plus" width="10px" height="10px" />
   </button>
 {:else}
   <button title="Map to row" on:click={mapRowApproved}>
-    <SvgIcon id="plus" {width} {height} />
+    <SvgIcon id="plus" width="10px" height="10px" />
   </button>
 {/if}
-{#if mappedToConceptIds[renderedRow.id] === 'FLAGGED'}
+{#if $mappedToConceptIds[renderedRow.id] === 'FLAGGED'}
   <button title="Flagged row" style="background-color: {Config.colors['FLAGGED']};">
-    <SvgIcon id="flag" {width} {height} />
+    <SvgIcon id="flag" width="10px" height="10px" />
   </button>
 {:else}
   <button title="Flag row" on:click={mapRowFlagged}>
-    <SvgIcon id="flag" {width} {height} />
+    <SvgIcon id="flag" width="10px" height="10px" />
   </button>
 {/if}
-{#if mappedToConceptIds[renderedRow.id] === 'UNAPPROVED'}
+{#if $mappedToConceptIds[renderedRow.id] === 'UNAPPROVED'}
   <button title="Unapproved row" style="background-color: {Config.colors['UNAPPROVED']};">
-    <SvgIcon id="x" {width} {height} />
+    <SvgIcon id="x" width="10px" height="10px" />
   </button>
 {:else}
   <button title="Unapprove row" on:click={mapRowUnapproved}>
-    <SvgIcon id="x" {width} {height} />
+    <SvgIcon id="x" width="10px" height="10px" />
   </button>
 {/if}
 <button on:click={() => referToAthena(renderedRow.id)}>
-  <SvgIcon id="link" {width} {height} />
+  <SvgIcon id="link" width="10px" height="10px" />
 </button>

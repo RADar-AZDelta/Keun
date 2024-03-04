@@ -6,13 +6,13 @@
   import CustomView from '$lib/components/mapping/views/CustomView.svelte'
   import Details from '$lib/components/mapping/details/Details.svelte'
   import MappedView from '$lib/components/mapping/views/MappedView.svelte'
-  import type { IView } from '@radar-azdelta/svelte-athena-search'
-  import type { IMappedRow, IMappedRows, IUsagiRow, MappingEvents, NavigateRowED } from '$lib/components/Types'
-  import type { EquivalenceChangeED, UpdateDetailsED } from '$lib/components/Types'
   import { SvgIcon, clickOutside } from '@radar-azdelta-int/radar-svelte-components'
   import AthenaActions from './views/AthenaActions.svelte'
   import { Config } from '$lib/helperClasses/Config'
   import Mapping from '$lib/classes/Mapping'
+  import type { IView } from '@radar-azdelta/svelte-athena-search'
+  import type { IMappedRow, IUsagiRow, MappingEvents, NavigateRowED } from '$lib/components/Types'
+  import type { EquivalenceChangeED, UpdateDetailsED } from '$lib/components/Types'
 
   export let selectedRow: IUsagiRow, selectedRowIndex: number
   export let globalAthenaFilter: { column: string; filter: string | undefined }
@@ -22,13 +22,8 @@
 
   let dialog: HTMLDialogElement
   let mappedData: (IMappedRow | object)[] = [{}]
-  let reviewer: string = '',
-    comment: string = '',
-    equivalence: string = 'EQUAL'
+  let equivalence: string = 'EQUAL'
   let activatedAthenaFilters = new Map<string, string[]>([['standardConcept', ['Standard']]])
-  let mappedToConceptIds: IMappedRows = {}
-
-  ///////////////////////////// DETAILS METHODS /////////////////////////////
 
   async function onUpdateDetails(e: CustomEvent<UpdateDetailsED>) {
     const { comment, reviewer: assignedReviewer } = e.detail
@@ -55,8 +50,12 @@
   export async function showDialog(): Promise<void> {
     dialog.showModal()
     fillMappedTable()
-    comment = ''
-    reviewer = ''
+    reset()
+  }
+
+  async function reset() {
+    const updatedProperties = { comment: '', assignedReviewer: '' }
+    await Mapping.updateMappingInfo(selectedRowIndex, updatedProperties)
   }
 
   function EscapeListener(e: KeyboardEvent) {
@@ -87,7 +86,7 @@
     <section class="search-container">
       <Search {views} bind:globalFilter={globalAthenaFilter} showFilters={true}>
         <div slot="action-athena" let:renderedRow class="actions-grid">
-          <AthenaActions {renderedRow} {mappedToConceptIds} {selectedRow} {selectedRowIndex} {equivalence} />
+          <AthenaActions {renderedRow} {selectedRow} {selectedRowIndex} {equivalence} />
         </div>
         <div slot="upperSlot">
           <SearchHead {selectedRow} on:navigateRow={onNavigateRow} />

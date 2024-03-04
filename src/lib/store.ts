@@ -42,7 +42,7 @@ export const settings = writable<ISettings>({
 
 export const table = writable<DataTable>()
 export const customTable = writable<DataTable>()
-export const mappedToConceptIds = writable<IMappedRows>()
+export const mappedToConceptIds = writable<IMappedRows>({})
 
 export const user = writable<IUser>()
 

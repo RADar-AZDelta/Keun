@@ -76,6 +76,7 @@
     if (dev) console.log('getFiles: Get all the files in the database')
     if (!$databaseImpl) await loadImplementationDB()
     const getFilesRes = await $databaseImpl?.getFilesList()
+    console.log('LIST ', getFilesRes)
     if (getFilesRes) files = getFilesRes
   }
 
@@ -143,7 +144,7 @@
         <h1 class="title">Files to map</h1>
         <div class="file-list">
           {#if databaseImplementation === 'firebase'}
-            {#if $user?.roles?.includes('user') || $user?.roles?.includes('admin')}
+            {#if ($user?.roles?.includes('user') || $user?.roles?.includes('admin')) && files}
               <FirebaseImpl
                 bind:files
                 on:downloadFiles={downloadFiles}

@@ -28,8 +28,8 @@ Therefore we decided to make a modern web variant of Usagi:
 If you want to setup Keun locally on your own device you will need to provide some information in the .env file. The following values are required
 
 ```bash
-VITE_MAPPINGDATA_PATH= This is the route to the API for your concepts
-VITE_ATHENA_DETAIL= This is the detail page of concepts
+PUBLIC_MAPPINGDATA_PATH= This is the route to the API for your concepts
+PUBLIC_ATHENA_DETAIL= This is the detail page of concepts
 
 PUBLIC_CLOUD_DATABASE_IMPLEMENTATION=
 PUBLIC_CLOUD_AUTH_IMPLEMENTATION=

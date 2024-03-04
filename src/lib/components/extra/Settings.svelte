@@ -31,7 +31,7 @@
   }
 
   async function abort() {
-    if (!$settings.autoMap && savedAutomapping !== $settings.autoMap) abortAutoMapping.set(true)
+    if (!$settings.autoMap && savedAutomapping !== $settings.autoMap) $abortAutoMapping = true
   }
 
   async function outClick() {

@@ -1,6 +1,6 @@
 import { customTable, mappedToConceptIds, settings, table, user } from '$lib/store'
 import type DataTable from '@radar-azdelta/svelte-datatable'
-import type { ICustomConcept, IMappedRows, IQueryResult, ISettings, IUsagiRow, IUser } from '$lib/components/Types'
+import type { ICustomConcept, ICustomConceptInput, IMappedRows, IQueryResult, ISettings, IUsagiRow, IUser } from '$lib/components/Types'
 
 export default class StoreMethods {
   static async getUser(): Promise<IUser> {
@@ -53,6 +53,16 @@ export default class StoreMethods {
     return <IUsagiRow>await table.getFullRow(index)
   }
 
+  static async getCustomTableRow(index: number) {
+    const customTable = await this.getCustomTable()
+    return <ICustomConceptInput>await customTable.getFullRow(index)
+  }
+
+  static async deleteCustomTableRows(indices: number[]) {
+    const customTable = await this.getCustomTable()
+    await customTable.deleteRows(indices)
+  }
+
   static async updateTableRow(index: number, updatedProperties: object) {
     const table = await this.getTable()
     await table.updateRows(new Map([[index, updatedProperties]]))
@@ -73,12 +83,37 @@ export default class StoreMethods {
     return await table.executeQueryAndReturnResults(query)
   }
 
-  static async insertCustomTableRow(row: ICustomConcept) {
+  static async insertCustomTableRow(row: ICustomConceptInput) {
     const customTable = await this.getCustomTable()
     await customTable.insertRows([row])
   }
 
   static async updateMappedConceptsBib(updatedConcept: object) {
     mappedToConceptIds.update(concepts => Object.assign(concepts, updatedConcept))
+  }
+
+  static async getLanguage() {
+    const settings = await this.getSettings()
+    return settings.language
+  }
+
+  static async getAutoMap() {
+    const settings = await this.getSettings()
+    return settings.autoMap
+  }
+
+  static async getTablePagination() {
+    const table = await this.getTable()
+    return table.getTablePagination()
+  }
+
+  static async disableTable() {
+    const table = await this.getTable()
+    table.setDisabled(true)
+  }
+
+  static async enableTable() {
+    const table = await this.getTable()
+    table.setDisabled(false)
   }
 }
