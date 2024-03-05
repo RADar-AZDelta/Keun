@@ -1,17 +1,19 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
-  import MappedRowActions from '$lib/classes/MappedRowActions'
   import type { IMappedRow, IUsagiRow } from '$lib/components/Types'
+  import MappedRow from '$lib/classes/mappedRow/MappedRow'
 
   export let renderedRow: IMappedRow, usagiRow: IUsagiRow
 
-  let row: MappedRowActions
+  // TODO: check if the initialize of the class can be done on line 11 instead of in the onMount
+
+  let row: MappedRow
 
   const removeMapping = async () => row.deleteRow()
 
   onMount(() => {
-    row = new MappedRowActions(usagiRow, renderedRow)
+    row = new MappedRow(usagiRow, renderedRow)
   })
 </script>
 

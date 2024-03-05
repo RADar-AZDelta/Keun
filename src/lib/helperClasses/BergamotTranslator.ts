@@ -9,13 +9,21 @@ export class BergamotTranslator {
   static async translate(text: string, language: string): Promise<string> {
     // Check the settings and if the language set is not english, translate the text
     if (!browser || !language || language === 'en') return text
-    if(!BergamotTranslator.translator) await BergamotTranslator.setup()
-    const translation = await BergamotTranslator.translator.translate({ from: language, to: 'en', text: text, html: true })
+    if (!BergamotTranslator.translator) await BergamotTranslator.setup()
+    const translation = await BergamotTranslator.translator.translate({
+      from: language,
+      to: 'en',
+      text: text,
+      html: true,
+    })
     return translation.target.text
   }
 
   private static async setup() {
     const registryUrl = dev ? 'bergamot/dev-registry.json' : '/Keun/bergamot/registry.json'
-    BergamotTranslator.translator = new LatencyOptimisedTranslator({ workers: 1, batchSize: 1, registryUrl, html: true }, undefined)
+    BergamotTranslator.translator = new LatencyOptimisedTranslator(
+      { workers: 1, batchSize: 1, registryUrl, html: true },
+      undefined,
+    )
   }
 }

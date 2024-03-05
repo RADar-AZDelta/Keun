@@ -3,9 +3,8 @@
   import { reformatDate } from '@radar-azdelta-int/radar-utils'
   import { EditableCell } from '@radar-azdelta/svelte-datatable'
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
-  import UsagiLogic from '$lib/classes/UsagiLogic'
   import { Config } from '$lib/helperClasses/Config'
-  import UsagiActions from '$lib/classes/UsagiActions'
+  import Usagi from '$lib/classes/usagi/Usagi'
   import type { IUsagiRow, MappingEvents } from '$lib/components/Types'
   import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
 
@@ -14,17 +13,18 @@
   export let disabled: boolean
 
   const dispatch = createEventDispatcher<MappingEvents>()
-  let rowActions: UsagiActions, rowLogic: UsagiLogic
+  let usagiRowLogic: Usagi
   let color: string = 'inherit'
   const width = '10px'
   const height = '10px'
 
   const mapRow = () => dispatch('rowSelection', { row: renderedRow as IUsagiRow, index })
-  const approveRow = async () => await rowActions.approveRow()
-  const flagRow = async () => await rowActions.flagRow()
-  const unapproveRow = async () => await rowActions.unapproveRow()
-  const deleteRow = async () => await rowLogic.deleteRow()
-  const updateValue = async (e: CustomEvent, column: string) => await rowLogic.updatePropertyValue(e, column)
+  const approveRow = async () => await usagiRowLogic.approveRow()
+  const flagRow = async () => await usagiRowLogic.flagRow()
+  const unapproveRow = async () => await usagiRowLogic.unapproveRow()
+  const deleteRow = async () => await usagiRowLogic.deleteRow()
+  const updateValue = async (e: CustomEvent, column: string) =>
+    await usagiRowLogic.updatePropertyValue(e.detail, column)
   const onClickAutoMap = async () => dispatch('autoMapRow', { index, sourceName: renderedRow.sourceName })
 
   async function getColors() {
@@ -48,8 +48,7 @@
   }
 
   onMount(() => {
-    rowActions = new UsagiActions(<IUsagiRow>renderedRow, index)
-    rowLogic = new UsagiLogic(<IUsagiRow>renderedRow, index)
+    usagiRowLogic = new Usagi(<IUsagiRow>renderedRow, index)
   })
 </script>
 

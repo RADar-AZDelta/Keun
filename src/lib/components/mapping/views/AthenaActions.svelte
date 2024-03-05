@@ -2,14 +2,14 @@
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
   import { mappedToConceptIds, user } from '$lib/store'
   import { Config } from '$lib/helperClasses/Config'
-  import AthenaActions from '$lib/classes/AthenaActions'
   import { PUBLIC_ATHENA_DETAIL } from '$env/static/public'
   import type { IAthenaRow, IUsagiRow } from '$lib/components/Types'
+  import Athena from '$lib/classes/athena/Athena'
 
   export let renderedRow: IAthenaRow
   export let selectedRow: IUsagiRow, selectedRowIndex: number, equivalence: string
 
-  let rowActions: AthenaActions
+  let rowActions: Athena
 
   const approveRow = async () => await rowActions.approveRow()
   const mapRowApproved = async () => await rowActions.mapRowApproved(equivalence)
@@ -22,8 +22,9 @@
   }
 
   async function updateRow() {
-    if (!rowActions) return (rowActions = new AthenaActions(renderedRow, selectedRow, selectedRowIndex))
-    return rowActions.updateSelectedRow(renderedRow, selectedRow, selectedRowIndex)
+    if (!rowActions) return (rowActions = new Athena(renderedRow, selectedRow, selectedRowIndex))
+    const updatedRows = { athenaRow: renderedRow, usagiRow: selectedRow, usagiRowIndex: selectedRowIndex }
+    await rowActions.updateCurrentRow(updatedRows)
   }
 
   $: {
@@ -88,8 +89,10 @@
 <!-- <button on:click={() => referToAthena(renderedRow.id)}>
   <SvgIcon id="link" width="10px" height="10px" />
 </button> -->
-<button on:click={() => {
-  console.log($mappedToConceptIds)
-}}>
+<button
+  on:click={() => {
+    console.log($mappedToConceptIds)
+  }}
+>
   <SvgIcon id="link" width="10px" height="10px" />
 </button>

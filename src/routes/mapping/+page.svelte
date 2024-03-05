@@ -10,15 +10,14 @@
   import { loadImplDB, loadImplDataType, loadImplSave } from '$lib/implementations/implementation'
   import UsagiRow from '$lib/components/mapping/UsagiRow.svelte'
   import AthenaSearch from '$lib/components/mapping/AthenaSearch.svelte'
-  import Table from '$lib/classes/Table'
-  import Mapping from '$lib/classes/Mapping'
-  import UsagiActions from '$lib/classes/UsagiActions'
-  import AutoMapping from '$lib/classes/AutoMapping'
-  import CustomTable from '$lib/classes/CustomTable'
+  import AutoMapping from '$lib/classes/mapping/AutoMapping'
   import { Config } from '$lib/helperClasses/Config'
   import type { SvelteComponent } from 'svelte'
   import type { ITableOptions } from '@radar-azdelta/svelte-datatable'
   import type { IUsagiRow, AutoMapRowED, RowSelectionED, NavigateRowED } from '$lib/components/Types'
+  import Usagi from '$lib/classes/usagi/Usagi'
+  import CustomTable from '$lib/classes/tables/CustomTable'
+  import Table from '$lib/classes/tables/Table'
 
   let file: File | undefined, customConceptsFile: File | undefined
   let customTableOptions: ITableOptions = Config.customTableOptions
@@ -53,7 +52,7 @@
   const translate = async (text: string) => await BergamotTranslator.translate(text, $settings.language)
 
   async function extractCustomConcepts() {
-    await Mapping.extractCustomConcepts()
+    await CustomTable.extractCustomConcepts()
     customsExtracted = true
   }
 
@@ -74,7 +73,7 @@
   }
 
   async function approveRow(row: IUsagiRow, index: number) {
-    const usagiRow = new UsagiActions(row, index)
+    const usagiRow = new Usagi(row, index)
     await usagiRow.approveRow()
   }
 

@@ -1,6 +1,6 @@
+import { localStorageGetter, localStorageSetter } from '@radar-azdelta-int/radar-utils'
 import { dev } from '$app/environment'
 import type { ISettings, ISettingsImpl } from '$lib/components/Types'
-import { localStorageGetter, localStorageSetter } from '@radar-azdelta-int/radar-utils'
 
 const defaultSettings: ISettings = {
   mapToMultipleConcepts: false,

@@ -1,8 +1,7 @@
-import { blobToString, downloadWithUrl, fileToBlob, logWhenDev, stringToFile } from '@radar-azdelta-int/radar-utils'
+import { blobToString, downloadWithUrl, logWhenDev, stringToFile } from '@radar-azdelta-int/radar-utils'
 import { dev } from '$app/environment'
 import { base } from '$app/paths'
-import type { IConceptFiles, IDatabaseImpl, IFile, IMessage, IUpdatedFunctionalityImpl } from '$lib/components/Types'
-import { Config } from '$lib/helperClasses/Config'
+import type { IDatabaseImpl, IFile, IMessage } from '$lib/components/Types'
 
 export default class SQLiteImpl implements IDatabaseImpl {
   path = `${base}/api/sqlite/file`
@@ -43,25 +42,25 @@ export default class SQLiteImpl implements IDatabaseImpl {
     return fileNames
   }
 
-  async uploadKeunFile(file: File, authors: string[]) {
-    logWhenDev('uploadKeunFile: Uploading file to SQLite')
-    const customBlob = new Blob([Config.customBlobInitial.initial])
-    const customFileString = await blobToString(customBlob)
-    const customFileContent = {
-      id: fileId,
-      name: `${file.name.split('.')[0]}_concepts.csv`,
-      content: customFileString,
-    }
-    const blob = await fileToBlob(file)
-    const fileString = await blobToString(blob)
-    const fileId = crypto.randomUUID()
-    const fileContent = { id: fileId, name: file.name, content: fileString, custom:  }
-    await this.performRequest(this.path, { method: 'POST', body: JSON.stringify({ file: fileContent }) })
-    await this.performRequest(this.path + '?custom=true', {
-      method: 'POST',
-      body: JSON.stringify({ file: customFileContent }),
-    })
-  }
+  // async uploadKeunFile(file: File) {
+  //   logWhenDev('uploadKeunFile: Uploading file to SQLite')
+  //   const customBlob = new Blob([Config.customBlobInitial])
+  //   const customFileString = await blobToString(customBlob)
+  //   const customFileContent = {
+  //     id: fileId,
+  //     name: `${file.name.split('.')[0]}_concepts.csv`,
+  //     content: customFileString,
+  //   }
+  //   const blob = await fileToBlob(file)
+  //   const fileString = await blobToString(blob)
+  //   const fileId = crypto.randomUUID()
+  //   const fileContent = { id: fileId, name: file.name, content: fileString, custom:  }
+  //   await this.performRequest(this.path, { method: 'POST', body: JSON.stringify({ file: fileContent }) })
+  //   await this.performRequest(this.path + '?custom=true', {
+  //     method: 'POST',
+  //     body: JSON.stringify({ file: customFileContent }),
+  //   })
+  // }
 
   async editFile(id: string, blob: Blob, customBlob?: Blob): Promise<void> {
     if (dev) console.log(`editFile: Editing the file with id ${id}`)

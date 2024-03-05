@@ -1,5 +1,4 @@
 import type { IFirestoreUser } from '$lib/implementations/databaseImpl/FirebaseImpl2'
-import type { IDatabaseFile } from '$lib/implementations/databaseImpl/LocalImpl'
 import type { IDataTypeFunctionalities } from '@radar-azdelta/svelte-datatable'
 
 export interface IFileTemplate {
@@ -14,6 +13,17 @@ export interface IFileIdTemplate {
 export interface IQueryResult {
   indices: number[]
   queriedData: IUsagiRow[]
+}
+
+export interface IUsagiInfo {
+  usagiRow: IUsagiRow
+  usagiRowIndex: number
+}
+
+export interface IAthenaInfo {
+  athenaRow: IAthenaRow
+  usagiRow: IUsagiRow
+  usagiRowIndex: number
 }
 
 export interface IUsagiActions {

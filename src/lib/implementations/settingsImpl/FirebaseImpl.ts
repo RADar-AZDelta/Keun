@@ -1,5 +1,5 @@
+import { FirebaseFirestore } from '@radar-azdelta-int/radar-firebase-utils'
 import { dev } from '$app/environment'
-import type { ISettings, ISettingsImpl, IUser } from '$lib/components/Types'
 import {
   PUBLIC_FIREBASE_API_KEY,
   PUBLIC_FIREBASE_APP_ID,
@@ -9,8 +9,8 @@ import {
   PUBLIC_FIREBASE_STORAGE_BUCKET,
 } from '$env/static/public'
 import { user } from '$lib/store'
+import type { ISettings, ISettingsImpl, IUser } from '$lib/components/Types'
 import type { FirebaseOptions } from 'firebase/app'
-import { FirebaseFirestore } from '@radar-azdelta-int/radar-firebase-utils'
 
 const defaultSettings: ISettings = {
   mapToMultipleConcepts: false,

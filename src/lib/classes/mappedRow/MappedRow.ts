@@ -1,10 +1,10 @@
 import { query } from 'arquero'
-import StoreMethods from './StoreMethods'
-import UsagiLogic from './UsagiLogic'
+import Usagi from '$lib/classes/usagi/Usagi'
+import StoreMethods from '$lib/classes/StoreMethods'
 import type Query from 'arquero/dist/types/query/query'
 import type { IMappedRow, IQueryResult, IUsagiRow } from '$lib/components/Types'
 
-export default class MappedRowActions {
+export default class MappedRow {
   usagiRow: IUsagiRow
   mappedRow: IMappedRow
 
@@ -16,7 +16,7 @@ export default class MappedRowActions {
   async deleteRow() {
     const concept = await this.findRowFromTable()
     if (!concept) return
-    const usagiRow = new UsagiLogic(concept.concept, concept.index)
+    const usagiRow = new Usagi(concept.concept, concept.index)
     await usagiRow.deleteRow()
   }
 

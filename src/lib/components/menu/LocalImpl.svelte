@@ -4,7 +4,7 @@
   import { base } from '$app/paths'
   import { createEventDispatcher } from 'svelte'
   import { selectedCustomFileId, selectedFileId } from '$lib/store'
-  import type { IFile, IFileInformation, PageEvents } from '$lib/components/Types'
+  import type { IFileInformation, PageEvents } from '$lib/components/Types'
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
 
   export let files: IFileInformation[]

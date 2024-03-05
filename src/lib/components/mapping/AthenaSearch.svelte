@@ -9,10 +9,11 @@
   import { SvgIcon, clickOutside } from '@radar-azdelta-int/radar-svelte-components'
   import AthenaActions from './views/AthenaActions.svelte'
   import { Config } from '$lib/helperClasses/Config'
-  import Mapping from '$lib/classes/Mapping'
   import type { IView } from '@radar-azdelta/svelte-athena-search'
   import type { IMappedRow, IUsagiRow, MappingEvents, NavigateRowED } from '$lib/components/Types'
   import type { EquivalenceChangeED, UpdateDetailsED } from '$lib/components/Types'
+  import Mapping from '$lib/classes/mapping/Mapping'
+  import Table from '$lib/classes/tables/Table'
 
   export let selectedRow: IUsagiRow, selectedRowIndex: number
   export let globalAthenaFilter: { column: string; filter: string | undefined }
@@ -35,12 +36,12 @@
 
   async function getAllMappedToConcepts() {
     if (!selectedRow?.sourceCode) return
-    await Mapping.saveAllMappedConcepts(selectedRow.sourceCode)
+    await Table.saveAllMappedConcepts(selectedRow.sourceCode)
   }
 
   async function fillMappedTable() {
     if (!selectedRow?.sourceCode) return
-    mappedData = await Mapping.getAllMappedConcepts(selectedRow.sourceCode)
+    mappedData = await Table.getAllMappedConcepts(selectedRow.sourceCode)
   }
 
   const onNavigateRow = (e: CustomEvent<NavigateRowED>) => dispatch('navigateRow', { ...e.detail })

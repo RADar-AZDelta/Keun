@@ -1,3 +1,6 @@
+import { FileHelper } from '@radar-azdelta-int/radar-utils'
+import { arrayRemove, arrayUnion } from 'firebase/firestore'
+import { FirebaseFirestore, FirebaseStorage } from '@radar-azdelta-int/radar-firebase-utils'
 import {
   PUBLIC_FIREBASE_API_KEY,
   PUBLIC_FIREBASE_APP_ID,
@@ -6,13 +9,10 @@ import {
   PUBLIC_FIREBASE_PROJECT_ID,
   PUBLIC_FIREBASE_STORAGE_BUCKET,
 } from '$env/static/public'
-import type { ICustomConceptCompact, IDatabaseImpl, IFile, IFileInformation, IUser } from '$lib/components/Types'
 import { user } from '$lib/store'
-import { FileHelper } from '@radar-azdelta-int/radar-utils'
-import { arrayRemove, arrayUnion } from 'firebase/firestore'
-import type { FirebaseOptions } from 'firebase/app'
 import { Config } from '$lib/helperClasses/Config'
-import { FirebaseFirestore, FirebaseStorage } from '@radar-azdelta-int/radar-firebase-utils'
+import type { ICustomConceptCompact, IDatabaseImpl, IFile, IFileInformation, IUser } from '$lib/components/Types'
+import type { FirebaseOptions } from 'firebase/app'
 
 // TODO: implement this in the program & check if all the functionalities work before removing the firebase file
 
@@ -165,7 +165,7 @@ export default class FirebaseImpl implements IDatabaseImpl {
     await this.storage.uploadFileStorage(`${this.storageCustomColl}/${id}`, file)
   }
 
-  private async getFileDataFromFirestore(id: string, custom: boolean = false) {
+  private async getFileDataFromFirestore(id: string) {
     const fileInfo = await this.firestore.readFirestore(this.firestoreFileColl, id)
     if (!fileInfo) return
     const fileData = <IFirestoreFile | undefined>fileInfo.data()

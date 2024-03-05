@@ -6,7 +6,7 @@
   import type { ICustomConceptCompact, IUsagiRow, MappingEvents } from '$lib/components/Types'
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
   import { Config } from '$lib/helperClasses/Config'
-  import CustomRowActions from '$lib/classes/CustomRowActions'
+  import CustomRow from '$lib/classes/customRow/CustomRow'
 
   export let renderedRow: ICustomConceptCompact,
     columns: IColumnMetaData[] | undefined,
@@ -18,7 +18,7 @@
   const inputAvailableColumns = ['concept_name', 'concept_class_id', 'domain_id', 'vocabulary_id']
   const colSuggestions: Record<string, Record<string, string>> = Config.customConceptInfo
   let action: string | undefined = undefined
-  let row: CustomRowActions
+  let row: CustomRow
 
   const dispatch = createEventDispatcher<MappingEvents>()
 
@@ -58,7 +58,7 @@
 
   onMount(async () => {
     await resetInputRow()
-    row = new CustomRowActions(renderedRow as ICustomConceptCompact, usagiRow, usagiRowIndex)
+    row = new CustomRow(renderedRow as ICustomConceptCompact, usagiRow, usagiRowIndex)
   })
 </script>
 

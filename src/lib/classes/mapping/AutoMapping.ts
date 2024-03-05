@@ -1,10 +1,10 @@
 import { query } from 'arquero'
 import { PUBLIC_MAPPINGDATA_PATH } from '$env/static/public'
 import { abortAutoMapping, disableActions } from '$lib/store'
-import Mapping from './Mapping'
-import StoreMethods from './StoreMethods'
+import Mapping from '$lib/classes/mapping/Mapping'
+import StoreMethods from '$lib/classes/StoreMethods'
 import { BergamotTranslator } from '$lib/helperClasses/BergamotTranslator'
-import type { IAthenaRow, IQueryResult, IUsagiRow } from '$lib/components/Types'
+import type { IAthenaInfo, IAthenaRow, IQueryResult, IUsagiRow } from '$lib/components/Types'
 
 export default class AutoMapping {
   private static autoMappingAbortController: AbortController
@@ -67,11 +67,8 @@ export default class AutoMapping {
     if (this.signal.aborted || !filter) return
     const concepts = await this.fetchFirstConcept(filter)
     if (!concepts) return
-    await Mapping.updateAthenaRow(concepts[0])
-    const { mappedIndex, mappedRow } = await Mapping.rowMapping(index)
-    mappedRow['ADD_INFO:lastAthenaFilter'] = filter ?? null
-    if (this.signal.aborted) return
-    await StoreMethods.updateTableRow(mappedIndex, mappedRow)
+    const athenaInfo: IAthenaInfo = { athenaRow: concepts[0], usagiRow: row, usagiRowIndex: index }
+    await Mapping.mapRow(athenaInfo, 'EQUAL', 'UNMAPPED')
   }
 
   private static async getTranslatedSourceName(sourceName: string) {

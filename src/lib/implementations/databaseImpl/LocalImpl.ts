@@ -1,7 +1,7 @@
 import { FileHelper, blobToString, fileToBlob, logWhenDev, stringToFile } from '@radar-azdelta-int/radar-utils'
 import { IndexedDB } from '@radar-azdelta-int/radar-utils'
-import type { ICustomConceptCompact, IDatabaseImpl, IFile, IFileInformation, IUser } from '$lib/components/Types'
 import { Config } from '$lib/helperClasses/Config'
+import type { IDatabaseImpl, IFile, IFileInformation } from '$lib/components/Types'
 
 export interface IDatabaseFile {
   id: string
@@ -15,7 +15,7 @@ export default class LocalImpl implements IDatabaseImpl {
   getCustomConcepts(): Promise<any> {
     throw new Error('Method not implemented.')
   }
-  addCustomConcept(customConcept: ICustomConceptCompact): Promise<any> {
+  addCustomConcept(): Promise<any> {
     throw new Error('Method not implemented.')
   }
   db: IndexedDB | undefined
@@ -84,7 +84,7 @@ export default class LocalImpl implements IDatabaseImpl {
     return files.map(file => ({ id: file.id, name: file.name, customId: file.custom, custom: file.custom }))
   }
 
-  async uploadKeunFile(file: File, authors: string[]) {
+  async uploadKeunFile(file: File) {
     logWhenDev('uploadKeunFile: Uploading file to IndexedDB')
     await this.openDatabase()
     const { name } = file
@@ -94,7 +94,7 @@ export default class LocalImpl implements IDatabaseImpl {
     const id = crypto.randomUUID()
     const fileContent: IDatabaseFile = { id, name, content: fileString, custom: customName, customId: customName }
     await this.db!.set(fileContent, name, true)
-    const customBlob = new Blob([Config.customBlobInitial.initial])
+    const customBlob = new Blob([Config.customBlobInitial])
     const customFileString = await blobToString(customBlob)
     const customFileContent = { id: customId, name: customName, content: customFileString }
     await this.openCustomDatabase()
@@ -127,7 +127,7 @@ export default class LocalImpl implements IDatabaseImpl {
     await this.customDb?.set(customFileContent, id, true)
   }
 
-  async editKeunFileAuthors(id: string, authors: string[]) {}
+  async editKeunFileAuthors() {}
 
   async deleteKeunFile(id: string) {
     logWhenDev(`deleteKeunFile: Delete the file with id ${id} in IndexedDB`)
@@ -147,7 +147,7 @@ export default class LocalImpl implements IDatabaseImpl {
     return []
   }
 
-  async saveUserConfig(user: IUser | undefined): Promise<void> {}
+  async saveUserConfig(): Promise<void> {}
 
   private async openDatabase() {
     if ((await this.isOpen(this.db)) == false) this.db = new IndexedDB('localMapping', 'localMapping')
