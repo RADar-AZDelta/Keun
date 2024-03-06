@@ -12,28 +12,39 @@ export default class MultipleMapping extends CommonMapping {
     if (alreadyMapped) return
     const alreadyMappedRows = await this.getAlreadyMappedRows()
     const isTheFirstRowMapped = await this.checkIfRowIsMapped(alreadyMappedRows.queriedData[0])
-    if (!isTheFirstRowMapped) return await this.singleMapping()
+    const updatedActionIndex = await this.checkIfTheConceptActionIsUpdated(alreadyMappedRows)
+    if (!isTheFirstRowMapped || updatedActionIndex !== -1)
+      return await this.singleMapping(updatedActionIndex, alreadyMappedRows.indices.length)
     const mappedRowIndex = await this.getRowIndexFromQueryData(alreadyMappedRows)
     await this.mapConceptOfMultiple(alreadyMappedRows, mappedRowIndex)
     await this.updateNumberOfConcepts(alreadyMappedRows)
   }
 
-  private static async singleMapping() {
-    const athenaInfo = { athenaRow: this.athenaRow, usagiRow: this.usagiRow, usagiRowIndex: this.usagiRowIndex }
+  private static async checkIfTheConceptActionIsUpdated(alreadyMappedRows: IQueryResult) {
+    const { id, name, domain, vocabulary } = this.athenaRow
+    let sameRowIndex = -1
+    for (let i = 0; i < alreadyMappedRows.indices.length; i++) {
+      const { conceptId, conceptName, domainId, vocabularyId } = alreadyMappedRows.queriedData[i]
+      if (conceptId === id && conceptName === name && domainId === domain && vocabularyId === vocabulary)
+        sameRowIndex = alreadyMappedRows.indices[i]
+    }
+    return sameRowIndex
+  }
+
+  private static async singleMapping(updatedRowIndex: number, conceptsNumbers: number) {
+    console.log('INDEX of change ', updatedRowIndex, ' AND CONCEPTS ', conceptsNumbers)
+    this.usagiRow['ADD_INFO:numberOfConcepts'] = conceptsNumbers
+    const usagiRowIndex = updatedRowIndex !== -1 ? updatedRowIndex : this.usagiRowIndex
+    const athenaInfo = { athenaRow: this.athenaRow, usagiRow: this.usagiRow, usagiRowIndex }
     await SingleMapping.singleMapping(athenaInfo, this.action, this.equivalence, this.custom)
   }
 
   private static async checkIfRowIsNotAlreadyMapped() {
     const mappedToConceptIds = await StoreMethods.getMappedConceptsBib()
     if (!this.usagiRow?.sourceCode || this.athenaRow?.id === undefined || this.athenaRow?.id === null) return false
-    if (this.custom) {
-      // TODO: change "this.athenaRow.id" to something unique for custom concepts
-      const mappedConcept = mappedToConceptIds[this.usagiRow.sourceCode]?.[`custom-${this.athenaRow.name}`]
-      return mappedConcept === this.action
-    } else {
-      const mappedConcept = mappedToConceptIds[this.usagiRow.sourceCode]?.[this.athenaRow.id]
-      return mappedConcept === this.action
-    }
+    const conceptKey = await this.getConceptKey()
+    const mappedConcept = mappedToConceptIds[this.usagiRow.sourceCode]?.[conceptKey]
+    return mappedConcept === this.action
   }
 
   private static async getAlreadyMappedRows() {
@@ -61,11 +72,8 @@ export default class MultipleMapping extends CommonMapping {
 
   private static async mapConceptOfMultiple(mapped: IQueryResult, index: number) {
     if (!this.usagiRow?.sourceCode || this.athenaRow?.id === undefined || this.athenaRow?.id === null) return
-    const updatedConcepts: IMappedRows = {
-      [this.usagiRow.sourceCode]: {
-        [this.custom ? `custom-${this.athenaRow.name}` : this.athenaRow.id]: this.action ?? '',
-      },
-    }
+    const conceptKey = await this.getConceptKey()
+    const updatedConcepts: IMappedRows = { [this.usagiRow.sourceCode]: { [conceptKey]: this.action ?? '' } }
     await StoreMethods.updateMappedConceptsBib(updatedConcepts)
     const { mappedRow } = await this.rowMapping(index)
     mappedRow['ADD_INFO:numberOfConcepts'] = mapped.indices.length + 1
@@ -73,17 +81,14 @@ export default class MultipleMapping extends CommonMapping {
   }
 
   private static async updateNumberOfConcepts(mapped: IQueryResult) {
-    const conceptWasMapped = await this.checkIfConceptWasMapped()
-    const numberOfConcepts = conceptWasMapped ? mapped.indices.length + 1 : mapped.indices.length
+    const numberOfConcepts = mapped.indices.length + 1
     const rowsToUpdate = new Map()
     for (let rowIndex of mapped.indices) rowsToUpdate.set(rowIndex, { 'ADD_INFO:numberOfConcepts': numberOfConcepts })
     await StoreMethods.updateTableRows(rowsToUpdate)
   }
 
-  private static async checkIfConceptWasMapped() {
-    const mappedConcepts = await StoreMethods.getMappedConceptsBib()
-    if (!this.usagiRow?.sourceCode || this.athenaRow?.id === undefined || this.athenaRow?.id === null) return
-    const action = mappedConcepts[this.usagiRow?.sourceCode]?.[this.athenaRow?.id]
-    return !action
+  private static async getConceptKey() {
+    if (this.custom) return `custom-${this.athenaRow.name}`
+    else return this.athenaRow.id
   }
 }

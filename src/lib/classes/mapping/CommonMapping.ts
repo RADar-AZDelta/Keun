@@ -23,11 +23,11 @@ export default class CommonMapping {
     this.custom = custom
   }
 
-  static async rowMapping(index?: number) {
+  static async rowMapping(index?: number, numberOfConcepts: number = 1) {
     let rowIndex: number = index !== undefined ? index : this.usagiRowIndex!
     const mappedUsagiRow = await StoreMethods.getTableRow(rowIndex)
     const mappedProperties = await this.assembleAthenaInfo()
-    const extraProps = await this.assembleExtraInfoSingleMapping()
+    const extraProps = await this.assembleExtraInfoSingleMapping(numberOfConcepts)
     Object.assign(mappedUsagiRow, mappedProperties, extraProps)
     return { mappedIndex: rowIndex, mappedRow: mappedUsagiRow }
   }
@@ -38,7 +38,7 @@ export default class CommonMapping {
     return mappedProperties
   }
 
-  private static async assembleExtraInfoSingleMapping() {
+  private static async assembleExtraInfoSingleMapping(numberOfConcepts: number) {
     const user = await StoreMethods.getUser()
     const updatedProperties = {
       mappingStatus: this.action,
@@ -47,7 +47,7 @@ export default class CommonMapping {
       createdBy: user.name,
       createdOn: Date.now(),
       'ADD_INFO:lastAthenaFilter': null,
-      'ADD_INFO:numberOfConcepts': 1,
+      'ADD_INFO:numberOfConcepts': numberOfConcepts,
       equivalence: this.equivalence,
       vocabularyId: this.athenaRow!.vocabulary,
       matchScore: 0,

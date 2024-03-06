@@ -18,7 +18,10 @@ export default class SingleMapping extends CommonMapping {
   }
 
   private static async updateTableWithMapping() {
-    const { mappedIndex, mappedRow } = await this.rowMapping()
+    const { mappedIndex, mappedRow } = await this.rowMapping(
+      this.usagiRowIndex,
+      this.usagiRow['ADD_INFO:numberOfConcepts'] ?? 1,
+    )
     if (mappedRow === undefined || mappedRow === null) return
     await StoreMethods.updateTableRow(mappedIndex, mappedRow)
   }
