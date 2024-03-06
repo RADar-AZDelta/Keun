@@ -26,6 +26,11 @@ export default class CustomRow {
     const transformedConcept = await this.transformCustomConceptToAthenaFormat(concept, equivalence)
     const rowMappingInfo = { usagiRow: this.usagiRow, usagiRowIndex: this.usagiRowIndex, athenaRow: transformedConcept }
     await Mapping.mapRow(rowMappingInfo, equivalence, action, true)
+    await StoreMethods.updateMappedConceptsBib({
+      [this.usagiRow.sourceCode]: {
+        [`custom-${this.customRow.concept_name}`]: action,
+      },
+    })
     await StoreMethods.insertCustomTableRow(customConcept)
   }
 

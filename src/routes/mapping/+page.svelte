@@ -12,12 +12,12 @@
   import AthenaSearch from '$lib/components/mapping/AthenaSearch.svelte'
   import AutoMapping from '$lib/classes/mapping/AutoMapping'
   import { Config } from '$lib/helperClasses/Config'
-  import type { SvelteComponent } from 'svelte'
-  import type { ITableOptions } from '@radar-azdelta/svelte-datatable'
-  import type { IUsagiRow, AutoMapRowED, RowSelectionED, NavigateRowED } from '$lib/components/Types'
   import Usagi from '$lib/classes/usagi/Usagi'
   import CustomTable from '$lib/classes/tables/CustomTable'
   import Table from '$lib/classes/tables/Table'
+  import type { SvelteComponent } from 'svelte'
+  import type { ITableOptions } from '@radar-azdelta/svelte-datatable'
+  import type { IUsagiRow, AutoMapRowED, RowSelectionED, NavigateRowED } from '$lib/components/Types'
 
   let file: File | undefined, customConceptsFile: File | undefined
   let customTableOptions: ITableOptions = Config.customTableOptions

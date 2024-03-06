@@ -4,12 +4,12 @@
   import { clickOutside } from '@radar-azdelta-int/radar-svelte-components'
   import type { ICustomEvents } from '$lib/components/Types'
 
-  export let id: string, list: Record<string, any>
+  export let id: string, list: string[]
   export let inputValue: string | null = null
 
   let value: string, key: string
 
-  let filteredValues: Map<string, string> = new Map()
+  let filteredValues: string[] = []
   let autoCompleted: boolean = false
   let focus: boolean = false
   let suggestionsFocus: boolean = false
@@ -18,8 +18,8 @@
 
   function save(): void {
     if (!inputValue) return
-    value = list[inputValue] ?? inputValue
-    if (!Object.values(list).includes(value)) return
+    value = inputValue
+    if (!list.includes(value)) return
     dispatch('autoComplete', { id, value, key })
   }
 
@@ -32,20 +32,19 @@
 
   // A method to search for suggestions to apply to the input field
   function filter(): void {
-    filteredValues = new Map<string, string>()
+    filteredValues = []
     if (!inputValue) return
-    const pairs = Object.entries(list).filter(findPossibleSuggestions)
-    for (let [key, value] of pairs) filteredValues.set(key, value)
+    const pairs = list.filter(findPossibleSuggestions)
+    for (let value of pairs) filteredValues.push(value)
   }
 
-  function findPossibleSuggestions([key, value]: [string, any]) {
+  function findPossibleSuggestions(value: string) {
     if (!inputValue) return
-    const lKey = key.toLowerCase()
     const lValue = value.toLowerCase()
     const lInput = inputValue?.toLowerCase()
-    const notEqual = lKey !== lInput && lValue !== lInput
-    const including = lKey.includes(lInput) || lValue.includes(lInput)
-    if (notEqual && including) return [key, value]
+    const notEqual = lValue !== lInput
+    const including = lValue.includes(lInput)
+    if (notEqual && including) return value
   }
 
   const onInput = debounce(async (e: any) => {
@@ -65,12 +64,12 @@
 
 <div class="input-container">
   <input title={id} bind:value={inputValue} on:input={onInput} on:focus={focussing} on:focusout={nonFocussing} />
-  {#if filteredValues.size > 0 && (focus || suggestionsFocus)}
+  {#if filteredValues.length && (focus || suggestionsFocus)}
     <ul use:clickOutside on:outClick={outClick}>
-      {#each [...filteredValues] as [key, value], i}
+      {#each filteredValues as suggestion, i}
         {#if i < 7 && !autoCompleted}
           <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
-          <li id={key} on:click={onClickAutoComplete} on:keydown={onClickAutoComplete}>{value}</li>
+          <li id={suggestion} on:click={onClickAutoComplete} on:keydown={onClickAutoComplete}>{suggestion}</li>
         {/if}
       {/each}
     </ul>

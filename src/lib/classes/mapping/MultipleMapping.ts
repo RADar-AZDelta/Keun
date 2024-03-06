@@ -66,7 +66,6 @@ export default class MultipleMapping extends CommonMapping {
         [this.custom ? `custom-${this.athenaRow.name}` : this.athenaRow.id]: this.action ?? '',
       },
     }
-    console.log('UPDATING ', updatedConcepts)
     await StoreMethods.updateMappedConceptsBib(updatedConcepts)
     const { mappedRow } = await this.rowMapping(index)
     mappedRow['ADD_INFO:numberOfConcepts'] = mapped.indices.length + 1

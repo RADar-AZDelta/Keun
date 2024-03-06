@@ -31,9 +31,16 @@ export default class UsagiRowDelete {
   }
 
   private static async getCustomConceptIndex() {
-    const params = { conceptName: this.usagiRow.concepName, sourceCode: this.usagiRow.sourceCode }
+    const params = {
+      concept_name: this.usagiRow.conceptName,
+      domain_id: this.usagiRow.domainId,
+      vocabulary_id: this.usagiRow.vocabularyId,
+    }
     const indexQuery = (<Query>query().params(params))
-      .filter((r: any, p: any) => r.sourceCode === p.sourceCode && r.conceptName === p.conceptName)
+      .filter(
+        (r: any, p: any) =>
+          r.concept_name === p.concept_name && r.domain_id === p.domain_id && r.vocabulary_id === p.vocabulary_id,
+      )
       .toObject()
     const customTable = await StoreMethods.getCustomTable()
     if (!customTable) return
@@ -44,12 +51,14 @@ export default class UsagiRowDelete {
 
   private static async getNumberOfConcepts() {
     const params = { sourceCode: this.usagiRow.sourceCode }
+    console.log('IN GETNUMBEROFCONCEPTS')
     const numberQuery = (<Query>query().params(params))
       .filter((r: any, p: any) => r.sourceCode === p.sourceCode)
       .toObject()
     const table = await StoreMethods.getTable()
     if (!table) return 0
     const queryResult = await table.executeQueryAndReturnResults(numberQuery)
+    console.log('QUERY RESULT ', queryResult)
     if (!queryResult.indices.length) return 0
     return queryResult.indices.length
   }
@@ -97,6 +106,7 @@ export default class UsagiRowDelete {
 
   private static async getConceptsIndices() {
     const params = { sourceCode: this.usagiRow.sourceCode }
+    console.log('IN GETCONCEPTSINDICES')
     const indexQuery = (<Query>query().params(params))
       .filter((r: any, p: any) => r.sourceCode === p.sourceCode)
       .toObject()

@@ -25,6 +25,8 @@ const firebaseConfig: FirebaseOptions = {
   appId: PUBLIC_FIREBASE_APP_ID,
 }
 
+// TODO: check if this is something that is needed to be in Firebase?
+
 export default class FirebaseSaveImpl implements ICustomStoreOptions {
   firestore: FirebaseFirestore = new FirebaseFirestore(firebaseConfig)
   storedOptions: ITableOptions

@@ -17,7 +17,7 @@
     equivalence: string
 
   const inputAvailableColumns = ['concept_name', 'concept_class_id', 'domain_id', 'vocabulary_id']
-  const colSuggestions: Record<string, Record<string, string>> = Config.customConceptInfo
+  const colSuggestions: Record<string, string[]> = Config.customConceptInfo
   let action: string | undefined = undefined
   let columnInputs: Record<string, string> = { domain_id: '', concept_class_id: '' }
   let row: CustomRow
@@ -50,9 +50,8 @@
     for (let [property, value] of Object.entries(inputRow)) if (!value) emptyProperties.push(property)
     if (emptyProperties.length) return `The following properties can't be empty: ${emptyProperties}`
     const { concept_class_id, domain_id } = inputRow
-    if (!Object.values(colSuggestions['domain_id']).includes(domain_id))
-      return 'The domain must be one of the suggested values'
-    if (!Object.values(colSuggestions['concept_class_id']).includes(concept_class_id))
+    if (!colSuggestions['domain_id'].includes(domain_id)) return 'The domain must be one of the suggested values'
+    if (!colSuggestions['concept_class_id'].includes(concept_class_id))
       return 'The className must be one of the suggested values'
   }
 

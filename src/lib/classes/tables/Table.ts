@@ -29,7 +29,7 @@ export default class Table {
     const mappedConcepts = await this.getAllMappedConceptsToRow(sourceCode)
     const mappedRows: (object | IMappedRow)[] = []
     for (let mappedConcept of mappedConcepts.queriedData) {
-      if (!mappedConcept.conceptId) continue
+      if (mappedConcept.conceptId === undefined || mappedConcept.conceptId === null) continue
       const row = await this.transformConceptToRowFormat(mappedConcept)
       if (!mappedRows.includes(row)) mappedRows.push(row)
     }

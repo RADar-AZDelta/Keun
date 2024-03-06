@@ -1,7 +1,7 @@
 import { FileHelper, blobToString, fileToBlob, logWhenDev, stringToFile } from '@radar-azdelta-int/radar-utils'
 import { IndexedDB } from '@radar-azdelta-int/radar-utils'
 import { Config } from '$lib/helperClasses/Config'
-import type { IDatabaseImpl, IFile, IFileInformation } from '$lib/components/Types'
+import type { ICustomConceptCompact, IDatabaseImpl, IFile, IFileInformation } from '$lib/components/Types'
 
 export interface IDatabaseFile {
   id: string
@@ -12,6 +12,9 @@ export interface IDatabaseFile {
 }
 
 export default class LocalImpl implements IDatabaseImpl {
+  checkIfCustomConceptAlreadyExists(conceptInput: ICustomConceptCompact): Promise<boolean> {
+    throw new Error('Method not implemented.')
+  }
   getCustomConcepts(): Promise<any> {
     throw new Error('Method not implemented.')
   }

@@ -20,6 +20,8 @@ export async function loadImplDB() {
   })
 }
 
+// TODO: set authImplementation directly here because it's not usefull to be a store
+// TODO: do this for all the implementation stores
 export async function loadImplAuth() {
   return new Promise(resolve => {
     authImpl.subscribe(async impl => {
@@ -36,10 +38,10 @@ export async function loadImplSave() {
     saveImpl.subscribe(async impl => {
       if (impl) return resolve(impl)
     })
-    if (saveImplementation === 'firebase')
-      await import('$lib/implementations/saveImplementations/FirebaseSaveImpl').then(({ default: Impl }) =>
-        saveImpl.set(new Impl()),
-      )
+    // if (saveImplementation === 'firebase')
+    //   await import('$lib/implementations/saveImplementations/FirebaseSaveImpl').then(({ default: Impl }) =>
+    //     saveImpl.set(new Impl()),
+    //   )
   })
 }
 
