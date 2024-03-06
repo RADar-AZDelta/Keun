@@ -131,13 +131,11 @@
     if ($selectedFileId) load()
   }
 
-  // TODO: fix the auto save when leaving
-  beforeNavigate(async({to, cancel}) => {
-    if(!to?.url) return
-    if(!syncingComplete && to?.url) cancel()
+  beforeNavigate(async ({ to, cancel, type }) => {
+    if (!syncingComplete) cancel()
     await syncFile()
     syncingComplete = true
-    goto(to.url)
+    if (to?.url) goto(to.url)
   })
 
   setupDataTable()

@@ -6,6 +6,8 @@ import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
 import type { IMappedRow, IMappedRows, IUsagiRow } from '$lib/components/Types'
 
 export default class Table {
+  private static columnsAdded: boolean = false
+
   static modifyColumnMetadata(columns: IColumnMetaData[]): IColumnMetaData[] {
     const usagiColumnsMap = Config.columnsUsagi.reduce((acc, cur) => {
       acc.set(cur.id, cur)
@@ -53,12 +55,20 @@ export default class Table {
   }
 
   private static async getAllMappedConceptsToRow(sourceCode: string) {
-    const params = { sourceCode }
+    const params = { sourceCode, columnsAdded: this.columnsAdded }
+    if (!this.columnsAdded) this.columnsAdded = await this.checkIfTableConceptsAreWithNewColumns()
     const conceptsQuery = (<Query>query().params(params))
-      .filter((r: any, p: any) => r.sourceCode === p.sourceCode && r.conceptName)
+      .filter((r: any, p: any) => r.sourceCode === p.sourceCode && p.columnsAdded ? r.conceptName : true)
       .toObject()
     const queryResult = await StoreMethods.executeQueryOnTable(conceptsQuery)
     return queryResult
+  }
+
+  private static async checkIfTableConceptsAreWithNewColumns() {
+    const conceptQuery = query().slice(0, 1).toObject()
+    const queryResult = await StoreMethods.executeQueryOnTable(conceptQuery)
+    if (queryResult.queriedData[0]?.conceptName) return true
+    return false
   }
 
   private static async transformConceptToRowFormat(concept: IUsagiRow) {

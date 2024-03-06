@@ -23,7 +23,7 @@
   const flagRow = async () => await usagiRow.flagRow()
   const unapproveRow = async () => await usagiRow.unapproveRow()
   const deleteRow = async () => await usagiRow.deleteRow()
-  const updateValue = async (e: CustomEvent, column: string) => await usagiRow.updatePropertyValue(e.detail, column)
+  const updateValue = async (e: CustomEvent, column: string) => await usagiRow.updatePropertyValue(column, e.detail)
   const updateUsagiRow = async (usagiInfo: IUsagiInfo) => await usagiRow.updateUsagiRow(usagiInfo)
   const onClickAutoMap = async () => dispatch('autoMapRow', { index, sourceName: renderedRow.sourceName })
 
@@ -77,7 +77,7 @@
   {@const value = renderedRow[id]}
   <td on:dblclick={mapRow} class="cell" style={`background-color: ${color}`} title={value}>
     {#if Config.usagiRowConfig.dateCells.includes(id)}
-      <p>{reformatDate(value)}</p>
+      <p>{reformatDate(new Date(value))}</p>
     {:else if Config.usagiRowConfig.editableCells.includes(id)}
       <EditableCell {value} on:valueChanged={e => updateValue(e, id)} />
     {:else}

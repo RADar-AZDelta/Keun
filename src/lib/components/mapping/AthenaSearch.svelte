@@ -51,12 +51,6 @@
   export async function showDialog(): Promise<void> {
     dialog.showModal()
     fillMappedTable()
-    reset()
-  }
-
-  async function reset() {
-    const updatedProperties = { comment: '', assignedReviewer: '' }
-    await Mapping.updateMappingInfo(selectedRowIndex, updatedProperties)
   }
 
   function EscapeListener(e: KeyboardEvent) {

@@ -15,16 +15,26 @@
   let comment: string = usagiRow?.comment ?? ''
 
   const onEquivalenceChange = (e: CustomEvent<EquivalenceChangeED>) => dispatch('equivalenceChange', { ...e.detail })
-  const onInputComment = debounce(async (e: any) => updateDetails(), 500)
+  const onInputComment = debounce(() => updateDetails(), 500)
 
   async function onReviewerChanged(e: CustomEvent<AutoCompleteShortED>) {
     ;({ value: reviewer } = e.detail)
     updateDetails()
   }
 
-  const updateDetails = () => dispatch('updateDetails', { reviewer, comment })
+  const updateDetails = () => dispatch('updateDetails', { reviewer, comment: comment.replace(/(\r\n|\n|\r)/gm, ' ') })
   const hideDetail = () => (show = false)
   const showDetail = () => (show = true)
+
+  async function reset() {
+    reviewer = usagiRow?.assignedReviewer ?? ''
+    comment = usagiRow?.comment ?? ''
+  }
+
+  $: {
+    usagiRow
+    reset()
+  }
 </script>
 
 {#if show}
