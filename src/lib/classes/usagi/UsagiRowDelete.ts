@@ -25,9 +25,7 @@ export default class UsagiRowDelete {
   private static async deleteCustomConcept() {
     const index = await this.getCustomConceptIndex()
     if (!index) return
-    const customTable = await StoreMethods.getCustomTable()
-    if (!customTable) return
-    await customTable.deleteRows([index])
+    await StoreMethods.deleteCustomTableRows([index])
   }
 
   private static async getCustomConceptIndex() {
@@ -42,9 +40,7 @@ export default class UsagiRowDelete {
           r.concept_name === p.concept_name && r.domain_id === p.domain_id && r.vocabulary_id === p.vocabulary_id,
       )
       .toObject()
-    const customTable = await StoreMethods.getCustomTable()
-    if (!customTable) return
-    const queryResult: IQueryResult = await customTable.executeQueryAndReturnResults(indexQuery)
+    const queryResult = await StoreMethods.executeQueryOnCustomTable(indexQuery)
     if (!queryResult.indices.length) return
     return queryResult.indices[0]
   }
@@ -55,10 +51,7 @@ export default class UsagiRowDelete {
     const numberQuery = (<Query>query().params(params))
       .filter((r: any, p: any) => r.sourceCode === p.sourceCode)
       .toObject()
-    const table = await StoreMethods.getTable()
-    if (!table) return 0
-    const queryResult = await table.executeQueryAndReturnResults(numberQuery)
-    console.log('QUERY RESULT ', queryResult)
+    const queryResult = await StoreMethods.executeQueryOnTable(numberQuery)
     if (!queryResult.indices.length) return 0
     return queryResult.indices.length
   }
@@ -73,10 +66,8 @@ export default class UsagiRowDelete {
   }
 
   private static async resetRow() {
-    const table = await StoreMethods.getTable()
-    if (!table) return
     const resetProperties = this.resetPropertiesOfRow()
-    await table.updateRows(new Map([[this.usagiRowIndex, resetProperties]]))
+    await StoreMethods.updateTableRows(new Map([[this.usagiRowIndex, resetProperties]]))
   }
 
   private static resetPropertiesOfRow() {
@@ -90,29 +81,22 @@ export default class UsagiRowDelete {
   }
 
   private static async deleteRowOnIndex() {
-    const table = await StoreMethods.getTable()
-    if (!table) return
-    await table.deleteRows([this.usagiRowIndex])
+    await StoreMethods.deleteTableRow(this.usagiRowIndex)
   }
 
   private static async updateRowsWithSameSourceCode() {
     const indices = await this.getConceptsIndices()
     const rowsToUpdate = new Map()
     for (let i of indices) rowsToUpdate.set(i, { 'ADD_INFO:numberOfConcepts': indices.length })
-    const table = await StoreMethods.getTable()
-    if (!table) return
-    await table.updateRows(rowsToUpdate)
+    await StoreMethods.updateTableRows(rowsToUpdate)
   }
 
   private static async getConceptsIndices() {
     const params = { sourceCode: this.usagiRow.sourceCode }
-    console.log('IN GETCONCEPTSINDICES')
     const indexQuery = (<Query>query().params(params))
       .filter((r: any, p: any) => r.sourceCode === p.sourceCode)
       .toObject()
-    const table = await StoreMethods.getTable()
-    if (!table) return []
-    const queryResult: IQueryResult = await table.executeQueryAndReturnResults(indexQuery)
+    const queryResult = await StoreMethods.executeQueryOnTable(indexQuery)
     if (!queryResult.indices.length) return []
     return queryResult.indices
   }

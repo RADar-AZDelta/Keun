@@ -25,8 +25,7 @@ export default class MappedRow {
     const conceptQuery = (<Query>query().params(params))
       .filter((r: any, p: any) => r.sourceCode === p.sourceCode && r.conceptId === p.conceptId)
       .toObject()
-    const table = await StoreMethods.getTable()
-    const conceptResult: IQueryResult = await table.executeQueryAndReturnResults(conceptQuery)
+    const conceptResult = await StoreMethods.executeQueryOnTable(conceptQuery)
     if (!conceptResult.indices.length) return
     const concept = conceptResult.queriedData[0]
     const index = conceptResult.indices[0]

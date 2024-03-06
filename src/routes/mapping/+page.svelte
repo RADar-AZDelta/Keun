@@ -1,6 +1,7 @@
 <script lang="ts">
   import { base } from '$app/paths'
   import { page } from '$app/stores'
+  import { onMount } from 'svelte'
   import { beforeNavigate, goto } from '$app/navigation'
   import DataTable from '@radar-azdelta/svelte-datatable'
   import { customTable, table, disableActions } from '$lib/store'
@@ -28,6 +29,7 @@
   let selectedRow: IUsagiRow, selectedRowIndex: number
   let search: SvelteComponent
   let globalAthenaFilter: { column: string; filter: string | undefined } = { column: 'all', filter: undefined }
+  let syncingComplete: boolean = false
 
   async function navigateRow(e: CustomEvent<NavigateRowED>) {
     ;({ row: selectedRow, index: selectedRowIndex } = e.detail)
@@ -130,9 +132,19 @@
   }
 
   // TODO: fix the auto save when leaving
-  beforeNavigate(async () => await syncFile())
+  beforeNavigate(async({to, cancel}) => {
+    if(!to?.url) return
+    if(!syncingComplete && to?.url) cancel()
+    await syncFile()
+    syncingComplete = true
+    goto(to.url)
+  })
 
   setupDataTable()
+
+  onMount(() => {
+    load()
+  })
 </script>
 
 <svelte:head>

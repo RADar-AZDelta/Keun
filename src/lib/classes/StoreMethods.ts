@@ -10,6 +10,8 @@ import type {
   IUser,
 } from '$lib/components/Types'
 
+// TODO: put these methods where they belong
+
 export default class StoreMethods {
   static async getUser(): Promise<IUser> {
     return new Promise(resolve =>
@@ -38,16 +40,15 @@ export default class StoreMethods {
     )
   }
 
-  static async getTable(): Promise<DataTable> {
+  private static async getTable(): Promise<DataTable> {
     return new Promise(resolve =>
       table.subscribe(table => {
-        if (!table) throw new Error('Table not found')
-        resolve(table)
+        if (table) resolve(table)
       }),
     )
   }
 
-  static async getCustomTable(): Promise<DataTable> {
+  private static async getCustomTable(): Promise<DataTable> {
     return new Promise(resolve =>
       customTable.subscribe(table => {
         if (!table) throw new Error('Custom table not found')
@@ -59,6 +60,11 @@ export default class StoreMethods {
   static async getTableRow(index: number) {
     const table = await this.getTable()
     return <IUsagiRow>await table.getFullRow(index)
+  }
+
+  static async deleteTableRow(index: number) {
+    const table = await this.getTable()
+    await table.deleteRows([index])
   }
 
   static async getCustomTableRow(index: number) {
@@ -89,6 +95,11 @@ export default class StoreMethods {
   static async executeQueryOnTable(query: object): Promise<IQueryResult> {
     const table = await this.getTable()
     return await table.executeQueryAndReturnResults(query)
+  }
+
+  static async executeQueryOnCustomTable(query: object): Promise<IQueryResult> {
+    const customTable = await this.getCustomTable()
+    return await customTable.executeQueryAndReturnResults(query)
   }
 
   static async insertCustomTableRow(row: ICustomConceptInput) {

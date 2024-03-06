@@ -27,9 +27,7 @@ export default class UsagiActions {
 
   private static async performActionOnRow(action: string) {
     const updatedProperties = await this.getConditionMethod(action)
-    const table = await StoreMethods.getTable()
-    if (!table) return
-    table.updateRows(new Map([[this.usagiRowIndex, updatedProperties]]))
+    await StoreMethods.updateTableRows(new Map([[this.usagiRowIndex, updatedProperties]]))
   }
 
   private static async getConditionMethod(action: string) {

@@ -14,8 +14,6 @@ export default class UsagiUpdate {
 
   private static async updateProps(column: string, value: string) {
     const updatedProperty = { [column]: value }
-    const table = await StoreMethods.getTable()
-    if (!table) return
-    await table.updateRows(new Map([[this.usagiRowIndex, updatedProperty]]))
+    await StoreMethods.updateTableRows(new Map([[this.usagiRowIndex, updatedProperty]]))
   }
 }
