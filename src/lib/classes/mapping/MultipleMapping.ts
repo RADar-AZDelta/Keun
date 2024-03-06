@@ -13,26 +13,37 @@ export default class MultipleMapping extends CommonMapping {
     const alreadyMappedRows = await this.getAlreadyMappedRows()
     const isTheFirstRowMapped = await this.checkIfRowIsMapped(alreadyMappedRows.queriedData[0])
     const updatedActionIndex = await this.checkIfTheConceptActionIsUpdated(alreadyMappedRows)
-    if (!isTheFirstRowMapped || updatedActionIndex !== -1)
+    const currentRowIsUnmapped = await this.checkIfTheCurrentRowIsUnmapped()
+    if (!isTheFirstRowMapped || updatedActionIndex !== -1 || currentRowIsUnmapped)
       return await this.singleMapping(updatedActionIndex, alreadyMappedRows.indices.length)
     const mappedRowIndex = await this.getRowIndexFromQueryData(alreadyMappedRows)
     await this.mapConceptOfMultiple(alreadyMappedRows, mappedRowIndex)
     await this.updateNumberOfConcepts(alreadyMappedRows)
   }
 
+  private static async checkIfTheCurrentRowIsUnmapped() {
+    if (this.usagiRow.mappingStatus === 'UNMAPPED') return true
+    return false
+  }
+
   private static async checkIfTheConceptActionIsUpdated(alreadyMappedRows: IQueryResult) {
-    const { id, name, domain, vocabulary } = this.athenaRow
+    const { id, name, domain, vocabulary, className } = this.athenaRow
     let sameRowIndex = -1
     for (let i = 0; i < alreadyMappedRows.indices.length; i++) {
-      const { conceptId, conceptName, domainId, vocabularyId } = alreadyMappedRows.queriedData[i]
-      if (conceptId === id && conceptName === name && domainId === domain && vocabularyId === vocabulary)
+      const { conceptId, conceptName, domainId, vocabularyId, className: classN } = alreadyMappedRows.queriedData[i]
+      if (
+        conceptId === id &&
+        conceptName === name &&
+        domainId === domain &&
+        vocabularyId === vocabulary &&
+        className === classN
+      )
         sameRowIndex = alreadyMappedRows.indices[i]
     }
     return sameRowIndex
   }
 
   private static async singleMapping(updatedRowIndex: number, conceptsNumbers: number) {
-    console.log('INDEX of change ', updatedRowIndex, ' AND CONCEPTS ', conceptsNumbers)
     this.usagiRow['ADD_INFO:numberOfConcepts'] = conceptsNumbers
     const usagiRowIndex = updatedRowIndex !== -1 ? updatedRowIndex : this.usagiRowIndex
     const athenaInfo = { athenaRow: this.athenaRow, usagiRow: this.usagiRow, usagiRowIndex }
@@ -75,7 +86,7 @@ export default class MultipleMapping extends CommonMapping {
     const conceptKey = await this.getConceptKey()
     const updatedConcepts: IMappedRows = { [this.usagiRow.sourceCode]: { [conceptKey]: this.action ?? '' } }
     await StoreMethods.updateMappedConceptsBib(updatedConcepts)
-    const { mappedRow } = await this.rowMapping(index)
+    const { mappedRow } = await this.rowMapping(index === -1 ? this.usagiRowIndex : index)
     mappedRow['ADD_INFO:numberOfConcepts'] = mapped.indices.length + 1
     await StoreMethods.insertTableRow(mappedRow)
   }

@@ -135,6 +135,11 @@
       "editable": false
     },
     {
+      "id": "className",
+      "visible": true,
+      "editable": false
+    },
+    {
       "id": "matchScore",
       "visible": false,
       "editable": false

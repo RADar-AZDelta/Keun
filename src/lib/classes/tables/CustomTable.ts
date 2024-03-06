@@ -42,7 +42,7 @@ export default class CustomTable {
       concept_id: conceptId ?? 0,
       concept_code: sourceName,
       concept_name: conceptName ?? '',
-      concept_class_id: className,
+      concept_class_id: className ?? '',
       domain_id: domainId ?? '',
       vocabulary_id: vocabularyId ?? '',
       standard_concept: '',

@@ -16,7 +16,7 @@
     customTable: DataTable
 
   const inputAvailableColumns = ['concept_name', 'concept_class_id', 'domain_id', 'vocabulary_id']
-  const colSuggestions: Record<string, Record<string, string>> = Config.customConceptInfo
+  const colSuggestions: Record<string, string[]> = Config.customConceptInfo
 
   const dispatch = createEventDispatcher<MappingEvents>()
 

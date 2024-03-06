@@ -33,11 +33,15 @@ export default class UsagiRowDelete {
       concept_name: this.usagiRow.conceptName,
       domain_id: this.usagiRow.domainId,
       vocabulary_id: this.usagiRow.vocabularyId,
+      concept_class_id: this.usagiRow.className,
     }
     const indexQuery = (<Query>query().params(params))
       .filter(
         (r: any, p: any) =>
-          r.concept_name === p.concept_name && r.domain_id === p.domain_id && r.vocabulary_id === p.vocabulary_id,
+          r.concept_name === p.concept_name &&
+          r.domain_id === p.domain_id &&
+          r.vocabulary_id === p.vocabulary_id &&
+          r.concept_class_id === p.concept_class_id,
       )
       .toObject()
     const queryResult = await StoreMethods.executeQueryOnCustomTable(indexQuery)
@@ -75,6 +79,7 @@ export default class UsagiRowDelete {
     reset.conceptId = null
     reset.domainId = null
     reset.vocabularyId = null
+    reset.className = null
     reset.conceptName = null
     delete reset.sourceAutoAssignedConceptIds
     return reset

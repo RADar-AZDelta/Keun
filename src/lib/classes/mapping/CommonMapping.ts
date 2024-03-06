@@ -33,8 +33,8 @@ export default class CommonMapping {
   }
 
   private static async assembleAthenaInfo() {
-    const { id, name, domain, vocabulary } = this.athenaRow!
-    const mappedProperties = { conceptId: id, conceptName: name, domainId: domain, vocabularyId: vocabulary }
+    const { id, name, domain, vocabulary, className } = this.athenaRow!
+    const mappedProperties = { conceptId: id, conceptName: name, domainId: domain, vocabularyId: vocabulary, className  }
     return mappedProperties
   }
 
@@ -50,6 +50,7 @@ export default class CommonMapping {
       'ADD_INFO:numberOfConcepts': numberOfConcepts,
       equivalence: this.equivalence,
       vocabularyId: this.athenaRow!.vocabulary,
+      className: this.athenaRow.className,
       matchScore: 0,
       mappingType: null,
       'ADD_INFO:approvedBy': null,
