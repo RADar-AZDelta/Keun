@@ -1,10 +1,10 @@
 <script lang="ts">
-  import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
-  import { mappedToConceptIds, user } from '$lib/store'
-  import { Config } from '$lib/helperClasses/Config'
   import { PUBLIC_ATHENA_DETAIL } from '$env/static/public'
-  import type { IAthenaRow, IUsagiRow } from '$lib/components/Types'
+  import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
+  import { Config } from '$lib/helperClasses/Config'
   import Athena from '$lib/classes/athena/Athena'
+  import { mappedToConceptIds, user } from '$lib/store'
+  import type { IAthenaRow, IUsagiRow } from '$lib/components/Types'
 
   export let renderedRow: IAthenaRow
   export let selectedRow: IUsagiRow, selectedRowIndex: number, equivalence: string
@@ -86,13 +86,6 @@
     <SvgIcon id="x" width="10px" height="10px" />
   </button>
 {/if}
-<!-- <button on:click={() => referToAthena(renderedRow.id)}>
-  <SvgIcon id="link" width="10px" height="10px" />
-</button> -->
-<button
-  on:click={() => {
-    console.log($mappedToConceptIds)
-  }}
->
+<button on:click={() => referToAthena(renderedRow.id)}>
   <SvgIcon id="link" width="10px" height="10px" />
 </button>

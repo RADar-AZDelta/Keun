@@ -96,7 +96,7 @@
           <CustomView {selectedRow} {selectedRowIndex} {equivalence} />
         </div>
         <div slot="slotView2">
-          <MappedView {mappedData} {selectedRow} />
+          <MappedView {selectedRow} />
         </div>
         <div slot="rightSlot">
           <Details usagiRow={selectedRow} on:updateDetails={onUpdateDetails} on:equivalenceChange={equivalenceChange} />

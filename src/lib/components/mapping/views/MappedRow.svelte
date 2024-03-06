@@ -1,8 +1,7 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
-  import type { IMappedRow, IUsagiRow } from '$lib/components/Types'
   import MappedRow from '$lib/classes/mappedRow/MappedRow'
+  import type { IMappedRow, IUsagiRow } from '$lib/components/Types'
 
   export let renderedRow: IMappedRow, usagiRow: IUsagiRow
 
@@ -12,9 +11,10 @@
 
   const removeMapping = async () => row.deleteRow()
 
-  onMount(() => {
+  $: {
+    renderedRow, usagiRow
     row = new MappedRow(usagiRow, renderedRow)
-  })
+  }
 </script>
 
 <td>

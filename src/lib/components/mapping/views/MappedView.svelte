@@ -1,20 +1,24 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte'
   import DataTable, { type ITableOptions } from '@radar-azdelta/svelte-datatable'
-  import type { IMappedRow, IUsagiRow, MappingEvents } from '$lib/components/Types'
-  import { Config } from '$lib/helperClasses/Config'
+  import { mappedToConceptIds } from '$lib/store'
   import MappedRow from './MappedRow.svelte'
+  import Table from '$lib/classes/tables/Table'
+  import { Config } from '$lib/helperClasses/Config'
+  import type { IMappedRow, IUsagiRow } from '$lib/components/Types'
 
-  export let mappedData: (IMappedRow | object)[]
   export let selectedRow: IUsagiRow
 
-  const dispatch = createEventDispatcher<MappingEvents>()
-
+  let mappedData: (IMappedRow | object)[] = [{}]
   let options: ITableOptions = { actionColumn: true, id: 'mappedConcepts' }
 
-  async function removeMapping(row: IMappedRow) {
-    if (!row.conceptName) return
-    dispatch('removeMapping', { conceptId: row.conceptId, conceptName: row.conceptName })
+  async function loadMappedConcepts() {
+    if (!selectedRow.sourceCode) return
+    mappedData = await Table.getAllMappedConcepts(selectedRow.sourceCode)
+  }
+
+  $: {
+    $mappedToConceptIds, selectedRow
+    loadMappedConcepts()
   }
 </script>
 
