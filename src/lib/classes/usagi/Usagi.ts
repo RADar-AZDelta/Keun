@@ -16,4 +16,5 @@ export default class Usagi {
   deleteRow = async () => await UsagiRowDelete.deleteRow(this.usagiInfo)
   updatePropertyValue = async (column: string, value: string) =>
     await UsagiUpdate.updateProperties(this.usagiInfo.usagiRowIndex, column, value)
+  updateUsagiRow = async (usagiInfo: IUsagiInfo) => (this.usagiInfo = usagiInfo)
 }

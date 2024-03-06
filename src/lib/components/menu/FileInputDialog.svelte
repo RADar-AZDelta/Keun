@@ -2,29 +2,24 @@
   import { dev } from '$app/environment'
   import { createEventDispatcher } from 'svelte'
   import { Drop, SvgIcon, Spinner } from '@radar-azdelta-int/radar-svelte-components'
-  import { databaseImpl, databaseImplementation, user } from '$lib/store'
+  import { user } from '$lib/store'
   import type { FileDropED, PageEvents } from '$lib/components/Types'
 
   export let processing: boolean
 
   const dispatch = createEventDispatcher<PageEvents>()
 
-  let dialog: HTMLDialogElement, file: File | undefined, userFilter: string
-  let authorizedAuthors: string[] = []
-  let allUsers: any[] = []
+  let dialog: HTMLDialogElement, file: File | undefined
   let currentColumns: string[] = []
   let missingColumns: Record<string, string> = {}
 
-  export async function showDialog(): Promise<void> {
-    dialog.showModal()
-  }
+  export const showDialog = async () => dialog.showModal()
 
   export async function closeDialog(): Promise<void> {
     file = undefined
     dialog.close()
   }
 
-  // A method for when a new file has been put in the field
   async function onFileInputChange(e: Event): Promise<void> {
     if (dev) console.log('onFileInputChange: A file has been upload via the input button')
     const allowedExtensions = ['csv']
@@ -41,7 +36,6 @@
     reader.readAsText(file)
   }
 
-  // Read the content of the file, seperate the columns from the rows and check if all columns are in the file
   async function checkForMissingColumns(this: FileReader, ev: ProgressEvent<FileReader>): Promise<void> {
     if (dev) console.log('checkForMissingColumns: Checking if there are missing columns in the file')
     if (!this.result) return
@@ -64,7 +58,6 @@
     dispatch('columnsDialogShow', { missingColumns, currentColumns, file })
   }
 
-  // When a file is dropped in the dropping field
   async function fileDrop(e: CustomEvent<FileDropED>) {
     file = e.detail.file
     const reader = new FileReader()
@@ -72,19 +65,9 @@
     reader.readAsText(file)
   }
 
-  // Send a request to the parent to check if there already is a file with the same name
   async function checkForCache() {
     if (!file || !$user.uid) return
-    if (!authorizedAuthors.includes($user.uid)) authorizedAuthors.push($user.uid)
-    dispatch('checkForCache', { file, authorizedAuthors })
-  }
-
-  async function retrieveAllUsers() {
-    allUsers = (await $databaseImpl?.getAllPossibleAuthors()) ?? []
-  }
-
-  $: {
-    if ($user?.uid && $databaseImpl) retrieveAllUsers()
+    dispatch('checkForCache', { file })
   }
 </script>
 
@@ -92,7 +75,6 @@
   <div class="file-input-container">
     <h1 class="file-input-title">Upload a new file</h1>
     <button on:click={closeDialog} class="close-dialog" disabled={processing}><SvgIcon id="x" /></button>
-    <!-- <Drop extensions={['csv']} on:fileDrop={fileDrop}> -->
     <div class="drop-container">
       <Drop extensions={['csv']} on:drop={fileDrop}>
         <label class="upload-file">
@@ -107,20 +89,6 @@
         </label>
       </Drop>
     </div>
-    {#if databaseImplementation === 'firebase'}
-      <h2 class="authors-title">Select the authors that have permission to this file:</h2>
-      <input class="authors-input" type="text" placeholder="search for an user" bind:value={userFilter} />
-      <ul class="authors-list">
-        {#each allUsers as user, _}
-          <li class="author-option">
-            <label class="author-label">
-              <input type="checkbox" id={user.name} bind:group={authorizedAuthors} value={user.uid} />
-              {user.name} - {user.uid}
-            </label>
-          </li>
-        {/each}
-      </ul>
-    {/if}
     <button class="upload" on:click={checkForCache} disabled={file ? false : true || processing}>Upload</button>
     {#if processing}
       <Spinner />
@@ -146,7 +114,6 @@
   }
 
   .drop-container {
-    max-height: 50%;
     flex: 1 1 auto;
   }
 
@@ -175,33 +142,6 @@
 
   .file-input {
     display: none;
-  }
-
-  .authors-title {
-    font-size: 1.25rem;
-    font-weight: 500;
-  }
-
-  .authors-input {
-    padding: 0.5rem;
-    font-size: 1rem;
-  }
-
-  .authors-list {
-    list-style: none;
-    flex: 1 1 auto;
-    overflow-y: auto;
-  }
-
-  .author-option {
-    display: flex;
-    gap: 1rem;
-  }
-
-  .author-label {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
   }
 
   .upload {

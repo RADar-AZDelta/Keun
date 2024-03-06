@@ -51,7 +51,6 @@ export default class LocalImpl implements IDatabaseImpl {
     if (!file || !file.file) return
     await FileHelper.downloadFile(file.file)
     const isCustomFileNotEmpty = await this.checkIfCustomFileIsNotEmpty(file.customId)
-    console.log('EMPTY ', isCustomFileNotEmpty)
     if (!isCustomFileNotEmpty) return
     const customFile = await this.getFileFromDatabase(this.customDb, file.customId)
     if (!customFile || !customFile.file) return
@@ -61,7 +60,6 @@ export default class LocalImpl implements IDatabaseImpl {
   private async checkIfCustomFileIsNotEmpty(id: string) {
     await this.openCustomDatabase()
     const fileInfo: undefined | IDatabaseFile = await this.customDb?.get(id, true)
-    console.log('INFO ', fileInfo, ' FOR ID ', id)
     if (!fileInfo) return false
     const content = fileInfo.content
     if (!content || content.includes(',,,,,,,,,')) return false
@@ -127,24 +125,14 @@ export default class LocalImpl implements IDatabaseImpl {
     await this.customDb?.set(customFileContent, id, true)
   }
 
-  async editKeunFileAuthors() {}
-
   async deleteKeunFile(id: string) {
     logWhenDev(`deleteKeunFile: Delete the file with id ${id} in IndexedDB`)
     await this.openDatabase()
     const file: undefined | IDatabaseFile = await this.db?.get(id, true)
-    console.log('FILE ', file, ' AND CUSTOM ', file?.customId)
     if (!file || !file.customId) return
     await this.db!.remove(id, true)
-    console.log('NORMAL REMOVED')
     await this.openCustomDatabase()
-    // TODO: get the correct id of the custom file
     await this.customDb!.remove(file.customId, true)
-    console.log('CUSTOM REMOVED')
-  }
-
-  async getAllPossibleAuthors() {
-    return []
   }
 
   async saveUserConfig(): Promise<void> {}

@@ -1,5 +1,4 @@
 import { FileHelper } from '@radar-azdelta-int/radar-utils'
-import { arrayRemove, arrayUnion } from 'firebase/firestore'
 import { FirebaseFirestore, FirebaseStorage } from '@radar-azdelta-int/radar-firebase-utils'
 import {
   PUBLIC_FIREBASE_API_KEY,
@@ -9,9 +8,8 @@ import {
   PUBLIC_FIREBASE_PROJECT_ID,
   PUBLIC_FIREBASE_STORAGE_BUCKET,
 } from '$env/static/public'
-import { user } from '$lib/store'
 import { Config } from '$lib/helperClasses/Config'
-import type { ICustomConceptCompact, IDatabaseImpl, IFile, IFileInformation, IUser } from '$lib/components/Types'
+import type { ICustomConceptCompact, IDatabaseImpl, IFile, IFileInformation } from '$lib/components/Types'
 import type { FirebaseOptions } from 'firebase/app'
 
 // TODO: implement this in the program & check if all the functionalities work before removing the firebase file
@@ -29,7 +27,6 @@ export interface IFirestoreFile {
   name: string
   custom: string
   customId: string
-  authors: string
 }
 
 export interface IFirestoreUser {
@@ -54,18 +51,10 @@ export default class FirebaseImpl implements IDatabaseImpl {
   storageCollection: string = 'Keun-files'
   storageCustomColl: string = 'Keun-custom-files'
   firestoreFileColl: string = 'files'
-  firestoreUserColl: string = 'users'
   firestoreCustomConceptsColl: string = 'customConcepts'
 
-  async getKeunFile(id: string): Promise<IFile | undefined> {
-    const file = await this.readFileFromCollection(id, this.storageCollection)
-    return file
-  }
-
-  async getCustomKeunFile(id: string): Promise<IFile | undefined> {
-    const file = await this.readFileFromCollection(id, this.storageCustomColl)
-    return file
-  }
+  getKeunFile = async (id: string) => await this.readFileFromCollection(id, this.storageCollection)
+  getCustomKeunFile = async (id: string) => await this.readFileFromCollection(id, this.storageCustomColl)
 
   private async readFileFromCollection(id: string, collection: string): Promise<IFile | undefined> {
     const fileInfo = await this.storage.readFileStorage(`${collection}/${id}`)
@@ -77,9 +66,7 @@ export default class FirebaseImpl implements IDatabaseImpl {
     return fileObj
   }
 
-  private async blobToFile(blob: Blob, name: string) {
-    return new File([blob], name, { type: 'text/csv' })
-  }
+  private blobToFile = async (blob: Blob, name: string) => new File([blob], name, { type: 'text/csv' })
 
   async downloadFiles(id: string): Promise<void> {
     const file = await this.readFileFromCollection(id, this.storageCollection)
@@ -97,27 +84,20 @@ export default class FirebaseImpl implements IDatabaseImpl {
   }
 
   async getFilesList(): Promise<IFileInformation[]> {
-    // Return the file id & the name
-    const fileIds = await this.getFileIdsForUser()
-    console.log('IDS ', fileIds)
+    const fileIds = await this.getFilesFromFirestore()
     const fileNames = []
     for (let fileId of fileIds) {
       const fileInfo = await this.getFileNameFromStorage(fileId)
-      console.log('FILE INFO ', fileInfo)
       if (fileInfo) fileNames.push({ id: fileId, name: fileInfo.fileName, customId: fileInfo.customId, custom: '' })
     }
     return fileNames
   }
 
-  private async getFileIdsForUser(): Promise<string[]> {
-    const user = await this.getUser()
-    if (!user.uid) return []
-    const userInfo = await this.firestore.readFirestore(this.firestoreUserColl, user.uid)
-    if (!userInfo) return []
-    const userData = <IFirestoreUser | undefined>userInfo.data()
-    if (!userData) return []
-    const fileIds: string[] = userData.files
-    return fileIds
+  private async getFilesFromFirestore() {
+    const fileIds = await this.firestore.readFirestoreCollection(this.firestoreFileColl)
+    if (!fileIds) return []
+    const files = fileIds.docs.map(file => file.id)
+    return files
   }
 
   private async getFileNameFromStorage(id: string) {
@@ -128,11 +108,7 @@ export default class FirebaseImpl implements IDatabaseImpl {
     return { fileName, customId }
   }
 
-  private async getUser(): Promise<IUser> {
-    return new Promise(resolve => user.subscribe(user => resolve(user))())
-  }
-
-  async uploadKeunFile(file: File, authors: string[]): Promise<void> {
+  async uploadKeunFile(file: File): Promise<void> {
     const fileId = crypto.randomUUID()
     const customFileId = crypto.randomUUID()
     const metaData: IStorageCustomMetadata = { customMetadata: { name: file.name, customId: customFileId } }
@@ -141,11 +117,8 @@ export default class FirebaseImpl implements IDatabaseImpl {
     const customFile = await this.blobToFile(new Blob([Config.customBlobInitial]), customName)
     const customMetaData: IStorageCustomMetadata = { customMetadata: { name: customName, customId: customFileId } }
     await this.storage.uploadFileStorage(`${this.storageCustomColl}/${customFileId}`, customFile, customMetaData)
-    const fileData = { name: file.name, authors, customId: customFileId, custom: customName }
+    const fileData = { name: file.name, customId: customFileId, custom: customName }
     await this.firestore.updateToFirestoreIfNotExist(this.firestoreFileColl, fileId, fileData)
-    for (let author of authors) {
-      await this.firestore.updateToFirestoreIfNotExist(this.firestoreUserColl, author, { files: arrayUnion(fileId) })
-    }
   }
 
   async editKeunFile(id: string, blob: Blob): Promise<void> {
@@ -173,20 +146,12 @@ export default class FirebaseImpl implements IDatabaseImpl {
     return fileData
   }
 
-  async editKeunFileAuthors(id: string, authors: string[]): Promise<void> {
-    await this.firestore.updateToFirestore(this.firestoreFileColl, id, { authors })
-  }
-
   async deleteKeunFile(id: string): Promise<void> {
     const customId = await this.retrieveCustomFileId(id)
     const fileSnapshot = await this.firestore.readFirestore(this.firestoreFileColl, id)
     if (!fileSnapshot || !fileSnapshot.data()) return
     const fileInfo = fileSnapshot.data()
     if (!fileInfo) return
-    const { authors } = fileInfo
-    for (let author of authors) {
-      await this.firestore.updateToFirestore(this.firestoreUserColl, author, { files: arrayRemove(id) })
-    }
     await this.storage.deleteFileStorage(`${this.storageCollection}/${id}`)
     await this.firestore.deleteDocumentFirestore(this.firestoreFileColl, id)
     if (customId) await this.storage.deleteFileStorage(`${this.storageCustomColl}/${customId}`)
@@ -198,21 +163,6 @@ export default class FirebaseImpl implements IDatabaseImpl {
     const fileInfo = fileDocument.data()
     if (!fileInfo) return
     return <string>fileInfo.customId
-  }
-
-  async getAllPossibleAuthors(): Promise<IFirestoreUser[]> {
-    const usersList = await this.firestore.readFirestoreCollection(this.firestoreUserColl)
-    if (!usersList) return []
-    const userListData = usersList.docs.map(doc => doc.data())
-    return <IFirestoreUser[]>userListData
-  }
-
-  async saveUserConfig(user: IUser | undefined): Promise<void> {
-    if (!user) return
-    const { uid, name } = user
-    if (!uid || !name) return
-    const userConfig = { uid, name }
-    await this.firestore.updateToFirestoreIfNotExist(this.firestoreUserColl, uid, userConfig)
   }
 
   async getCustomConcepts(): Promise<any> {

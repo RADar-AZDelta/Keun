@@ -25,53 +25,11 @@ service cloud.firestore {
       		return request.auth.token.firebase.sign_in_provider != "anonymous"
       	}
       
-        function checkRights() {
-      		// Check if the user trying to read the file info, is in the list of authors
-          let uid = request.auth.uid;
-          let authors = get(/databases/(default)/documents/files/$(fileId)).data.authors;
-          return uid in authors || getRole('admin');
-      	}
-
-				// The user must be logged in through Microsoft, has the role "user" || "admin" & is in the list of authors for this file
-        allow read: if isSignedIn() && (getRole('user') || getRole('admin')) && checkProvider() && checkRights();
+				// The user must be logged in through Microsoft, has the role "user" || "admin"
+        allow read: if isSignedIn() && (getRole('user') || getRole('admin')) && checkProvider();
         // The user must be logged in through Microsoft & has the role "admin"
         allow write: if isSignedIn() && getRole('admin') && checkProvider();
     }
-    
-    match /users/{userId} {
-        function isSignedIn() {
-        	// Check if the user is logged in
-          return request.auth != null;
-        }
-        
-        function checkId() {
-          // Check if the role of the requested user is the same as the user that's reading
-          return request.auth.uid == userId;
-      	}
-
-        function getRole(expectedRole) {
-        	// Check the role set in the Firestore collection "roles"
-          let roles = get(/databases/$(database)/documents/roles/$(request.auth.token.email)).data.roles;
-          return expectedRole in roles;
-        }
-
-        // function getRoleClaims(arr) {
-        	// Check the roles through the custom claims in the auth
-          // return request.auth.token.role in arr;
-        // }
-        
-        function checkProvider() {
-        	// All the users must be logged in through OAuth of Microsoft
-          // Microsoft is not an option here so we'll check if the user is not logged in anonymous
-      		return request.auth.token.firebase.sign_in_provider != "anonymous"
-      	}
-
-				// The user must be logged in through Microsoft, has the role "user" || "admin" & is reading his own user info
-        allow read: if isSignedIn() && ((checkId() && getRole('user')) || getRole('admin')) && checkProvider();
-        // The user must be logged in through Microsoft & has the role "admin"
-        allow write: if isSignedIn() && ((checkId() && getRole('user')) || getRole('admin')) && checkProvider();
-    }
-
     match /settings/{userId} {
       function isSignedIn() {
         // Check if the user is logged in

@@ -129,8 +129,7 @@
     if ($selectedFileId) load()
   }
 
-  // Sync the file to the database implementation before leaving the page
-  // Note: this does not always work so for that reason, there is a save button provided
+  // TODO: fix the auto save when leaving
   beforeNavigate(async () => await syncFile())
 
   setupDataTable()

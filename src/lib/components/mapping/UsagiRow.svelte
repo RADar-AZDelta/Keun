@@ -5,7 +5,7 @@
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
   import { Config } from '$lib/helperClasses/Config'
   import Usagi from '$lib/classes/usagi/Usagi'
-  import type { IUsagiRow, MappingEvents } from '$lib/components/Types'
+  import type { IUsagiInfo, IUsagiRow, MappingEvents } from '$lib/components/Types'
   import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
 
   export let renderedRow: Record<string, any>, columns: IColumnMetaData[] | undefined, index: number
@@ -13,18 +13,18 @@
   export let disabled: boolean
 
   const dispatch = createEventDispatcher<MappingEvents>()
-  let usagiRowLogic: Usagi
+  let usagiRow: Usagi
   let color: string = 'inherit'
   const width = '10px'
   const height = '10px'
 
   const mapRow = () => dispatch('rowSelection', { row: renderedRow as IUsagiRow, index })
-  const approveRow = async () => await usagiRowLogic.approveRow()
-  const flagRow = async () => await usagiRowLogic.flagRow()
-  const unapproveRow = async () => await usagiRowLogic.unapproveRow()
-  const deleteRow = async () => await usagiRowLogic.deleteRow()
-  const updateValue = async (e: CustomEvent, column: string) =>
-    await usagiRowLogic.updatePropertyValue(e.detail, column)
+  const approveRow = async () => await usagiRow.approveRow()
+  const flagRow = async () => await usagiRow.flagRow()
+  const unapproveRow = async () => await usagiRow.unapproveRow()
+  const deleteRow = async () => await usagiRow.deleteRow()
+  const updateValue = async (e: CustomEvent, column: string) => await usagiRow.updatePropertyValue(e.detail, column)
+  const updateUsagiRow = async (usagiInfo: IUsagiInfo) => await usagiRow.updateUsagiRow(usagiInfo)
   const onClickAutoMap = async () => dispatch('autoMapRow', { index, sourceName: renderedRow.sourceName })
 
   async function getColors() {
@@ -41,14 +41,23 @@
     color = await getColors()
   }
 
+  async function setCurrentRow() {
+    const usagiInfo: IUsagiInfo = { usagiRow: <IUsagiRow>renderedRow, usagiRowIndex: index }
+    if (!usagiRow) await createUsagiRow()
+    await updateUsagiRow(usagiInfo)
+  }
+
+  const createUsagiRow = async () => (usagiRow = new Usagi(<IUsagiRow>renderedRow, index))
+
   $: {
     renderedRow, index
     currentVisibleRows.set(index, renderedRow)
     setPreset()
+    setCurrentRow()
   }
 
   onMount(() => {
-    usagiRowLogic = new Usagi(<IUsagiRow>renderedRow, index)
+    usagiRow = new Usagi(<IUsagiRow>renderedRow, index)
   })
 </script>
 

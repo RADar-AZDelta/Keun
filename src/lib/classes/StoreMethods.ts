@@ -100,9 +100,20 @@ export default class StoreMethods {
     mappedToConceptIds.update(concepts => (concepts = this.addMappedConceptsToBib(concepts, updatedConcept)))
   }
 
+  static async deleteConceptInMappedConceptsBib(sourceCode: string, conceptId: number) {
+    mappedToConceptIds.update(concepts => (concepts = this.deleteMappedConceptsInBib(concepts, sourceCode, conceptId)))
+  }
+
   private static addMappedConceptsToBib(currentConcepts: IMappedRows, updatedConcepts: IMappedRows) {
     for (let [sourceCode, conceptIds] of Object.entries(updatedConcepts))
       currentConcepts = this.addMappedConceptToBib(currentConcepts, sourceCode, conceptIds)
+    return currentConcepts
+  }
+
+  private static deleteMappedConceptsInBib(currentConcepts: IMappedRows, sourceCode: string, conceptId: number) {
+    const currentRow = currentConcepts[sourceCode]
+    if (!currentRow) return currentConcepts
+    delete currentRow[conceptId]
     return currentConcepts
   }
 

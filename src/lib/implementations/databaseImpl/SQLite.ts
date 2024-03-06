@@ -73,8 +73,6 @@ export default class SQLiteImpl implements IDatabaseImpl {
     await this.performRequest(this.path + '?custom=true', { method: 'PUT', body: JSON.stringify(customFileContent) })
   }
 
-  async editFileAuthors(): Promise<void> {}
-
   async deleteFile(id: string): Promise<void> {
     if (dev) console.log(`deleteFile: Delete the file with id ${id} in IndexedDB`)
     await this.performRequest(this.path, { method: 'DELETE', body: JSON.stringify({ id }) })

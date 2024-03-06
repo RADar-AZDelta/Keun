@@ -1,9 +1,7 @@
-import type { IFirestoreUser } from '$lib/implementations/databaseImpl/FirebaseImpl2'
 import type { IDataTypeFunctionalities } from '@radar-azdelta/svelte-datatable'
 
 export interface IFileTemplate {
   file: File
-  authorizedAuthors: string[]
 }
 
 export interface IFileIdTemplate {
@@ -408,18 +406,6 @@ export interface IExtraUsagiCols {
   mappingStatus?: string | null
 }
 
-export interface IUpdatedFunctionalityImpl {
-  getFile(id: string): Promise<IConceptFiles | void>
-  checkFileExistance(name: string): Promise<boolean | string | void>
-  getFiles(userId?: string, roles?: string[]): Promise<IFile[] | void>
-  uploadFile(file: File, authors: string[]): Promise<string[] | void>
-  editFile(id: string, blob: Blob, customBlob?: Blob): Promise<void>
-  editFileAuthors(id: string, authors: string[]): Promise<void>
-  deleteFile(id: string): Promise<void>
-  downloadFile(id: string): Promise<void>
-  getAllAuthors(): Promise<void | IUserRestriction[]>
-}
-
 export interface IFileInformation {
   id: string
   name: string
@@ -438,13 +424,10 @@ export interface IDatabaseImpl {
   downloadFiles(id: string): Promise<void>
   checkFileExistance(id: string): Promise<undefined | IFileIds>
   getFilesList(): Promise<IFileInformation[]>
-  uploadKeunFile(file: File, authors: string[]): Promise<void>
+  uploadKeunFile(file: File): Promise<void>
   editKeunFile(id: string, blob: Blob): Promise<void>
   editCustomKeunFile(id: string, blob: Blob): Promise<void>
-  editKeunFileAuthors(id: string, authors: string[]): Promise<void>
   deleteKeunFile(id: string): Promise<void>
-  getAllPossibleAuthors(): Promise<IFirestoreUser[]>
-  saveUserConfig(user: IUser | undefined): Promise<void>
   getCustomConcepts(): Promise<any>
   addCustomConcept(customConcept: ICustomConceptCompact): Promise<any>
 }

@@ -8,9 +8,9 @@
 
   let dialog: HTMLDialogElement, manualText: string
 
-  // A method to open the dialog if it was closed and where the README from the Github repo is fetched
   async function openDialog(): Promise<void> {
-    manualText = await import(href).then(res => res.default)
+    const fetchResult = await fetch(href)
+    manualText = await fetchResult.text()
     dialog.showModal()
   }
 </script>

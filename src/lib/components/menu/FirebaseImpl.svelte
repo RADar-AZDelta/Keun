@@ -32,12 +32,6 @@
     if (e && e.stopPropagation) e.stopPropagation()
     dispatch('deleteFiles', { id })
   }
-
-  // Send a request to the parent to be able to edit the rights of the file with corresponding id
-  async function editRights(e: Event, id: string): Promise<void> {
-    if (e && e.stopPropagation) e.stopPropagation()
-    dispatch('editRights', { id })
-  }
 </script>
 
 {#if user}
@@ -50,7 +44,6 @@
       {#if $user.roles?.includes('admin')}
         <div>
           <button class="download-file" on:click={e => downloadFiles(e, file.id)}><SvgIcon id="download" /></button>
-          <button class="edit-file" on:click={e => editRights(e, file.id)}><SvgIcon id="edit" /></button>
           <button class="delete-file" on:click={e => deleteFiles(e, file.id)}><SvgIcon id="x" /></button>
         </div>
       {/if}
@@ -113,21 +106,6 @@
   }
 
   .download-file:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px #71bbd4;
-    background-color: #80c3d8;
-  }
-
-  .edit-file {
-    border: none;
-    background-color: inherit;
-  }
-
-  .edit-file:hover {
-    background-color: #80c3d8;
-  }
-
-  .edit-file:focus {
     outline: none;
     box-shadow: 0 0 0 2px #71bbd4;
     background-color: #80c3d8;

@@ -5,11 +5,9 @@
     ColumnsDialogShowED,
     DeleteFilesED,
     DownloadFilesED,
-    EditRightsED,
     FileUpdatedColumnsED,
     IFileInformation,
   } from '$lib/components/Types'
-  import AuthorsDialog from '$lib/components/menu/AuthorsDialog.svelte'
   import ColumnsDialog from '$lib/components/menu/ColumnsDialog.svelte'
   import FileChoiceDialog from '$lib/components/menu/FileChoiceDialog.svelte'
   import FileInputDialog from '$lib/components/menu/FileInputDialog.svelte'
@@ -25,89 +23,68 @@
   let file: File
   let cols: string[] = []
   let missing: Record<string, string> = {}
-  let authorizedAuthors: string[] = []
   let processing: boolean = false
-  let selected: string
 
-  let fileInputDialog: SvelteComponent,
-    authorsDialog: SvelteComponent,
-    columnDialog: SvelteComponent,
-    locationDialog: SvelteComponent
+  let fileInputDialog: SvelteComponent, columnDialog: SvelteComponent, locationDialog: SvelteComponent
 
-  // A method to upload a file & refetch all the files
-  async function uploadFile(): Promise<void> {
+  async function uploadFile() {
     if (dev) console.log('uploadFile: Uploading a file')
     if (!$databaseImpl) await loadImplDB()
-    await $databaseImpl!.uploadKeunFile(file, authorizedAuthors)
+    await $databaseImpl!.uploadKeunFile(file)
     await getFiles()
     fileInputDialog.closeDialog()
   }
 
-  // Select the correct file & show a pop-up to change the authors
-  async function editRights(e: CustomEvent<EditRightsED>): Promise<void> {
-    selected = e.detail.id
-    authorsDialog.showDialog()
-  }
-
-  // Open the input pop-up to add a file
   const openFileInputDialog = async () => fileInputDialog.showDialog()
 
-  // Open the pop-up to change missing columns to the correct name
-  async function openColumnDialog(e: CustomEvent<ColumnsDialogShowED>): Promise<void> {
-    if (e.detail.file) file = e.detail.file
-    missing = e.detail.missingColumns
-    cols = e.detail.currentColumns
+  async function openColumnDialog(e: CustomEvent<ColumnsDialogShowED>) {
+    if (e.detail.file) ({ file } = e.detail)
+    ;({ missingColumns: missing, currentColumns: cols } = e.detail)
     columnDialog.showDialog()
   }
 
-  // A method to check if there is cache of files
-  async function checkForCache(e: CustomEvent<CheckForCacheED>): Promise<void> {
+  async function checkForCache(e: CustomEvent<CheckForCacheED>) {
     if (dev) console.log('checkForCache: Checking for cache')
     if (!$databaseImpl) await loadImplDB()
-    ;({ file, authorizedAuthors } = e.detail)
+    ;({ file } = e.detail)
     const cached = await $databaseImpl!.checkFileExistance(file.name)
     fileInputDialog.closeDialog()
     if (!cached) return await uploadFile()
     locationDialog.showDialog()
   }
 
-  // A method to get all the files to map
-  async function getFiles(): Promise<void> {
+  async function getFiles() {
     if (dev) console.log('getFiles: Get all the files in the database')
     if (!$databaseImpl) await loadImplDB()
     const getFilesRes = await $databaseImpl?.getFilesList()
-    console.log('LIST ', getFilesRes)
     if (getFilesRes) files = getFilesRes
   }
 
-  // Download the file & eventual custom concepts file
-  async function downloadFiles(e: CustomEvent<DownloadFilesED>): Promise<void> {
+  async function downloadFiles(e: CustomEvent<DownloadFilesED>) {
     if (!$databaseImpl) await loadImplDB()
     const { id } = e.detail
     await $databaseImpl?.downloadFiles(id)
     await getFiles()
   }
 
-  // Delete the files regarding the file name
-  async function deleteFiles(e: CustomEvent<DeleteFilesED>): Promise<void> {
+  async function deleteFiles(e: CustomEvent<DeleteFilesED>) {
     if (dev) console.log('deleteFile: Deleting a file')
     processing = true
     if (!$databaseImpl) await loadImplDB()
-    await $databaseImpl!.deleteKeunFile(e.detail.id)
+    const { id: fileId } = e.detail
+    await $databaseImpl!.deleteKeunFile(fileId)
     await getFiles()
     processing = false
     if (dev) console.log('deleteFile: File has been deleted')
   }
 
-  // When choosing to delete the cache & upload the file with the same name again
-  async function reUploadFile(e: CustomEvent<FileUploadED>): Promise<void> {
+  async function reUploadFile(e: CustomEvent<FileUploadED>) {
     await deleteFiles(e)
     await uploadFile()
   }
 
-  // Update the columns to the correct name in a file
   async function updateFileColumns(e: CustomEvent<FileUpdatedColumnsED>) {
-    file = e.detail.file
+    ;({ file } = e.detail)
     uploadFile()
   }
 
@@ -135,8 +112,6 @@
 
 <ColumnsDialog {missing} {cols} {file} on:fileUpdateColumns={updateFileColumns} bind:this={columnDialog} />
 
-<AuthorsDialog bind:processing bind:selected bind:this={authorsDialog} />
-
 <main class="files-screen">
   <section class="file-selection">
     <section class="file-container">
@@ -145,12 +120,7 @@
         <div class="file-list">
           {#if databaseImplementation === 'firebase'}
             {#if ($user?.roles?.includes('user') || $user?.roles?.includes('admin')) && files}
-              <FirebaseImpl
-                bind:files
-                on:downloadFiles={downloadFiles}
-                on:deleteFiles={deleteFiles}
-                on:editRights={editRights}
-              />
+              <FirebaseImpl bind:files on:downloadFiles={downloadFiles} on:deleteFiles={deleteFiles} />
             {:else}
               <p class="rights-error">You do not have sufficient rights, contact an admin please.</p>
             {/if}
