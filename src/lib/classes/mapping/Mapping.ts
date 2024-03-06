@@ -8,10 +8,10 @@ export default class Mapping {
     await StoreMethods.updateTableRow(index, mappingInfo)
   }
 
-  static async mapRow(athenaInfo: IAthenaInfo, equivalence: string, action: string) {
+  static async mapRow(athenaInfo: IAthenaInfo, equivalence: string, action: string, custom: boolean = false) {
     const settings = await StoreMethods.getSettings()
     const { mapToMultipleConcepts } = settings
-    if (mapToMultipleConcepts) await MultipleMapping.multipleMapping(athenaInfo, action, equivalence)
-    else await SingleMapping.singleMapping(athenaInfo, action, equivalence)
+    if (mapToMultipleConcepts) await MultipleMapping.multipleMapping(athenaInfo, action, equivalence, custom)
+    else await SingleMapping.singleMapping(athenaInfo, action, equivalence, custom)
   }
 }

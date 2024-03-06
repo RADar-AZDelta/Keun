@@ -33,54 +33,36 @@
   }
 </script>
 
-{#if selectedRow?.sourceCode && $mappedToConceptIds[selectedRow.sourceCode] && $mappedToConceptIds[selectedRow.sourceCode][renderedRow.id]}
-  {#if $mappedToConceptIds[selectedRow.sourceCode][renderedRow.id] === 'APPROVED'}
-    <button title="Mapped to row" style="background-color: {Config.colors['APPROVED']};">
-      <SvgIcon id="check" width="10px" height="10px" />
-    </button>
-  {:else if $mappedToConceptIds[selectedRow.sourceCode][renderedRow.id] === 'SEMI-APPROVED' && selectedRow.statusSetBy !== $user.name}
-    <button on:click={approveRow} title="Approve mapping" style="background-color: {Config.colors['SEMI-APPROVED']};">
-      <SvgIcon id="check" width="10px" height="10px" />
-    </button>
-  {:else if $mappedToConceptIds[selectedRow.sourceCode][renderedRow.id] === 'SEMI-APPROVED'}
-    <button title="Mapped to row" style="background-color: {Config.colors['SEMI-APPROVED']};">
-      <SvgIcon id="plus" width="10px" height="10px" />
-    </button>
-  {:else}
-    <button title="Map to row" on:click={mapRowApproved}>
-      <SvgIcon id="plus" width="10px" height="10px" />
-    </button>
-  {/if}
+{#if selectedRow?.sourceCode && $mappedToConceptIds[selectedRow.sourceCode]?.[renderedRow.id] === 'APPROVED'}
+  <button title="Mapped to row" style="background-color: {Config.colors['APPROVED']};">
+    <SvgIcon id="check" width="10px" height="10px" />
+  </button>
+{:else if selectedRow?.sourceCode && $mappedToConceptIds[selectedRow.sourceCode]?.[renderedRow.id] === 'SEMI-APPROVED' && selectedRow.statusSetBy !== $user.name}
+  <button on:click={approveRow} title="Approve mapping" style="background-color: {Config.colors['SEMI-APPROVED']};">
+    <SvgIcon id="check" width="10px" height="10px" />
+  </button>
+{:else if selectedRow?.sourceCode && $mappedToConceptIds[selectedRow.sourceCode]?.[renderedRow.id] === 'SEMI-APPROVED'}
+  <button title="Mapped to row" style="background-color: {Config.colors['SEMI-APPROVED']};">
+    <SvgIcon id="plus" width="10px" height="10px" />
+  </button>
 {:else}
   <button title="Map to row" on:click={mapRowApproved}>
     <SvgIcon id="plus" width="10px" height="10px" />
   </button>
 {/if}
-{#if selectedRow?.sourceCode && $mappedToConceptIds[selectedRow.sourceCode] && $mappedToConceptIds[selectedRow.sourceCode][renderedRow.id]}
-  {#if $mappedToConceptIds[selectedRow.sourceCode][renderedRow.id] === 'FLAGGED'}
-    <button title="Flagged row" style="background-color: {Config.colors['FLAGGED']};">
-      <SvgIcon id="flag" width="10px" height="10px" />
-    </button>
-  {:else}
-    <button title="Flag row" on:click={mapRowFlagged}>
-      <SvgIcon id="flag" width="10px" height="10px" />
-    </button>
-  {/if}
+{#if selectedRow?.sourceCode && $mappedToConceptIds[selectedRow.sourceCode]?.[renderedRow.id] === 'FLAGGED'}
+  <button title="Flagged row" style="background-color: {Config.colors['FLAGGED']};">
+    <SvgIcon id="flag" width="10px" height="10px" />
+  </button>
 {:else}
   <button title="Flag row" on:click={mapRowFlagged}>
     <SvgIcon id="flag" width="10px" height="10px" />
   </button>
 {/if}
-{#if selectedRow?.sourceCode && $mappedToConceptIds[selectedRow.sourceCode] && $mappedToConceptIds[selectedRow.sourceCode][renderedRow.id]}
-  {#if $mappedToConceptIds[selectedRow.sourceCode][renderedRow.id] === 'UNAPPROVED'}
-    <button title="Unapproved row" style="background-color: {Config.colors['UNAPPROVED']};">
-      <SvgIcon id="x" width="10px" height="10px" />
-    </button>
-  {:else}
-    <button title="Unapprove row" on:click={mapRowUnapproved}>
-      <SvgIcon id="x" width="10px" height="10px" />
-    </button>
-  {/if}
+{#if selectedRow?.sourceCode && $mappedToConceptIds[selectedRow.sourceCode]?.[renderedRow.id] === 'UNAPPROVED'}
+  <button title="Unapproved row" style="background-color: {Config.colors['UNAPPROVED']};">
+    <SvgIcon id="x" width="10px" height="10px" />
+  </button>
 {:else}
   <button title="Unapprove row" on:click={mapRowUnapproved}>
     <SvgIcon id="x" width="10px" height="10px" />

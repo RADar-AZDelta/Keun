@@ -7,13 +7,20 @@ export default class CommonMapping {
   static usagiRowIndex: number
   static action: string
   static equivalence: string
+  static custom: boolean
 
-  static async setVars({ athenaRow, usagiRow, usagiRowIndex }: IAthenaInfo, action: string, equivalence: string) {
+  static async setVars(
+    { athenaRow, usagiRow, usagiRowIndex }: IAthenaInfo,
+    action: string,
+    equivalence: string,
+    custom: boolean,
+  ) {
     this.athenaRow = athenaRow
     this.usagiRow = usagiRow
     this.usagiRowIndex = usagiRowIndex
     this.action = action
     this.equivalence = equivalence
+    this.custom = custom
   }
 
   static async rowMapping(index?: number) {
@@ -47,7 +54,7 @@ export default class CommonMapping {
       mappingType: null,
       'ADD_INFO:approvedBy': null,
       'ADD_INFO:approvedOn': null,
-      'ADD_INFO:customConcept': null,
+      'ADD_INFO:customConcept': this.custom,
     }
     return updatedProperties
   }

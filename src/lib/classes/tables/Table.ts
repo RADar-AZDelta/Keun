@@ -42,10 +42,11 @@ export default class Table {
   }
 
   private static async addConceptToMappedConceptsIfExists(concept: IUsagiRow) {
-    if (!concept.conceptId) return
+    const customConcept = concept['ADD_INFO:customConcept']
+    if ((!concept.conceptId && !customConcept) || (!concept.conceptName && customConcept)) return
     const updatedConcepts: IMappedRows = {
       [concept.sourceCode]: {
-        [concept.conceptId]: concept.mappingStatus ?? '',
+        [customConcept ? `custom-${concept.conceptName ?? ''}` : concept.conceptId ?? '']: concept.mappingStatus ?? '',
       },
     }
     await StoreMethods.updateMappedConceptsBib(updatedConcepts)

@@ -123,7 +123,7 @@ export default class StoreMethods {
       return currentConcepts
     }
     for (let [conceptId, mappingStatus] of Object.entries(concepts))
-      currentConcepts[sourceCode][Number(conceptId)] = mappingStatus
+      currentConcepts[sourceCode][conceptId] = mappingStatus
     return currentConcepts
   }
 

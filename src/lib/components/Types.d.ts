@@ -234,7 +234,7 @@ export interface IMappedRows {
 }
 
 export interface IMappedRowsConcept {
-  [key: number]: string
+  [key: number | string]: string
 }
 
 export interface IDataTypeFile extends IDataTypeFunctionalities {
@@ -430,6 +430,7 @@ export interface IDatabaseImpl {
   deleteKeunFile(id: string): Promise<void>
   getCustomConcepts(): Promise<any>
   addCustomConcept(customConcept: ICustomConceptCompact): Promise<any>
+  checkIfCustomConceptAlreadyExists(conceptInput: ICustomConceptCompact): Promise<boolean>
 }
 
 export interface IAuthImpl {

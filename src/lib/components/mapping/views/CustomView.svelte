@@ -43,6 +43,7 @@
     id: 'createCustomConcepts',
     saveOptions: false,
     rowsPerPageOptions: [5, 10, 15],
+    rowsPerPage: 15,
   }
 
   async function mapCustomConcept(e: CustomEvent<MapCustomConceptED>) {

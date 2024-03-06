@@ -5,12 +5,11 @@
   import type { ICustomEvents } from '$lib/components/Types'
 
   export let id: string, list: Record<string, any>
-  export let initial: string | undefined = undefined
+  export let inputValue: string | null = null
 
-  let inputValue: string | null = initial ?? null
   let value: string, key: string
 
-  let filteredValues: Map<string, any> = new Map()
+  let filteredValues: Map<string, string> = new Map()
   let autoCompleted: boolean = false
   let focus: boolean = false
   let suggestionsFocus: boolean = false
@@ -20,7 +19,7 @@
   function save(): void {
     if (!inputValue) return
     value = list[inputValue] ?? inputValue
-    if (!Object.keys(list).includes(value) && !Object.values(list).includes(value)) return
+    if (!Object.values(list).includes(value)) return
     dispatch('autoComplete', { id, value, key })
   }
 
@@ -33,7 +32,7 @@
 
   // A method to search for suggestions to apply to the input field
   function filter(): void {
-    filteredValues = new Map<string, any>()
+    filteredValues = new Map<string, string>()
     if (!inputValue) return
     const pairs = Object.entries(list).filter(findPossibleSuggestions)
     for (let [key, value] of pairs) filteredValues.set(key, value)
@@ -71,7 +70,7 @@
       {#each [...filteredValues] as [key, value], i}
         {#if i < 7 && !autoCompleted}
           <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
-          <li id={key} on:click={onClickAutoComplete} on:keydown={onClickAutoComplete}>{key}</li>
+          <li id={key} on:click={onClickAutoComplete} on:keydown={onClickAutoComplete}>{value}</li>
         {/if}
       {/each}
     </ul>
