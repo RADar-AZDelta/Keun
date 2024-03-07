@@ -16,4 +16,5 @@ export class Config {
   static athenaViews = config.athenaViews
   static customTableOptions: ITableOptions = config.customTableOptions
   static flaggedTableOptions: ITableOptions = config.flaggedTableOptions
+  static languages: Record<string, string> = config.languages
 }

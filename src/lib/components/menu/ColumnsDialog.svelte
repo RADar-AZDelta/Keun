@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { dev } from '$app/environment'
   import { createEventDispatcher } from 'svelte'
   import { user } from '$lib/store'
   import type { PageEvents } from '$lib/Types'
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
+  import { logWhenDev } from '@radar-azdelta-int/radar-utils'
 
   export let missing: Record<string, string>, cols: string[], file: File
 
@@ -17,7 +17,7 @@
 
   // A method to rename the columns to get a standardized version of the file
   async function fileUploadWithColumnChanges(): Promise<void> {
-    if (dev) console.log('fileUploadWithColumnChanges: The file is uploading and process the column changes')
+    logWhenDev('fileUploadWithColumnChanges: The file is uploading and process the column changes')
     if (!$user) return console.error('fileUploadWithColumnChanges: There is no author name set.')
     var reader = new FileReader()
     reader.onload = processUpdatedColumns
@@ -26,7 +26,7 @@
 
   // Read the file and update the columns
   async function processUpdatedColumns(this: FileReader, ev: ProgressEvent<FileReader>): Promise<void> {
-    if (dev) console.log('processUpdatedColumns: Update the given columns to the expected columns')
+    logWhenDev('processUpdatedColumns: Update the given columns to the expected columns')
     if (!ev.target?.result) return
     // Get the columns row of the file
     const fileContent = ev.target.result.toString()

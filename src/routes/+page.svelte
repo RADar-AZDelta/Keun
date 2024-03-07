@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { dev } from '$app/environment'
   import type {
     CheckForCacheED,
     ColumnsDialogShowED,
@@ -19,6 +18,7 @@
   import type { SvelteComponent } from 'svelte'
   import type { FileUploadED } from '$lib/Types'
   import { Providers } from '$lib/enums'
+  import { logWhenDev } from '@radar-azdelta-int/radar-utils'
 
   let files: IFileInformation[] = []
   let file: File
@@ -30,7 +30,7 @@
   let fileInputDialog: SvelteComponent, columnDialog: SvelteComponent, locationDialog: SvelteComponent
 
   async function uploadFile() {
-    if (dev) console.log('uploadFile: Uploading a file')
+    logWhenDev('uploadFile: Uploading a file')
     if (!$databaseImpl) await loadImplDB()
     await $databaseImpl!.uploadKeunFile(file)
     await getFiles()
@@ -46,7 +46,7 @@
   }
 
   async function checkForCache(e: CustomEvent<CheckForCacheED>) {
-    if (dev) console.log('checkForCache: Checking for cache')
+    logWhenDev('checkForCache: Checking for cache')
     if (!$databaseImpl) await loadImplDB()
     ;({ file } = e.detail)
     const cached = await $databaseImpl!.checkFileExistance(file.name)
@@ -57,7 +57,7 @@
   }
 
   async function getFiles() {
-    if (dev) console.log('getFiles: Get all the files in the database')
+    logWhenDev('getFiles: Get all the files in the database')
     if (!$databaseImpl) await loadImplDB()
     const getFilesRes = await $databaseImpl?.getFilesList()
     if (getFilesRes) files = getFilesRes
@@ -72,14 +72,14 @@
   }
 
   async function deleteFiles(e: CustomEvent<DeleteFilesED>) {
-    if (dev) console.log('deleteFile: Deleting a file')
+    logWhenDev('deleteFile: Deleting a file')
     processing = true
     if (!$databaseImpl) await loadImplDB()
     const { id: fileId } = e.detail
     if (fileId) return await $databaseImpl!.deleteKeunFile(fileId)
     await getFiles()
     processing = false
-    if (dev) console.log('deleteFile: File has been deleted')
+    logWhenDev('deleteFile: File has been deleted')
   }
 
   async function reUploadFile(e: CustomEvent<FileUploadED>) {

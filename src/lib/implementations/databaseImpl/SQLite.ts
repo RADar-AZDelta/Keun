@@ -1,5 +1,4 @@
 import { blobToString, downloadWithUrl, logWhenDev, stringToFile } from '@radar-azdelta-int/radar-utils'
-import { dev } from '$app/environment'
 import { base } from '$app/paths'
 import type { IDatabaseImpl, IFile, IMessage } from '$lib/Types'
 
@@ -63,7 +62,7 @@ export default class SQLiteImpl implements IDatabaseImpl {
   // }
 
   async editFile(id: string, blob: Blob, customBlob?: Blob): Promise<void> {
-    if (dev) console.log(`editFile: Editing the file with id ${id}`)
+    logWhenDev(`editFile: Editing the file with id ${id}`)
     const fileString = await blobToString(blob)
     const fileContent = { id, content: fileString }
     await this.performRequest(this.path, { method: 'PUT', body: JSON.stringify(fileContent) })
@@ -74,13 +73,13 @@ export default class SQLiteImpl implements IDatabaseImpl {
   }
 
   async deleteFile(id: string): Promise<void> {
-    if (dev) console.log(`deleteFile: Delete the file with id ${id} in IndexedDB`)
+    logWhenDev(`deleteFile: Delete the file with id ${id} in IndexedDB`)
     await this.performRequest(this.path, { method: 'DELETE', body: JSON.stringify({ id }) })
     await this.performRequest(this.path, { method: 'DELETE', body: JSON.stringify({ id }) })
   }
 
   async downloadFile(id: string): Promise<void> {
-    if (dev) console.log('downloadFile: Download the file & the custom concepts')
+    logWhenDev('downloadFile: Download the file & the custom concepts')
     const fileInfo = await this.performRequest(this.path + `?id=${id}`)
     if (!fileInfo || !fileInfo.details.content) return console.error('getFile: File not found')
     const { name, content } = fileInfo.details

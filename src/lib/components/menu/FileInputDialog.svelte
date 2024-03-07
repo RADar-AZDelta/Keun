@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { dev } from '$app/environment'
   import { createEventDispatcher } from 'svelte'
   import { Drop, SvgIcon, Spinner } from '@radar-azdelta-int/radar-svelte-components'
   import { user } from '$lib/store'
   import type { FileDropED, PageEvents } from '$lib/Types'
+  import { logWhenDev } from '@radar-azdelta-int/radar-utils'
 
   export let processing: boolean
 
@@ -21,7 +21,7 @@
   }
 
   async function onFileInputChange(e: Event): Promise<void> {
-    if (dev) console.log('onFileInputChange: A file has been upload via the input button')
+    logWhenDev('onFileInputChange: A file has been upload via the input button')
     const allowedExtensions = ['csv']
     const inputFiles = (e.target as HTMLInputElement).files
     if (!inputFiles) return
@@ -37,7 +37,7 @@
   }
 
   async function checkForMissingColumns(this: FileReader, ev: ProgressEvent<FileReader>): Promise<void> {
-    if (dev) console.log('checkForMissingColumns: Checking if there are missing columns in the file')
+    logWhenDev('checkForMissingColumns: Checking if there are missing columns in the file')
     if (!this.result) return
     let content = this.result.toString()
     if (!content) return
@@ -54,7 +54,7 @@
       if (!currentColumns.includes(col)) missingColumns[col] = ''
     })
     // Show the pop up where the user can select the corresponding columns to the missing important columns
-    if (dev) console.log('checkForMissingColumns: All missing columns were identified')
+    logWhenDev('checkForMissingColumns: All missing columns were identified')
     dispatch('columnsDialogShow', { missingColumns, currentColumns, file })
   }
 

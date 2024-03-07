@@ -104,6 +104,8 @@
     await readFile()
   }
 
+  // TODO: fix the flagged concepts issue
+
   async function syncFile() {
     if (!$table) return
     const blob = await $table.getBlob()

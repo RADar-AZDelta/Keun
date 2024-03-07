@@ -1,5 +1,5 @@
 import { FirebaseFirestore } from '@radar-azdelta-int/radar-firebase-utils'
-import { dev } from '$app/environment'
+import { logWhenDev } from '@radar-azdelta-int/radar-utils'
 import {
   PUBLIC_FIREBASE_API_KEY,
   PUBLIC_FIREBASE_APP_ID,
@@ -35,7 +35,7 @@ export default class FirebaseImpl implements ISettingsImpl {
   collection: string = 'settings'
 
   async getSettings(): Promise<ISettings> {
-    if (dev) console.log('getSettings: Reading the settings from Firestore')
+    logWhenDev('getSettings: Reading the settings from Firestore')
     const retrievedUser = await this.getUser()
     if (!retrievedUser?.uid) return defaultSettings
     const userInfoDocument = await this.firestore.readFirestore(this.collection, retrievedUser.uid)
@@ -46,7 +46,7 @@ export default class FirebaseImpl implements ISettingsImpl {
   }
 
   async updateSettings(settings: ISettings): Promise<void> {
-    if (dev) console.log('updateSettings: Updating the settings to the Firestore')
+    logWhenDev('updateSettings: Updating the settings to the Firestore')
     const retrievedUser = await this.getUser()
     if (!retrievedUser?.uid) return
     await this.firestore.updateToFirestoreIfNotExist(this.collection, retrievedUser.uid, settings)

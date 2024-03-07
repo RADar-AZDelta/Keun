@@ -5,6 +5,14 @@
     "SEMI-APPROVED": "hsl(84, 100%, 70%)",
     "UNAPPROVED": "hsl(8, 100%, 59%)"
   },
+  "languages": {
+    "nl": "Dutch",
+    "en": "English",
+    "de": "German",
+    "fr": "French",
+    "it": "Italian",
+    "es": "Spanish"
+  },
   "usagiRow": {
     "dateCells": ["statusSetOn", "createdOn", "ADD_INFO:approvedOn"],
     "editableCells": ["comment"]
