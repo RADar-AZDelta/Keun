@@ -38,6 +38,13 @@ export default class LocalImpl implements IDatabaseImpl {
     return file
   }
 
+  async getFlaggedFile(id: string): Promise<IFile | undefined> {
+    logWhenDev(`getFlaggedFile: Get file with id ${id} in IndexedDB`)
+    await this.openFlaggedDatabase()
+    const file = await this.getFileFromDatabase(this.flaggedDb, id)
+    return file
+  }
+
   private async getFileFromDatabase(database: IndexedDB | undefined, id: string) {
     if (!database) return
     const fileInfo: undefined | IDatabaseFile = await database.get(id, true, true)
@@ -74,7 +81,14 @@ export default class LocalImpl implements IDatabaseImpl {
     await this.openDatabase()
     const file: undefined | IDatabaseFile = await this.db?.get(id, true)
     if (!file || !file.id) return
-    return { id: file.id, customId: file.customId }
+    return { id: file.id, customId: file.customId, flaggedId: file.flaggedId }
+  }
+
+  async checkForFileWithSameName(name: string): Promise<string | false> {
+    await this.openDatabase()
+    const file: undefined | IDatabaseFile = await this.db?.get(name, true)
+    if (!file || !file.id) return false
+    return file.id
   }
 
   async getFilesList(): Promise<IFileInformation[]> {

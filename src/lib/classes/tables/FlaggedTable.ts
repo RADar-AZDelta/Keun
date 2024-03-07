@@ -28,11 +28,21 @@ export default class FlaggedTable {
     await this.insertTableRows(concepts)
   }
 
-  private static async insertTableRows(rows: IUsagiRow[]) {
+  static async insertTableRows(rows: IUsagiRow[]) {
     const flaggedTable = await this.getFlaggedTable()
     await flaggedTable.insertRows(rows)
+  }
 
-    console.log(await flaggedTable.getFullRow(0))
+  static async removeAllTableRows() {
+    const flaggedTable = await this.getFlaggedTable()
+    const pagination = flaggedTable.getTablePagination()
+    if (!pagination || !pagination.totalRows) return
+    await flaggedTable.deleteRows(Array.from(Array(pagination.totalRows).keys()))
+  }
+
+  static async getBlob() {
+    const flaggedTable = await this.getFlaggedTable()
+    return await flaggedTable.getBlob()
   }
 
   private static async getFlaggedTable(): Promise<DataTable> {

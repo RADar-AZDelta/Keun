@@ -436,13 +436,16 @@ export interface IFileInformation {
 export interface IFileIds {
   id: string
   customId: string
+  flaggedId: string
 }
 
 export interface IDatabaseImpl {
   getKeunFile(id: string): Promise<IFile | undefined>
   getCustomKeunFile(id: string): Promise<IFile | undefined>
+  getFlaggedFile(id: string): Promise<IFile | undefined>
   downloadFiles(id: string): Promise<void>
   checkFileExistance(id: string): Promise<undefined | IFileIds>
+  checkForFileWithSameName(name: string): Promise<false | string>
   getFilesList(): Promise<IFileInformation[]>
   uploadKeunFile(file: File): Promise<void>
   editKeunFile(id: string, blob: Blob): Promise<void>

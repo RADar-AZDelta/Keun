@@ -29,9 +29,11 @@
   let selectedRow: IUsagiRow, selectedRowIndex: number
   let search: SvelteComponent
   let globalAthenaFilter: { column: string; filter: string | undefined } = { column: 'all', filter: undefined }
+  let filesLoaded: boolean = false
   let syncingComplete: boolean = false
 
   let customFileId: string | undefined = undefined
+  let flaggedFileId: string | undefined = undefined
   let selectedFileId: string
 
   async function navigateRow(e: CustomEvent<NavigateRowED>) {
@@ -59,10 +61,11 @@
   }
 
   async function autoMapPage() {
-    if (!tableRendered) tableRendered = true
-    if (!customsExtracted) await extractCustomConcepts()
-    await AutoMapping.autoMapPage()
-    $triggerAutoMapping = false
+    if (tableRendered) {
+      if (!customsExtracted) await extractCustomConcepts()
+      await AutoMapping.autoMapPage()
+      $triggerAutoMapping = false
+    } else tableRendered = true
   }
 
   async function approvePage() {
@@ -85,8 +88,10 @@
     if (!$databaseImpl) await loadImplDB()
     const keunFile = await $databaseImpl!.getKeunFile(selectedFileId)
     const customKeunFile = await $databaseImpl?.getCustomKeunFile(customFileId ?? '')
+    const flaggedFile = await $databaseImpl?.getFlaggedFile(flaggedFileId ?? '')
     if (keunFile && keunFile?.file) file = keunFile.file
     if (customKeunFile && customKeunFile?.file) customConceptsFile = customKeunFile.file
+    if (flaggedFile && flaggedFile?.file) flaggedConceptsFile = flaggedFile.file
   }
 
   async function getCustomFileId() {
@@ -94,48 +99,51 @@
     const cached = await $databaseImpl!.checkFileExistance(selectedFileId)
     if (!cached) return
     customFileId = cached.customId
+    flaggedFileId = cached.flaggedId
   }
 
   async function load() {
+    if (filesLoaded) return
     const urlId = $page.url.searchParams.get('id')
     if (!urlId) return goto(`${base}/`)
     selectedFileId = urlId
     if (!customFileId) await getCustomFileId()
     await readFile()
+    filesLoaded = true
   }
 
-  // TODO: fix the flagged concepts issue
-
   async function syncFile() {
-    if (!$table) return
-    const blob = await $table.getBlob()
+    const blob = await Table.getBlob()
     if (!blob) return
-    await extractFlaggedConcepts()
-    console.log('FLAGGED ', flaggedConcepts)
-    await FlaggedTable.addFlaggedConcepts(flaggedConcepts)
-    const customBlob = $customTable ? await $customTable.getBlob() : undefined
+    await insertFlaggedRows()
+    const customBlob = await CustomTable.getBlob()
+    const flaggedBlob = await FlaggedTable.getBlob()
     if (!$databaseImpl) await loadImplDB()
     await $databaseImpl?.editKeunFile(selectedFileId, blob)
     if (customBlob) await $databaseImpl?.editCustomKeunFile(selectedFileId, customBlob)
-    // TODO: check the getBlob method for an array of objects datatable, the datatable is filled so that's not the problem
-    const flaggedBlob = await $flaggedTable.getBlob()
-    const res = await flaggedBlob.text()
-    console.log('BLOB ', res, ' AND ', flaggedBlob)
     if (flaggedBlob) await $databaseImpl?.editFlaggedFile(selectedFileId, flaggedBlob)
   }
 
-  const extractFlaggedConcepts = async () => (flaggedConcepts = await Table.extractFlaggedConcepts())
+  async function insertFlaggedRows() {
+    const concepts = await extractFlaggedConcepts()
+    if (!concepts.length) return
+    await FlaggedTable.removeAllTableRows()
+    await FlaggedTable.insertTableRows(concepts)
+  }
+
+  const extractFlaggedConcepts = async () => await Table.extractFlaggedConcepts()
+
+  async function checkIfTableIsRenderedBeforeAutomapping() {
+    if (!tableRendered) return
+    await autoMapPage()
+  }
 
   $: {
     if ($abortAutoMapping) abortAutoMap()
   }
 
   $: {
-    if ($triggerAutoMapping) autoMapPage()
-  }
-
-  $: {
-    if (selectedFileId) load()
+    if ($triggerAutoMapping) checkIfTableIsRenderedBeforeAutomapping()
   }
 
   beforeNavigate(async ({ to, cancel, type }) => {
@@ -165,7 +173,6 @@
     bind:this={$table}
     options={tableOptions}
     on:rendering={abortAutoMap}
-    on:renderingComplete={autoMapPage}
     modifyColumnMetadata={Table.modifyColumnMetadata}
   >
     <UsagiRow
@@ -206,7 +213,7 @@
     <DataTable
       data={flaggedConceptsFile}
       options={Config.flaggedTableOptions}
-      modifyColumnMetadata={Table.modifyColumnMetadata}
+      modifyColumnMetadata={FlaggedTable.modifyColumnMetadata}
       bind:this={$flaggedTable}
     />
   </div>

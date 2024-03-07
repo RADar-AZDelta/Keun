@@ -40,6 +40,7 @@ export default class FirebaseImpl implements IDatabaseImpl {
 
   getKeunFile = async (id: string) => await this.readFileFromCollection(id, this.storageCollection)
   getCustomKeunFile = async (id: string) => await this.readFileFromCollection(id, this.storageCustomColl)
+  getFlaggedFile = async(id: string) => await this.readFileFromCollection(id, this.storageFlaggedColl)
 
   private async readFileFromCollection(id: string, collection: string): Promise<IFile | undefined> {
     const fileInfo = await this.storage.readFileStorage(`${collection}/${id}`)
@@ -84,6 +85,14 @@ export default class FirebaseImpl implements IDatabaseImpl {
     }
   }
 
+  async checkForFileWithSameName(name: string) {
+    const files = await this.firestore.readFirestoreCollection(this.firestoreFileColl)
+    if (!files) return false
+    const file = files.docs.find(file => file.data().name === name)
+    if (!file) return false
+    return file.id
+  }
+
   async getFilesList(): Promise<IFileInformation[]> {
     const fileIds = await this.getFilesFromFirestore()
     const fileNames = []
@@ -121,15 +130,32 @@ export default class FirebaseImpl implements IDatabaseImpl {
     const fileId = crypto.randomUUID()
     const customId = crypto.randomUUID()
     const flaggedId = crypto.randomUUID()
-    const metaData: IStorageCustomMetadata = { customMetadata: { name: file.name, customId, flaggedId } }
-    await this.storage.uploadFileStorage(`${this.storageCollection}/${fileId}`, file, metaData)
-    const customName = `${file.name.split('.')[0]}_concepts.csv`
-    const customFile = await this.blobToFile(new Blob([Config.customBlobInitial]), customName)
-    const customMetaData: IStorageCustomMetadata = { customMetadata: { name: customName, customId, flaggedId } }
-    await this.storage.uploadFileStorage(`${this.storageCustomColl}/${customId}`, customFile, customMetaData)
-    const flaggedName = `${file.name.split('.')[0]}_flagged.csv`
-    const fileData = { name: file.name, customId, custom: customName, flaggedName }
+    await this.uploadFile(fileId, file, customId, flaggedId)
+    const customName = await this.uploadCustomFile(customId, file.name, flaggedId)
+    const flaggedName = await this.uploadFlaggedFile(flaggedId, file.name, customId)
+    const fileData = { name: file.name, customId, custom: customName, flaggedId, flaggedName }
     await this.firestore.updateToFirestoreIfNotExist(this.firestoreFileColl, fileId, fileData)
+  }
+
+  private async uploadFile(id: string, file: File, customId: string, flaggedId: string) {
+    const metaData: IStorageCustomMetadata = { customMetadata: { name: file.name, customId, flaggedId } }
+    await this.storage.uploadFileStorage(`${this.storageCollection}/${id}`, file, metaData)
+  }
+
+  private async uploadCustomFile(id: string, name: string, flaggedId: string) {
+    const customName = `${name.split('.')[0]}_concepts.csv`
+    const customFile = await this.blobToFile(new Blob([Config.customBlobInitial]), customName)
+    const customMetaData: IStorageCustomMetadata = { customMetadata: { name: customName, customId: id, flaggedId } }
+    await this.storage.uploadFileStorage(`${this.storageCustomColl}/${id}`, customFile, customMetaData)
+    return customName
+  }
+
+  private async uploadFlaggedFile(id: string, name: string, customId: string) {
+    const flaggedName = `${name.split('.')[0]}_flagged.csv`
+    const flaggedFile = await this.blobToFile(new Blob([Config.flaggedBlobInitial]), flaggedName)
+    const customMetaData: IStorageCustomMetadata = { customMetadata: { name: flaggedName, customId, flaggedId: id } }
+    await this.storage.uploadFileStorage(`${this.storageFlaggedColl}/${id}`, flaggedFile, customMetaData)
+    return flaggedName
   }
 
   async editKeunFile(id: string, blob: Blob): Promise<void> {
@@ -147,7 +173,7 @@ export default class FirebaseImpl implements IDatabaseImpl {
     const { flaggedId, flaggedName: name, customId } = fileData
     const file = await this.blobToFile(blob, name)
     const metaData: IStorageCustomMetadata = { customMetadata: { name, customId, flaggedId } }
-    await this.storage.uploadFileStorage(`${this.storageCollection}/${flaggedId}`, file, metaData)
+    await this.storage.uploadFileStorage(`${this.storageFlaggedColl}/${flaggedId}`, file, metaData)
   }
 
   async editCustomKeunFile(id: string, blob: Blob) {

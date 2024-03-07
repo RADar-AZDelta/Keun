@@ -53,7 +53,6 @@ export default class UsagiRowDelete {
 
   private static async getNumberOfConcepts() {
     const params = { sourceCode: this.usagiRow.sourceCode }
-    console.log('IN GETNUMBEROFCONCEPTS')
     const numberQuery = (<Query>query().params(params))
       .filter((r: any, p: any) => r.sourceCode === p.sourceCode)
       .toObject()

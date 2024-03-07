@@ -103,6 +103,11 @@ export default class CustomTable {
     await customTable.insertRows([row])
   }
 
+  static async getBlob() {
+    const customTable = await this.getCustomTable()
+    return await customTable.getBlob()
+  }
+
   private static async getCustomTable(): Promise<DataTable> {
     return new Promise(resolve =>
       customTable.subscribe(table => {

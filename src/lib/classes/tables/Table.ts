@@ -86,6 +86,8 @@ export default class Table {
   }
 
   static async extractFlaggedConcepts() {
+    const columnsWereAdded = await this.checkIfTableConceptsAreWithNewColumns()
+    if (!columnsWereAdded) return []
     const flaggedConceptsQuery = query()
       .filter((r: any) => r.mappingStatus === 'FLAGGED')
       .toObject()
@@ -136,6 +138,11 @@ export default class Table {
   static async enableTable() {
     const table = await this.getTable()
     table.setDisabled(false)
+  }
+
+  static async getBlob() {
+    const table = await this.getTable()
+    return await table.getBlob()
   }
 
   private static async getTable(): Promise<DataTable> {

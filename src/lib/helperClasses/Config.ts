@@ -7,6 +7,7 @@ export class Config {
   static columnsMapped = config.columnsMapped
   static columnsUsagi = config.columnsUsagi
   static customBlobInitial = config.customBlobInitial
+  static flaggedBlobInitial = config.flaggedBlobInitial
   static customConceptInfo = config.customConceptInfo
   static equivalenceOptions = config.equivalenceOptions
   static filters = config.filters

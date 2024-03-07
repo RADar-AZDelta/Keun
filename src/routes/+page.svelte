@@ -49,10 +49,10 @@
     logWhenDev('checkForCache: Checking for cache')
     if (!$databaseImpl) await loadImplDB()
     ;({ file } = e.detail)
-    const cached = await $databaseImpl!.checkFileExistance(file.name)
+    const fileWithSameName = await $databaseImpl!.checkForFileWithSameName(file.name)
     fileInputDialog.closeDialog()
-    if (!cached) return await uploadFile()
-    possibleEditingFileId = cached.id
+    if (!fileWithSameName) return await uploadFile()
+    possibleEditingFileId = fileWithSameName
     locationDialog.showDialog()
   }
 
@@ -76,7 +76,7 @@
     processing = true
     if (!$databaseImpl) await loadImplDB()
     const { id: fileId } = e.detail
-    if (fileId) return await $databaseImpl!.deleteKeunFile(fileId)
+    if (fileId) await $databaseImpl!.deleteKeunFile(fileId)
     await getFiles()
     processing = false
     logWhenDev('deleteFile: File has been deleted')
