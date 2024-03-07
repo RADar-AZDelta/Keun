@@ -1,7 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
   import { Dialog } from '@radar-azdelta-int/radar-svelte-components'
-  import type { ICustomEvents } from '$lib/components/Types'
+  import type { ICustomEvents } from '$lib/Types'
 
   export let dialog: HTMLDialogElement, columns: string[], shownColumns: string[]
 

@@ -2,7 +2,7 @@
   import { createEventDispatcher } from 'svelte'
   import { settings, settingsImpl } from '$lib/store'
   import debounce from 'lodash.debounce'
-  import type { ICustomEvents } from '$lib/components/Types'
+  import type { ICustomEvents } from '$lib/Types'
   import { loadImpSettings } from '$lib/implementations/implementation'
 
   let inputValue: string, value: string

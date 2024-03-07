@@ -9,7 +9,7 @@ import {
   PUBLIC_FIREBASE_STORAGE_BUCKET,
 } from '$env/static/public'
 import { user } from '$lib/store'
-import type { ISettings, ISettingsImpl, IUser } from '$lib/components/Types'
+import type { ISettings, ISettingsImpl, IUser } from '$lib/Types'
 import type { FirebaseOptions } from 'firebase/app'
 
 const defaultSettings: ISettings = {

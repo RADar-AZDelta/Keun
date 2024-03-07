@@ -1,7 +1,7 @@
 import { blobToString, downloadWithUrl, logWhenDev, stringToFile } from '@radar-azdelta-int/radar-utils'
 import { dev } from '$app/environment'
 import { base } from '$app/paths'
-import type { IDatabaseImpl, IFile, IMessage } from '$lib/components/Types'
+import type { IDatabaseImpl, IFile, IMessage } from '$lib/Types'
 
 export default class SQLiteImpl implements IDatabaseImpl {
   path = `${base}/api/sqlite/file`

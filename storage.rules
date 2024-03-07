@@ -59,5 +59,34 @@ service firebase.storage {
 			// The user must be logged in through Microsoft & has the role "admin"
       allow create, delete: if isSignedIn() && checkRole('admin') && checkProvider();
     }
+
+    match /Keun-flagged-files/{fileId} {
+      function isSignedIn() {
+        // Check if the user is logged in
+      	return request.auth != null;
+      }
+      
+      function checkRole(expectedRole) {
+      	// Check the role set in the Firestore collection "roles"
+      	let roles = firestore.get(/databases/(default)/documents/roles/$(request.auth.token.email)).data.roles;
+        return expectedRole in roles;
+      }
+      
+      // function getRoleClaims(arr) {
+      	// Check the roles through the custom claims in the auth
+      	// return request.auth.token.role in arr;
+      // }
+      
+      function checkProvider() {
+      	// All the users must be logged in through OAuth of Microsoft
+        // Microsoft is not an option here so it'll be custom
+      	return request.auth.token.firebase.sign_in_provider != "anonymous"
+      }
+
+			// The user must be logged in through Microsoft, has the role "user" || "admin"
+      allow read, update: if isSignedIn() && (checkRole('user') || checkRole('admin')) && checkProvider();
+			// The user must be logged in through Microsoft & has the role "admin"
+      allow create, delete: if isSignedIn() && checkRole('admin') && checkProvider();
+    }
   }
 }

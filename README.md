@@ -33,14 +33,11 @@ PUBLIC_ATHENA_DETAIL= This is the detail page of concepts
 
 PUBLIC_CLOUD_DATABASE_IMPLEMENTATION=
 PUBLIC_CLOUD_AUTH_IMPLEMENTATION=
-PUBLIC_CLOUD_SAVE_IMPLEMENTATION=
 ```
 
 The PUBLIC_CLOUD_DATABASE_IMPLEMENTATION is the implementation used to store the data. This is for the file data, settings, ...
 
 The PUBLIC_CLOUD_AUTH_IMPLEMENTATION is the implementation used for authentication. At the moment, there is only a Firebase auth implementation. The local implementation let's the user put in his name, but that's all.
-
-The PUBLIC_CLOUD_SAVE_IMPLEMENTATION is the implementation used to save the table configuration from the Svelte-datatable. In the local implementation, this is saved in IndexedDB, but this can also be saved in Firestore or a SQL database.
 
 At the moment there are three implementations made.
 
@@ -53,7 +50,6 @@ To use the local implementation, you'll need to set the following values in the 
 ```bash
 PUBLIC_CLOUD_DATABASE_IMPLEMENTATION='none'
 PUBLIC_CLOUD_AUTH_IMPLEMENTATION='none'
-PUBLIC_CLOUD_SAVE_IMPLEMENTATION='none'
 ```
 
 ##### Firebase implementation
@@ -69,7 +65,6 @@ To implement the Firebase environment, add the following values to your .env fil
 ```bash
 PUBLIC_CLOUD_DATABASE_IMPLEMENTATION='firebase'
 PUBLIC_CLOUD_AUTH_IMPLEMENTATION='firebase'
-PUBLIC_CLOUD_SAVE_IMPLEMENTATION='firebase'
 
 PUBLIC_FIREBASE_AUTH_DOMAIN=
 PUBLIC_FIREBASE_DATABASE_URL=
@@ -92,7 +87,6 @@ To use the SQLite implementation, set the following values in the .env file:
 ```bash
 PUBLIC_CLOUD_DATABASE_IMPLEMENTATION='sqlite'
 PUBLIC_CLOUD_AUTH_IMPLEMENTATION='sqlite'
-PUBLIC_CLOUD_SAVE_IMPLEMENTATION='sqlite'
 ```
 
 ##### Combination

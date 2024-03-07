@@ -1,5 +1,5 @@
-import type { IMappedRows, IMappedRowsConcept } from '$lib/components/Types'
 import { mappedToConceptIds } from '$lib/store'
+import type { IMappedRows, IMappedRowsConcept } from '$lib/Types'
 
 export default class MappedConcepts {
   static async updateMappedConceptsBib(updatedConcept: IMappedRows) {

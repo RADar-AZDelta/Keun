@@ -4,7 +4,7 @@
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
   import Equivalence from '$lib/components/mapping/details/Equivalence.svelte'
   import AutocompleteInputSettings from '$lib/components/extra/AutocompleteInputSettings.svelte'
-  import type { AutoCompleteShortED, EquivalenceChangeED, IUsagiRow, MappingEvents } from '$lib/components/Types'
+  import type { AutoCompleteShortED, EquivalenceChangeED, IUsagiRow, MappingEvents } from '$lib/Types'
 
   export let usagiRow: IUsagiRow
 

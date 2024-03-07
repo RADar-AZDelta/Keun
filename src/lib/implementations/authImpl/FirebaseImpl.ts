@@ -15,7 +15,7 @@ import {
   PUBLIC_FIREBASE_STORAGE_BUCKET,
   PUBLIC_TENANT_ID,
 } from '$env/static/public'
-import type { IAuthImpl } from '$lib/components/Types'
+import type { IAuthImpl } from '$lib/Types'
 
 const firebaseConfig: FirebaseOptions = {
   apiKey: PUBLIC_FIREBASE_API_KEY,

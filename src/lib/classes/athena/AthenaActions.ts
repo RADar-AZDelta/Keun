@@ -1,8 +1,8 @@
 import Mapping from '$lib/classes/mapping/Mapping'
-import type { IAthenaInfo, IAthenaRow, IUsagiRow } from '$lib/components/Types'
 import MappedConcepts from '../general/MappedConcepts'
 import User from '../general/User'
 import Table from '../tables/Table'
+import type { IAthenaInfo, IAthenaRow, IUsagiRow } from '$lib/Types'
 
 export default class AthenaActions {
   private static athenaRow: IAthenaRow

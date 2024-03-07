@@ -6,7 +6,7 @@
   import AutocompleteInput from '$lib/components/extra/AutocompleteInput.svelte'
   import type Query from 'arquero/dist/types/query/query'
   import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
-  import type { ICustomConcept, ICustomConceptInput, MappingEvents } from '$lib/components/Types'
+  import type { ICustomConcept, ICustomConceptInput, MappingEvents } from '$lib/Types'
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
   import { Config } from '$lib/helperClasses/Config'
 

@@ -15,4 +15,5 @@ export class Config {
   static usagiRowConfig = config.usagiRow
   static athenaViews = config.athenaViews
   static customTableOptions: ITableOptions = config.customTableOptions
+  static flaggedTableOptions: ITableOptions = config.flaggedTableOptions
 }

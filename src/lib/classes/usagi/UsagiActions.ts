@@ -1,6 +1,6 @@
-import type { IUsagiInfo, IUsagiRow } from '$lib/components/Types'
 import User from '../general/User'
 import Table from '../tables/Table'
+import type { IUsagiInfo, IUsagiRow } from '$lib/Types'
 
 export default class UsagiActions {
   private static usagiRow: IUsagiRow

@@ -1,10 +1,10 @@
 import { query } from 'arquero'
 import SingleMapping from '$lib/classes/mapping/SingleMapping'
 import CommonMapping from '$lib/classes/mapping/CommonMapping'
-import type Query from 'arquero/dist/types/query/query'
-import type { IAthenaInfo, IMappedRows, IQueryResult, IUsagiRow } from '$lib/components/Types'
 import Table from '../tables/Table'
 import MappedConcepts from '../general/MappedConcepts'
+import type Query from 'arquero/dist/types/query/query'
+import type { IAthenaInfo, IMappedRows, IQueryResult, IUsagiRow } from '$lib/Types'
 
 export default class MultipleMapping extends CommonMapping {
   static async multipleMapping(athenaInfo: IAthenaInfo, action: string, equivalence: string, custom: boolean = false) {

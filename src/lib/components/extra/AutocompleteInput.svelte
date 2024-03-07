@@ -2,7 +2,7 @@
   import { createEventDispatcher } from 'svelte'
   import debounce from 'lodash.debounce'
   import { clickOutside } from '@radar-azdelta-int/radar-svelte-components'
-  import type { ICustomEvents } from '$lib/components/Types'
+  import type { ICustomEvents } from '$lib/Types'
 
   export let id: string, list: string[]
   export let inputValue: string | null = null

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
-  import type { MappingEvents } from '$lib/components/Types'
+  import type { MappingEvents } from '$lib/Types'
   import { Config } from '$lib/helperClasses/Config'
 
   const dispatch = createEventDispatcher<MappingEvents>()

@@ -7,23 +7,25 @@
     DownloadFilesED,
     FileUpdatedColumnsED,
     IFileInformation,
-  } from '$lib/components/Types'
+  } from '$lib/Types'
   import ColumnsDialog from '$lib/components/menu/ColumnsDialog.svelte'
   import FileChoiceDialog from '$lib/components/menu/FileChoiceDialog.svelte'
   import FileInputDialog from '$lib/components/menu/FileInputDialog.svelte'
   import FirebaseImpl from '$lib/components/menu/FirebaseImpl.svelte'
   import LocalImpl from '$lib/components/menu/LocalImpl.svelte'
-  import { loadImplDB } from '$lib/implementations/implementation'
-  import { databaseImpl, databaseImplementation, user } from '$lib/store'
+  import { databaseImplementation, loadImplDB } from '$lib/implementations/implementation'
+  import { databaseImpl, user } from '$lib/store'
   import { Spinner } from '@radar-azdelta-int/radar-svelte-components'
   import type { SvelteComponent } from 'svelte'
-  import type { FileUploadED } from '$lib/components/Types'
+  import type { FileUploadED } from '$lib/Types'
+  import { Providers } from '$lib/enums'
 
   let files: IFileInformation[] = []
   let file: File
   let cols: string[] = []
   let missing: Record<string, string> = {}
   let processing: boolean = false
+  let possibleEditingFileId: string | undefined = undefined
 
   let fileInputDialog: SvelteComponent, columnDialog: SvelteComponent, locationDialog: SvelteComponent
 
@@ -50,6 +52,7 @@
     const cached = await $databaseImpl!.checkFileExistance(file.name)
     fileInputDialog.closeDialog()
     if (!cached) return await uploadFile()
+    possibleEditingFileId = cached.id
     locationDialog.showDialog()
   }
 
@@ -63,6 +66,7 @@
   async function downloadFiles(e: CustomEvent<DownloadFilesED>) {
     if (!$databaseImpl) await loadImplDB()
     const { id } = e.detail
+    if (!id) return
     await $databaseImpl?.downloadFiles(id)
     await getFiles()
   }
@@ -72,7 +76,7 @@
     processing = true
     if (!$databaseImpl) await loadImplDB()
     const { id: fileId } = e.detail
-    await $databaseImpl!.deleteKeunFile(fileId)
+    if (fileId) return await $databaseImpl!.deleteKeunFile(fileId)
     await getFiles()
     processing = false
     if (dev) console.log('deleteFile: File has been deleted')
@@ -81,6 +85,7 @@
   async function reUploadFile(e: CustomEvent<FileUploadED>) {
     await deleteFiles(e)
     await uploadFile()
+    possibleEditingFileId = undefined
   }
 
   async function updateFileColumns(e: CustomEvent<FileUpdatedColumnsED>) {
@@ -101,7 +106,12 @@
   />
 </svelte:head>
 
-<FileChoiceDialog bind:processing on:fileUpload={reUploadFile} bind:this={locationDialog} />
+<FileChoiceDialog
+  bind:processing
+  on:fileUpload={reUploadFile}
+  currentFileId={possibleEditingFileId}
+  bind:this={locationDialog}
+/>
 
 <FileInputDialog
   bind:processing
@@ -118,7 +128,7 @@
       <div class="file-menu">
         <h1 class="title">Files to map</h1>
         <div class="file-list">
-          {#if databaseImplementation === 'firebase'}
+          {#if databaseImplementation === Providers.Firebase}
             {#if ($user?.roles?.includes('user') || $user?.roles?.includes('admin')) && files}
               <FirebaseImpl bind:files on:downloadFiles={downloadFiles} on:deleteFiles={deleteFiles} />
             {:else}

@@ -4,11 +4,11 @@
   import { onMount } from 'svelte'
   import { beforeNavigate, goto } from '$app/navigation'
   import DataTable from '@radar-azdelta/svelte-datatable'
-  import { customTable, table, disableActions } from '$lib/store'
+  import { customTable, table, flaggedTable, disableActions } from '$lib/store'
   import { BergamotTranslator } from '$lib/helperClasses/BergamotTranslator'
-  import { selectedFileId, selectedCustomFileId, settings, triggerAutoMapping, user } from '$lib/store'
-  import { abortAutoMapping, customFileTypeImpl, databaseImpl, fileTypeImpl, saveImpl } from '$lib/store'
-  import { loadImplDB, loadImplDataType, loadImplSave } from '$lib/implementations/implementation'
+  import { settings, triggerAutoMapping } from '$lib/store'
+  import { abortAutoMapping, databaseImpl } from '$lib/store'
+  import { loadImplDB } from '$lib/implementations/implementation'
   import UsagiRow from '$lib/components/mapping/UsagiRow.svelte'
   import AthenaSearch from '$lib/components/mapping/AthenaSearch.svelte'
   import AutoMapping from '$lib/classes/mapping/AutoMapping'
@@ -16,12 +16,12 @@
   import Usagi from '$lib/classes/usagi/Usagi'
   import CustomTable from '$lib/classes/tables/CustomTable'
   import Table from '$lib/classes/tables/Table'
+  import FlaggedTable from '$lib/classes/tables/FlaggedTable'
   import type { SvelteComponent } from 'svelte'
   import type { ITableOptions } from '@radar-azdelta/svelte-datatable'
-  import type { IUsagiRow, AutoMapRowED, RowSelectionED, NavigateRowED } from '$lib/components/Types'
+  import type { IUsagiRow, AutoMapRowED, RowSelectionED, NavigateRowED } from '$lib/Types'
 
-  let file: File | undefined, customConceptsFile: File | undefined
-  let customTableOptions: ITableOptions = Config.customTableOptions
+  let file: File | undefined, customConceptsFile: File | undefined, flaggedConceptsFile: File | undefined
   let tableRendered: boolean = false
   let customsExtracted: boolean = false
   let tableOptions: ITableOptions = { ...Config.tableOptions, id: $page.url.searchParams.get('id') ?? '' }
@@ -30,6 +30,9 @@
   let search: SvelteComponent
   let globalAthenaFilter: { column: string; filter: string | undefined } = { column: 'all', filter: undefined }
   let syncingComplete: boolean = false
+
+  let customFileId: string | undefined = undefined
+  let selectedFileId: string
 
   async function navigateRow(e: CustomEvent<NavigateRowED>) {
     ;({ row: selectedRow, index: selectedRowIndex } = e.detail)
@@ -41,14 +44,6 @@
   async function selectRow(e: CustomEvent<RowSelectionED>) {
     await navigateRow(e)
     search.showDialog()
-  }
-
-  async function setupDataTable() {
-    if (!$saveImpl) await loadImplSave()
-    if ($saveImpl) tableOptions.saveImpl = $saveImpl
-    if (!$fileTypeImpl) await loadImplDataType()
-    if ($fileTypeImpl) tableOptions.dataTypeImpl = $fileTypeImpl
-    if ($customFileTypeImpl) customTableOptions.dataTypeImpl = $customFileTypeImpl
   }
 
   const translate = async (text: string) => await BergamotTranslator.translate(text, $settings.language)
@@ -81,31 +76,31 @@
 
   async function downloadPage() {
     await syncFile()
-    await $databaseImpl?.downloadFiles($selectedFileId)
+    await $databaseImpl?.downloadFiles(selectedFileId)
     goto(`${base}/`)
   }
 
   async function readFile() {
-    if (!$selectedFileId) return
+    if (!selectedFileId) return
     if (!$databaseImpl) await loadImplDB()
-    const keunFile = await $databaseImpl!.getKeunFile($selectedFileId)
-    const customKeunFile = await $databaseImpl?.getCustomKeunFile($selectedCustomFileId)
+    const keunFile = await $databaseImpl!.getKeunFile(selectedFileId)
+    const customKeunFile = await $databaseImpl?.getCustomKeunFile(customFileId ?? '')
     if (keunFile && keunFile?.file) file = keunFile.file
     if (customKeunFile && customKeunFile?.file) customConceptsFile = customKeunFile.file
   }
 
   async function getCustomFileId() {
     if (!$databaseImpl) await loadImplDB()
-    const cached = await $databaseImpl!.checkFileExistance($selectedFileId)
+    const cached = await $databaseImpl!.checkFileExistance(selectedFileId)
     if (!cached) return
-    $selectedCustomFileId = cached.customId
+    customFileId = cached.customId
   }
 
   async function load() {
     const urlId = $page.url.searchParams.get('id')
     if (!urlId) return goto(`${base}/`)
-    $selectedFileId = urlId
-    if (!$selectedCustomFileId) await getCustomFileId()
+    selectedFileId = urlId
+    if (!customFileId) await getCustomFileId()
     await readFile()
   }
 
@@ -113,11 +108,21 @@
     if (!$table) return
     const blob = await $table.getBlob()
     if (!blob) return
+    await extractFlaggedConcepts()
+    console.log('FLAGGED ', flaggedConcepts)
+    await FlaggedTable.addFlaggedConcepts(flaggedConcepts)
     const customBlob = $customTable ? await $customTable.getBlob() : undefined
     if (!$databaseImpl) await loadImplDB()
-    await $databaseImpl?.editKeunFile($selectedFileId, blob)
-    if (customBlob) await $databaseImpl?.editCustomKeunFile($selectedFileId, $selectedCustomFileId, customBlob)
+    await $databaseImpl?.editKeunFile(selectedFileId, blob)
+    if (customBlob) await $databaseImpl?.editCustomKeunFile(selectedFileId, customBlob)
+    // TODO: check the getBlob method for an array of objects datatable, the datatable is filled so that's not the problem
+    const flaggedBlob = await $flaggedTable.getBlob()
+    const res = await flaggedBlob.text()
+    console.log('BLOB ', res, ' AND ', flaggedBlob)
+    if (flaggedBlob) await $databaseImpl?.editFlaggedFile(selectedFileId, flaggedBlob)
   }
+
+  const extractFlaggedConcepts = async () => (flaggedConcepts = await Table.extractFlaggedConcepts())
 
   $: {
     if ($abortAutoMapping) abortAutoMap()
@@ -128,7 +133,7 @@
   }
 
   $: {
-    if ($selectedFileId) load()
+    if (selectedFileId) load()
   }
 
   beforeNavigate(async ({ to, cancel, type }) => {
@@ -138,11 +143,7 @@
     if (to?.url) goto(to.url)
   })
 
-  setupDataTable()
-
-  onMount(() => {
-    load()
-  })
+  onMount(() => load())
 </script>
 
 <svelte:head>
@@ -190,12 +191,21 @@
     />
   {/if}
 
-  <div class="custom-concepts">
+  <div class="hidden">
     <DataTable
       data={customConceptsFile}
-      options={customTableOptions}
+      options={Config.customTableOptions}
       modifyColumnMetadata={CustomTable.modifyColumnMetadata}
       bind:this={$customTable}
+    />
+  </div>
+
+  <div class="hidden">
+    <DataTable
+      data={flaggedConceptsFile}
+      options={Config.flaggedTableOptions}
+      modifyColumnMetadata={Table.modifyColumnMetadata}
+      bind:this={$flaggedTable}
     />
   </div>
 {/if}
@@ -205,7 +215,7 @@
     margin-top: 1rem;
   }
 
-  .custom-concepts {
+  .hidden {
     display: none;
   }
 </style>

@@ -17,6 +17,10 @@
     "id": "customConceptsTable",
     "saveOptions": false
   },
+  "flaggedTableOptions": {
+    "id": "flaggedConceptsTable",
+    "saveOptions": false
+  },
   "additionalColumns": {
     "matchScore": 0,
     "statusSetBy": null,
@@ -126,17 +130,17 @@
     },
     {
       "id": "domainId",
-      "visible": true,
+      "visible": false,
       "editable": false
     },
     {
       "id": "vocabularyId",
-      "visible": true,
+      "visible": false,
       "editable": false
     },
     {
       "id": "className",
-      "visible": true,
+      "visible": false,
       "editable": false
     },
     {
@@ -166,7 +170,7 @@
     },
     {
       "id": "comment",
-      "visible": false,
+      "visible": true,
       "editable": true
     },
     {

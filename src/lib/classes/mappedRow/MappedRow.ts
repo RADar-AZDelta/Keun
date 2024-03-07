@@ -1,8 +1,8 @@
 import { query } from 'arquero'
 import Usagi from '$lib/classes/usagi/Usagi'
-import type Query from 'arquero/dist/types/query/query'
-import type { IMappedRow, IQueryResult, IUsagiRow } from '$lib/components/Types'
 import Table from '../tables/Table'
+import type Query from 'arquero/dist/types/query/query'
+import type { IMappedRow, IUsagiRow } from '$lib/Types'
 
 export default class MappedRow {
   usagiRow: IUsagiRow

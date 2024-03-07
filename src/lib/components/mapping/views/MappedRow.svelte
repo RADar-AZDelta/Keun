@@ -1,11 +1,9 @@
 <script lang="ts">
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
   import MappedRow from '$lib/classes/mappedRow/MappedRow'
-  import type { IMappedRow, IUsagiRow } from '$lib/components/Types'
+  import type { IMappedRow, IUsagiRow } from '$lib/Types'
 
   export let renderedRow: IMappedRow, usagiRow: IUsagiRow
-
-  // TODO: check if the initialize of the class can be done on line 11 instead of in the onMount
 
   let row: MappedRow
 

@@ -1,7 +1,7 @@
 import { FileHelper, blobToString, fileToBlob, logWhenDev, stringToFile } from '@radar-azdelta-int/radar-utils'
 import { IndexedDB } from '@radar-azdelta-int/radar-utils'
 import { Config } from '$lib/helperClasses/Config'
-import type { ICustomConceptCompact, IDatabaseImpl, IFile, IFileInformation } from '$lib/components/Types'
+import type { ICustomConceptCompact, IDatabaseImpl, IFile, IFileInformation } from '$lib/Types'
 
 export interface IDatabaseFile {
   id: string
@@ -9,26 +9,20 @@ export interface IDatabaseFile {
   content: string
   custom: string
   customId: string
+  flaggedId: string
+  flagged: string
 }
 
 // TODO: fix issues
-// TODO: add the missing methods for custom concepts in the local implementation
 // TODO: put interfaces for this impl & for Firebase in the Types.d.ts
 // TODO: clean up all the interfaces because some are double
 // TODO: try hosting on Github pages & Firebase
 
 export default class LocalImpl implements IDatabaseImpl {
-  checkIfCustomConceptAlreadyExists(conceptInput: ICustomConceptCompact): Promise<boolean> {
-    throw new Error('Method not implemented.')
-  }
-  getCustomConcepts(): Promise<any> {
-    throw new Error('Method not implemented.')
-  }
-  addCustomConcept(): Promise<any> {
-    throw new Error('Method not implemented.')
-  }
   db: IndexedDB | undefined
   customDb: IndexedDB | undefined
+  flaggedDb: IndexedDB | undefined
+  customConceptsDb: IndexedDB | undefined
 
   async getKeunFile(id: string): Promise<IFile | undefined> {
     logWhenDev(`getKeunFile: Get file with id ${id} in IndexedDB`)
@@ -48,9 +42,9 @@ export default class LocalImpl implements IDatabaseImpl {
     if (!database) return
     const fileInfo: undefined | IDatabaseFile = await database.get(id, true, true)
     if (!fileInfo || !fileInfo.content) return undefined
-    const { name, content, customId } = fileInfo
+    const { name, content, customId, flaggedId } = fileInfo
     const file = await stringToFile(content, name)
-    const fileObj: IFile = { id, name: name, file, customId }
+    const fileObj: IFile = { id, name: name, file, customId, flaggedId }
     return fileObj
   }
 
@@ -96,10 +90,19 @@ export default class LocalImpl implements IDatabaseImpl {
     await this.openDatabase()
     const { name } = file
     const customName = `${name.split('.')[0]}_concepts.csv`
+    const flaggedName = `${name.split('.')[0]}_flagged.csv`
     const customId = crypto.randomUUID()
     const fileString = await this.transformFileToString(file)
     const id = crypto.randomUUID()
-    const fileContent: IDatabaseFile = { id, name, content: fileString, custom: customName, customId: customName }
+    const fileContent: IDatabaseFile = {
+      id,
+      name,
+      content: fileString,
+      custom: customName,
+      customId: customName,
+      flaggedId: flaggedName,
+      flagged: flaggedName,
+    }
     await this.db!.set(fileContent, name, true)
     const customBlob = new Blob([Config.customBlobInitial])
     const customFileString = await blobToString(customBlob)
@@ -119,9 +122,9 @@ export default class LocalImpl implements IDatabaseImpl {
     await this.openDatabase()
     const fileInfo = await this.db?.get(id, true)
     if (!fileInfo) return
-    const { customId, custom, name } = fileInfo
+    const { customId, custom, name, flagged, flaggedId } = fileInfo
     const fileString = await blobToString(blob)
-    const fileContent: IDatabaseFile = { id, name, content: fileString, customId, custom }
+    const fileContent: IDatabaseFile = { id, name, content: fileString, customId, custom, flaggedId, flagged }
     await this.db?.set(fileContent, id, true)
   }
 
@@ -134,6 +137,15 @@ export default class LocalImpl implements IDatabaseImpl {
     await this.customDb?.set(customFileContent, id, true)
   }
 
+  async editFlaggedFile(id: string, blob: Blob): Promise<void> {
+    await this.openFlaggedDatabase()
+    const fileInfo = await this.flaggedDb?.get(id, true)
+    if (!fileInfo) return
+    const flaggedFileString = await blobToString(blob)
+    const flaggedFileContent = { id, name: fileInfo.name, content: flaggedFileString }
+    await this.flaggedDb?.set(flaggedFileContent, id, true)
+  }
+
   async deleteKeunFile(id: string) {
     logWhenDev(`deleteKeunFile: Delete the file with id ${id} in IndexedDB`)
     await this.openDatabase()
@@ -144,14 +156,51 @@ export default class LocalImpl implements IDatabaseImpl {
     await this.customDb!.remove(file.customId, true)
   }
 
-  async saveUserConfig(): Promise<void> {}
+  async checkIfCustomConceptAlreadyExists(conceptInput: ICustomConceptCompact): Promise<boolean> {
+    await this.openConceptsDatabase()
+    const { concept_name, concept_class_id, domain_id, vocabulary_id } = conceptInput
+    const recordName = `${concept_name}-${domain_id.replaceAll('/', '')}-${concept_class_id.replaceAll('/', '')}-${vocabulary_id}`
+    const customConcept = await this.customConceptsDb?.get(recordName, true)
+    if (!customConcept) return false
+    return true
+  }
+
+  async getCustomConcepts(): Promise<any> {
+    await this.openConceptsDatabase()
+    const customConcepts: undefined | any[] = await this.customConceptsDb?.getAll(true)
+    if (!customConcepts) return []
+    return customConcepts
+  }
+
+  async addCustomConcept(customConcept: ICustomConceptCompact): Promise<any> {
+    await this.openConceptsDatabase()
+    const { concept_name, concept_class_id, domain_id, vocabulary_id } = customConcept
+    const recordName = `${concept_name}-${domain_id.replaceAll('/', '')}-${concept_class_id.replaceAll('/', '')}-${vocabulary_id}`
+    await this.customConceptsDb?.set(customConcept, recordName, true)
+  }
 
   private async openDatabase() {
-    if ((await this.isOpen(this.db)) == false) this.db = new IndexedDB('localMapping', 'localMapping')
+    const open = await this.isOpen(this.db)
+    if (open) return
+    this.db = new IndexedDB('localMapping', 'localMapping')
   }
 
   private async openCustomDatabase() {
-    if ((await this.isOpen(this.customDb)) == false) this.customDb = new IndexedDB('customMapping', 'customMapping')
+    const open = await this.isOpen(this.customDb)
+    if (open) return
+    this.customDb = new IndexedDB('customMapping', 'customMapping')
+  }
+
+  private async openFlaggedDatabase() {
+    const open = await this.isOpen(this.flaggedDb)
+    if (open) return
+    this.flaggedDb = new IndexedDB('flaggedMapping', 'flaggedMapping')
+  }
+
+  private async openConceptsDatabase() {
+    const open = await this.isOpen(this.customConceptsDb)
+    if (open) return
+    this.customConceptsDb = new IndexedDB('customConcepts', 'customConcepts')
   }
 
   private async isOpen(db: IndexedDB | undefined) {

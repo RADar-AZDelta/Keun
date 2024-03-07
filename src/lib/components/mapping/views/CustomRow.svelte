@@ -3,7 +3,7 @@
   import { databaseImpl, mappedToConceptIds, settings, user } from '$lib/store'
   import AutocompleteInput from '$lib/components/extra/AutocompleteInput.svelte'
   import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
-  import type { ICustomConceptCompact, IUsagiRow, MappingEvents } from '$lib/components/Types'
+  import type { ICustomConceptCompact, IUsagiRow, MappingEvents } from '$lib/Types'
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
   import { Config } from '$lib/helperClasses/Config'
   import CustomRow from '$lib/classes/customRow/CustomRow'

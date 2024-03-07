@@ -3,9 +3,9 @@
   import { goto } from '$app/navigation'
   import { base } from '$app/paths'
   import { createEventDispatcher } from 'svelte'
-  import { databaseImpl, selectedCustomFileId, selectedFileId, user } from '$lib/store'
+  import { databaseImpl, user } from '$lib/store'
   import { SvgIcon, Spinner } from '@radar-azdelta-int/radar-svelte-components'
-  import type { PageEvents, IFileInformation } from '$lib/components/Types'
+  import type { PageEvents, IFileInformation } from '$lib/Types'
 
   export let files: IFileInformation[]
 
@@ -16,8 +16,6 @@
     if (dev) console.log('openMappingTool: Navigating to the mapping tool')
     const cached = await $databaseImpl!.checkFileExistance(fileId)
     if (!cached) return
-    $selectedFileId = fileId
-    $selectedCustomFileId = cached.customId
     goto(`${base}/mapping?impl=firebase&id=${fileId}`)
   }
 

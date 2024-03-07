@@ -5,7 +5,32 @@ export interface IFileTemplate {
 }
 
 export interface IFileIdTemplate {
+  id: string | undefined
+}
+
+export interface IFirestoreFile {
+  name: string
+  custom: string
+  customId: string
+  flaggedId: string
+  flaggedName: string
+}
+
+export interface IFirestoreUser {
   id: string
+  name: string
+  files: string[]
+}
+
+export interface IStorageMetadata {
+  name: string
+  customId: string
+  flaggedId: string
+  [key: string]: string
+}
+
+export interface IStorageCustomMetadata {
+  customMetadata: IStorageMetadata
 }
 
 export interface IQueryResult {
@@ -303,6 +328,7 @@ export interface IFile {
   name: string
   file?: File
   customId: string
+  flaggedId: string
   content?: string
 }
 
@@ -420,7 +446,8 @@ export interface IDatabaseImpl {
   getFilesList(): Promise<IFileInformation[]>
   uploadKeunFile(file: File): Promise<void>
   editKeunFile(id: string, blob: Blob): Promise<void>
-  editCustomKeunFile(keunFileId: string, id: string, blob: Blob): Promise<void>
+  editFlaggedFile(id: string, blob: Blob): Promise<void>
+  editCustomKeunFile(id: string, blob: Blob): Promise<void>
   deleteKeunFile(id: string): Promise<void>
   getCustomConcepts(): Promise<any>
   addCustomConcept(customConcept: ICustomConceptCompact): Promise<any>

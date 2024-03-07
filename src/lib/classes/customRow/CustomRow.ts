@@ -1,15 +1,8 @@
 import { reformatDate } from '@radar-azdelta-int/radar-utils'
 import Mapping from '$lib/classes/mapping/Mapping'
-import type {
-  IAthenaRow,
-  ICustomConcept,
-  ICustomConceptCompact,
-  ICustomConceptInput,
-  IUsagiRow,
-} from '$lib/components/Types'
-import { query } from 'arquero'
 import CustomTable from '../tables/CustomTable'
 import MappedConcepts from '../general/MappedConcepts'
+import type { IAthenaRow, ICustomConcept, ICustomConceptCompact, ICustomConceptInput, IUsagiRow } from '$lib/Types'
 
 export default class CustomRow {
   customRow: ICustomConceptCompact

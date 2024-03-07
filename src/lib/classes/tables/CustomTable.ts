@@ -1,11 +1,11 @@
 import { query } from 'arquero'
 import { reformatDate } from '@radar-azdelta-int/radar-utils'
 import { Config } from '$lib/helperClasses/Config'
-import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
-import type { ICustomConceptInput, ICustomQueryResult, IUsagiRow } from '$lib/components/Types'
-import Table from './Table'
-import type DataTable from '@radar-azdelta/svelte-datatable'
 import { customTable } from '$lib/store'
+import Table from './Table'
+import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
+import type { ICustomConceptInput, ICustomQueryResult, IUsagiRow } from '$lib/Types'
+import type DataTable from '@radar-azdelta/svelte-datatable'
 
 export default class CustomTable {
   private static firstRowIsEmpty: boolean = true

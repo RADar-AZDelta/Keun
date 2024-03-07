@@ -3,7 +3,7 @@
   import { createEventDispatcher } from 'svelte'
   import { Drop, SvgIcon, Spinner } from '@radar-azdelta-int/radar-svelte-components'
   import { user } from '$lib/store'
-  import type { FileDropED, PageEvents } from '$lib/components/Types'
+  import type { FileDropED, PageEvents } from '$lib/Types'
 
   export let processing: boolean
 

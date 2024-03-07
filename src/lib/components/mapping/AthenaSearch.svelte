@@ -10,8 +10,8 @@
   import AthenaActions from './views/AthenaActions.svelte'
   import { Config } from '$lib/helperClasses/Config'
   import type { IView } from '@radar-azdelta/svelte-athena-search'
-  import type { IMappedRow, IUsagiRow, MappingEvents, NavigateRowED } from '$lib/components/Types'
-  import type { EquivalenceChangeED, UpdateDetailsED } from '$lib/components/Types'
+  import type { IMappedRow, IUsagiRow, MappingEvents, NavigateRowED } from '$lib/Types'
+  import type { EquivalenceChangeED, UpdateDetailsED } from '$lib/Types'
   import Mapping from '$lib/classes/mapping/Mapping'
   import Table from '$lib/classes/tables/Table'
 

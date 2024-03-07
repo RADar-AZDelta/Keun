@@ -9,10 +9,16 @@ import {
   PUBLIC_FIREBASE_STORAGE_BUCKET,
 } from '$env/static/public'
 import { Config } from '$lib/helperClasses/Config'
-import type { ICustomConceptCompact, IDatabaseImpl, IFile, IFileInformation } from '$lib/components/Types'
+import type {
+  ICustomConceptCompact,
+  IDatabaseImpl,
+  IFile,
+  IFileInformation,
+  IFirestoreFile,
+  IStorageCustomMetadata,
+  IStorageMetadata,
+} from '$lib/Types'
 import type { FirebaseOptions } from 'firebase/app'
-
-// TODO: implement this in the program & check if all the functionalities work before removing the firebase file
 
 const firebaseConfig: FirebaseOptions = {
   apiKey: PUBLIC_FIREBASE_API_KEY,
@@ -23,33 +29,12 @@ const firebaseConfig: FirebaseOptions = {
   appId: PUBLIC_FIREBASE_APP_ID,
 }
 
-export interface IFirestoreFile {
-  name: string
-  custom: string
-  customId: string
-}
-
-export interface IFirestoreUser {
-  id: string
-  name: string
-  files: string[]
-}
-
-export interface IStorageMetadata {
-  name: string
-  customId: string
-  [key: string]: string
-}
-
-interface IStorageCustomMetadata {
-  customMetadata: IStorageMetadata
-}
-
 export default class FirebaseImpl implements IDatabaseImpl {
   firestore: FirebaseFirestore = new FirebaseFirestore(firebaseConfig)
   storage: FirebaseStorage = new FirebaseStorage(firebaseConfig)
   storageCollection: string = 'Keun-files'
   storageCustomColl: string = 'Keun-custom-files'
+  storageFlaggedColl: string = 'Keun-flagged-files'
   firestoreFileColl: string = 'files'
   firestoreCustomConceptsColl: string = 'customConcepts'
 
@@ -61,8 +46,9 @@ export default class FirebaseImpl implements IDatabaseImpl {
     if (!fileInfo.file || !fileInfo.meta) return
     const name = fileInfo.meta.customMetadata?.name ?? fileInfo.meta.name
     const customId = fileInfo.meta.customMetadata?.customId ?? ''
+    const flaggedId = fileInfo.meta.customMetadata?.flaggedId ?? ''
     const file = await this.blobToFile(fileInfo.file, name)
-    const fileObj: IFile = { id, name, file, customId }
+    const fileObj: IFile = { id, name, file, customId, flaggedId }
     return fileObj
   }
 
@@ -72,15 +58,30 @@ export default class FirebaseImpl implements IDatabaseImpl {
     const file = await this.readFileFromCollection(id, this.storageCollection)
     if (!file || !file.file) return
     await FileHelper.downloadFile(file.file)
-    const customFile = await this.readFileFromCollection(file.customId, this.storageCustomColl)
+    await this.downloadFlaggedFile(file.flaggedId)
+    await this.downloadCustomFile(file.customId)
+  }
+
+  private async downloadCustomFile(customId: string) {
+    const customFile = await this.readFileFromCollection(customId, this.storageCustomColl)
     if (!customFile || !customFile.file) return
     await FileHelper.downloadFile(customFile.file)
+  }
+
+  private async downloadFlaggedFile(flaggedId: string) {
+    const flaggedFile = await this.readFileFromCollection(flaggedId, this.storageFlaggedColl)
+    if (!flaggedFile || !flaggedFile.file) return
+    await FileHelper.downloadFile(flaggedFile.file)
   }
 
   async checkFileExistance(id: string) {
     const existance = await this.storage.readFileStorage(`${this.storageCollection}/${id}`).catch(() => false)
     if (typeof existance === 'boolean') return
-    return { id, customId: existance.meta?.customMetadata?.customId ?? '' }
+    return {
+      id,
+      customId: existance.meta?.customMetadata?.customId ?? '',
+      flaggedId: existance.meta?.customMetadata?.flaggedId ?? '',
+    }
   }
 
   async getFilesList(): Promise<IFileInformation[]> {
@@ -88,7 +89,14 @@ export default class FirebaseImpl implements IDatabaseImpl {
     const fileNames = []
     for (let fileId of fileIds) {
       const fileInfo = await this.getFileNameFromStorage(fileId)
-      if (fileInfo) fileNames.push({ id: fileId, name: fileInfo.fileName, customId: fileInfo.customId, custom: '' })
+      if (fileInfo)
+        fileNames.push({
+          id: fileId,
+          name: fileInfo.fileName,
+          customId: fileInfo.customId,
+          custom: '',
+          flaggedId: fileInfo.flaggedId,
+        })
     }
     return fileNames
   }
@@ -105,38 +113,50 @@ export default class FirebaseImpl implements IDatabaseImpl {
     if (!fileInfo || !fileInfo.customMetadata) return
     const fileName = (<IStorageMetadata>fileInfo.customMetadata).name
     const customId = (<IStorageMetadata>fileInfo.customMetadata).customId
-    return { fileName, customId }
+    const flaggedId = (<IStorageMetadata>fileInfo.customMetadata).flaggedId
+    return { fileName, customId, flaggedId }
   }
 
   async uploadKeunFile(file: File): Promise<void> {
     const fileId = crypto.randomUUID()
-    const customFileId = crypto.randomUUID()
-    const metaData: IStorageCustomMetadata = { customMetadata: { name: file.name, customId: customFileId } }
+    const customId = crypto.randomUUID()
+    const flaggedId = crypto.randomUUID()
+    const metaData: IStorageCustomMetadata = { customMetadata: { name: file.name, customId, flaggedId } }
     await this.storage.uploadFileStorage(`${this.storageCollection}/${fileId}`, file, metaData)
     const customName = `${file.name.split('.')[0]}_concepts.csv`
     const customFile = await this.blobToFile(new Blob([Config.customBlobInitial]), customName)
-    const customMetaData: IStorageCustomMetadata = { customMetadata: { name: customName, customId: customFileId } }
-    await this.storage.uploadFileStorage(`${this.storageCustomColl}/${customFileId}`, customFile, customMetaData)
-    const fileData = { name: file.name, customId: customFileId, custom: customName }
+    const customMetaData: IStorageCustomMetadata = { customMetadata: { name: customName, customId, flaggedId } }
+    await this.storage.uploadFileStorage(`${this.storageCustomColl}/${customId}`, customFile, customMetaData)
+    const flaggedName = `${file.name.split('.')[0]}_flagged.csv`
+    const fileData = { name: file.name, customId, custom: customName, flaggedName }
     await this.firestore.updateToFirestoreIfNotExist(this.firestoreFileColl, fileId, fileData)
   }
 
   async editKeunFile(id: string, blob: Blob): Promise<void> {
     const fileData = await this.getFileDataFromFirestore(id)
     if (!fileData) return
-    const { name, customId } = fileData
+    const { name, customId, flaggedId } = fileData
     const file = await this.blobToFile(blob, name)
-    const metaData: IStorageCustomMetadata = { customMetadata: { name: file.name, customId } }
+    const metaData: IStorageCustomMetadata = { customMetadata: { name: file.name, customId, flaggedId } }
     await this.storage.uploadFileStorage(`${this.storageCollection}/${id}`, file, metaData)
   }
 
-  async editCustomKeunFile(keunFileId: string, id: string, blob: Blob): Promise<void> {
-    const fileData = await this.getFileDataFromFirestore(keunFileId)
+  async editFlaggedFile(id: string, blob: Blob) {
+    const fileData = await this.getFileDataFromFirestore(id)
     if (!fileData) return
-    const { custom: name, customId } = fileData
+    const { flaggedId, flaggedName: name, customId } = fileData
     const file = await this.blobToFile(blob, name)
-    const metaData: IStorageCustomMetadata = { customMetadata: { name: file.name, customId } }
-    await this.storage.uploadFileStorage(`${this.storageCustomColl}/${id}`, file, metaData)
+    const metaData: IStorageCustomMetadata = { customMetadata: { name, customId, flaggedId } }
+    await this.storage.uploadFileStorage(`${this.storageCollection}/${flaggedId}`, file, metaData)
+  }
+
+  async editCustomKeunFile(id: string, blob: Blob) {
+    const fileData = await this.getFileDataFromFirestore(id)
+    if (!fileData) return
+    const { custom: name, customId, flaggedId } = fileData
+    const file = await this.blobToFile(blob, name)
+    const metaData: IStorageCustomMetadata = { customMetadata: { name: file.name, customId, flaggedId } }
+    await this.storage.uploadFileStorage(`${this.storageCustomColl}/${customId}`, file, metaData)
   }
 
   private async getFileDataFromFirestore(id: string) {
@@ -148,22 +168,23 @@ export default class FirebaseImpl implements IDatabaseImpl {
   }
 
   async deleteKeunFile(id: string): Promise<void> {
-    const customId = await this.retrieveCustomFileId(id)
+    const ids = await this.retrieveFileIds(id)
     const fileSnapshot = await this.firestore.readFirestore(this.firestoreFileColl, id)
     if (!fileSnapshot || !fileSnapshot.data()) return
     const fileInfo = fileSnapshot.data()
     if (!fileInfo) return
     await this.storage.deleteFileStorage(`${this.storageCollection}/${id}`)
     await this.firestore.deleteDocumentFirestore(this.firestoreFileColl, id)
-    if (customId) await this.storage.deleteFileStorage(`${this.storageCustomColl}/${customId}`)
+    if (ids?.customId) await this.storage.deleteFileStorage(`${this.storageCustomColl}/${ids.customId}`)
+    if (ids?.flaggedId) await this.storage.deleteFileStorage(`${this.storageFlaggedColl}/${ids.flaggedId}`)
   }
 
-  private async retrieveCustomFileId(id: string) {
+  private async retrieveFileIds(id: string) {
     const fileDocument = await this.firestore.readFirestore(this.firestoreFileColl, id)
     if (!fileDocument) return
     const fileInfo = fileDocument.data()
     if (!fileInfo) return
-    return <string>fileInfo.customId
+    return { customId: <string>fileInfo.customId, flaggedId: <string>fileInfo.flaggedId }
   }
 
   async getCustomConcepts(): Promise<any> {

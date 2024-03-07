@@ -1,5 +1,5 @@
 import AthenaActions from '$lib/classes/athena/AthenaActions'
-import type { IAthenaInfo, IAthenaRow, IUsagiRow } from '$lib/components/Types'
+import type { IAthenaInfo, IAthenaRow, IUsagiRow } from '$lib/Types'
 
 export default class Athena {
   athenaInfo: IAthenaInfo

@@ -3,7 +3,7 @@
   import { query } from 'arquero'
   import ShowColumnsDialog from '$lib/components/mapping/ShowColumnsDialog.svelte'
   import type Query from 'arquero/dist/types/query/query'
-  import type { IQueryResult, ITablePagination, IUsagiRow, MappingEvents, ShowColumnsED } from '$lib/components/Types'
+  import type { IQueryResult, ITablePagination, IUsagiRow, MappingEvents, ShowColumnsED } from '$lib/Types'
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
   import { table } from '$lib/store'
 

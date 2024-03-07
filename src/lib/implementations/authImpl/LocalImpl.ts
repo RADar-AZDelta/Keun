@@ -1,6 +1,6 @@
 import { localStorageGetter, localStorageSetter, logWhenDev } from '@radar-azdelta-int/radar-utils'
 import { user } from '$lib/store'
-import type { IAuthImpl } from '$lib/components/Types'
+import type { IAuthImpl } from '$lib/Types'
 
 export default class LocalImpl implements IAuthImpl {
   async logIn(name?: string): Promise<void> {

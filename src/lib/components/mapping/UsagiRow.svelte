@@ -5,7 +5,7 @@
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
   import { Config } from '$lib/helperClasses/Config'
   import Usagi from '$lib/classes/usagi/Usagi'
-  import type { IUsagiInfo, IUsagiRow, MappingEvents } from '$lib/components/Types'
+  import type { IUsagiInfo, IUsagiRow, MappingEvents } from '$lib/Types'
   import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
 
   export let renderedRow: Record<string, any>, columns: IColumnMetaData[] | undefined, index: number

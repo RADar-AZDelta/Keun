@@ -8,8 +8,8 @@
     IUsagiRow,
     MapCustomConceptED,
     MappingEvents,
-  } from '$lib/components/Types'
-  import type { UpdateErrorED } from '$lib/components/Types'
+  } from '$lib/Types'
+  import type { UpdateErrorED } from '$lib/Types'
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
   import CustomRow from './CustomRow.svelte'
 

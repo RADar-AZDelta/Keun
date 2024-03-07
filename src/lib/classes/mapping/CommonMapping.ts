@@ -1,6 +1,6 @@
-import type { IAthenaInfo, IAthenaRow, IUsagiRow } from '$lib/components/Types'
 import User from '../general/User'
 import Table from '../tables/Table'
+import type { IAthenaInfo, IAthenaRow, IUsagiRow } from '$lib/Types'
 
 export default class CommonMapping {
   static athenaRow: IAthenaRow
@@ -35,7 +35,7 @@ export default class CommonMapping {
 
   private static async assembleAthenaInfo() {
     const { id, name, domain, vocabulary, className } = this.athenaRow!
-    const mappedProperties = { conceptId: id, conceptName: name, domainId: domain, vocabularyId: vocabulary, className  }
+    const mappedProperties = { conceptId: id, conceptName: name, domainId: domain, vocabularyId: vocabulary, className }
     return mappedProperties
   }
 

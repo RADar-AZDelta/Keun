@@ -1,7 +1,7 @@
 import UsagiUpdate from '$lib/classes/usagi/UsagiUpdate'
 import UsagiActions from '$lib/classes/usagi/UsagiActions'
 import UsagiRowDelete from '$lib/classes/usagi/UsagiRowDelete'
-import type { IUsagiInfo, IUsagiRow } from '$lib/components/Types'
+import type { IUsagiInfo, IUsagiRow } from '$lib/Types'
 
 export default class Usagi {
   usagiInfo: IUsagiInfo

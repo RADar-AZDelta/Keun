@@ -1,7 +1,7 @@
 import CommonMapping from '$lib/classes/mapping/CommonMapping'
-import type { IAthenaInfo, IMappedRows } from '$lib/components/Types'
 import MappedConcepts from '../general/MappedConcepts'
 import Table from '../tables/Table'
+import type { IAthenaInfo, IMappedRows } from '$lib/Types'
 
 export default class SingleMapping extends CommonMapping {
   static async singleMapping(athenaInfo: IAthenaInfo, action: string, equivalence: string, custom: boolean = false) {

@@ -1,5 +1,5 @@
-import type { IUser } from '$lib/components/Types'
 import { user } from '$lib/store'
+import type { IUser } from '$lib/Types'
 
 export default class User {
   static async getUser(): Promise<IUser> {

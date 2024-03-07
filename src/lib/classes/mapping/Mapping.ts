@@ -1,8 +1,8 @@
 import SingleMapping from '$lib/classes/mapping/SingleMapping'
 import MultipleMapping from '$lib/classes/mapping/MultipleMapping'
-import type { IAthenaInfo, IMappingExtra } from '$lib/components/Types'
 import Table from '../tables/Table'
 import Settings from '../general/Settings'
+import type { IAthenaInfo, IMappingExtra } from '$lib/Types'
 
 export default class Mapping {
   static async updateMappingInfo(index: number, mappingInfo: IMappingExtra) {

@@ -1,11 +1,11 @@
 import { query } from 'arquero'
 import { Config } from '$lib/helperClasses/Config'
-import type Query from 'arquero/dist/types/query/query'
-import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
-import type { IMappedRow, IMappedRows, IQueryResult, IUsagiRow } from '$lib/components/Types'
-import type DataTable from '@radar-azdelta/svelte-datatable'
 import { table } from '$lib/store'
 import MappedConcepts from '../general/MappedConcepts'
+import type Query from 'arquero/dist/types/query/query'
+import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
+import type { IMappedRow, IMappedRows, IQueryResult, IUsagiRow } from '$lib/Types'
+import type DataTable from '@radar-azdelta/svelte-datatable'
 
 export default class Table {
   private static columnsAdded: boolean = false

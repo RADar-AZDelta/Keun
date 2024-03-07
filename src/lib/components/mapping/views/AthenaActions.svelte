@@ -4,7 +4,7 @@
   import { Config } from '$lib/helperClasses/Config'
   import Athena from '$lib/classes/athena/Athena'
   import { mappedToConceptIds, user } from '$lib/store'
-  import type { IAthenaRow, IUsagiRow } from '$lib/components/Types'
+  import type { IAthenaRow, IUsagiRow } from '$lib/Types'
 
   export let renderedRow: IAthenaRow
   export let selectedRow: IUsagiRow, selectedRowIndex: number, equivalence: string

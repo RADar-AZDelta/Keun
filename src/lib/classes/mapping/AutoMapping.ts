@@ -3,9 +3,9 @@ import { PUBLIC_MAPPINGDATA_PATH } from '$env/static/public'
 import { abortAutoMapping, disableActions } from '$lib/store'
 import Mapping from '$lib/classes/mapping/Mapping'
 import { BergamotTranslator } from '$lib/helperClasses/BergamotTranslator'
-import type { IAthenaInfo, IAthenaRow, IQueryResult, IUsagiRow } from '$lib/components/Types'
 import Table from '../tables/Table'
 import Settings from '../general/Settings'
+import type { IAthenaInfo, IAthenaRow, IQueryResult, IUsagiRow } from '$lib/Types'
 
 export default class AutoMapping {
   private static autoMappingAbortController: AbortController

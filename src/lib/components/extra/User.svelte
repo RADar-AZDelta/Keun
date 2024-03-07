@@ -1,8 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { SvgIcon, clickOutside } from '@radar-azdelta-int/radar-svelte-components'
-  import { authImpl, authImplementation, databaseImpl, user } from '$lib/store'
-  import { loadImplAuth } from '$lib/implementations/implementation'
+  import { authImpl, user } from '$lib/store'
+  import { authImplementation, loadImplAuth } from '$lib/implementations/implementation'
+  import { Providers } from '$lib/enums'
 
   let userDialog: HTMLDialogElement
   let author: string | undefined | null = undefined
@@ -14,15 +15,13 @@
   }
 
   function openDialog(): void {
-    if (authImplementation === 'none' || !authImplementation) author = backupAuthor = $user.name
+    if (authImplementation === Providers.Local || !authImplementation) author = backupAuthor = $user.name
     userDialog.showModal()
   }
 
-  async function login(provider: string): Promise<void> {
+  async function login(): Promise<void> {
     if (!$authImpl) await loadImplAuth()
-    // await $authImpl!.logIn(author ? author : undefined)
-    await $authImpl?.logIn(provider)
-    await $databaseImpl?.saveUserConfig($user)
+    await $authImpl?.logIn(author ?? undefined)
     backupAuthor = author
     closeDialog()
   }
@@ -50,10 +49,9 @@
     <button class="close-dialog" on:click={closeDialog} disabled={!$user ? true : false}>
       <SvgIcon id="x" />
     </button>
-    {#if authImplementation == 'firebase'}
+    {#if authImplementation === Providers.Firebase}
       <section class="author">
-        <button on:click={() => login('microsoft')}>Microsoft</button>
-        <button on:click={() => login('google')}>Google</button>
+        <button on:click={login}>Microsoft</button>
       </section>
     {:else}
       <section class="author">
@@ -61,7 +59,7 @@
         <input id="author" type="text" placeholder="John Wick" bind:value={author} />
         <div class="buttons-container">
           <button class="cancel" on:click={cancelLogIn} disabled={author == undefined ? true : false}> Cancel </button>
-          <button class="save" on:click={() => login('')} disabled={author == undefined ? true : false}> Save </button>
+          <button class="save" on:click={login} disabled={author == undefined ? true : false}> Save </button>
         </div>
       </section>
     {/if}

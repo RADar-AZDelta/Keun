@@ -2,7 +2,7 @@
   import { dev } from '$app/environment'
   import { createEventDispatcher } from 'svelte'
   import { user } from '$lib/store'
-  import type { PageEvents } from '$lib/components/Types'
+  import type { PageEvents } from '$lib/Types'
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
 
   export let missing: Record<string, string>, cols: string[], file: File
@@ -19,7 +19,6 @@
   async function fileUploadWithColumnChanges(): Promise<void> {
     if (dev) console.log('fileUploadWithColumnChanges: The file is uploading and process the column changes')
     if (!$user) return console.error('fileUploadWithColumnChanges: There is no author name set.')
-    // if (!($implementation === 'firebase' && $settings?.author?.roles?.includes('Admin')) && $databaseImpl) return
     var reader = new FileReader()
     reader.onload = processUpdatedColumns
     reader.readAsText(<Blob>file)

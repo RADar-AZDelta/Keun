@@ -4,7 +4,7 @@
   import MappedRow from './MappedRow.svelte'
   import Table from '$lib/classes/tables/Table'
   import { Config } from '$lib/helperClasses/Config'
-  import type { IMappedRow, IUsagiRow } from '$lib/components/Types'
+  import type { IMappedRow, IUsagiRow } from '$lib/Types'
 
   export let selectedRow: IUsagiRow
 

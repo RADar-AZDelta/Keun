@@ -3,8 +3,7 @@
   import { goto } from '$app/navigation'
   import { base } from '$app/paths'
   import { createEventDispatcher } from 'svelte'
-  import { selectedCustomFileId, selectedFileId } from '$lib/store'
-  import type { IFileInformation, PageEvents } from '$lib/components/Types'
+  import type { IFileInformation, PageEvents } from '$lib/Types'
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
 
   export let files: IFileInformation[]
@@ -14,8 +13,6 @@
   // A method to go to the mapping route without updating the file in IndexedDB for local mapping (the cached version is still in IndexedDB)
   async function mapCachedFile(id: string, customId: string): Promise<void> {
     if (dev) console.log(`mapCachedFile: Go to the route "/mapping" to map the file: ${id}`)
-    $selectedFileId = id
-    $selectedCustomFileId = customId
     goto(`${base}/mapping?id=${id}`)
   }
 

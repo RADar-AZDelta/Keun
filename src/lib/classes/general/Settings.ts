@@ -1,5 +1,5 @@
-import type { ISettings } from '$lib/components/Types'
 import { settings } from '$lib/store'
+import type { ISettings } from '$lib/Types'
 
 export default class Settings {
   static async getLanguage() {

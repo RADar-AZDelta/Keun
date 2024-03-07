@@ -1,10 +1,10 @@
 import { query } from 'arquero'
-import Table from '../tables/Table'
 import { Config } from '$lib/helperClasses/Config'
-import type Query from 'arquero/dist/types/query/query'
-import type { IExtraUsagiCols, IUsagiAllExtra, IUsagiInfo, IUsagiRow } from '$lib/components/Types'
+import Table from '../tables/Table'
 import CustomTable from '../tables/CustomTable'
 import MappedConcepts from '../general/MappedConcepts'
+import type Query from 'arquero/dist/types/query/query'
+import type { IExtraUsagiCols, IUsagiAllExtra, IUsagiInfo, IUsagiRow } from '$lib/Types'
 
 const additionalFields: IExtraUsagiCols = Config.additionalColumns
 
