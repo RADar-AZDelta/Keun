@@ -1,5 +1,6 @@
-import StoreMethods from '$lib/classes/StoreMethods'
 import type { IAthenaInfo, IAthenaRow, IUsagiRow } from '$lib/components/Types'
+import User from '../general/User'
+import Table from '../tables/Table'
 
 export default class CommonMapping {
   static athenaRow: IAthenaRow
@@ -25,7 +26,7 @@ export default class CommonMapping {
 
   static async rowMapping(index?: number, numberOfConcepts: number = 1) {
     let rowIndex: number = index !== undefined ? index : this.usagiRowIndex!
-    const mappedUsagiRow = await StoreMethods.getTableRow(rowIndex)
+    const mappedUsagiRow = await Table.getTableRow(rowIndex)
     const mappedProperties = await this.assembleAthenaInfo()
     const extraProps = await this.assembleExtraInfoSingleMapping(numberOfConcepts)
     Object.assign(mappedUsagiRow, mappedProperties, extraProps)
@@ -39,7 +40,7 @@ export default class CommonMapping {
   }
 
   private static async assembleExtraInfoSingleMapping(numberOfConcepts: number) {
-    const user = await StoreMethods.getUser()
+    const user = await User.getUser()
     const updatedProperties = {
       mappingStatus: this.action,
       statusSetBy: user.name,

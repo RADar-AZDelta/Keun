@@ -1,9 +1,11 @@
 import { query } from 'arquero'
 import { reformatDate } from '@radar-azdelta-int/radar-utils'
-import StoreMethods from '$lib/classes/StoreMethods'
 import { Config } from '$lib/helperClasses/Config'
 import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
-import type { ICustomConceptInput, IUsagiRow } from '$lib/components/Types'
+import type { ICustomConceptInput, ICustomQueryResult, IUsagiRow } from '$lib/components/Types'
+import Table from './Table'
+import type DataTable from '@radar-azdelta/svelte-datatable'
+import { customTable } from '$lib/store'
 
 export default class CustomTable {
   private static firstRowIsEmpty: boolean = true
@@ -36,16 +38,16 @@ export default class CustomTable {
     const customQuery = query()
       .filter((r: any) => r['ADD_INFO:customConcept'] === true)
       .toObject()
-    const concepts = await StoreMethods.executeQueryOnTable(customQuery)
+    const concepts = await Table.executeQueryOnTable(customQuery)
     if (!concepts?.indices?.length) return
-    const testRow = await StoreMethods.getCustomTableRow(0)
-    if (testRow?.domain_id === 'test') await StoreMethods.deleteCustomTableRows([0])
+    const testRow = await this.getCustomTableRow(0)
+    if (!testRow?.domain_id) await this.deleteCustomTableRows([0])
     for (let concept of concepts.queriedData) await this.addCustomConceptToTable(concept)
   }
 
   private static async checkIfColumnsAreAdded() {
     const conceptQuery = query().slice(0, 1).toObject()
-    const concept = await StoreMethods.executeQueryOnTable(conceptQuery)
+    const concept = await Table.executeQueryOnTable(conceptQuery)
     return Object.hasOwn(concept.queriedData[0], 'ADD_INFO:customConcept')
   }
 
@@ -63,21 +65,49 @@ export default class CustomTable {
       valid_end_date: '2099-12-31',
       invalid_reason: '',
     }
-    await StoreMethods.insertCustomTableRow(custom)
+    await this.insertCustomTableRow(custom)
   }
 
   static async deleteFirstEmptyConceptIfNeeded() {
     if (!this.firstRowIsEmpty) return (this.customTableWasFilled = true)
     const emptyConceptQuery = query().slice(0, 1).toObject()
-    const firstConceptRes = await StoreMethods.executeQueryOnCustomTable(emptyConceptQuery)
+    const firstConceptRes = await this.executeQueryOnCustomTable(emptyConceptQuery)
     const firstConcept = firstConceptRes.queriedData[0]
     if (firstConcept.concept_name) {
       this.firstRowIsEmpty = false
       this.customTableWasFilled = true
       return
     }
-    await StoreMethods.deleteCustomTableRows([0])
+    await this.deleteCustomTableRows([0])
     this.firstRowIsEmpty = false
     this.customTableWasFilled = false
+  }
+
+  static async getCustomTableRow(index: number) {
+    const customTable = await this.getCustomTable()
+    return <ICustomConceptInput>await customTable.getFullRow(index)
+  }
+
+  static async deleteCustomTableRows(indices: number[]) {
+    const customTable = await this.getCustomTable()
+    await customTable.deleteRows(indices)
+  }
+
+  static async executeQueryOnCustomTable(query: object): Promise<ICustomQueryResult> {
+    const customTable = await this.getCustomTable()
+    return await customTable.executeQueryAndReturnResults(query)
+  }
+
+  static async insertCustomTableRow(row: ICustomConceptInput) {
+    const customTable = await this.getCustomTable()
+    await customTable.insertRows([row])
+  }
+
+  private static async getCustomTable(): Promise<DataTable> {
+    return new Promise(resolve =>
+      customTable.subscribe(table => {
+        if (table) resolve(table)
+      }),
+    )
   }
 }

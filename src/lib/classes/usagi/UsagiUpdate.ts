@@ -1,4 +1,4 @@
-import StoreMethods from '$lib/classes/StoreMethods'
+import Table from '../tables/Table'
 
 export default class UsagiUpdate {
   private static usagiRowIndex: number
@@ -14,6 +14,6 @@ export default class UsagiUpdate {
 
   private static async updateProps(column: string, value: string) {
     const updatedProperty = { [column]: value }
-    await StoreMethods.updateTableRows(new Map([[this.usagiRowIndex, updatedProperty]]))
+    await Table.updateTableRows(new Map([[this.usagiRowIndex, updatedProperty]]))
   }
 }

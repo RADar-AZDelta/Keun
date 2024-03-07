@@ -1,9 +1,10 @@
 import { query } from 'arquero'
-import StoreMethods from '$lib/classes/StoreMethods'
 import SingleMapping from '$lib/classes/mapping/SingleMapping'
 import CommonMapping from '$lib/classes/mapping/CommonMapping'
 import type Query from 'arquero/dist/types/query/query'
 import type { IAthenaInfo, IMappedRows, IQueryResult, IUsagiRow } from '$lib/components/Types'
+import Table from '../tables/Table'
+import MappedConcepts from '../general/MappedConcepts'
 
 export default class MultipleMapping extends CommonMapping {
   static async multipleMapping(athenaInfo: IAthenaInfo, action: string, equivalence: string, custom: boolean = false) {
@@ -51,7 +52,7 @@ export default class MultipleMapping extends CommonMapping {
   }
 
   private static async checkIfRowIsNotAlreadyMapped() {
-    const mappedToConceptIds = await StoreMethods.getMappedConceptsBib()
+    const mappedToConceptIds = await MappedConcepts.getMappedConceptsBib()
     if (!this.usagiRow?.sourceCode || this.athenaRow?.id === undefined || this.athenaRow?.id === null) return false
     const conceptKey = await this.getConceptKey()
     const mappedConcept = mappedToConceptIds[this.usagiRow.sourceCode]?.[conceptKey]
@@ -63,7 +64,7 @@ export default class MultipleMapping extends CommonMapping {
     const rowsQuery = (<Query>query().params(params))
       .filter((r: any, p: any) => r.sourceCode === p.sourceCode)
       .toObject()
-    const alreadyMappedRows = await StoreMethods.executeQueryOnTable(rowsQuery)
+    const alreadyMappedRows = await Table.executeQueryOnTable(rowsQuery)
     return alreadyMappedRows
   }
 
@@ -85,17 +86,17 @@ export default class MultipleMapping extends CommonMapping {
     if (!this.usagiRow?.sourceCode || this.athenaRow?.id === undefined || this.athenaRow?.id === null) return
     const conceptKey = await this.getConceptKey()
     const updatedConcepts: IMappedRows = { [this.usagiRow.sourceCode]: { [conceptKey]: this.action ?? '' } }
-    await StoreMethods.updateMappedConceptsBib(updatedConcepts)
+    await MappedConcepts.updateMappedConceptsBib(updatedConcepts)
     const { mappedRow } = await this.rowMapping(index === -1 ? this.usagiRowIndex : index)
     mappedRow['ADD_INFO:numberOfConcepts'] = mapped.indices.length + 1
-    await StoreMethods.insertTableRow(mappedRow)
+    await Table.insertTableRow(mappedRow)
   }
 
   private static async updateNumberOfConcepts(mapped: IQueryResult) {
     const numberOfConcepts = mapped.indices.length + 1
     const rowsToUpdate = new Map()
     for (let rowIndex of mapped.indices) rowsToUpdate.set(rowIndex, { 'ADD_INFO:numberOfConcepts': numberOfConcepts })
-    await StoreMethods.updateTableRows(rowsToUpdate)
+    await Table.updateTableRows(rowsToUpdate)
   }
 
   private static async getConceptKey() {

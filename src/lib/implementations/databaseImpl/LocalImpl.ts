@@ -12,7 +12,6 @@ export interface IDatabaseFile {
 }
 
 // TODO: fix issues
-// TODO: check if the custom concepts table works correctly
 // TODO: add the missing methods for custom concepts in the local implementation
 // TODO: put interfaces for this impl & for Firebase in the Types.d.ts
 // TODO: clean up all the interfaces because some are double

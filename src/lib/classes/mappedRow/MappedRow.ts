@@ -1,8 +1,8 @@
 import { query } from 'arquero'
 import Usagi from '$lib/classes/usagi/Usagi'
-import StoreMethods from '$lib/classes/StoreMethods'
 import type Query from 'arquero/dist/types/query/query'
 import type { IMappedRow, IQueryResult, IUsagiRow } from '$lib/components/Types'
+import Table from '../tables/Table'
 
 export default class MappedRow {
   usagiRow: IUsagiRow
@@ -25,7 +25,7 @@ export default class MappedRow {
     const conceptQuery = (<Query>query().params(params))
       .filter((r: any, p: any) => r.sourceCode === p.sourceCode && r.conceptId === p.conceptId)
       .toObject()
-    const conceptResult = await StoreMethods.executeQueryOnTable(conceptQuery)
+    const conceptResult = await Table.executeQueryOnTable(conceptQuery)
     if (!conceptResult.indices.length) return
     const concept = conceptResult.queriedData[0]
     const index = conceptResult.indices[0]

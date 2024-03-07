@@ -40,18 +40,6 @@ export interface IUsagiLogic {
   deleteRow(): Promise<void>
 }
 
-export interface IStoreMethods {
-  getUser(): Promise<IUser>
-  getSettings(): Promise<ISettings>
-  getMappedConceptsBib(): Promise<IMappedRows>
-  getTableRow(index: number): Promise<IUsagiRow>
-  updateTableRow(index: number, updatedProperties: object): Promise<void>
-  updateTableRows(rows: Map<number, object>): Promise<void>
-  insertTableRow(row: IUsagiRow): Promise<void>
-  executeQueryOnTable(query: object): Promise<IQueryResult>
-  updateMappedConceptsBib(updatedConcept: object): Promise<void>
-}
-
 export interface IMappingInformation {
   equivalence: string
   comment: string

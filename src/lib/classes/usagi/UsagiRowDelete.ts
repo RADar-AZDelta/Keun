@@ -1,8 +1,10 @@
 import { query } from 'arquero'
-import StoreMethods from '$lib/classes/StoreMethods'
+import Table from '../tables/Table'
 import { Config } from '$lib/helperClasses/Config'
 import type Query from 'arquero/dist/types/query/query'
-import type { IExtraUsagiCols, IQueryResult, IUsagiAllExtra, IUsagiInfo, IUsagiRow } from '$lib/components/Types'
+import type { IExtraUsagiCols, IUsagiAllExtra, IUsagiInfo, IUsagiRow } from '$lib/components/Types'
+import CustomTable from '../tables/CustomTable'
+import MappedConcepts from '../general/MappedConcepts'
 
 const additionalFields: IExtraUsagiCols = Config.additionalColumns
 
@@ -25,7 +27,7 @@ export default class UsagiRowDelete {
   private static async deleteCustomConcept() {
     const index = await this.getCustomConceptIndex()
     if (!index) return
-    await StoreMethods.deleteCustomTableRows([index])
+    await CustomTable.deleteCustomTableRows([index])
   }
 
   private static async getCustomConceptIndex() {
@@ -44,7 +46,7 @@ export default class UsagiRowDelete {
           r.concept_class_id === p.concept_class_id,
       )
       .toObject()
-    const queryResult = await StoreMethods.executeQueryOnCustomTable(indexQuery)
+    const queryResult = await CustomTable.executeQueryOnCustomTable(indexQuery)
     if (!queryResult.indices.length) return
     return queryResult.indices[0]
   }
@@ -55,7 +57,7 @@ export default class UsagiRowDelete {
     const numberQuery = (<Query>query().params(params))
       .filter((r: any, p: any) => r.sourceCode === p.sourceCode)
       .toObject()
-    const queryResult = await StoreMethods.executeQueryOnTable(numberQuery)
+    const queryResult = await Table.executeQueryOnTable(numberQuery)
     if (!queryResult.indices.length) return 0
     return queryResult.indices.length
   }
@@ -71,7 +73,7 @@ export default class UsagiRowDelete {
 
   private static async resetRow() {
     const resetProperties = this.resetPropertiesOfRow()
-    await StoreMethods.updateTableRows(new Map([[this.usagiRowIndex, resetProperties]]))
+    await Table.updateTableRows(new Map([[this.usagiRowIndex, resetProperties]]))
   }
 
   private static resetPropertiesOfRow() {
@@ -86,14 +88,14 @@ export default class UsagiRowDelete {
   }
 
   private static async deleteRowOnIndex() {
-    await StoreMethods.deleteTableRow(this.usagiRowIndex)
+    await Table.deleteTableRow(this.usagiRowIndex)
   }
 
   private static async updateRowsWithSameSourceCode() {
     const indices = await this.getConceptsIndices()
     const rowsToUpdate = new Map()
     for (let i of indices) rowsToUpdate.set(i, { 'ADD_INFO:numberOfConcepts': indices.length })
-    await StoreMethods.updateTableRows(rowsToUpdate)
+    await Table.updateTableRows(rowsToUpdate)
   }
 
   private static async getConceptsIndices() {
@@ -101,13 +103,13 @@ export default class UsagiRowDelete {
     const indexQuery = (<Query>query().params(params))
       .filter((r: any, p: any) => r.sourceCode === p.sourceCode)
       .toObject()
-    const queryResult = await StoreMethods.executeQueryOnTable(indexQuery)
+    const queryResult = await Table.executeQueryOnTable(indexQuery)
     if (!queryResult.indices.length) return []
     return queryResult.indices
   }
 
   private static async deleteFromMappedConceptIds() {
     if (!this.usagiRow.conceptId) return
-    await StoreMethods.deleteConceptInMappedConceptsBib(this.usagiRow.sourceCode, this.usagiRow.conceptId)
+    await MappedConcepts.deleteConceptInMappedConceptsBib(this.usagiRow.sourceCode, this.usagiRow.conceptId)
   }
 }

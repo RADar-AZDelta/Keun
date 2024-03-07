@@ -1,6 +1,8 @@
 import Mapping from '$lib/classes/mapping/Mapping'
-import StoreMethods from '$lib/classes/StoreMethods'
 import type { IAthenaInfo, IAthenaRow, IUsagiRow } from '$lib/components/Types'
+import MappedConcepts from '../general/MappedConcepts'
+import User from '../general/User'
+import Table from '../tables/Table'
 
 export default class AthenaActions {
   private static athenaRow: IAthenaRow
@@ -10,14 +12,14 @@ export default class AthenaActions {
   static async approveRow({ athenaRow, usagiRow, usagiRowIndex }: IAthenaInfo) {
     await this.setVars(athenaRow, usagiRow, usagiRowIndex)
     if (!this.usagiRow.sourceCode || this.usagiRow.mappingStatus === 'SEMI-APPROVED') return
-    const user = await StoreMethods.getUser()
+    const user = await User.getUser()
     const updatedProperties = { statusSetBy: user.name, statusSetOn: new Date(), mappingStatus: 'APPROVED' }
-    await StoreMethods.updateMappedConceptsBib({
+    await MappedConcepts.updateMappedConceptsBib({
       [this.usagiRow.sourceCode]: {
         [this.athenaRow.id]: 'APPROVED',
       },
     })
-    await StoreMethods.updateTableRow(this.usagiRowIndex, updatedProperties)
+    await Table.updateTableRow(this.usagiRowIndex, updatedProperties)
     return true
   }
 

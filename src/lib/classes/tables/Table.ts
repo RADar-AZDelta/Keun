@@ -1,9 +1,11 @@
 import { query } from 'arquero'
-import StoreMethods from '$lib/classes/StoreMethods'
 import { Config } from '$lib/helperClasses/Config'
 import type Query from 'arquero/dist/types/query/query'
 import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
-import type { IMappedRow, IMappedRows, IUsagiRow } from '$lib/components/Types'
+import type { IMappedRow, IMappedRows, IQueryResult, IUsagiRow } from '$lib/components/Types'
+import type DataTable from '@radar-azdelta/svelte-datatable'
+import { table } from '$lib/store'
+import MappedConcepts from '../general/MappedConcepts'
 
 export default class Table {
   private static columnsAdded: boolean = false
@@ -51,23 +53,23 @@ export default class Table {
         [customConcept ? `custom-${concept.conceptName ?? ''}` : concept.conceptId ?? '']: concept.mappingStatus ?? '',
       },
     }
-    await StoreMethods.updateMappedConceptsBib(updatedConcepts)
+    await MappedConcepts.updateMappedConceptsBib(updatedConcepts)
   }
 
   private static async getAllMappedConceptsToRow(sourceCode: string) {
     const params = { sourceCode, columnsAdded: this.columnsAdded }
     if (!this.columnsAdded) this.columnsAdded = await this.checkIfTableConceptsAreWithNewColumns()
     const conceptsQuery = (<Query>query().params(params))
-      .filter((r: any, p: any) => r.sourceCode === p.sourceCode && p.columnsAdded ? r.conceptName : true)
+      .filter((r: any, p: any) => (r.sourceCode === p.sourceCode && p.columnsAdded ? r.conceptName : true))
       .toObject()
-    const queryResult = await StoreMethods.executeQueryOnTable(conceptsQuery)
+    const queryResult = await this.executeQueryOnTable(conceptsQuery)
     return queryResult
   }
 
   private static async checkIfTableConceptsAreWithNewColumns() {
     const conceptQuery = query().slice(0, 1).toObject()
-    const queryResult = await StoreMethods.executeQueryOnTable(conceptQuery)
-    return Object.hasOwn(queryResult.queriedData[0], "conceptName")
+    const queryResult = await this.executeQueryOnTable(conceptQuery)
+    return Object.hasOwn(queryResult.queriedData[0], 'conceptName')
   }
 
   private static async transformConceptToRowFormat(concept: IUsagiRow) {
@@ -81,5 +83,66 @@ export default class Table {
       customConcept,
     }
     return row
+  }
+
+  static async extractFlaggedConcepts() {
+    const flaggedConceptsQuery = query()
+      .filter((r: any) => r.mappingStatus === 'FLAGGED')
+      .toObject()
+    const flaggedConceptsResult = await this.executeQueryOnTable(flaggedConceptsQuery)
+    return flaggedConceptsResult.queriedData
+  }
+
+  static async getTableRow(index: number) {
+    const table = await this.getTable()
+    return <IUsagiRow>await table.getFullRow(index)
+  }
+
+  static async deleteTableRow(index: number) {
+    const table = await this.getTable()
+    await table.deleteRows([index])
+  }
+
+  static async updateTableRow(index: number, updatedProperties: object) {
+    const table = await this.getTable()
+    await table.updateRows(new Map([[index, updatedProperties]]))
+  }
+
+  static async updateTableRows(rows: Map<number, object>) {
+    const table = await this.getTable()
+    await table.updateRows(rows)
+  }
+
+  static async insertTableRow(row: IUsagiRow) {
+    const table = await this.getTable()
+    await table.insertRows([row])
+  }
+
+  static async executeQueryOnTable(query: object): Promise<IQueryResult> {
+    const table = await this.getTable()
+    return await table.executeQueryAndReturnResults(query)
+  }
+
+  static async getTablePagination() {
+    const table = await this.getTable()
+    return table.getTablePagination()
+  }
+
+  static async disableTable() {
+    const table = await this.getTable()
+    table.setDisabled(true)
+  }
+
+  static async enableTable() {
+    const table = await this.getTable()
+    table.setDisabled(false)
+  }
+
+  private static async getTable(): Promise<DataTable> {
+    return new Promise(resolve =>
+      table.subscribe(table => {
+        if (table) resolve(table)
+      }),
+    )
   }
 }

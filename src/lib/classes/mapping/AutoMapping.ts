@@ -2,9 +2,10 @@ import { query } from 'arquero'
 import { PUBLIC_MAPPINGDATA_PATH } from '$env/static/public'
 import { abortAutoMapping, disableActions } from '$lib/store'
 import Mapping from '$lib/classes/mapping/Mapping'
-import StoreMethods from '$lib/classes/StoreMethods'
 import { BergamotTranslator } from '$lib/helperClasses/BergamotTranslator'
 import type { IAthenaInfo, IAthenaRow, IQueryResult, IUsagiRow } from '$lib/components/Types'
+import Table from '../tables/Table'
+import Settings from '../general/Settings'
 
 export default class AutoMapping {
   private static autoMappingAbortController: AbortController
@@ -14,7 +15,7 @@ export default class AutoMapping {
   static previousPage: number
 
   static async autoMapPage() {
-    const autoMap = await StoreMethods.getAutoMap()
+    const autoMap = await Settings.getAutoMap()
     if (!autoMap) return
     if (this.autoMappingPromise) this.autoMappingAbortController.abort()
     this.autoMappingAbortController = new AbortController()
@@ -31,12 +32,12 @@ export default class AutoMapping {
   }
 
   private static async autoMapPageRows() {
-    const pagination = await StoreMethods.getTablePagination()
+    const pagination = await Table.getTablePagination()
     const { currentPage, rowsPerPage } = pagination
     if (!currentPage || !rowsPerPage) return
     this.previousPage = currentPage
     const concepts = await this.getTableConcepts(rowsPerPage, currentPage)
-    if (concepts.indices.length) await StoreMethods.disableTable()
+    if (concepts.indices.length) await Table.disableTable()
     for (let i = 0; i < concepts.queriedData.length; i++) await this.getConceptInfoForAutoMapping(concepts, i)
   }
 
@@ -52,12 +53,12 @@ export default class AutoMapping {
     const startIndex = rowsPerPage * (currentPage - 1)
     const endingIndex = rowsPerPage * currentPage
     const conceptsQuery = query().slice(startIndex, endingIndex).toObject()
-    const concepts = await StoreMethods.executeQueryOnTable(conceptsQuery)
+    const concepts = await Table.executeQueryOnTable(conceptsQuery)
     return concepts
   }
 
   private static async autoMapSingleRow(index: number) {
-    const row = await StoreMethods.getTableRow(index)
+    const row = await Table.getTableRow(index)
     await this.autoMapRow(row, index)
   }
 
@@ -72,7 +73,7 @@ export default class AutoMapping {
   }
 
   private static async getTranslatedSourceName(sourceName: string) {
-    const language = await StoreMethods.getLanguage()
+    const language = await Settings.getLanguage()
     const translated = await BergamotTranslator.translate(sourceName, language)
     return translated
   }
@@ -89,17 +90,17 @@ export default class AutoMapping {
     if (this.autoMappingPromise) this.autoMappingAbortController.abort()
     abortAutoMapping.set(false)
     this.enableTable()
-    const pag = await StoreMethods.getTablePagination()
+    const pag = await Table.getTablePagination()
     if (this.previousPage !== pag.currentPage) return new Map<number, IUsagiRow>()
   }
 
   private static enableTable() {
     disableActions.set(false)
-    StoreMethods.enableTable()
+    Table.enableTable()
   }
 
   private static disableTable() {
     disableActions.set(true)
-    StoreMethods.disableTable()
+    Table.disableTable()
   }
 }

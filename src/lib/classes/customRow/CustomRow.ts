@@ -1,6 +1,5 @@
 import { reformatDate } from '@radar-azdelta-int/radar-utils'
 import Mapping from '$lib/classes/mapping/Mapping'
-import StoreMethods from '$lib/classes/StoreMethods'
 import type {
   IAthenaRow,
   ICustomConcept,
@@ -10,6 +9,7 @@ import type {
 } from '$lib/components/Types'
 import { query } from 'arquero'
 import CustomTable from '../tables/CustomTable'
+import MappedConcepts from '../general/MappedConcepts'
 
 export default class CustomRow {
   customRow: ICustomConceptCompact
@@ -28,9 +28,9 @@ export default class CustomRow {
     const transformedConcept = await this.transformCustomConceptToAthenaFormat(concept, equivalence)
     const rowMappingInfo = { usagiRow: this.usagiRow, usagiRowIndex: this.usagiRowIndex, athenaRow: transformedConcept }
     await CustomTable.deleteFirstEmptyConceptIfNeeded()
-    await StoreMethods.insertCustomTableRow(customConcept)
+    await CustomTable.insertCustomTableRow(customConcept)
     await Mapping.mapRow(rowMappingInfo, equivalence, action, true)
-    await StoreMethods.updateMappedConceptsBib({
+    await MappedConcepts.updateMappedConceptsBib({
       [this.usagiRow.sourceCode]: {
         [`custom-${this.customRow.concept_name}`]: action,
       },

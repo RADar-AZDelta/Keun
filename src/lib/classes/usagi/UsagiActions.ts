@@ -1,5 +1,6 @@
-import StoreMethods from '$lib/classes/StoreMethods'
 import type { IUsagiInfo, IUsagiRow } from '$lib/components/Types'
+import User from '../general/User'
+import Table from '../tables/Table'
 
 export default class UsagiActions {
   private static usagiRow: IUsagiRow
@@ -27,7 +28,7 @@ export default class UsagiActions {
 
   private static async performActionOnRow(action: string) {
     const updatedProperties = await this.getConditionMethod(action)
-    await StoreMethods.updateTableRows(new Map([[this.usagiRowIndex, updatedProperties]]))
+    await Table.updateTableRows(new Map([[this.usagiRowIndex, updatedProperties]]))
   }
 
   private static async getConditionMethod(action: string) {
@@ -38,7 +39,7 @@ export default class UsagiActions {
   }
 
   private static async checkApprovalConditionsAndReturnUpdate() {
-    const user = await StoreMethods.getUser()
+    const user = await User.getUser()
     if (!user || !user.name) return {}
     const { mappingStatus, statusSetBy, conceptId: id, sourceAutoAssignedConceptIds } = this.usagiRow
     const semiApproval = mappingStatus === 'SEMI-APPROVED'
@@ -54,7 +55,7 @@ export default class UsagiActions {
   }
 
   private static async checkFlaggingConditionsAndReturnUpdate() {
-    const user = await StoreMethods.getUser()
+    const user = await User.getUser()
     if (!user || !user.name) return {}
     const { mappingStatus } = this.usagiRow
     const rowIsFlagged = mappingStatus === 'FLAGGED'
@@ -63,7 +64,7 @@ export default class UsagiActions {
   }
 
   private static async checkUnapprovalConditionsAndReturnUpdate() {
-    const user = await StoreMethods.getUser()
+    const user = await User.getUser()
     if (!user || !user.name) return {}
     const { mappingStatus } = this.usagiRow
     const rowIsUnapproved = mappingStatus === 'UNAPPROVED'
