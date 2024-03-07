@@ -11,6 +11,13 @@ export interface IDatabaseFile {
   customId: string
 }
 
+// TODO: fix issues
+// TODO: check if the custom concepts table works correctly
+// TODO: add the missing methods for custom concepts in the local implementation
+// TODO: put interfaces for this impl & for Firebase in the Types.d.ts
+// TODO: clean up all the interfaces because some are double
+// TODO: try hosting on Github pages & Firebase
+
 export default class LocalImpl implements IDatabaseImpl {
   checkIfCustomConceptAlreadyExists(conceptInput: ICustomConceptCompact): Promise<boolean> {
     throw new Error('Method not implemented.')

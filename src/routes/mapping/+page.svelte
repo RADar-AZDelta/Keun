@@ -116,7 +116,7 @@
     const customBlob = $customTable ? await $customTable.getBlob() : undefined
     if (!$databaseImpl) await loadImplDB()
     await $databaseImpl?.editKeunFile($selectedFileId, blob)
-    if (customBlob) await $databaseImpl?.editCustomKeunFile($selectedCustomFileId, customBlob)
+    if (customBlob) await $databaseImpl?.editCustomKeunFile($selectedFileId, $selectedCustomFileId, customBlob)
   }
 
   $: {

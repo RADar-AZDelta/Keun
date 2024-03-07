@@ -6,6 +6,9 @@ import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
 import type { ICustomConceptInput, IUsagiRow } from '$lib/components/Types'
 
 export default class CustomTable {
+  private static firstRowIsEmpty: boolean = true
+  private static customTableWasFilled: boolean = false
+
   static modifyColumnMetadata(columns: IColumnMetaData[]) {
     const customConceptsColumnMap = Config.columnsCustomConcept.reduce((acc, cur) => {
       acc.set(cur.id, cur)
@@ -26,6 +29,10 @@ export default class CustomTable {
   }
 
   static async extractCustomConcepts() {
+    await this.deleteFirstEmptyConceptIfNeeded()
+    if (this.customTableWasFilled) return
+    const columnsAreAdded = await this.checkIfColumnsAreAdded()
+    if (!columnsAreAdded) return
     const customQuery = query()
       .filter((r: any) => r['ADD_INFO:customConcept'] === true)
       .toObject()
@@ -34,6 +41,12 @@ export default class CustomTable {
     const testRow = await StoreMethods.getCustomTableRow(0)
     if (testRow?.domain_id === 'test') await StoreMethods.deleteCustomTableRows([0])
     for (let concept of concepts.queriedData) await this.addCustomConceptToTable(concept)
+  }
+
+  private static async checkIfColumnsAreAdded() {
+    const conceptQuery = query().slice(0, 1).toObject()
+    const concept = await StoreMethods.executeQueryOnTable(conceptQuery)
+    return Object.hasOwn(concept.queriedData[0], 'ADD_INFO:customConcept')
   }
 
   private static async addCustomConceptToTable(concept: IUsagiRow) {
@@ -51,5 +64,20 @@ export default class CustomTable {
       invalid_reason: '',
     }
     await StoreMethods.insertCustomTableRow(custom)
+  }
+
+  static async deleteFirstEmptyConceptIfNeeded() {
+    if (!this.firstRowIsEmpty) return (this.customTableWasFilled = true)
+    const emptyConceptQuery = query().slice(0, 1).toObject()
+    const firstConceptRes = await StoreMethods.executeQueryOnCustomTable(emptyConceptQuery)
+    const firstConcept = firstConceptRes.queriedData[0]
+    if (firstConcept.concept_name) {
+      this.firstRowIsEmpty = false
+      this.customTableWasFilled = true
+      return
+    }
+    await StoreMethods.deleteCustomTableRows([0])
+    this.firstRowIsEmpty = false
+    this.customTableWasFilled = false
   }
 }

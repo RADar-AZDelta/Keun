@@ -130,12 +130,13 @@ export default class FirebaseImpl implements IDatabaseImpl {
     await this.storage.uploadFileStorage(`${this.storageCollection}/${id}`, file, metaData)
   }
 
-  async editCustomKeunFile(id: string, blob: Blob): Promise<void> {
-    const fileData = await this.getFileDataFromFirestore(id)
+  async editCustomKeunFile(keunFileId: string, id: string, blob: Blob): Promise<void> {
+    const fileData = await this.getFileDataFromFirestore(keunFileId)
     if (!fileData) return
-    const { name } = fileData
+    const { custom: name, customId } = fileData
     const file = await this.blobToFile(blob, name)
-    await this.storage.uploadFileStorage(`${this.storageCustomColl}/${id}`, file)
+    const metaData: IStorageCustomMetadata = { customMetadata: { name: file.name, customId } }
+    await this.storage.uploadFileStorage(`${this.storageCustomColl}/${id}`, file, metaData)
   }
 
   private async getFileDataFromFirestore(id: string) {

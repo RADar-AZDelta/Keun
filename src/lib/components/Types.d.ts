@@ -13,6 +13,11 @@ export interface IQueryResult {
   queriedData: IUsagiRow[]
 }
 
+export interface ICustomQueryResult {
+  indices: number[]
+  queriedData: ICustomConceptInput[]
+}
+
 export interface IUsagiInfo {
   usagiRow: IUsagiRow
   usagiRowIndex: number
@@ -427,7 +432,7 @@ export interface IDatabaseImpl {
   getFilesList(): Promise<IFileInformation[]>
   uploadKeunFile(file: File): Promise<void>
   editKeunFile(id: string, blob: Blob): Promise<void>
-  editCustomKeunFile(id: string, blob: Blob): Promise<void>
+  editCustomKeunFile(keunFileId: string, id: string, blob: Blob): Promise<void>
   deleteKeunFile(id: string): Promise<void>
   getCustomConcepts(): Promise<any>
   addCustomConcept(customConcept: ICustomConceptCompact): Promise<any>

@@ -2,6 +2,7 @@ import { customTable, mappedToConceptIds, settings, table, user } from '$lib/sto
 import type DataTable from '@radar-azdelta/svelte-datatable'
 import type {
   ICustomConceptInput,
+  ICustomQueryResult,
   IMappedRows,
   IMappedRowsConcept,
   IQueryResult,
@@ -51,8 +52,7 @@ export default class StoreMethods {
   private static async getCustomTable(): Promise<DataTable> {
     return new Promise(resolve =>
       customTable.subscribe(table => {
-        if (!table) throw new Error('Custom table not found')
-        resolve(table)
+        if(table) resolve(table)
       }),
     )
   }
@@ -97,7 +97,7 @@ export default class StoreMethods {
     return await table.executeQueryAndReturnResults(query)
   }
 
-  static async executeQueryOnCustomTable(query: object): Promise<IQueryResult> {
+  static async executeQueryOnCustomTable(query: object): Promise<ICustomQueryResult> {
     const customTable = await this.getCustomTable()
     return await customTable.executeQueryAndReturnResults(query)
   }

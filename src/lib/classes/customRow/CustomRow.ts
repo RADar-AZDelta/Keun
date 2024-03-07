@@ -8,6 +8,8 @@ import type {
   ICustomConceptInput,
   IUsagiRow,
 } from '$lib/components/Types'
+import { query } from 'arquero'
+import CustomTable from '../tables/CustomTable'
 
 export default class CustomRow {
   customRow: ICustomConceptCompact
@@ -25,13 +27,14 @@ export default class CustomRow {
     const concept = await this.createCustomConcept()
     const transformedConcept = await this.transformCustomConceptToAthenaFormat(concept, equivalence)
     const rowMappingInfo = { usagiRow: this.usagiRow, usagiRowIndex: this.usagiRowIndex, athenaRow: transformedConcept }
+    await CustomTable.deleteFirstEmptyConceptIfNeeded()
+    await StoreMethods.insertCustomTableRow(customConcept)
     await Mapping.mapRow(rowMappingInfo, equivalence, action, true)
     await StoreMethods.updateMappedConceptsBib({
       [this.usagiRow.sourceCode]: {
         [`custom-${this.customRow.concept_name}`]: action,
       },
     })
-    await StoreMethods.insertCustomTableRow(customConcept)
   }
 
   private async addDetailToCustomConcept() {

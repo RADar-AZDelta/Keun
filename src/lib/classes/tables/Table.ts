@@ -67,8 +67,7 @@ export default class Table {
   private static async checkIfTableConceptsAreWithNewColumns() {
     const conceptQuery = query().slice(0, 1).toObject()
     const queryResult = await StoreMethods.executeQueryOnTable(conceptQuery)
-    if (queryResult.queriedData[0]?.conceptName) return true
-    return false
+    return Object.hasOwn(queryResult.queriedData[0], "conceptName")
   }
 
   private static async transformConceptToRowFormat(concept: IUsagiRow) {
