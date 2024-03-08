@@ -40,7 +40,7 @@ export default class FirebaseImpl implements IDatabaseImpl {
 
   getKeunFile = async (id: string) => await this.readFileFromCollection(id, this.storageCollection)
   getCustomKeunFile = async (id: string) => await this.readFileFromCollection(id, this.storageCustomColl)
-  getFlaggedFile = async(id: string) => await this.readFileFromCollection(id, this.storageFlaggedColl)
+  getFlaggedFile = async (id: string) => await this.readFileFromCollection(id, this.storageFlaggedColl)
 
   private async readFileFromCollection(id: string, collection: string): Promise<IFile | undefined> {
     const fileInfo = await this.storage.readFileStorage(`${collection}/${id}`)

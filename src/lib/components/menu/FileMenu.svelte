@@ -3,13 +3,20 @@
   import { base } from '$app/paths'
   import { createEventDispatcher } from 'svelte'
   import { databaseImpl, user } from '$lib/store'
-  import { SvgIcon, Spinner } from '@radar-azdelta-int/radar-svelte-components'
+  import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
   import type { PageEvents, IFileInformation } from '$lib/Types'
   import { logWhenDev } from '@radar-azdelta-int/radar-utils'
+  import { databaseImplementation } from '$lib/implementations/implementation'
+  import { Providers } from '$lib/enums'
 
   export let files: IFileInformation[]
 
   const dispatch = createEventDispatcher<PageEvents>()
+
+  $: firebaseProvider = databaseImplementation === Providers.Firebase
+  $: localProvider = databaseImplementation === Providers.Local
+  $: userIsUser = $user?.roles?.includes('user')
+  $: userIsAdmin = $user?.roles?.includes('admin')
 
   // A method to send the user to the mappingtool
   async function openMappingTool(fileId: string): Promise<void> {
@@ -32,14 +39,14 @@
   }
 </script>
 
-{#if user}
+{#if $user && (localProvider || (firebaseProvider && (userIsUser || userIsAdmin)))}
   {#each files as file}
     <button class="file-card" on:click={() => openMappingTool(file.id)}>
       <div class="file-name-container">
         <SvgIcon id="excel" width="40px" height="40px" />
         <p class="file-name">{file?.name}</p>
       </div>
-      {#if $user.roles?.includes('admin')}
+      {#if (firebaseProvider && userIsAdmin) || localProvider}
         <div>
           <button class="download-file" on:click={e => downloadFiles(e, file.id)}><SvgIcon id="download" /></button>
           <button class="delete-file" on:click={e => deleteFiles(e, file.id)}><SvgIcon id="x" /></button>
@@ -48,9 +55,7 @@
     </button>
   {/each}
 {:else}
-  <div class="loader">
-    <Spinner />
-  </div>
+  <p class="rights-error">You do not have sufficient rights, contact an admin please.</p>
 {/if}
 
 <style>
@@ -107,5 +112,10 @@
     outline: none;
     box-shadow: 0 0 0 2px #71bbd4;
     background-color: #80c3d8;
+  }
+
+  .rights-error {
+    text-align: center;
+    margin: 0 0 1rem 0;
   }
 </style>

@@ -10,15 +10,13 @@
   import ColumnsDialog from '$lib/components/menu/ColumnsDialog.svelte'
   import FileChoiceDialog from '$lib/components/menu/FileChoiceDialog.svelte'
   import FileInputDialog from '$lib/components/menu/FileInputDialog.svelte'
-  import FirebaseImpl from '$lib/components/menu/FirebaseImpl.svelte'
-  import LocalImpl from '$lib/components/menu/LocalImpl.svelte'
-  import { databaseImplementation, loadImplDB } from '$lib/implementations/implementation'
+  import { loadImplDB } from '$lib/implementations/implementation'
   import { databaseImpl, user } from '$lib/store'
   import { Spinner } from '@radar-azdelta-int/radar-svelte-components'
   import type { SvelteComponent } from 'svelte'
   import type { FileUploadED } from '$lib/Types'
-  import { Providers } from '$lib/enums'
   import { logWhenDev } from '@radar-azdelta-int/radar-utils'
+  import FileMenu from '$lib/components/menu/FileMenu.svelte'
 
   let files: IFileInformation[] = []
   let file: File
@@ -128,15 +126,7 @@
       <div class="file-menu">
         <h1 class="title">Files to map</h1>
         <div class="file-list">
-          {#if databaseImplementation === Providers.Firebase}
-            {#if ($user?.roles?.includes('user') || $user?.roles?.includes('admin')) && files}
-              <FirebaseImpl bind:files on:downloadFiles={downloadFiles} on:deleteFiles={deleteFiles} />
-            {:else}
-              <p class="rights-error">You do not have sufficient rights, contact an admin please.</p>
-            {/if}
-          {:else}
-            <LocalImpl bind:files on:downloadFiles={downloadFiles} on:deleteFiles={deleteFiles} />
-          {/if}
+          <FileMenu bind:files on:downloadFiles={downloadFiles} on:deleteFiles={deleteFiles} />
         </div>
         {#if processing}
           <Spinner />
@@ -200,10 +190,5 @@
     outline: none;
     box-shadow: 0 0 0 2px #7feb7f;
     background-color: #90ee90;
-  }
-
-  .rights-error {
-    text-align: center;
-    margin: 0 0 1rem 0;
   }
 </style>
