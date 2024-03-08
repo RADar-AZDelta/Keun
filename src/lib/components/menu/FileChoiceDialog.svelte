@@ -1,8 +1,8 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
-  import type { PageEvents } from '$lib/Types'
-  import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
   import { logWhenDev } from '@radar-azdelta-int/radar-utils'
+  import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
+  import type { PageEvents } from '$lib/Types'
 
   export let processing: boolean, currentFileId: string | undefined
 
@@ -10,16 +10,10 @@
   let dialog: HTMLDialogElement
 
   export const showDialog = () => dialog.showModal()
-
   export const closeDialog = () => dialog.close()
 
-  // Go to the mapping page of the current uploaded file
-  async function mapCachedFile(): Promise<void> {
-    logWhenDev(`mapCachedFile: Keep the file with id: ${currentFileId}`)
-    closeDialog()
-  }
+  const mapCachedFile = async () => closeDialog()
 
-  // Send a request to the parent to rewrite the current uploaded file with the new file that is inserted
   async function uploadFile(): Promise<void> {
     logWhenDev(`uploadFile: Upload the file instead of using the cached version.`)
     dispatch('fileUpload', { id: currentFileId })

@@ -18,6 +18,7 @@
   async function saveSettings() {
     await SettingsImpl.updateSettings($settings)
     const automappingChanged = $settings.autoMap && savedAutomapping !== $settings.autoMap
+    savedAutomapping = $settings.autoMap
     if (automappingChanged) $triggerAutoMapping = savedAutomapping = true
   }
 
@@ -38,7 +39,7 @@
   }
 
   $: {
-    $settings.mapToMultipleConcepts
+    $settings.autoMap
     changeAutoMapping()
   }
 </script>

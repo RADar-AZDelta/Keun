@@ -63,7 +63,6 @@
     processing = true
     const { id: fileId } = e.detail
     if (fileId) await DatabaseImpl.deleteKeunFile(fileId)
-    await getFiles()
     processing = false
     logWhenDev('deleteFile: File has been deleted')
   }

@@ -31,18 +31,18 @@ export default class CustomTable {
   }
 
   static async extractCustomConcepts() {
-    await this.deleteFirstEmptyConceptIfNeeded()
     if (this.customTableWasFilled) return
     const columnsAreAdded = await this.checkIfColumnsAreAdded()
     if (!columnsAreAdded) return
     const customQuery = query()
-      .filter((r: any) => r['ADD_INFO:customConcept'] === true)
-      .toObject()
+    .filter((r: any) => r['ADD_INFO:customConcept'] === true)
+    .toObject()
     const concepts = await Table.executeQueryOnTable(customQuery)
     if (!concepts?.indices?.length) return
     const testRow = await this.getCustomTableRow(0)
     if (!testRow?.domain_id) await this.deleteCustomTableRows([0])
     for (let concept of concepts.queriedData) await this.addCustomConceptToTable(concept)
+    await this.deleteFirstEmptyConceptIfNeeded()
   }
 
   private static async checkIfColumnsAreAdded() {
@@ -84,22 +84,31 @@ export default class CustomTable {
   }
 
   static async getCustomTableRow(index: number) {
+    await this.throwIfTableNotInitialized()
     return <ICustomConceptInput>await this.table.getFullRow(index)
   }
 
   static async deleteCustomTableRows(indices: number[]) {
+    await this.throwIfTableNotInitialized()
     await this.table.deleteRows(indices)
   }
 
   static async executeQueryOnCustomTable(query: object): Promise<ICustomQueryResult> {
+    await this.throwIfTableNotInitialized()
     return await this.table.executeQueryAndReturnResults(query)
   }
 
   static async insertCustomTableRow(row: ICustomConceptInput) {
+    await this.throwIfTableNotInitialized()
     await this.table.insertRows([row])
   }
 
   static async getBlob() {
+    await this.throwIfTableNotInitialized().catch(() => console.error('THIS GIVES ERRORS'))
     return await this.table.getBlob()
+  }
+
+  private static async throwIfTableNotInitialized() {
+    if (!this.table) throw new Error('Custom table is not initialized')
   }
 }

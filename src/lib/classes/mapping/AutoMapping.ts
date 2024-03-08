@@ -89,18 +89,31 @@ export default class AutoMapping {
   static async abortAutoMap() {
     if (this.autoMappingPromise) this.autoMappingAbortController.abort()
     abortAutoMapping.set(false)
+    const autoMappingTriggered = await this.checkIfTheAutomappingIsTriggered()
+    if (!autoMappingTriggered) return
     this.enableTable()
     const pag = await Table.getTablePagination()
     if (this.previousPage !== pag.currentPage) return new Map<number, IUsagiRow>()
   }
 
-  private static enableTable() {
+  private static async checkIfTheAutomappingIsTriggered() {
+    const disable = await this.getDisableAction()
+    return disable
+  }
+
+  private static async enableTable() {
     disableActions.set(false)
     Table.enableTable()
   }
 
-  private static disableTable() {
+  private static async disableTable() {
+    const disable = await this.getDisableAction()
+    if (disable) return
     disableActions.set(true)
     Table.disableTable()
+  }
+
+  private static async getDisableAction() {
+    return new Promise(resolve => disableActions.subscribe(disableActions => resolve(disableActions)))
   }
 }

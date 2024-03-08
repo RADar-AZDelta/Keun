@@ -23,7 +23,7 @@
     logWhenDev('openMappingTool: Navigating to the mapping tool')
     const cached = await DatabaseImpl.checkFileExistance(fileId)
     if (!cached) return
-    goto(`${base}/mapping?impl=firebase&id=${fileId}`)
+    goto(`${base}/mapping?id=${fileId}`)
   }
 
   async function downloadFiles(e: Event, id: string): Promise<void> {

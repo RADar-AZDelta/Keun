@@ -23,6 +23,7 @@
 
   let file: File | undefined, customConceptsFile: File | undefined, flaggedConceptsFile: File | undefined
   let tableRendered: boolean = false
+  let customTableRendered: boolean = false
   let customsExtracted: boolean = false
   let tableOptions: ITableOptions = { ...Config.tableOptions, id: $page.url.searchParams.get('id') ?? '' }
   let currentVisibleRows: Map<number, IUsagiRow> = new Map<number, IUsagiRow>()
@@ -51,6 +52,7 @@
   const translate = async (text: string) => await BergamotTranslator.translate(text, $settings.language)
 
   async function extractCustomConcepts() {
+    if (!customTableRendered) return
     await CustomTable.extractCustomConcepts()
     customsExtracted = true
   }
@@ -60,11 +62,11 @@
     if (rows) currentVisibleRows = rows
   }
 
+  // TODO: fix issue that the automapping won't work when opening the file
   async function autoMapPage() {
     if (tableRendered) {
       if (!customsExtracted) await extractCustomConcepts()
       await AutoMapping.autoMapPage()
-      $triggerAutoMapping = false
     } else tableRendered = true
   }
 
@@ -111,43 +113,56 @@
   }
 
   async function syncFile() {
-    const blob = await Table.getBlob()
-    if (!blob) return
-    await insertFlaggedRows()
-    const customBlob = await CustomTable.getBlob()
-    const flaggedBlob = await FlaggedTable.getBlob()
-    await DatabaseImpl.editKeunFile(selectedFileId, blob)
-    if (customBlob) await DatabaseImpl.editCustomKeunFile(selectedFileId, customBlob)
-    if (flaggedBlob) await DatabaseImpl.editFlaggedFile(selectedFileId, flaggedBlob)
+    try {
+      const blob = await Table.getBlob()
+      if (!blob) return
+      await DatabaseImpl.editKeunFile(selectedFileId, blob)
+      const customBlob = await CustomTable.getBlob().catch(() => console.error('CATCHED'))
+      if (customBlob) await DatabaseImpl.editCustomKeunFile(selectedFileId, customBlob)
+      // await insertFlaggedRows()
+      // const flaggedBlob = await FlaggedTable.getBlob()
+      // if (flaggedBlob) await DatabaseImpl.editFlaggedFile(selectedFileId, flaggedBlob)
+    } catch (e) {
+      console.error(e)
+      throw e
+    }
   }
 
-  async function insertFlaggedRows() {
-    const concepts = await extractFlaggedConcepts()
-    if (!concepts.length) return
-    await FlaggedTable.removeAllTableRows()
-    await FlaggedTable.insertTableRows(concepts)
-  }
+  const tableRenderedComplete = () => (tableRendered = true)
+  const customTableRenderedComplete = () => (customTableRendered = true)
 
-  const extractFlaggedConcepts = async () => await Table.extractFlaggedConcepts()
+  // async function insertFlaggedRows() {
+  //   const concepts = await extractFlaggedConcepts()
+  //   if (!concepts.length) return
+  //   await FlaggedTable.removeAllTableRows()
+  //   await FlaggedTable.insertTableRows(concepts)
+  // }
 
-  async function checkIfTableIsRenderedBeforeAutomapping() {
-    if (!tableRendered) return
-    await autoMapPage()
-  }
+  // const extractFlaggedConcepts = async () => await Table.extractFlaggedConcepts()
 
   $: {
     if ($abortAutoMapping) abortAutoMap()
   }
 
   $: {
-    if ($triggerAutoMapping) checkIfTableIsRenderedBeforeAutomapping()
+    if ($triggerAutoMapping) {
+      autoMapPage()
+      $triggerAutoMapping = false
+    }
+  }
+
+  $: {
+    tableRendered
+    autoMapPage()
   }
 
   beforeNavigate(async ({ to, cancel, type }) => {
-    if (!syncingComplete) cancel()
-    await syncFile()
-    syncingComplete = true
-    if (to?.url) goto(to.url)
+    if (!syncingComplete) {
+      cancel()
+      await syncFile()
+      syncingComplete = true
+      return goto(to!.url)
+    }
   })
 
   onMount(() => load())
@@ -162,6 +177,7 @@
 </svelte:head>
 
 {#if file}
+  <button on:click={() => console.log('CHECK ', $triggerAutoMapping)}>Check</button>
   <button on:click={syncFile}>Save</button>
   <button on:click={downloadPage}>Download</button>
   <button on:click={approvePage}>Approve page</button>
@@ -170,6 +186,7 @@
     bind:this={Table.table}
     options={tableOptions}
     on:rendering={abortAutoMap}
+    on:renderingComplete={tableRenderedComplete}
     modifyColumnMetadata={Table.modifyColumnMetadata}
   >
     <UsagiRow
@@ -202,18 +219,19 @@
       data={customConceptsFile}
       options={Config.customTableOptions}
       modifyColumnMetadata={CustomTable.modifyColumnMetadata}
+      on:renderingComplete={customTableRenderedComplete}
       bind:this={CustomTable.table}
     />
   </div>
 
-  <div class="hidden">
+  <!-- <div class="hidden">
     <DataTable
       data={flaggedConceptsFile}
       options={Config.flaggedTableOptions}
       modifyColumnMetadata={FlaggedTable.modifyColumnMetadata}
       bind:this={FlaggedTable.table}
     />
-  </div>
+  </div> -->
 {/if}
 
 <style>
