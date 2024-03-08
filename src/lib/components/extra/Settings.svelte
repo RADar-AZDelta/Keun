@@ -35,6 +35,7 @@
 
   async function changeAutoMapping() {
     abort()
+    if (!SettingsImpl.settingsRetrievedFromStorage) return
     saveSettings()
   }
 

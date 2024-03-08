@@ -5,6 +5,7 @@ import type { ISettings, ISettingsImpl } from '$lib/Types'
 export default class SettingsImpl {
   private static settings: ISettingsImpl
   private static settingsImplementation = PUBLIC_CLOUD_DATABASE_IMPLEMENTATION || Providers.Local
+  static settingsRetrievedFromStorage: boolean = false
 
   static async updateSettings(settings: ISettings) {
     await this.loadImpl()
@@ -13,7 +14,9 @@ export default class SettingsImpl {
 
   static async getSettings() {
     await this.loadImpl()
-    return await this.settings.getSettings()
+    const settings = await this.settings.getSettings()
+    this.settingsRetrievedFromStorage = true
+    return settings
   }
 
   private static async loadImpl() {

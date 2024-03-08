@@ -19,6 +19,6 @@ export default class LocalImpl implements IAuthImpl {
   }
 
   private async updateUser(author: string) {
-    user.set({ name: author })
+    user.set({ name: author, uid: crypto.randomUUID() })
   }
 }
