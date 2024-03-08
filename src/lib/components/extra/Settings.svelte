@@ -1,9 +1,9 @@
 <script lang="ts">
   import { SvgIcon, clickOutside } from '@radar-azdelta-int/radar-svelte-components'
-  import { abortAutoMapping, settings, settingsImpl, triggerAutoMapping } from '$lib/store'
-  import { loadImpSettings } from '$lib/implementations/implementation'
+  import { abortAutoMapping, settings, triggerAutoMapping } from '$lib/store'
   import Switch from '$lib/components/extra/Switch.svelte'
   import { Config } from '$lib/helperClasses/Config'
+  import SettingsImpl from '$lib/classes/implementation/SettingsImpl'
 
   let savedAutomapping: boolean, possibleOutclick: boolean, settingsDialog: HTMLDialogElement
 
@@ -16,8 +16,7 @@
   }
 
   async function saveSettings() {
-    if (!$settingsImpl) await loadImpSettings()
-    await $settingsImpl?.updateSettings($settings)
+    await SettingsImpl.updateSettings($settings)
     const automappingChanged = $settings.autoMap && savedAutomapping !== $settings.autoMap
     if (automappingChanged) $triggerAutoMapping = savedAutomapping = true
   }

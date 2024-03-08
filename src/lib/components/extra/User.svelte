@@ -1,9 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { SvgIcon, clickOutside } from '@radar-azdelta-int/radar-svelte-components'
-  import { authImpl, user } from '$lib/store'
-  import { authImplementation, loadImplAuth } from '$lib/implementations/implementation'
+  import { user } from '$lib/store'
   import { Providers } from '$lib/enums'
+  import AuthImpl from '$lib/classes/implementation/AuthImpl'
 
   let userDialog: HTMLDialogElement
   let author: string | undefined | null = undefined
@@ -15,13 +15,13 @@
   }
 
   function openDialog(): void {
-    if (authImplementation === Providers.Local || !authImplementation) author = backupAuthor = $user.name
+    if (AuthImpl.authImplementation === Providers.Local || !AuthImpl.authImplementation)
+      author = backupAuthor = $user.name
     userDialog.showModal()
   }
 
   async function login(): Promise<void> {
-    if (!$authImpl) await loadImplAuth()
-    await $authImpl?.logIn(author ?? undefined)
+    await AuthImpl.logIn(author ?? undefined)
     backupAuthor = author
     closeDialog()
   }
@@ -33,10 +33,7 @@
     else if ($user?.name) userDialog.close()
   }
 
-  onMount(async () => {
-    if (!$authImpl) await loadImplAuth()
-    if ($authImpl) return await $authImpl!.getAuthor()
-  })
+  onMount(() => AuthImpl.getAuthor())
 </script>
 
 <button title="Author" aria-label="User button" on:click={openDialog} class="header-button">
@@ -49,7 +46,7 @@
     <button class="close-dialog" on:click={closeDialog} disabled={!$user ? true : false}>
       <SvgIcon id="x" />
     </button>
-    {#if authImplementation === Providers.Firebase}
+    {#if AuthImpl.authImplementation === Providers.Firebase}
       <section class="author">
         <button on:click={login}>Microsoft</button>
       </section>

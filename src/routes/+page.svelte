@@ -3,20 +3,20 @@
     CheckForCacheED,
     ColumnsDialogShowED,
     DeleteFilesED,
-    DownloadFilesED,
     FileUpdatedColumnsED,
     IFileInformation,
+    ProcessingED,
   } from '$lib/Types'
   import ColumnsDialog from '$lib/components/menu/ColumnsDialog.svelte'
   import FileChoiceDialog from '$lib/components/menu/FileChoiceDialog.svelte'
   import FileInputDialog from '$lib/components/menu/FileInputDialog.svelte'
-  import { loadImplDB } from '$lib/implementations/implementation'
-  import { databaseImpl, user } from '$lib/store'
+  import { user } from '$lib/store'
   import { Spinner } from '@radar-azdelta-int/radar-svelte-components'
   import type { SvelteComponent } from 'svelte'
   import type { FileUploadED } from '$lib/Types'
   import { logWhenDev } from '@radar-azdelta-int/radar-utils'
   import FileMenu from '$lib/components/menu/FileMenu.svelte'
+  import DatabaseImpl from '$lib/classes/implementation/DatabaseImpl'
 
   let files: IFileInformation[] = []
   let file: File
@@ -29,8 +29,7 @@
 
   async function uploadFile() {
     logWhenDev('uploadFile: Uploading a file')
-    if (!$databaseImpl) await loadImplDB()
-    await $databaseImpl!.uploadKeunFile(file)
+    await DatabaseImpl.uploadKeunFile(file)
     await getFiles()
     fileInputDialog.closeDialog()
   }
@@ -45,9 +44,8 @@
 
   async function checkForCache(e: CustomEvent<CheckForCacheED>) {
     logWhenDev('checkForCache: Checking for cache')
-    if (!$databaseImpl) await loadImplDB()
     ;({ file } = e.detail)
-    const fileWithSameName = await $databaseImpl!.checkForFileWithSameName(file.name)
+    const fileWithSameName = await DatabaseImpl.checkForFileWithSameName(file.name)
     fileInputDialog.closeDialog()
     if (!fileWithSameName) return await uploadFile()
     possibleEditingFileId = fileWithSameName
@@ -56,25 +54,15 @@
 
   async function getFiles() {
     logWhenDev('getFiles: Get all the files in the database')
-    if (!$databaseImpl) await loadImplDB()
-    const getFilesRes = await $databaseImpl?.getFilesList()
+    const getFilesRes = await DatabaseImpl.getFilesList()
     if (getFilesRes) files = getFilesRes
-  }
-
-  async function downloadFiles(e: CustomEvent<DownloadFilesED>) {
-    if (!$databaseImpl) await loadImplDB()
-    const { id } = e.detail
-    if (!id) return
-    await $databaseImpl?.downloadFiles(id)
-    await getFiles()
   }
 
   async function deleteFiles(e: CustomEvent<DeleteFilesED>) {
     logWhenDev('deleteFile: Deleting a file')
     processing = true
-    if (!$databaseImpl) await loadImplDB()
     const { id: fileId } = e.detail
-    if (fileId) await $databaseImpl!.deleteKeunFile(fileId)
+    if (fileId) await DatabaseImpl.deleteKeunFile(fileId)
     await getFiles()
     processing = false
     logWhenDev('deleteFile: File has been deleted')
@@ -91,8 +79,10 @@
     uploadFile()
   }
 
+  const setProcessing = async (e: CustomEvent<ProcessingED>) => ({ processing } = e.detail)
+
   $: {
-    if ($user && $databaseImpl) getFiles()
+    if ($user) getFiles()
   }
 </script>
 
@@ -126,7 +116,7 @@
       <div class="file-menu">
         <h1 class="title">Files to map</h1>
         <div class="file-list">
-          <FileMenu bind:files on:downloadFiles={downloadFiles} on:deleteFiles={deleteFiles} />
+          <FileMenu bind:files on:processing={setProcessing} on:getFiles={getFiles} />
         </div>
         {#if processing}
           <Spinner />

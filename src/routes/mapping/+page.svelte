@@ -4,11 +4,10 @@
   import { onMount } from 'svelte'
   import { beforeNavigate, goto } from '$app/navigation'
   import DataTable from '@radar-azdelta/svelte-datatable'
-  import { customTable, table, flaggedTable, disableActions } from '$lib/store'
+  import { disableActions } from '$lib/store'
   import { BergamotTranslator } from '$lib/helperClasses/BergamotTranslator'
   import { settings, triggerAutoMapping } from '$lib/store'
-  import { abortAutoMapping, databaseImpl } from '$lib/store'
-  import { loadImplDB } from '$lib/implementations/implementation'
+  import { abortAutoMapping } from '$lib/store'
   import UsagiRow from '$lib/components/mapping/UsagiRow.svelte'
   import AthenaSearch from '$lib/components/mapping/AthenaSearch.svelte'
   import AutoMapping from '$lib/classes/mapping/AutoMapping'
@@ -20,6 +19,7 @@
   import type { SvelteComponent } from 'svelte'
   import type { ITableOptions } from '@radar-azdelta/svelte-datatable'
   import type { IUsagiRow, AutoMapRowED, RowSelectionED, NavigateRowED } from '$lib/Types'
+  import DatabaseImpl from '$lib/classes/implementation/DatabaseImpl'
 
   let file: File | undefined, customConceptsFile: File | undefined, flaggedConceptsFile: File | undefined
   let tableRendered: boolean = false
@@ -79,24 +79,22 @@
 
   async function downloadPage() {
     await syncFile()
-    await $databaseImpl?.downloadFiles(selectedFileId)
+    await DatabaseImpl.downloadFiles(selectedFileId)
     goto(`${base}/`)
   }
 
   async function readFile() {
     if (!selectedFileId) return
-    if (!$databaseImpl) await loadImplDB()
-    const keunFile = await $databaseImpl!.getKeunFile(selectedFileId)
-    const customKeunFile = await $databaseImpl?.getCustomKeunFile(customFileId ?? '')
-    const flaggedFile = await $databaseImpl?.getFlaggedFile(flaggedFileId ?? '')
+    const keunFile = await DatabaseImpl.getKeunFile(selectedFileId)
+    const customKeunFile = await DatabaseImpl.getCustomKeunFile(customFileId ?? '')
+    const flaggedFile = await DatabaseImpl.getFlaggedFile(flaggedFileId ?? '')
     if (keunFile && keunFile?.file) file = keunFile.file
     if (customKeunFile && customKeunFile?.file) customConceptsFile = customKeunFile.file
     if (flaggedFile && flaggedFile?.file) flaggedConceptsFile = flaggedFile.file
   }
 
   async function getCustomFileId() {
-    if (!$databaseImpl) await loadImplDB()
-    const cached = await $databaseImpl!.checkFileExistance(selectedFileId)
+    const cached = await DatabaseImpl.checkFileExistance(selectedFileId)
     if (!cached) return
     customFileId = cached.customId
     flaggedFileId = cached.flaggedId
@@ -118,10 +116,9 @@
     await insertFlaggedRows()
     const customBlob = await CustomTable.getBlob()
     const flaggedBlob = await FlaggedTable.getBlob()
-    if (!$databaseImpl) await loadImplDB()
-    await $databaseImpl?.editKeunFile(selectedFileId, blob)
-    if (customBlob) await $databaseImpl?.editCustomKeunFile(selectedFileId, customBlob)
-    if (flaggedBlob) await $databaseImpl?.editFlaggedFile(selectedFileId, flaggedBlob)
+    await DatabaseImpl.editKeunFile(selectedFileId, blob)
+    if (customBlob) await DatabaseImpl.editCustomKeunFile(selectedFileId, customBlob)
+    if (flaggedBlob) await DatabaseImpl.editFlaggedFile(selectedFileId, flaggedBlob)
   }
 
   async function insertFlaggedRows() {
@@ -170,7 +167,7 @@
   <button on:click={approvePage}>Approve page</button>
   <DataTable
     data={file}
-    bind:this={$table}
+    bind:this={Table.table}
     options={tableOptions}
     on:rendering={abortAutoMap}
     modifyColumnMetadata={Table.modifyColumnMetadata}
@@ -205,7 +202,7 @@
       data={customConceptsFile}
       options={Config.customTableOptions}
       modifyColumnMetadata={CustomTable.modifyColumnMetadata}
-      bind:this={$customTable}
+      bind:this={CustomTable.table}
     />
   </div>
 
@@ -214,7 +211,7 @@
       data={flaggedConceptsFile}
       options={Config.flaggedTableOptions}
       modifyColumnMetadata={FlaggedTable.modifyColumnMetadata}
-      bind:this={$flaggedTable}
+      bind:this={FlaggedTable.table}
     />
   </div>
 {/if}

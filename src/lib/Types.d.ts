@@ -93,6 +93,8 @@ export interface PageEvents {
   downloadFiles: DownloadFilesED
   deleteFiles: DeleteFilesED
   editRights: EditRightsED
+  getFiles: void
+  processing: ProcessingED
 }
 
 export type FileDropED = IFileTemplate
@@ -107,6 +109,9 @@ export type FileUpdatedColumnsED = IFileTemplate
 export type DownloadFilesED = IFileIdTemplate
 export type DeleteFilesED = IFileIdTemplate
 export type EditRightsED = IFileIdTemplate
+export interface ProcessingED {
+  processing: boolean
+}
 
 ////////////////////////////// Events for the mapping page //////////////////////////////
 

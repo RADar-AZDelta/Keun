@@ -1,7 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte'
   import DataTable, { type IColumnMetaData, type ITableOptions } from '@radar-azdelta/svelte-datatable'
-  import { databaseImpl } from '$lib/store'
   import type {
     CustomConceptAddedED,
     ICustomConceptCompact,
@@ -12,6 +11,7 @@
   import type { UpdateErrorED } from '$lib/Types'
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
   import CustomRow from './CustomRow.svelte'
+  import DatabaseImpl from '$lib/classes/implementation/DatabaseImpl'
 
   export let selectedRow: IUsagiRow, selectedRowIndex: number, equivalence: string
 
@@ -56,7 +56,7 @@
   const updateError = (e: CustomEvent<UpdateErrorED>) => (errorMessage = e.detail.error)
 
   async function getAllCustomConcepts() {
-    const customConcepts: ICustomConceptCompact[] = await $databaseImpl?.getCustomConcepts()
+    const customConcepts: ICustomConceptCompact[] = await DatabaseImpl.getCustomConcepts()
     const inputRow = { concept_name: '', domain_id: '', vocabulary_id: '', concept_class_id: '' }
     data = [inputRow, ...customConcepts]
   }

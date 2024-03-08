@@ -1,6 +1,5 @@
 import { query } from 'arquero'
 import { Config } from '$lib/helperClasses/Config'
-import { table } from '$lib/store'
 import MappedConcepts from '../general/MappedConcepts'
 import type Query from 'arquero/dist/types/query/query'
 import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
@@ -8,6 +7,7 @@ import type { IMappedRow, IMappedRows, IQueryResult, IUsagiRow } from '$lib/Type
 import type DataTable from '@radar-azdelta/svelte-datatable'
 
 export default class Table {
+  static table: DataTable
   private static columnsAdded: boolean = false
 
   static modifyColumnMetadata(columns: IColumnMetaData[]): IColumnMetaData[] {
@@ -96,60 +96,71 @@ export default class Table {
   }
 
   static async getTableRow(index: number) {
-    const table = await this.getTable()
-    return <IUsagiRow>await table.getFullRow(index)
+    await this.throwIfTableNotInitialized()
+    return <IUsagiRow>await this.table.getFullRow(index)
   }
 
   static async deleteTableRow(index: number) {
-    const table = await this.getTable()
-    await table.deleteRows([index])
+    await this.throwIfTableNotInitialized()
+    await this.table.deleteRows([index])
   }
 
   static async updateTableRow(index: number, updatedProperties: object) {
-    const table = await this.getTable()
-    await table.updateRows(new Map([[index, updatedProperties]]))
+    await this.throwIfTableNotInitialized()
+    await this.table.updateRows(new Map([[index, updatedProperties]]))
   }
 
   static async updateTableRows(rows: Map<number, object>) {
-    const table = await this.getTable()
-    await table.updateRows(rows)
+    await this.throwIfTableNotInitialized()
+    await this.table.updateRows(rows)
   }
 
   static async insertTableRow(row: IUsagiRow) {
-    const table = await this.getTable()
-    await table.insertRows([row])
+    await this.throwIfTableNotInitialized()
+    await this.table.insertRows([row])
   }
 
   static async executeQueryOnTable(query: object): Promise<IQueryResult> {
-    const table = await this.getTable()
-    return await table.executeQueryAndReturnResults(query)
+    await this.throwIfTableNotInitialized()
+    return await this.table.executeQueryAndReturnResults(query)
   }
 
   static async getTablePagination() {
-    const table = await this.getTable()
-    return table.getTablePagination()
+    await this.throwIfTableNotInitialized()
+    return this.table.getTablePagination()
+  }
+
+  static async changePagination(currentPage: number) {
+    await this.throwIfTableNotInitialized()
+    return this.table.changePagination({ currentPage })
   }
 
   static async disableTable() {
-    const table = await this.getTable()
-    table.setDisabled(true)
+    await this.throwIfTableNotInitialized()
+    this.table.setDisabled(true)
   }
 
   static async enableTable() {
-    const table = await this.getTable()
-    table.setDisabled(false)
+    await this.throwIfTableNotInitialized()
+    this.table.setDisabled(false)
   }
 
   static async getBlob() {
-    const table = await this.getTable()
-    return await table.getBlob()
+    await this.throwIfTableNotInitialized()
+    return await this.table.getBlob()
   }
 
-  private static async getTable(): Promise<DataTable> {
-    return new Promise(resolve =>
-      table.subscribe(table => {
-        if (table) resolve(table)
-      }),
-    )
+  static async getNextRow(currentIndex: number) {
+    await this.throwIfTableNotInitialized()
+    return this.table.getNextRow(currentIndex)
+  }
+
+  static async getPreviousRow(currentIndex: number) {
+    await this.throwIfTableNotInitialized()
+    return this.table.getPreviousRow(currentIndex)
+  }
+
+  private static async throwIfTableNotInitialized() {
+    if (!this.table) throw new Error('Table is not initialized')
   }
 }

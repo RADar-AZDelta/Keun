@@ -3,9 +3,9 @@
   import { query } from 'arquero'
   import ShowColumnsDialog from '$lib/components/mapping/ShowColumnsDialog.svelte'
   import type Query from 'arquero/dist/types/query/query'
-  import type { IQueryResult, ITablePagination, IUsagiRow, MappingEvents, ShowColumnsED } from '$lib/Types'
+  import type { IQueryResult, IUsagiRow, MappingEvents, ShowColumnsED } from '$lib/Types'
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
-  import { table } from '$lib/store'
+  import Table from '$lib/classes/tables/Table'
 
   export let selectedRow: IUsagiRow
 
@@ -14,8 +14,7 @@
   let shownColumns: string[] = ['sourceCode', 'sourceName', 'sourceFrequency']
 
   async function getPagination() {
-    let pag: ITablePagination = $table.getTablePagination()
-    const { currentPage } = pag
+    const { currentPage } = await Table.getTablePagination()
     return currentPage ?? 0
   }
 
@@ -32,13 +31,13 @@
     const conceptName2 = concept === 'Unmapped' ? null : concept
     const params = { sourceCode, sourceName, conceptName, conceptName2 }
     const indexQuery = (<Query>query().params(params)).filter(rowFilter).toObject()
-    const rows: IQueryResult = await $table.executeQueryAndReturnResults(indexQuery)
+    const rows: IQueryResult = await Table.executeQueryOnTable(indexQuery)
     const index = rows.indices[0]
     return index
   }
 
   async function getFollowingRow(up: boolean, currentRowIndex: number) {
-    const rowResult = up ? await $table.getNextRow(currentRowIndex) : await $table.getPreviousRow(currentRowIndex)
+    const rowResult = up ? await Table.getNextRow(currentRowIndex) : await Table.getPreviousRow(currentRowIndex)
     const { row, index, page } = rowResult
     return { row, index, page }
   }
@@ -48,7 +47,7 @@
     const { row, index, page } = await getFollowingRow(up, rowIndex)
     if (!row.sourceCode) return
     const currentPage = await getPagination()
-    if (currentPage !== page) $table.changePagination({ currentPage: page })
+    if (currentPage !== page) Table.changePagination(page)
     dispatch('navigateRow', { row, index })
   }
 

@@ -2,40 +2,48 @@
   import { goto } from '$app/navigation'
   import { base } from '$app/paths'
   import { createEventDispatcher } from 'svelte'
-  import { databaseImpl, user } from '$lib/store'
+  import { user } from '$lib/store'
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
   import type { PageEvents, IFileInformation } from '$lib/Types'
   import { logWhenDev } from '@radar-azdelta-int/radar-utils'
-  import { databaseImplementation } from '$lib/implementations/implementation'
   import { Providers } from '$lib/enums'
+  import DatabaseImpl from '$lib/classes/implementation/DatabaseImpl'
 
   export let files: IFileInformation[]
 
   const dispatch = createEventDispatcher<PageEvents>()
 
-  $: firebaseProvider = databaseImplementation === Providers.Firebase
-  $: localProvider = databaseImplementation === Providers.Local
+  $: firebaseProvider = DatabaseImpl.databaseImplementation === Providers.Firebase
+  $: localProvider = DatabaseImpl.databaseImplementation === Providers.Local
   $: userIsUser = $user?.roles?.includes('user')
   $: userIsAdmin = $user?.roles?.includes('admin')
 
   // A method to send the user to the mappingtool
   async function openMappingTool(fileId: string): Promise<void> {
     logWhenDev('openMappingTool: Navigating to the mapping tool')
-    const cached = await $databaseImpl!.checkFileExistance(fileId)
+    const cached = await DatabaseImpl.checkFileExistance(fileId)
     if (!cached) return
     goto(`${base}/mapping?impl=firebase&id=${fileId}`)
   }
 
-  // Send a request to the parent to download the files with the corresponding id
   async function downloadFiles(e: Event, id: string): Promise<void> {
-    if (e && e.stopPropagation) e.stopPropagation()
-    dispatch('downloadFiles', { id })
+    await stopPropagation(e)
+    if (!id) return
+    await DatabaseImpl.downloadFiles(id)
+    dispatch('getFiles')
   }
 
   // Send a request to the parent to delete the files with the corresponding id
   async function deleteFiles(e: Event, id: string): Promise<void> {
+    await stopPropagation(e)
+    dispatch('processing', { processing: true })
+    if (id) await DatabaseImpl.deleteKeunFile(id)
+    dispatch('getFiles')
+    dispatch('processing', { processing: false })
+  }
+
+  async function stopPropagation(e: Event) {
     if (e && e.stopPropagation) e.stopPropagation()
-    dispatch('deleteFiles', { id })
   }
 </script>
 

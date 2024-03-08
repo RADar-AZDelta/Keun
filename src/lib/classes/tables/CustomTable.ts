@@ -1,13 +1,13 @@
 import { query } from 'arquero'
 import { reformatDate } from '@radar-azdelta-int/radar-utils'
 import { Config } from '$lib/helperClasses/Config'
-import { customTable } from '$lib/store'
 import Table from './Table'
 import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
 import type { ICustomConceptInput, ICustomQueryResult, IUsagiRow } from '$lib/Types'
 import type DataTable from '@radar-azdelta/svelte-datatable'
 
 export default class CustomTable {
+  static table: DataTable
   private static firstRowIsEmpty: boolean = true
   private static customTableWasFilled: boolean = false
 
@@ -84,35 +84,22 @@ export default class CustomTable {
   }
 
   static async getCustomTableRow(index: number) {
-    const customTable = await this.getCustomTable()
-    return <ICustomConceptInput>await customTable.getFullRow(index)
+    return <ICustomConceptInput>await this.table.getFullRow(index)
   }
 
   static async deleteCustomTableRows(indices: number[]) {
-    const customTable = await this.getCustomTable()
-    await customTable.deleteRows(indices)
+    await this.table.deleteRows(indices)
   }
 
   static async executeQueryOnCustomTable(query: object): Promise<ICustomQueryResult> {
-    const customTable = await this.getCustomTable()
-    return await customTable.executeQueryAndReturnResults(query)
+    return await this.table.executeQueryAndReturnResults(query)
   }
 
   static async insertCustomTableRow(row: ICustomConceptInput) {
-    const customTable = await this.getCustomTable()
-    await customTable.insertRows([row])
+    await this.table.insertRows([row])
   }
 
   static async getBlob() {
-    const customTable = await this.getCustomTable()
-    return await customTable.getBlob()
-  }
-
-  private static async getCustomTable(): Promise<DataTable> {
-    return new Promise(resolve =>
-      customTable.subscribe(table => {
-        if (table) resolve(table)
-      }),
-    )
+    return await this.table.getBlob()
   }
 }

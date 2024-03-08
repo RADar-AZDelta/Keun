@@ -1,10 +1,11 @@
 import { Config } from '$lib/helperClasses/Config'
-import { flaggedTable } from '$lib/store'
 import type { IUsagiRow } from '$lib/Types'
 import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
 import type DataTable from '@radar-azdelta/svelte-datatable'
 
 export default class FlaggedTable {
+  static table: DataTable
+
   static modifyColumnMetadata(columns: IColumnMetaData[]): IColumnMetaData[] {
     const usagiColumnsMap = Config.columnsUsagi.reduce((acc, cur) => {
       acc.set(cur.id, cur)
@@ -29,27 +30,16 @@ export default class FlaggedTable {
   }
 
   static async insertTableRows(rows: IUsagiRow[]) {
-    const flaggedTable = await this.getFlaggedTable()
-    await flaggedTable.insertRows(rows)
+    await this.table.insertRows(rows)
   }
 
   static async removeAllTableRows() {
-    const flaggedTable = await this.getFlaggedTable()
-    const pagination = flaggedTable.getTablePagination()
+    const pagination = this.table.getTablePagination()
     if (!pagination || !pagination.totalRows) return
-    await flaggedTable.deleteRows(Array.from(Array(pagination.totalRows).keys()))
+    await this.table.deleteRows(Array.from(Array(pagination.totalRows).keys()))
   }
 
   static async getBlob() {
-    const flaggedTable = await this.getFlaggedTable()
-    return await flaggedTable.getBlob()
-  }
-
-  private static async getFlaggedTable(): Promise<DataTable> {
-    return new Promise(resolve =>
-      flaggedTable.subscribe(table => {
-        if (table) resolve(table)
-      }),
-    )
+    return await this.table.getBlob()
   }
 }

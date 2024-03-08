@@ -1,9 +1,9 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
-  import { settings, settingsImpl } from '$lib/store'
+  import { settings } from '$lib/store'
   import debounce from 'lodash.debounce'
   import type { ICustomEvents } from '$lib/Types'
-  import { loadImpSettings } from '$lib/implementations/implementation'
+  import SettingsImpl from '$lib/classes/implementation/SettingsImpl'
 
   let inputValue: string, value: string
   let filteredValues: string[] = []
@@ -11,10 +11,7 @@
 
   const dispatch = createEventDispatcher<ICustomEvents>()
 
-  async function updateSettings() {
-    if (!$settingsImpl) await loadImpSettings()
-    $settingsImpl?.updateSettings($settings)
-  }
+  const updateSettings = async () => await SettingsImpl.updateSettings($settings)
 
   function save(): void {
     value = inputValue

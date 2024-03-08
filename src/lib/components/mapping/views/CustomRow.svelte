@@ -1,13 +1,13 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte'
-  import { databaseImpl, mappedToConceptIds, settings, user } from '$lib/store'
+  import { mappedToConceptIds, settings, user } from '$lib/store'
   import AutocompleteInput from '$lib/components/extra/AutocompleteInput.svelte'
   import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
   import type { ICustomConceptCompact, IUsagiRow, MappingEvents } from '$lib/Types'
   import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
   import { Config } from '$lib/helperClasses/Config'
   import CustomRow from '$lib/classes/customRow/CustomRow'
-  import { loadImplDB } from '$lib/implementations/implementation'
+  import DatabaseImpl from '$lib/classes/implementation/DatabaseImpl'
 
   export let renderedRow: ICustomConceptCompact,
     columns: IColumnMetaData[] | undefined,
@@ -32,14 +32,13 @@
   }
 
   async function onClickAdd() {
-    if (!$databaseImpl) await loadImplDB()
-    const conceptAlreadyExists = await $databaseImpl!.checkIfCustomConceptAlreadyExists(<ICustomConceptCompact>inputRow)
+    const conceptAlreadyExists = await DatabaseImpl.checkIfCustomConceptAlreadyExists(<ICustomConceptCompact>inputRow)
     if (conceptAlreadyExists) return dispatch('updateError', { error: 'This custom concept already exists' })
     const error = await inputValidation()
     if (error) return dispatch('updateError', { error })
     const { concept_name, concept_class_id, domain_id, vocabulary_id } = inputRow
     const concept = { concept_name, concept_class_id, domain_id, vocabulary_id }
-    $databaseImpl!.addCustomConcept(concept)
+    await DatabaseImpl.addCustomConcept(concept)
     await resetInputRow()
     dispatch('customConceptAdded', { concept })
     dispatch('updateError', { error: '' })
