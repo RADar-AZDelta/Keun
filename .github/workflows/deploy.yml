@@ -1,5 +1,9 @@
 name: Deploy to GitHub Pages
 
+env:
+  PUBLIC_CLOUD_DATABASE_IMPLEMENTATION: 'none'
+  PUBLIC_CLOUD_AUTH_IMPLEMENTATION: 'none'
+
 on:
   push:
     branches: 'site'

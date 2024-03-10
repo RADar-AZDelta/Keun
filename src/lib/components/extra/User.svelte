@@ -1,73 +1,44 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import clickOutside from '$lib/obsolete/clickOutside'
-  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
-  import { authImpl, authImplementation, user } from '$lib/store'
-  import type { IAuthImpl } from '$lib/components/Types'
+  import { SvgIcon, clickOutside } from '@radar-azdelta-int/radar-svelte-components'
+  import { user } from '$lib/store'
+  import { Providers } from '$lib/enums'
+  import AuthImpl from '$lib/classes/implementation/AuthImpl'
 
-  let userDialog: HTMLDialogElement,
-    author: string | undefined | null = undefined,
-    backupAuthor: string | undefined | null = undefined
+  let userDialog: HTMLDialogElement
+  let author: string | undefined | null = undefined
+  let backupAuthor: string | undefined | null = undefined
 
-  async function loadImplementation(): Promise<IAuthImpl> {
-    return new Promise(async (resolve, reject) => {
-      if ($authImpl) return resolve($authImpl)
-      if (authImplementation === 'firebase') {
-        // await import('$lib/authImpl/FirebaseImpl').then(({ default: FirebaseImpl }) => {
-        //   $authImpl = new FirebaseImpl()
-        //   resolve($authImpl)
-        // })
-      } else {
-        import('$lib/implementations/authImpl/LocalImpl').then(({ default: LocalImpl }) => {
-          $authImpl = new LocalImpl()
-          resolve($authImpl)
-        })
-      }
-    })
-  }
-
-  // A method to close the dialog
   function closeDialog(): void {
-    // Check if the author is filled in and if the dialog was open in first instance
-    if (!$user || !userDialog.attributes.getNamedItem('open')) return
+    if (!$user) return
     userDialog.close()
   }
 
-  // A method to open the dialog
   function openDialog(): void {
-    // Check if the dialog is not already open
-    if (authImplementation === 'none' || !authImplementation) author = backupAuthor = $user.name
+    if (AuthImpl.authImplementation === Providers.Local || !AuthImpl.authImplementation)
+      author = backupAuthor = $user.name
     userDialog.showModal()
   }
 
   async function login(): Promise<void> {
-    if (!$authImpl) await loadImplementation()
-    await $authImpl!.logIn(author ? author : undefined)
+    await AuthImpl.logIn(author ?? undefined)
     backupAuthor = author
     closeDialog()
   }
 
-  async function cancelLogIn(): Promise<void> {
-    closeDialog()
-  }
-
-  // If the userdialog is closed and there has not been an author set yet, open the dialog
-  $: {
-    if (userDialog?.attributes.getNamedItem('open') === null && !$user) userDialog.showModal()
-  }
+  const cancelLogIn = closeDialog
 
   $: {
-    if ($user && userDialog?.attributes.getNamedItem('open')) userDialog.close()
+    if (!$user?.name && userDialog) userDialog.showModal()
+    else if ($user?.name) userDialog.close()
   }
 
-  onMount(async () => {
-    if (!$authImpl) await loadImplementation()
-    if ($authImpl) return await $authImpl!.getAuthor()
-  })
+  onMount(() => AuthImpl.getAuthor())
 </script>
 
+<!-- <button title="Author" aria-label="User button" on:click={openDialog} class="header-button"> -->
 <button title="Author" aria-label="User button" on:click={openDialog} class="header-button">
-  <p>{$user && $user.name ? $user.name : ''}</p>
+  <p>{$user?.name ?? ''}</p>
   <SvgIcon id="user" />
 </button>
 
@@ -76,7 +47,7 @@
     <button class="close-dialog" on:click={closeDialog} disabled={!$user ? true : false}>
       <SvgIcon id="x" />
     </button>
-    {#if authImplementation == 'firebase'}
+    {#if AuthImpl.authImplementation === Providers.Firebase}
       <section class="author">
         <button on:click={login}>Microsoft</button>
       </section>
