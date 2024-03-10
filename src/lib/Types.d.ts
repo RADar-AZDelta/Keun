@@ -16,10 +16,14 @@ export interface IFirestoreFile {
   flaggedName: string
 }
 
-export interface IFirestoreUser {
+export interface IDatabaseFile {
   id: string
   name: string
-  files: string[]
+  content: string
+  custom: string
+  customId: string
+  flaggedId: string
+  flagged: string
 }
 
 export interface IStorageMetadata {
@@ -54,32 +58,9 @@ export interface IAthenaInfo {
   usagiRowIndex: number
 }
 
-export interface IUsagiActions {
-  approveRow(): Promise<void>
-  flagRow(): Promise<void>
-  unapproveRow(): Promise<void>
-}
-
-export interface IUsagiLogic {
-  updatePropertyValue(e: CustomEvent, column: string): Promise<void>
-  deleteRow(): Promise<void>
-}
-
-export interface IMappingInformation {
-  equivalence: string
-  comment: string
-  reviewer: string
-}
-
 export interface IMappingExtra {
   comment: string
   assignedReviewer: string
-}
-
-export interface IRowMappingInformation {
-  athenaRow: IAthenaRow
-  usagiRow: IUsagiRow
-  usagiRowIndex: number
 }
 
 ////////////////////////////// Events for the menu page //////////////////////////////
@@ -230,12 +211,6 @@ export interface ISettings {
   popupSidesShowed: ISides
 }
 
-export interface ICategories {
-  altName: string
-  altNameFacet: string
-  options: string[]
-}
-
 export interface ISides {
   filters: boolean
   details: boolean
@@ -258,16 +233,6 @@ export interface IMappedRows {
 
 export interface IMappedRowsConcept {
   [key: number | string]: string
-}
-
-export interface IDataTypeFile extends IDataTypeFunctionalities {
-  syncFile(update?: boolean, get?: boolean): Promise<File | void>
-}
-
-export interface ITablePagination {
-  currentPage: number | undefined
-  rowsPerPage: number | undefined
-  totalRows: number | undefined
 }
 
 export interface ICustomConceptInput {
@@ -323,11 +288,6 @@ export interface IMessage {
   details: any
 }
 
-export interface IConceptFiles {
-  file: IFile
-  customFile?: IFile
-}
-
 export interface IFile {
   id: string
   name: string
@@ -335,17 +295,6 @@ export interface IFile {
   customId: string
   flaggedId: string
   content?: string
-}
-
-export interface IUserRestriction {
-  id: string
-  name: string
-  fileIds: string[]
-}
-
-export interface IMapRow {
-  mappedIndex: number
-  mappedRow: IUsagiRow
 }
 
 export interface IAthenaRow {
@@ -399,18 +348,6 @@ export interface IUsagiMappedCols {
   vocabularyId?: string | null
   className?: string | null
   sourceAutoAssignedConceptIds?: string | null
-}
-
-export interface ICustomColumn {
-  id: string
-  label?: string
-  value?: any
-}
-
-export interface ICustomColumnConfig {
-  inputAvailable: boolean
-  value: string
-  suggestions: Record<string, string>
 }
 
 export interface IExtraUsagiCols {

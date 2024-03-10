@@ -1,20 +1,8 @@
 import { FileHelper, blobToString, fileToBlob, logWhenDev, stringToFile } from '@radar-azdelta-int/radar-utils'
 import { IndexedDB } from '@radar-azdelta-int/radar-utils'
 import { Config } from '$lib/helperClasses/Config'
-import type { ICustomConceptCompact, IDatabaseImpl, IFile, IFileInformation } from '$lib/Types'
+import type { ICustomConceptCompact, IDatabaseFile, IDatabaseImpl, IFile, IFileInformation } from '$lib/Types'
 
-export interface IDatabaseFile {
-  id: string
-  name: string
-  content: string
-  custom: string
-  customId: string
-  flaggedId: string
-  flagged: string
-}
-
-// TODO: put interfaces for this impl & for Firebase in the Types.d.ts
-// TODO: clean up all the interfaces because some are double
 // TODO: try hosting on Github pages & Firebase
 
 export default class LocalImpl implements IDatabaseImpl {
