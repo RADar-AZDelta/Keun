@@ -1,18 +1,16 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
-  import options from '$lib/data/equivalenceOptions.json'
-  import type { MappingEvents } from '$lib/components/Types'
+  import type { MappingEvents } from '$lib/Types'
+  import { Config } from '$lib/helperClasses/Config'
 
   const dispatch = createEventDispatcher<MappingEvents>()
 
-  async function equivalenceChange(e: Event) {
-    dispatch('equivalenceChange', { equivalence: (<any>e.target).value })
-  }
+  const equivalenceChange = (e: Event) => dispatch('equivalenceChange', { equivalence: (<any>e.target).value })
 </script>
 
 <div class="equivalence">
   <select title="Equivalence" name="equivalence" id="equivalence" on:change={equivalenceChange}>
-    {#each options as option, _}
+    {#each Config.equivalenceOptions as option, _}
       <option value={option}>{option}</option>
     {/each}
   </select>

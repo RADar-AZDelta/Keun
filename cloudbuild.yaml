@@ -8,34 +8,47 @@ steps:
   - name: 'gcr.io/cloud-builders/git'
     entrypoint: 'bash'
     args: ['-c', 'git config --global --add safe.directory /workspace']
-    id: 'Configure Git to trust /workspace'
+    id: 'Configure Git'
 
   - name: 'node:lts'
+    waitFor: ['Configure Git']
+    entrypoint: npx
+    args: ['google-artifactregistry-auth']
+    id: 'Authenticate'
+
+  # Authenticate the service account with GCP to have access to the Artifact Registry to download private packages
+  - name: 'node:lts'
+    waitFor: ['Authenticate']
     entrypoint: npm
     args: ['install']
-    id: 'Install all dependencies'
+    id: 'Install'
 
   - name: 'node:lts'
+    waitFor: ['Install']
     entrypoint: npm
     args: ['run', 'build']
-    id: 'Build the application'
+    id: 'Build'
 
   # Scan the application on CWE's
   - name: 'bearer/bearer'
+    waitFor: ['Install']
     entrypoint: bearer
     args: ['scan', '.']
-    id: 'Scan the application for vulnerabilities'
+    id: 'Scan'
 
   # Download the Firebase tool package in a container
   - name: 'gcr.io/cloud-builders/wget'
+    waitFor: ['Install']
     args:
       - '--quiet'
       - '-O'
       - 'firebase'
       - 'https://firebase.tools/bin/linux/latest'
+    id: 'Download Firebase'
 
   # Change the rights to the tool through chmod & deploy the project with Firebase
   - name: 'debian:11'
+    waitFor: ['Download Firebase', 'Scan', 'Build']
     args:
       - 'bash'
       - '-c'

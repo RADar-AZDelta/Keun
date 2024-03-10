@@ -1,7 +1,0 @@
-{
-  "rowsPerPage": 15,
-  "rowsPerPageOptions": [5, 10, 15, 20, 50, 80, 100],
-  "actionColumn": true,
-  "paginationOnTop": true,
-  "saveOptions": false
-}

@@ -2,14 +2,7 @@
 // for information about these interfaces
 // and what to do when importing types
 
-export interface UserSession {
-  uid?: string
-  name?: string
-  email?: string
-  roles?: [string]
-  token?: string
-  exp?: string
-}
+import type { UserSession } from '@radar-azdelta-int/radar-firebase-utils'
 
 declare global {
   namespace App {

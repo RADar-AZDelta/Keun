@@ -2,9 +2,9 @@
   "name": "scripts",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "setRolesForGroup.js",
   "scripts": {
-    "assign": "npx ts-node ./src/index.ts",
+    "assign": "npx ts-node ./src/setRolesForGroup.ts",
     "check": "npx ts-node ./src/check.ts"
   },
   "keywords": [],

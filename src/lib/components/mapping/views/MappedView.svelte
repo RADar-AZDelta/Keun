@@ -1,34 +1,30 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte'
   import DataTable, { type ITableOptions } from '@radar-azdelta/svelte-datatable'
-  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
-  import columns from '$lib/data/columnsMapped.json'
-  import type { IMappedRow, MappingEvents } from '$lib/components/Types'
+  import { mappedToConceptIds } from '$lib/store'
+  import MappedRow from './MappedRow.svelte'
+  import Table from '$lib/classes/tables/Table'
+  import { Config } from '$lib/helperClasses/Config'
+  import type { IMappedRow, IUsagiRow } from '$lib/Types'
 
-  export let mappedData: (IMappedRow | object)[]
+  export let selectedRow: IUsagiRow
 
-  const dispatch = createEventDispatcher<MappingEvents>()
-
+  let mappedData: (IMappedRow | object)[] = [{}]
   let options: ITableOptions = { actionColumn: true, id: 'mappedConcepts' }
 
-  async function removeMapping(row: IMappedRow) {
-    if (!row.conceptName) return
-    dispatch('removeMapping', { conceptId: row.conceptId, conceptName: row.conceptName })
+  async function loadMappedConcepts() {
+    if (!selectedRow.sourceCode) return
+    mappedData = await Table.getAllMappedConcepts(selectedRow.sourceCode)
+  }
+
+  $: {
+    $mappedToConceptIds, selectedRow
+    loadMappedConcepts()
   }
 </script>
 
 <div class="table">
-  <DataTable data={mappedData} {columns} {options} let:renderedRow>
-    <td>
-      {#if renderedRow.conceptName}
-        <button on:click={() => removeMapping(renderedRow)}><SvgIcon id="x" /></button>
-      {/if}
-    </td>
-    {#each Object.keys(renderedRow) as key}
-      <td>
-        <p>{renderedRow[key]}</p>
-      </td>
-    {/each}
+  <DataTable data={mappedData} columns={Config.columnsMapped} {options}>
+    <MappedRow slot="default" let:renderedRow {renderedRow} usagiRow={selectedRow} />
   </DataTable>
 </div>
 

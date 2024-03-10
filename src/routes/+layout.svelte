@@ -1,29 +1,23 @@
 <script lang="ts">
-  import { beforeNavigate } from '$app/navigation'
   import { base } from '$app/paths'
   import { page } from '$app/stores'
-  import Manual from '$lib/obsolete/Manual.svelte'
+  import Manual from '$lib/components/extra/Manual.svelte'
   import Header from '$lib/components/extra/Header.svelte'
   import Settings from '$lib/components/extra/Settings.svelte'
   import User from '$lib/components/extra/User.svelte'
-  import { loadImplementationSettings } from '$lib/implementations/implementation'
-  import { authImplementation, settings, settingsImpl, user } from '$lib/store'
+  import { settings, user } from '$lib/store'
   import '$lib/table.scss'
-  // import '@radar-azdelta/svelte-datatable/dist/styles/data-table.scss'
-  import { onMount } from 'svelte'
+  import '@radar-azdelta/svelte-datatable/style'
+  import SettingsImpl from '$lib/classes/implementation/SettingsImpl'
 
-  // TODO: set up Firebase project for internal use in AZD (Firebase impl)
-
-  beforeNavigate(async ({ from, to, cancel }): Promise<void> => {
-    if (!$settingsImpl) loadImplementationSettings()
-    $settingsImpl?.updateSettings($settings)
-  })
-
-  onMount(async () => {
-    if (!$settingsImpl) await loadImplementationSettings()
-    const storedSettings = await $settingsImpl?.getSettings()
+  async function retrieveSettings() {
+    const storedSettings = await SettingsImpl.getSettings()
     if (storedSettings) $settings = storedSettings
-  })
+  }
+
+  $: {
+    if ($user) retrieveSettings()
+  }
 </script>
 
 <main>
@@ -32,9 +26,6 @@
     <ul class="page-nav">
       {#if $page.url.pathname !== '/' && $page.url.pathname !== '/Keun'}
         <li><a href="{base}/">File selection</a></li>
-      {/if}
-      {#if $user && $user.roles?.includes('Admin') && authImplementation == 'firebase'}
-        <li><a href="{base}/register">Registration</a></li>
       {/if}
     </ul>
     {#if $page.url.pathname.substring($page.url.pathname.lastIndexOf('/')) !== 'registration'}

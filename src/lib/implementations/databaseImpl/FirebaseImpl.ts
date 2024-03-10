@@ -1,187 +1,238 @@
-import { dev } from '$app/environment'
-import initial from '$lib/data/customBlobInitial.json'
+import { FileHelper } from '@radar-azdelta-int/radar-utils'
+import { FirebaseFirestore, FirebaseStorage } from '@radar-azdelta-int/radar-firebase-utils'
 import {
-  deleteDocumentFirestore,
-  deleteFileStorage,
-  readFileStorage,
-  readFirestore,
-  readFirestoreCollection,
-  updateToFirestore,
-  uploadFileStorage,
-  writeToFirestore,
-} from '$lib/obsolete/firebase'
-import { downloadWithUrl } from '$lib/obsolete/utils'
-import type { IConceptFiles, IFile, IUpdatedFunctionalityImpl } from '$lib/components/Types'
+  PUBLIC_FIREBASE_API_KEY,
+  PUBLIC_FIREBASE_APP_ID,
+  PUBLIC_FIREBASE_AUTH_DOMAIN,
+  PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  PUBLIC_FIREBASE_PROJECT_ID,
+  PUBLIC_FIREBASE_STORAGE_BUCKET,
+} from '$env/static/public'
+import { Config } from '$lib/helperClasses/Config'
+import type {
+  ICustomConceptCompact,
+  IDatabaseImpl,
+  IFile,
+  IFileInformation,
+  IFirestoreFile,
+  IStorageCustomMetadata,
+  IStorageMetadata,
+} from '$lib/Types'
+import type { FirebaseOptions } from 'firebase/app'
 
-/* Possible Firestore structure
-
-files: {
-  {id}: {
-    name: string
-    customName: string
-  }
-},
-users: {
-  {userId}: {
-    files: [
-      {
-        id: string
-        columns: IColumnMetaData[]
-        tableOptions: any
-      }
-    ],
-    options: ITableOptions
-    name: string
-    lastName: string
-  }
-}
-  
-*/
-
-/* Possible Storage structure (id of custom file is the same as the id of the file)
-
-Keun-files: {
-  {id}: {
-    file: Blob
-    meta: {
-      customMetadata : {
-        name: string
-      }
-    }
-  }
+const firebaseConfig: FirebaseOptions = {
+  apiKey: PUBLIC_FIREBASE_API_KEY,
+  authDomain: PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: PUBLIC_FIREBASE_APP_ID,
 }
 
-Keun-custom-files: {
-  {id}: {
-    file: Blob
-    meta: {
-      customMetaData: {
-        name: string
-      }
-    }
-  }
-}
-  
-*/
-
-// TODO: create Database impl
-// TODO: implement auth
-// TODO: implement save impl
-// TODO: implement type impl
-// TODO: write security rules Firestore
-// TODO: write security rules Storage
-
-export default class FirebaseImpl implements IUpdatedFunctionalityImpl {
+export default class FirebaseImpl implements IDatabaseImpl {
+  firestore: FirebaseFirestore = new FirebaseFirestore(firebaseConfig)
+  storage: FirebaseStorage = new FirebaseStorage(firebaseConfig)
   storageCollection: string = 'Keun-files'
   storageCustomColl: string = 'Keun-custom-files'
+  storageFlaggedColl: string = 'Keun-flagged-files'
   firestoreFileColl: string = 'files'
-  firestoreUserColl: string = 'users'
+  firestoreCustomConceptsColl: string = 'customConcepts'
 
-  async getFile(id: string): Promise<IConceptFiles | void> {
-    if (dev) console.log(`getFile: Get file with id ${id} in IndexedDB`)
-    const file = await this.getFileFromColl(this.storageCollection, id)
-    const customFile = await this.getFileFromColl(this.storageCustomColl, id)
-    if (!file || !customFile) return console.error(`getFile: Error when fetching the file & custom file with id ${id}`)
-    return { file, customFile }
+  getKeunFile = async (id: string) => await this.readFileFromCollection(id, this.storageCollection)
+  getCustomKeunFile = async (id: string) => await this.readFileFromCollection(id, this.storageCustomColl)
+  getFlaggedFile = async (id: string) => await this.readFileFromCollection(id, this.storageFlaggedColl)
+
+  private async readFileFromCollection(id: string, collection: string): Promise<IFile | undefined> {
+    const fileInfo = await this.storage.readFileStorage(`${collection}/${id}`)
+    if (!fileInfo.file || !fileInfo.meta) return
+    const name = fileInfo.meta.customMetadata?.name ?? fileInfo.meta.name
+    const customId = fileInfo.meta.customMetadata?.customId ?? ''
+    const flaggedId = fileInfo.meta.customMetadata?.flaggedId ?? ''
+    const file = await this.blobToFile(fileInfo.file, name)
+    const fileObj: IFile = { id, name, file, customId, flaggedId }
+    return fileObj
   }
 
-  async checkFileExistance(name: string): Promise<string | boolean | void> {
-    // This method will only be available if you are admin, so we can fetch all the files & check if the same name is found
-    if (dev) console.log('checkFileExistence: Check if the file with name already exists')
-    const files = await readFirestoreCollection(this.firestoreFileColl)
-    for (const file of files) if (file.name === name) return file.id
+  private blobToFile = async (blob: Blob, name: string) => new File([blob], name, { type: 'text/csv' })
+
+  async downloadFiles(id: string): Promise<void> {
+    const file = await this.readFileFromCollection(id, this.storageCollection)
+    if (!file || !file.file) return
+    await FileHelper.downloadFile(file.file)
+    await this.downloadFlaggedFile(file.flaggedId)
+    await this.downloadCustomFile(file.customId)
   }
 
-  async getFiles(userId?: string): Promise<IFile[] | void> {
-    // TODO: automize the roles in Azure AD to implement this in a good way
-    if (dev) console.log('getFiles: Get files from Firebase Storage')
-    if (!userId) return console.error('getFiles: The user is not logged in, so his files could not be fetched')
-    if (roles && roles?.includes('admin')) {
-      const res = await readFirestoreCollection(this.firestoreFileColl)
-      return res.map(doc => ({ id: doc.id, name: doc.name, file: new File([], '') }))
+  private async downloadCustomFile(customId: string) {
+    const customFile = await this.readFileFromCollection(customId, this.storageCustomColl)
+    if (!customFile || !customFile.file) return
+    await FileHelper.downloadFile(customFile.file)
+  }
+
+  private async downloadFlaggedFile(flaggedId: string) {
+    const flaggedFile = await this.readFileFromCollection(flaggedId, this.storageFlaggedColl)
+    if (!flaggedFile || !flaggedFile.file) return
+    await FileHelper.downloadFile(flaggedFile.file)
+  }
+
+  async checkFileExistance(id: string) {
+    const existance = await this.storage.readFileStorage(`${this.storageCollection}/${id}`).catch(() => false)
+    if (typeof existance === 'boolean') return
+    return {
+      id,
+      customId: existance.meta?.customMetadata?.customId ?? '',
+      flaggedId: existance.meta?.customMetadata?.flaggedId ?? '',
     }
-    const userInfo = await readFirestore(this.firestoreUserColl, userId)
-    if (!userInfo)
-      return console.error('getFiles: Could not get files for user, there were no files assigned to his account')
-    const { files } = userInfo.files
-    const allFiles: IFile[] = []
-    for (const file of files) {
-      const res = await this.getFileFromColl(this.storageCollection, file.id)
-      if (res) allFiles.push(res)
+  }
+
+  async checkForFileWithSameName(name: string) {
+    const files = await this.firestore.readFirestoreCollection(this.firestoreFileColl)
+    if (!files) return false
+    const file = files.docs.find(file => file.data().name === name)
+    if (!file) return false
+    return file.id
+  }
+
+  async getFilesList(): Promise<IFileInformation[]> {
+    const fileIds = await this.getFilesFromFirestore()
+    const fileNames = []
+    for (let fileId of fileIds) {
+      const fileInfo = await this.getFileNameFromStorage(fileId)
+      if (fileInfo)
+        fileNames.push({
+          id: fileId,
+          name: fileInfo.fileName,
+          customId: fileInfo.customId,
+          custom: '',
+          flaggedId: fileInfo.flaggedId,
+        })
     }
-    return allFiles
+    return fileNames
   }
 
-  async uploadFile(file: File, authors: string[]): Promise<void | string[]> {
-    if (dev) console.log('uploadFile: Uploading file to Firebase Storage & Firestore')
-    const customName = `${file.name.split('.')[0]}_concepts.csv`
-    const id = await this.uploadToFirebase(this.storageCollection, file, authors)
-    const customFile = await this.blobToFile(new Blob([initial.initial]), customName)
-    await this.uploadToFirebase(this.storageCustomColl, customFile, authors, id)
+  private async getFilesFromFirestore() {
+    const fileIds = await this.firestore.readFirestoreCollection(this.firestoreFileColl)
+    if (!fileIds) return []
+    const files = fileIds.docs.map(file => file.id)
+    return files
   }
 
-  async editFile(id: string, blob: Blob, customBlob?: Blob | undefined): Promise<void> {
-    if (dev) console.log(`editFile: Editing the file with id ${id}`)
-    const { name, customName } = await this.getFileName(id)
+  private async getFileNameFromStorage(id: string) {
+    const fileInfo = await this.storage.readMetaData(`${this.storageCollection}/${id}`)
+    if (!fileInfo || !fileInfo.customMetadata) return
+    const fileName = (<IStorageMetadata>fileInfo.customMetadata).name
+    const customId = (<IStorageMetadata>fileInfo.customMetadata).customId
+    const flaggedId = (<IStorageMetadata>fileInfo.customMetadata).flaggedId
+    return { fileName, customId, flaggedId }
+  }
+
+  async uploadKeunFile(file: File): Promise<void> {
+    const fileId = crypto.randomUUID()
+    const customId = crypto.randomUUID()
+    const flaggedId = crypto.randomUUID()
+    await this.uploadFile(fileId, file, customId, flaggedId)
+    const customName = await this.uploadCustomFile(customId, file.name, flaggedId)
+    const flaggedName = await this.uploadFlaggedFile(flaggedId, file.name, customId)
+    const fileData = { name: file.name, customId, custom: customName, flaggedId, flaggedName }
+    await this.firestore.updateToFirestoreIfNotExist(this.firestoreFileColl, fileId, fileData)
+  }
+
+  private async uploadFile(id: string, file: File, customId: string, flaggedId: string) {
+    const metaData: IStorageCustomMetadata = { customMetadata: { name: file.name, customId, flaggedId } }
+    await this.storage.uploadFileStorage(`${this.storageCollection}/${id}`, file, metaData)
+  }
+
+  private async uploadCustomFile(id: string, name: string, flaggedId: string) {
+    const customName = `${name.split('.')[0]}_concepts.csv`
+    const customFile = await this.blobToFile(new Blob([Config.customBlobInitial]), customName)
+    const customMetaData: IStorageCustomMetadata = { customMetadata: { name: customName, customId: id, flaggedId } }
+    await this.storage.uploadFileStorage(`${this.storageCustomColl}/${id}`, customFile, customMetaData)
+    return customName
+  }
+
+  private async uploadFlaggedFile(id: string, name: string, customId: string) {
+    const flaggedName = `${name.split('.')[0]}_flagged.csv`
+    const flaggedFile = await this.blobToFile(new Blob([Config.flaggedBlobInitial]), flaggedName)
+    const customMetaData: IStorageCustomMetadata = { customMetadata: { name: flaggedName, customId, flaggedId: id } }
+    await this.storage.uploadFileStorage(`${this.storageFlaggedColl}/${id}`, flaggedFile, customMetaData)
+    return flaggedName
+  }
+
+  async editKeunFile(id: string, blob: Blob): Promise<void> {
+    const fileData = await this.getFileDataFromFirestore(id)
+    if (!fileData) return
+    const { name, customId, flaggedId } = fileData
     const file = await this.blobToFile(blob, name)
-    await uploadFileStorage(`${this.storageCollection}/${id}`, file, { customMetadata: { id, name } })
-    if (!customBlob) return
-    const customFile = await this.blobToFile(customBlob, customName)
-    await uploadFileStorage(`${this.storageCustomColl}/${id}`, customFile, { customMetadata: { id, name: customName } })
+    const metaData: IStorageCustomMetadata = { customMetadata: { name: file.name, customId, flaggedId } }
+    await this.storage.uploadFileStorage(`${this.storageCollection}/${id}`, file, metaData)
   }
 
-  async editFileAuthors(id: string, authors: string[]): Promise<void> {
-    if (dev) console.log(`editFileAuthors: Editing authors of file ${id}`)
-    await updateToFirestore(this.firestoreFileColl, id, { authors })
-    for (const author of authors) {
-      const userInfo = await readFirestore(this.firestoreUserColl, author)
-      if (userInfo) await writeToFirestore(this.firestoreUserColl, author, { files: [...userInfo.files, id] })
-    }
+  async editFlaggedFile(id: string, blob: Blob) {
+    const fileData = await this.getFileDataFromFirestore(id)
+    if (!fileData) return
+    const { flaggedId, flaggedName: name, customId } = fileData
+    const file = await this.blobToFile(blob, name)
+    const metaData: IStorageCustomMetadata = { customMetadata: { name, customId, flaggedId } }
+    await this.storage.uploadFileStorage(`${this.storageFlaggedColl}/${flaggedId}`, file, metaData)
   }
 
-  async deleteFile(id: string): Promise<void> {
-    if (dev) console.log(`deleteFile: Deleting the file with id ${id}`)
-    await deleteFileStorage(`${this.storageCollection}/${id}`)
-    await deleteFileStorage(`${this.storageCustomColl}/${id}`)
-    await deleteDocumentFirestore(this.firestoreFileColl, id)
+  async editCustomKeunFile(id: string, blob: Blob) {
+    const fileData = await this.getFileDataFromFirestore(id)
+    if (!fileData) return
+    const { custom: name, customId, flaggedId } = fileData
+    const file = await this.blobToFile(blob, name)
+    const metaData: IStorageCustomMetadata = { customMetadata: { name: file.name, customId, flaggedId } }
+    await this.storage.uploadFileStorage(`${this.storageCustomColl}/${customId}`, file, metaData)
   }
 
-  async downloadFile(id: string): Promise<void> {
-    if (dev) console.log(`downloadFile: Downloading the file with id ${id}`)
-    await this.download(this.storageCollection, id)
-    await this.download(this.storageCustomColl, id)
+  private async getFileDataFromFirestore(id: string) {
+    const fileInfo = await this.firestore.readFirestore(this.firestoreFileColl, id)
+    if (!fileInfo) return
+    const fileData = <IFirestoreFile | undefined>fileInfo.data()
+    if (!fileData) return
+    return fileData
   }
 
-  private async getFileName(id: string) {
-    const fileInfo = await readFirestore(this.firestoreFileColl, id)
-    return { name: fileInfo?.id ?? '', customName: fileInfo?.custom?.name ?? '' }
+  async deleteKeunFile(id: string): Promise<void> {
+    const ids = await this.retrieveFileIds(id)
+    const fileSnapshot = await this.firestore.readFirestore(this.firestoreFileColl, id)
+    if (!fileSnapshot || !fileSnapshot.data()) return
+    const fileInfo = fileSnapshot.data()
+    if (!fileInfo) return
+    await this.storage.deleteFileStorage(`${this.storageCollection}/${id}`)
+    await this.firestore.deleteDocumentFirestore(this.firestoreFileColl, id)
+    if (ids?.customId) await this.storage.deleteFileStorage(`${this.storageCustomColl}/${ids.customId}`)
+    if (ids?.flaggedId) await this.storage.deleteFileStorage(`${this.storageFlaggedColl}/${ids.flaggedId}`)
   }
 
-  private async blobToFile(blob: Blob, name: string) {
-    return new File([blob], name, { type: 'text/csv' })
+  private async retrieveFileIds(id: string) {
+    const fileDocument = await this.firestore.readFirestore(this.firestoreFileColl, id)
+    if (!fileDocument) return
+    const fileInfo = fileDocument.data()
+    if (!fileInfo) return
+    return { customId: <string>fileInfo.customId, flaggedId: <string>fileInfo.flaggedId }
   }
 
-  private async getFileFromColl(coll: string, id: string): Promise<IFile | void> {
-    const result = await readFileStorage(`${coll}/${id}`)
-    if (!result || !result.meta.customMetadata?.name)
-      return console.error('getFile: File not found in Firebase Storage')
-    const { name } = result.meta.customMetadata
-    return { id, name, file: await this.blobToFile(result.file, name ?? 'file') }
+  async getCustomConcepts(): Promise<any> {
+    const concepts = await this.firestore.readFirestoreCollection(this.firestoreCustomConceptsColl)
+    if (!concepts) return []
+    const customConcepts = concepts.docs.map(doc => doc.data())
+    return customConcepts
   }
 
-  private async uploadToFirebase(coll: string, file: File, authors: string[], id?: string) {
-    const fileId = id ?? crypto.randomUUID()
-    await uploadFileStorage(`${coll}/${fileId}`, file, { customMetadata: { id: fileId, name: file.name } })
-    await writeToFirestore(this.firestoreFileColl, fileId, { name: file.name, authors })
-    return fileId
+  async addCustomConcept(customConcept: ICustomConceptCompact) {
+    const { concept_name, concept_class_id, domain_id, vocabulary_id } = customConcept
+    const recordName = `${concept_name}-${domain_id.replaceAll('/', '')}-${concept_class_id.replaceAll('/', '')}-${vocabulary_id}`
+    await this.firestore.writeToFirestore(this.firestoreCustomConceptsColl, recordName, customConcept)
   }
 
-  private async download(coll: string, id: string) {
-    const fileInfo = await readFileStorage(`${coll}/${id}`)
-    if (!fileInfo?.file || !fileInfo?.meta.customMetadata?.name) return
-    const name = fileInfo.meta.customMetadata.name
-    const file = await this.blobToFile(fileInfo?.file, name)
-    const url = URL.createObjectURL(file)
-    await downloadWithUrl(url, name)
+  async checkIfCustomConceptAlreadyExists(conceptInput: ICustomConceptCompact) {
+    const { concept_name, concept_class_id, domain_id, vocabulary_id } = conceptInput
+    const recordName = `${concept_name}-${domain_id.replaceAll('/', '')}-${concept_class_id.replaceAll('/', '')}-${vocabulary_id}`
+    const conceptDocument = await this.firestore.readFirestore(this.firestoreCustomConceptsColl, recordName)
+    if (!conceptDocument) return false
+    const concept = conceptDocument.data()
+    if (!concept) return false
+    return true
   }
 }

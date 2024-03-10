@@ -1,7 +1,7 @@
 import { appendFileSync, existsSync, readFileSync, writeFileSync } from 'node:fs'
 import { json, type RequestHandler } from '@sveltejs/kit'
 import Database, { type Database as DB } from 'better-sqlite3'
-import type { IFile } from '$lib/components/Types'
+import type { IFile } from '$lib/Types'
 
 let db: DB
 let tableExistance: boolean = false
@@ -152,7 +152,6 @@ async function getFiles(info: boolean | null) {
 
 async function insertFile(custom: boolean, file: IFile) {
   try {
-    console.log('INSERTING FILE ', file, ' AND CUSTOM ', custom)
     const query = custom
       ? 'INSERT INTO customFile (id, name, content) VALUES ($id, $name, $content);'
       : 'INSERT INTO file (id, name, content) VALUES ($id, $name, $content);'
