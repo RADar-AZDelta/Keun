@@ -35,8 +35,8 @@ export default class CustomTable {
     const columnsAreAdded = await this.checkIfColumnsAreAdded()
     if (!columnsAreAdded) return
     const customQuery = query()
-    .filter((r: any) => r['ADD_INFO:customConcept'] === true)
-    .toObject()
+      .filter((r: any) => r['ADD_INFO:customConcept'] === true)
+      .toObject()
     const concepts = await Table.executeQueryOnTable(customQuery)
     if (!concepts?.indices?.length) return
     const testRow = await this.getCustomTableRow(0)

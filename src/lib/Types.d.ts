@@ -1,5 +1,3 @@
-import type { IDataTypeFunctionalities } from '@radar-azdelta/svelte-datatable'
-
 export interface IFileTemplate {
   file: File
 }

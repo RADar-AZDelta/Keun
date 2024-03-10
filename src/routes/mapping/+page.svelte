@@ -15,11 +15,11 @@
   import Usagi from '$lib/classes/usagi/Usagi'
   import CustomTable from '$lib/classes/tables/CustomTable'
   import Table from '$lib/classes/tables/Table'
-  import FlaggedTable from '$lib/classes/tables/FlaggedTable'
+  import DatabaseImpl from '$lib/classes/implementation/DatabaseImpl'
+  // import FlaggedTable from '$lib/classes/tables/FlaggedTable'
   import type { SvelteComponent } from 'svelte'
   import type { ITableOptions } from '@radar-azdelta/svelte-datatable'
   import type { IUsagiRow, AutoMapRowED, RowSelectionED, NavigateRowED } from '$lib/Types'
-  import DatabaseImpl from '$lib/classes/implementation/DatabaseImpl'
 
   let file: File | undefined, customConceptsFile: File | undefined, flaggedConceptsFile: File | undefined
   let tableRendered: boolean = false
@@ -62,12 +62,11 @@
     if (rows) currentVisibleRows = rows
   }
 
-  // TODO: fix issue that the automapping won't work when opening the file
-  async function autoMapPage() {
-    if (tableRendered) {
-      if (!customsExtracted) await extractCustomConcepts()
-      await AutoMapping.autoMapPage()
-    } else tableRendered = true
+  async function autoMapPage(rendered: boolean = false) {
+    if (!tableRendered && !rendered) return
+    tableRendered = true
+    if (!customsExtracted) await extractCustomConcepts()
+    await AutoMapping.autoMapPage()
   }
 
   async function approvePage() {
@@ -128,7 +127,6 @@
     }
   }
 
-  const tableRenderedComplete = () => (tableRendered = true)
   const customTableRenderedComplete = () => (customTableRendered = true)
 
   // async function insertFlaggedRows() {
@@ -149,11 +147,6 @@
       autoMapPage()
       $triggerAutoMapping = false
     }
-  }
-
-  $: {
-    tableRendered
-    autoMapPage()
   }
 
   beforeNavigate(async ({ to, cancel, type }) => {
@@ -177,7 +170,6 @@
 </svelte:head>
 
 {#if file}
-  <button on:click={() => console.log('CHECK ', $triggerAutoMapping)}>Check</button>
   <button on:click={syncFile}>Save</button>
   <button on:click={downloadPage}>Download</button>
   <button on:click={approvePage}>Approve page</button>
@@ -186,7 +178,7 @@
     bind:this={Table.table}
     options={tableOptions}
     on:rendering={abortAutoMap}
-    on:renderingComplete={tableRenderedComplete}
+    on:renderingComplete={() => autoMapPage(true)}
     modifyColumnMetadata={Table.modifyColumnMetadata}
   >
     <UsagiRow

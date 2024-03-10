@@ -3,8 +3,6 @@ import { IndexedDB } from '@radar-azdelta-int/radar-utils'
 import { Config } from '$lib/helperClasses/Config'
 import type { ICustomConceptCompact, IDatabaseFile, IDatabaseImpl, IFile, IFileInformation } from '$lib/Types'
 
-// TODO: try hosting on Github pages & Firebase
-
 export default class LocalImpl implements IDatabaseImpl {
   db: IndexedDB | undefined
   customDb: IndexedDB | undefined
@@ -166,7 +164,7 @@ export default class LocalImpl implements IDatabaseImpl {
   }
 
   async checkIfCustomConceptAlreadyExists(conceptInput: ICustomConceptCompact): Promise<boolean> {
-    logWhenDev(`checkIfCustomConceptAlreadyExists: Check if a custom concept already exists`)
+    logWhenDev('checkIfCustomConceptAlreadyExists: Check if a custom concept already exists')
     await this.openConceptsDatabase()
     const { concept_name, concept_class_id, domain_id, vocabulary_id } = conceptInput
     const recordName = `${concept_name}-${domain_id.replaceAll('/', '')}-${concept_class_id.replaceAll('/', '')}-${vocabulary_id}`
@@ -176,7 +174,7 @@ export default class LocalImpl implements IDatabaseImpl {
   }
 
   async getCustomConcepts(): Promise<any> {
-    logWhenDev(`getCustomConcepts: Get custom concepts from IndexedDB`)
+    logWhenDev('getCustomConcepts: Get custom concepts from IndexedDB')
     await this.openConceptsDatabase()
     const customConcepts: undefined | any[] = await this.customConceptsDb?.getAll(true)
     if (!customConcepts) return []
@@ -184,7 +182,7 @@ export default class LocalImpl implements IDatabaseImpl {
   }
 
   async addCustomConcept(customConcept: ICustomConceptCompact): Promise<any> {
-    logWhenDev(`getCustomConcepts: Add a new custom concept to IndexedDB`)
+    logWhenDev('getCustomConcepts: Add a new custom concept to IndexedDB')
     await this.openConceptsDatabase()
     const { concept_name, concept_class_id, domain_id, vocabulary_id } = customConcept
     const recordName = `${concept_name}-${domain_id.replaceAll('/', '')}-${concept_class_id.replaceAll('/', '')}-${vocabulary_id}`
