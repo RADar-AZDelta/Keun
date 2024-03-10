@@ -13,7 +13,6 @@ export interface IDatabaseFile {
   flagged: string
 }
 
-// TODO: fix issues
 // TODO: put interfaces for this impl & for Firebase in the Types.d.ts
 // TODO: clean up all the interfaces because some are double
 // TODO: try hosting on Github pages & Firebase
@@ -56,6 +55,7 @@ export default class LocalImpl implements IDatabaseImpl {
   }
 
   async downloadFiles(id: string): Promise<void> {
+    logWhenDev(`downloadFiles: Downloading files with id ${id} from the database`)
     await this.openDatabase()
     const file = await this.getFileFromDatabase(this.db, id)
     if (!file || !file.file) return
@@ -85,9 +85,12 @@ export default class LocalImpl implements IDatabaseImpl {
   }
 
   async checkForFileWithSameName(name: string): Promise<string | false> {
+    logWhenDev(`checkForFileWithSameName: Check if a file with name ${name} exists`)
     await this.openDatabase()
-    const file: undefined | IDatabaseFile = await this.db?.get(name, true)
-    if (!file || !file.id) return false
+    const files = await this.db?.getAll(true)
+    if (!files) return false
+    const file = files.find((file: IFile) => file.name === name)
+    if (!file) return false
     return file.id
   }
 
@@ -113,16 +116,16 @@ export default class LocalImpl implements IDatabaseImpl {
       name,
       content: fileString,
       custom: customName,
-      customId: customName,
+      customId,
       flaggedId: flaggedName,
       flagged: flaggedName,
     }
-    await this.db!.set(fileContent, name, true)
+    await this.db!.set(fileContent, id, true)
     const customBlob = new Blob([Config.customBlobInitial])
     const customFileString = await blobToString(customBlob)
     const customFileContent = { id: customId, name: customName, content: customFileString }
     await this.openCustomDatabase()
-    await this.customDb!.set(customFileContent, customName, true)
+    await this.customDb!.set(customFileContent, customId, true)
   }
 
   private async transformFileToString(file: File) {
@@ -143,15 +146,19 @@ export default class LocalImpl implements IDatabaseImpl {
   }
 
   async editCustomKeunFile(id: string, blob: Blob) {
-    await this.openCustomDatabase()
-    const fileInfo = await this.customDb?.get(id, true)
+    logWhenDev(`editCustomKeunFile: Editing the custom file with id ${id}`)
+    await this.openDatabase()
+    const fileInfo = await this.db?.get(id, true, true)
     if (!fileInfo) return
+    const { customId, custom: name } = fileInfo
     const customFileString = await blobToString(blob)
-    const customFileContent = { id, name: fileInfo.name, content: customFileString }
-    await this.customDb?.set(customFileContent, id, true)
+    const customFileContent = { id: customId, name, content: customFileString }
+    await this.openCustomDatabase()
+    await this.customDb?.set(customFileContent, customId, true)
   }
 
   async editFlaggedFile(id: string, blob: Blob): Promise<void> {
+    logWhenDev(`editFlaggedFile: Editing the flagged file with id ${id}`)
     await this.openFlaggedDatabase()
     const fileInfo = await this.flaggedDb?.get(id, true)
     if (!fileInfo) return
@@ -171,6 +178,7 @@ export default class LocalImpl implements IDatabaseImpl {
   }
 
   async checkIfCustomConceptAlreadyExists(conceptInput: ICustomConceptCompact): Promise<boolean> {
+    logWhenDev(`checkIfCustomConceptAlreadyExists: Check if a custom concept already exists`)
     await this.openConceptsDatabase()
     const { concept_name, concept_class_id, domain_id, vocabulary_id } = conceptInput
     const recordName = `${concept_name}-${domain_id.replaceAll('/', '')}-${concept_class_id.replaceAll('/', '')}-${vocabulary_id}`
@@ -180,6 +188,7 @@ export default class LocalImpl implements IDatabaseImpl {
   }
 
   async getCustomConcepts(): Promise<any> {
+    logWhenDev(`getCustomConcepts: Get custom concepts from IndexedDB`)
     await this.openConceptsDatabase()
     const customConcepts: undefined | any[] = await this.customConceptsDb?.getAll(true)
     if (!customConcepts) return []
@@ -187,6 +196,7 @@ export default class LocalImpl implements IDatabaseImpl {
   }
 
   async addCustomConcept(customConcept: ICustomConceptCompact): Promise<any> {
+    logWhenDev(`getCustomConcepts: Add a new custom concept to IndexedDB`)
     await this.openConceptsDatabase()
     const { concept_name, concept_class_id, domain_id, vocabulary_id } = customConcept
     const recordName = `${concept_name}-${domain_id.replaceAll('/', '')}-${concept_class_id.replaceAll('/', '')}-${vocabulary_id}`

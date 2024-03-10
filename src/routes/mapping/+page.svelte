@@ -117,7 +117,7 @@
       const blob = await Table.getBlob()
       if (!blob) return
       await DatabaseImpl.editKeunFile(selectedFileId, blob)
-      const customBlob = await CustomTable.getBlob().catch(() => console.error('CATCHED'))
+      const customBlob = await CustomTable.getBlob()
       if (customBlob) await DatabaseImpl.editCustomKeunFile(selectedFileId, customBlob)
       // await insertFlaggedRows()
       // const flaggedBlob = await FlaggedTable.getBlob()
