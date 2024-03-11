@@ -67,7 +67,7 @@ steps:
         git config --global user.name "BostoenToby"
         mkdir /public
         cp -r public/* /public
-        git checkout site
+        git checkout -b origin/site
         cp /public ./public
         git add .
         git commit -m "Deploying build to site"
