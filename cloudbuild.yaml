@@ -1,3 +1,7 @@
+secrets:
+  - secretEnv:
+      GITHUB_TOKEN: "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"
+
 steps:
   # Let Git recognize "/workspace" as a safe directory, otherwise it would throw the following error
   # Error: failed to get git context: exit status 128
@@ -63,8 +67,6 @@ steps:
     args:
       - '-c'
       - |
-        GITHUB_TOKEN="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"
-
         git config --global user.email "toby.bostoen@azdelta.be"
         git config --global user.name "BostoenToby"
 
@@ -85,3 +87,4 @@ steps:
     # waitFor: ['Scan', 'Build']
     waitFor: ['Build']
     id: 'Push builded site to site branch'
+    secretEnv: ['GITHUB_TOKEN']
