@@ -75,7 +75,6 @@ steps:
 
         git config --global credential.helper 'store --file=.git/credentials'
         echo "https://$$TF_VAR_github_personal_access_token:x-oauth-basic@github.com" > .git/credentials
-
         cat .git/credentials
 
         mkdir /public
