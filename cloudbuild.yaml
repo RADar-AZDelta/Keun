@@ -1,7 +1,3 @@
-secrets:
-  - secretEnv:
-      GITHUB_TOKEN: "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"
-
 steps:
   # Let Git recognize "/workspace" as a safe directory, otherwise it would throw the following error
   # Error: failed to get git context: exit status 128
@@ -71,7 +67,7 @@ steps:
         git config --global user.name "BostoenToby"
 
         git config --global credential.helper 'store --file=.git/credentials'
-        echo "https://$GITHUB_TOKEN:x-oauth-basic@github.com" > .git/credentials
+        echo "https://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:x-oauth-basic@github.com" > .git/credentials
 
         mkdir /public
         cp public/* /public
