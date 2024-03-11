@@ -67,12 +67,11 @@ steps:
         git config --global user.name "BostoenToby"
         mkdir /public
         cp -r public/* /public
-        git checkout -b origin/site
-        git pull origin site --rebase
+        git checkout -b origin/gh-pages
         cp /public ./public
         git add .
-        git commit -m "Deploying build to site"
-        git push origin site
+        git commit -m "Deploying build to gh-pages"
+        git push origin gh-pages
     # waitFor: ['Scan', 'Build']
     waitFor: ['Build']
     id: 'Push builded site to site branch'
