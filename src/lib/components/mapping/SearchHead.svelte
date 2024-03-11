@@ -1,46 +1,59 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
   import { query } from 'arquero'
-  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
   import ShowColumnsDialog from '$lib/components/mapping/ShowColumnsDialog.svelte'
   import type Query from 'arquero/dist/types/query/query'
-  import type DataTable from '@radar-azdelta/svelte-datatable'
-  import type { ITablePagination, IUsagiRow, MappingEvents, ShowColumnsEventDetail } from '$lib/components/Types'
+  import type { IQueryResult, IUsagiRow, MappingEvents, ShowColumnsED } from '$lib/Types'
+  import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
+  import Table from '$lib/classes/tables/Table'
 
-  export let selectedRow: IUsagiRow, mainTable: DataTable
+  export let selectedRow: IUsagiRow
 
   const dispatch = createEventDispatcher<MappingEvents>()
   let dialog: HTMLDialogElement
   let shownColumns: string[] = ['sourceCode', 'sourceName', 'sourceFrequency']
 
+  async function getPagination() {
+    const { currentPage } = await Table.getTablePagination()
+    return currentPage ?? 0
+  }
+
+  function rowFilter(row: IUsagiRow, params: Record<string, string>) {
+    const sourceCodeEqual = row.sourceCode === params.sourceCode
+    const sourceNameEqual = row.sourceName === params.sourceName
+    const conceptNameEqual = row.conceptName === params.conceptName || row.conceptName === params.conceptName2
+    return sourceCodeEqual && sourceNameEqual && conceptNameEqual
+  }
+
+  async function getCurrentRowIndex() {
+    const { sourceCode, sourceName, conceptName: concept } = selectedRow
+    const conceptName = concept === 'Unmapped' ? undefined : concept
+    const conceptName2 = concept === 'Unmapped' ? null : concept
+    const params = { sourceCode, sourceName, conceptName, conceptName2 }
+    const indexQuery = (<Query>query().params(params)).filter(rowFilter).toObject()
+    const rows: IQueryResult = await Table.executeQueryOnTable(indexQuery)
+    const index = rows.indices[0]
+    return index
+  }
+
+  async function getFollowingRow(up: boolean, currentRowIndex: number) {
+    const rowResult = up ? await Table.getNextRow(currentRowIndex) : await Table.getPreviousRow(currentRowIndex)
+    const { row, index, page } = rowResult
+    return { row, index, page }
+  }
+
   async function navigateRows(up: boolean) {
-    let pag: ITablePagination = await mainTable.getTablePagination()
-    if (!pag.currentPage || !pag.rowsPerPage) return
-    const indexParams = <Query>query().params({
-      code: selectedRow.sourceCode,
-      name: selectedRow.sourceName,
-      concept: selectedRow.conceptName === 'Unmapped' ? undefined : selectedRow.conceptName ?? undefined,
-      concept2: selectedRow.conceptName === 'Unmapped' ? null : selectedRow.conceptName,
-    })
-    const indexQuery = indexParams
-      .filter(
-        (r: any, p: any) =>
-          r.sourceCode === p.code &&
-          r.sourceName === p.name &&
-          (r.conceptName === p.concept || r.conceptName === p.concept2),
-      )
-      .toObject()
-    const rows = await mainTable.executeQueryAndReturnResults(indexQuery)
-    const i = rows.indices[0]
-    const { row, index, page } = up ? await mainTable.getNextRow(i) : await mainTable.getPreviousRow(i)
+    const rowIndex = await getCurrentRowIndex()
+    const { row, index, page } = await getFollowingRow(up, rowIndex)
     if (!row.sourceCode) return
-    if (pag.currentPage !== page) mainTable.changePagination({ currentPage: page })
+    const currentPage = await getPagination()
+    if (currentPage !== page) Table.changePagination(page)
     dispatch('navigateRow', { row, index })
   }
 
   const showDialogColumns = () => dialog.showModal()
 
-  const showColumns = (e: CustomEvent<ShowColumnsEventDetail>) => (shownColumns = e.detail.columns)
+  const showColumns = (e: CustomEvent<ShowColumnsED>) => ({ columns: shownColumns } = e.detail)
 
   $: columns = selectedRow ? Object.keys(selectedRow) : []
 </script>
@@ -60,7 +73,7 @@
           {/each}
         </tr>
         <tr>
-          {#if selectedRow != undefined}
+          {#if selectedRow}
             {#each shownColumns as column}
               <td title={selectedRow[column]}>{selectedRow[column]}</td>
             {/each}

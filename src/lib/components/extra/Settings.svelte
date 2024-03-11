@@ -1,37 +1,29 @@
 <script lang="ts">
-  import clickOutside from '$lib/obsolete/clickOutside'
-  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
+  import { SvgIcon, clickOutside } from '@radar-azdelta-int/radar-svelte-components'
   import { abortAutoMapping, settings, triggerAutoMapping } from '$lib/store'
+  import Switch from '$lib/components/extra/Switch.svelte'
+  import { Config } from '$lib/helperClasses/Config'
+  import SettingsImpl from '$lib/classes/implementation/SettingsImpl'
 
   let savedAutomapping: boolean, possibleOutclick: boolean, settingsDialog: HTMLDialogElement
-  let languages: Record<string, string> = {
-    nl: 'Dutch',
-    en: 'English',
-    de: 'German',
-    fr: 'French',
-    it: 'Italian',
-    es: 'Spanish',
-  }
 
   const closeDialog = () => settingsDialog.close()
 
-  // A method to open the dialog if it was closed
-  async function openDialog(): Promise<void> {
+  async function openDialog() {
     savedAutomapping = $settings.autoMap
     settingsDialog.showModal()
     possibleOutclick = true
   }
 
-  // A method to set the settings in the localstorage
-  async function saveSettings(): Promise<void> {
-    if ($settings.autoMap && savedAutomapping !== $settings.autoMap) {
-      triggerAutoMapping.set(true)
-      savedAutomapping = true
-    }
+  async function saveSettings() {
+    await SettingsImpl.updateSettings($settings)
+    const automappingChanged = $settings.autoMap && savedAutomapping !== $settings.autoMap
+    savedAutomapping = $settings.autoMap
+    if (automappingChanged) $triggerAutoMapping = savedAutomapping = true
   }
 
-  async function abort(): Promise<void> {
-    if (!$settings.autoMap && savedAutomapping !== $settings.autoMap) abortAutoMapping.set(true)
+  async function abort() {
+    if (!$settings.autoMap && savedAutomapping !== $settings.autoMap) $abortAutoMapping = true
   }
 
   async function outClick() {
@@ -42,9 +34,14 @@
   }
 
   async function changeAutoMapping() {
-    savedAutomapping = !$settings.autoMap
     abort()
+    if (!SettingsImpl.settingsRetrievedFromStorage) return
     saveSettings()
+  }
+
+  $: {
+    $settings.autoMap
+    changeAutoMapping()
   }
 </script>
 
@@ -57,31 +54,13 @@
       <section class="settings">
         <h2 class="title">Settings</h2>
         <div class="options">
-          <div class="option">
-            <p>Map to multiple concepts?</p>
-            <div class="switch">
-              <input class="switch-input" id="mltpl" type="checkbox" bind:checked={$settings.mapToMultipleConcepts} />
-              <label class="switch-label" for="mltpl" />
-            </div>
-          </div>
-          <div class="option">
-            <p>Automatic mapping?</p>
-            <div class="switch">
-              <input
-                class="switch-input"
-                id="automap"
-                type="checkbox"
-                bind:checked={$settings.autoMap}
-                on:change={changeAutoMapping}
-              />
-              <label class="switch-label" for="automap" />
-            </div>
-          </div>
+          <Switch name="Map to multiple concepts?" bind:checked={$settings.mapToMultipleConcepts} />
+          <Switch name="Automatic mapping?" bind:checked={$settings.autoMap} />
           <div class="option">
             <p>Language of source CSV</p>
             <select name="language" id="language" bind:value={$settings.language}>
-              {#each Object.keys(languages) as lang, _}
-                <option value={lang} selected={lang == $settings.language ? true : false}>{languages[lang]}</option>
+              {#each Object.keys(Config.languages) as lang, _}
+                <option value={lang} selected={lang === $settings.language}>{Config.languages[lang]}</option>
               {/each}
             </select>
           </div>
@@ -169,67 +148,6 @@
   option,
   p {
     font-size: 16px;
-  }
-
-  .switch-input {
-    height: 0;
-    width: 0;
-    visibility: hidden;
-  }
-
-  .switch-label {
-    cursor: pointer;
-    text-indent: -9999px;
-    top: -15px;
-    width: 60px;
-    height: 30px;
-    background: #c5c5c5;
-    display: block;
-    border-radius: 20px;
-    position: relative;
-  }
-
-  .switch-label:hover {
-    background: #bbbbbb;
-  }
-
-  .switch-input:checked + .switch-label:hover {
-    background: #0082ba;
-  }
-
-  .switch-label:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px #cecece;
-  }
-
-  .switch-input:checked + .switch-label:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px #0070a0;
-  }
-
-  .switch-label:after {
-    content: '';
-    position: absolute;
-    top: 4px;
-    left: 4px;
-    width: 22px;
-    height: 22px;
-    background: white;
-    border-radius: 20px;
-    transition: 0.3s;
-  }
-
-  .switch-input:checked + .switch-label {
-    background: #0094d3;
-  }
-
-  .switch-input:checked + .switch-label:after {
-    left: calc(100% - 4px);
-    transform: translateX(-100%);
-  }
-
-  .switch-label:active:after {
-    width: 20px;
   }
 
   select {
