@@ -56,17 +56,19 @@ steps:
         mv firebase /tmp
         chmod 755 /tmp/firebase
         /tmp/firebase deploy --project ${PROJECT_ID} --non-interactive -m "Build ${BUILD_ID}" --debug
+    id: 'Deploy to Firebase'
 
   - name: 'gcr.io/cloud-builders/git'
     entrypoint: 'bash'
     args:
       - '-c'
       - |
-        git configure --global user.email "toby.bostoen@azdelta.be"
-        git configure --global user.name "BostoenToby"
+        git config --global user.email "toby.bostoen@azdelta.be"
+        git config --global user.name "BostoenToby"
         git checkout -b site
-        rsync -av --exclude='.git' --delete build/ ./
+        cp ./public/* ./
         git add .
         git commit -m "Build ${BUILD_ID}"
         git push origin site
     waitFor: ['Scan', 'Build']
+    id: 'Push builded site to site branch'
