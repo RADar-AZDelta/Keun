@@ -66,10 +66,14 @@ steps:
         git config --global user.email "toby.bostoen@azdelta.be"
         git config --global user.name "BostoenToby"
         mkdir /public
-        cp -r public/* /public
-        git checkout -b origin/gh-pages
+        cp public/* /public
+        git checkout --orphan gh-pages
+        rm -rf .
+        touch README.md
+        git add README.md
         cp /public ./public
         git add .
+        git status
         git commit -m "Deploying build to gh-pages"
         git push origin gh-pages
     # waitFor: ['Scan', 'Build']
