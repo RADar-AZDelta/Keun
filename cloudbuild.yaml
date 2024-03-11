@@ -71,5 +71,6 @@ steps:
         git add .
         git commit -m "Deploying build to deployment-branch"
         git push origin deployment-branch
-    waitFor: ['Scan', 'Build']
+    # waitFor: ['Scan', 'Build']
+    waitFor: ['Build']
     id: 'Push builded site to site branch'
