@@ -2,14 +2,13 @@
   import { createEventDispatcher } from 'svelte'
   import type DataTable from '@radar-azdelta/svelte-datatable'
   import { query } from 'arquero'
-  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
   import { settings } from '$lib/store'
-  import suggestions from '$lib/data/customConceptInfo.json'
-  import { transformFromCustomRowToUsagiRow } from '$lib/mappingUtils'
   import AutocompleteInput from '$lib/components/extra/AutocompleteInput.svelte'
   import type Query from 'arquero/dist/types/query/query'
   import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
-  import type { ICustomConceptInput, MappingEvents } from '$lib/components/Types'
+  import type { ICustomConcept, ICustomConceptInput, MappingEvents } from '$lib/Types'
+  import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
+  import { Config } from '$lib/helperClasses/Config'
 
   export let renderedRow: Record<string, any>,
     columns: IColumnMetaData[] | undefined,
@@ -17,7 +16,7 @@
     customTable: DataTable
 
   const inputAvailableColumns = ['concept_name', 'concept_class_id', 'domain_id', 'vocabulary_id']
-  const colSuggestions: Record<string, Record<string, string>> = suggestions
+  const colSuggestions: Record<string, string[]> = Config.customConceptInfo
 
   const dispatch = createEventDispatcher<MappingEvents>()
 
@@ -35,7 +34,23 @@
     addCustomConcept()
     const transformedRow = await transformFromCustomRowToUsagiRow(inputRow as ICustomConceptInput)
     showMappingButton = false
-    dispatch('customMappingInput', { row: transformedRow, originalRow: inputRow as ICustomConceptInput })
+    dispatch('customMappingInput', { row: transformedRow, action: 'APPROVE' })
+  }
+
+  async function transformFromCustomRowToUsagiRow(custom: ICustomConceptInput) {
+    const usagiRow: ICustomConcept = {
+      conceptId: custom.concept_id,
+      conceptName: custom.concept_name,
+      domainId: custom.domain_id,
+      vocabularyId: custom.vocabulary_id,
+      conceptClassId: custom.concept_class_id,
+      standardConcept: custom.standard_concept,
+      conceptCode: custom.concept_code,
+      validStartDate: custom.valid_start_date,
+      validEndDate: custom.valid_end_date,
+      invalidReason: custom.invalid_reason,
+    }
+    return usagiRow
   }
 
   // If multiple mapping is off & there are already other custom concepts for this row, delete those

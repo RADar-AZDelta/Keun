@@ -1,61 +1,60 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
   import debounce from 'lodash.debounce'
-  import clickOutside from '$lib/obsolete/clickOutside'
-  import type { ICustomEvents } from '$lib/components/Types'
+  import { clickOutside } from '@radar-azdelta-int/radar-svelte-components'
+  import type { ICustomEvents } from '$lib/Types'
 
-  export let id: string,
-    list: Record<string, any>,
-    initial: string | undefined = undefined
+  export let id: string, list: string[]
+  export let inputValue: string | null = null
 
-  let inputValue: string | null,
-    value: string,
-    key: string,
-    filteredValues: Map<string, any> = new Map(),
-    autoCompleted: boolean = false,
-    focus: boolean = false,
-    suggestionsFocus: boolean = false
+  let value: string, key: string
 
-  if (initial) inputValue = initial
+  let filteredValues: string[] = []
+  let autoCompleted: boolean = false
+  let focus: boolean = false
+  let suggestionsFocus: boolean = false
+
   const dispatch = createEventDispatcher<ICustomEvents>()
 
-  // A method for when the input needs to be saved, don't show an error because the user can be typing and can get frustrated with the error
   function save(): void {
     if (!inputValue) return
-    value = list[inputValue] ? list[inputValue] : inputValue
-    // The input value must be chosen from the list of values suggested
-    if (Object.keys(list).includes(value) || Object.values(list).includes(value))
-      dispatch('autoComplete', { id, value, key })
+    value = inputValue
+    if (!list.includes(value)) return
+    dispatch('autoComplete', { id, value, key })
   }
 
-  // A method to apply a suggestion to the input field
   function onClickAutoComplete(e: Event): void {
     const element = e.target as HTMLLIElement
-    inputValue = element.textContent
-    key = element.id
+    ;({ textContent: inputValue, id: key } = element)
     save()
     autoCompleted = true
   }
 
   // A method to search for suggestions to apply to the input field
   function filter(): void {
-    filteredValues = new Map<string, any>()
+    filteredValues = []
     if (!inputValue) return
-    const pairs = Object.entries(list).filter(
-      ([key, value]) =>
-        (key.toLowerCase().includes(inputValue!.toLowerCase()) ||
-          value.toLowerCase().includes(inputValue!.toLowerCase())) &&
-        key.toLowerCase() !== inputValue?.toLowerCase() &&
-        value.toLowerCase() !== inputValue?.toLowerCase(),
-    )
-    if (!pairs.length) return
-    for (let [key, value] of pairs) filteredValues.set(key, value)
+    const pairs = list.filter(findPossibleSuggestions)
+    for (let value of pairs) filteredValues.push(value)
   }
 
-  const onInput = debounce(async (e: any): Promise<void> => {
+  function findPossibleSuggestions(value: string) {
+    if (!inputValue) return
+    const lValue = value.toLowerCase()
+    const lInput = inputValue?.toLowerCase()
+    const notEqual = lValue !== lInput
+    const including = lValue.includes(lInput)
+    if (notEqual && including) return value
+  }
+
+  const onInput = debounce(async (e: any) => {
     autoCompleted = false
     save()
   }, 1000)
+
+  const focussing = () => (focus = suggestionsFocus = true)
+  const nonFocussing = () => (focus = false)
+  const outClick = () => (suggestionsFocus = false)
 
   $: {
     inputValue
@@ -64,25 +63,13 @@
 </script>
 
 <div class="input-container">
-  <input
-    title={id}
-    type="text"
-    bind:value={inputValue}
-    on:input={onInput}
-    on:focus={() => {
-      focus = true
-      suggestionsFocus = true
-    }}
-    on:focusout={() => {
-      focus = false
-    }}
-  />
-  {#if filteredValues.size > 0 && (focus || suggestionsFocus)}
-    <ul use:clickOutside on:outClick={() => (suggestionsFocus = false)}>
-      {#each [...filteredValues] as [key, value], i}
+  <input title={id} bind:value={inputValue} on:input={onInput} on:focus={focussing} on:focusout={nonFocussing} />
+  {#if filteredValues.length && (focus || suggestionsFocus)}
+    <ul use:clickOutside on:outClick={outClick}>
+      {#each filteredValues as suggestion, i}
         {#if i < 7 && !autoCompleted}
           <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
-          <li id={key} on:click={onClickAutoComplete} on:keydown={onClickAutoComplete}>{key}</li>
+          <li id={suggestion} on:click={onClickAutoComplete} on:keydown={onClickAutoComplete}>{suggestion}</li>
         {/if}
       {/each}
     </ul>

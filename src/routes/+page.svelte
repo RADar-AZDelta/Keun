@@ -1,116 +1,87 @@
 <script lang="ts">
-  import { dev } from '$app/environment'
   import type {
-    CheckForCacheEventDetail,
-    ColumnsDialogShowEventDetail,
-    DeleteFilesEventDetail,
-    DownloadFilesEventDetail,
-    EditRightsEventDetail,
-    FileUpdatedColumnsEventDetail,
-    FileUploadEventDetail,
-    IFile,
-  } from '$lib/components/Types'
-  import AuthorsDialog from '$lib/components/menu/AuthorsDialog.svelte'
+    CheckForCacheED,
+    ColumnsDialogShowED,
+    DeleteFilesED,
+    FileUpdatedColumnsED,
+    IFileInformation,
+    ProcessingED,
+  } from '$lib/Types'
   import ColumnsDialog from '$lib/components/menu/ColumnsDialog.svelte'
   import FileChoiceDialog from '$lib/components/menu/FileChoiceDialog.svelte'
   import FileInputDialog from '$lib/components/menu/FileInputDialog.svelte'
-  import FirebaseImpl from '$lib/components/menu/FirebaseImpl.svelte'
-  import LocalImpl from '$lib/components/menu/LocalImpl.svelte'
-  import { loadImplementationDB } from '$lib/implementations/implementation'
-  import Spinner from '$lib/obsolete/Spinner.svelte'
-  import { databaseImpl, databaseImplementation, selectedFileId, user } from '$lib/store'
+  import { user } from '$lib/store'
+  import { Spinner } from '@radar-azdelta-int/radar-svelte-components'
   import type { SvelteComponent } from 'svelte'
+  import type { FileUploadED } from '$lib/Types'
+  import { logWhenDev } from '@radar-azdelta-int/radar-utils'
+  import FileMenu from '$lib/components/menu/FileMenu.svelte'
+  import DatabaseImpl from '$lib/classes/implementation/DatabaseImpl'
 
-  let files: IFile[] = []
+  let files: IFileInformation[] = []
   let file: File
   let cols: string[] = []
   let missing: Record<string, string> = {}
-  let authorizedAuthors: string[]
   let processing: boolean = false
-  let selected: string
+  let possibleEditingFileId: string | undefined = undefined
 
-  let fileInputDialog: SvelteComponent,
-    authorsDialog: SvelteComponent,
-    columnDialog: SvelteComponent,
-    locationDialog: SvelteComponent
+  let fileInputDialog: SvelteComponent, columnDialog: SvelteComponent, locationDialog: SvelteComponent
 
-  // A method to upload a file & refetch all the files
-  async function uploadFile(): Promise<void> {
-    if (dev) console.log('uploadFile: Uploading a file')
-    if (!$databaseImpl) await loadImplementationDB()
-    await $databaseImpl!.uploadFile(file, authorizedAuthors)
+  async function uploadFile() {
+    logWhenDev('uploadFile: Uploading a file')
+    await DatabaseImpl.uploadKeunFile(file)
     await getFiles()
     fileInputDialog.closeDialog()
   }
 
-  // Select the correct file & show a pop-up to change the authors
-  async function editRights(e: CustomEvent<EditRightsEventDetail>): Promise<void> {
-    selected = e.detail.id
-    authorsDialog.showDialog()
-  }
-
-  // Open the input pop-up to add a file
   const openFileInputDialog = async () => fileInputDialog.showDialog()
 
-  // Open the pop-up to change missing columns to the correct name
-  async function openColumnDialog(e: CustomEvent<ColumnsDialogShowEventDetail>): Promise<void> {
-    if (e.detail.file) file = e.detail.file
-    missing = e.detail.missingColumns
-    cols = e.detail.currentColumns
+  async function openColumnDialog(e: CustomEvent<ColumnsDialogShowED>) {
+    if (e.detail.file) ({ file } = e.detail)
+    ;({ missingColumns: missing, currentColumns: cols } = e.detail)
     columnDialog.showDialog()
   }
 
-  // A method to check if there is cache of files
-  async function checkForCache(e: CustomEvent<CheckForCacheEventDetail>): Promise<void> {
-    if (dev) console.log('checkForCache: Checking for cache')
-    if (!$databaseImpl) await loadImplementationDB()
-    file = e.detail.file
-    const cached = await $databaseImpl!.checkFileExistance(e.detail.file.name)
-    if (!cached) return await uploadFile()
-    $selectedFileId = cached.toString()
+  async function checkForCache(e: CustomEvent<CheckForCacheED>) {
+    logWhenDev('checkForCache: Checking for cache')
+    ;({ file } = e.detail)
+    const fileWithSameName = await DatabaseImpl.checkForFileWithSameName(file.name)
+    fileInputDialog.closeDialog()
+    if (!fileWithSameName) return await uploadFile()
+    possibleEditingFileId = fileWithSameName
     locationDialog.showDialog()
   }
 
-  // A method to get all the files to map
-  async function getFiles(): Promise<void> {
-    if (dev) console.log('getFiles: Get all the files in the database')
-    if (!$databaseImpl) await loadImplementationDB()
-    const getFilesRes = await $databaseImpl?.getFiles($user.uid ?? undefined, $user.roles ?? [])
+  async function getFiles() {
+    logWhenDev('getFiles: Get all the files in the database')
+    const getFilesRes = await DatabaseImpl.getFilesList()
     if (getFilesRes) files = getFilesRes
   }
 
-  // Download the file & eventual custom concepts file
-  async function downloadFiles(e: CustomEvent<DownloadFilesEventDetail>): Promise<void> {
-    if (!$databaseImpl) await loadImplementationDB()
-    await $databaseImpl!.downloadFile(e.detail.id)
-    await getFiles()
-  }
-
-  // Delete the files regarding the file name
-  async function deleteFiles(e: CustomEvent<DeleteFilesEventDetail>): Promise<void> {
-    if (dev) console.log('deleteFile: Deleting a file')
+  async function deleteFiles(e: CustomEvent<DeleteFilesED>) {
+    logWhenDev('deleteFile: Deleting a file')
     processing = true
-    if (!$databaseImpl) await loadImplementationDB()
-    await $databaseImpl!.deleteFile(e.detail.id)
-    await getFiles()
+    const { id: fileId } = e.detail
+    if (fileId) await DatabaseImpl.deleteKeunFile(fileId)
     processing = false
-    if (dev) console.log('deleteFile: File has been deleted')
+    logWhenDev('deleteFile: File has been deleted')
   }
 
-  // When choosing to delete the cache & upload the file with the same name again
-  async function reUploadFile(e: CustomEvent<FileUploadEventDetail>): Promise<void> {
-    deleteFiles(e)
+  async function reUploadFile(e: CustomEvent<FileUploadED>) {
+    await deleteFiles(e)
+    await uploadFile()
+    possibleEditingFileId = undefined
+  }
+
+  async function updateFileColumns(e: CustomEvent<FileUpdatedColumnsED>) {
+    ;({ file } = e.detail)
     uploadFile()
   }
 
-  // Update the columns to the correct name in a file
-  async function updateFileColumns(e: CustomEvent<FileUpdatedColumnsEventDetail>) {
-    file = e.detail.file
-    uploadFile()
-  }
+  const setProcessing = async (e: CustomEvent<ProcessingED>) => ({ processing } = e.detail)
 
   $: {
-    if ($user && $databaseImpl) getFiles()
+    if ($user) getFiles()
   }
 </script>
 
@@ -122,7 +93,12 @@
   />
 </svelte:head>
 
-<FileChoiceDialog bind:processing on:fileUpload={reUploadFile} bind:this={locationDialog} />
+<FileChoiceDialog
+  bind:processing
+  on:fileUpload={reUploadFile}
+  currentFileId={possibleEditingFileId}
+  bind:this={locationDialog}
+/>
 
 <FileInputDialog
   bind:processing
@@ -133,28 +109,13 @@
 
 <ColumnsDialog {missing} {cols} {file} on:fileUpdateColumns={updateFileColumns} bind:this={columnDialog} />
 
-<AuthorsDialog bind:processing bind:selected bind:this={authorsDialog} />
-
 <main class="files-screen">
   <section class="file-selection">
     <section class="file-container">
       <div class="file-menu">
         <h1 class="title">Files to map</h1>
         <div class="file-list">
-          {#if databaseImplementation === 'firebase'}
-            {#if $user?.roles?.includes('user') || $user?.roles?.includes('admin')}
-              <FirebaseImpl
-                bind:files
-                on:downloadFiles={downloadFiles}
-                on:deleteFiles={deleteFiles}
-                on:editRights={editRights}
-              />
-            {:else}
-              <p class="rights-error">You do not have sufficient rights, contact an admin please.</p>
-            {/if}
-          {:else}
-            <LocalImpl bind:files on:downloadFiles={downloadFiles} on:deleteFiles={deleteFiles} />
-          {/if}
+          <FileMenu bind:files on:processing={setProcessing} on:getFiles={getFiles} />
         </div>
         {#if processing}
           <Spinner />
@@ -218,10 +179,5 @@
     outline: none;
     box-shadow: 0 0 0 2px #7feb7f;
     background-color: #90ee90;
-  }
-
-  .rights-error {
-    text-align: center;
-    margin: 0 0 1rem 0;
   }
 </style>

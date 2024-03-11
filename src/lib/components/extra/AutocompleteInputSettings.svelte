@@ -1,29 +1,28 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
   import { settings } from '$lib/store'
-  import { localStorageSetter } from '$lib/obsolete/utils'
   import debounce from 'lodash.debounce'
-  import type { ICustomEvents } from '$lib/components/Types'
+  import type { ICustomEvents } from '$lib/Types'
+  import SettingsImpl from '$lib/classes/implementation/SettingsImpl'
 
-  let inputValue: string,
-    value: string,
-    filteredValues: string[] = [],
-    autoCompleted: boolean = false
+  let inputValue: string, value: string
+  let filteredValues: string[] = []
+  let autoCompleted: boolean = false
 
   const dispatch = createEventDispatcher<ICustomEvents>()
 
-  // A method for when the input needs to be saved
+  const updateSettings = async () => await SettingsImpl.updateSettings($settings)
+
   function save(): void {
     value = inputValue
     if (!$settings.savedAuthors) $settings.savedAuthors = []
     if (!$settings.savedAuthors.includes(inputValue)) {
       $settings.savedAuthors.push(inputValue)
-      localStorageSetter('settings', $settings)
+      updateSettings()
     }
     dispatch('autoCompleteShort', { value })
   }
 
-  // A method to apply a suggestion to the input field
   function onClickAutoComplete(e: Event): void {
     inputValue = (e.target as HTMLLIElement).id
     save()
@@ -31,22 +30,23 @@
     autoCompleted = true
   }
 
-  // A method to search for suggestions to apply to the input field
   function filterNames(): void | string[] {
     let filteredNames: string[] = []
     if (!inputValue || !$settings.savedAuthors) return (filteredValues = filteredNames)
-    filteredNames = [
-      ...filteredNames,
-      ...$settings.savedAuthors.filter(
-        name =>
-          name.toLowerCase().startsWith(inputValue.toLowerCase()) && name.toLowerCase() !== inputValue.toLowerCase(),
-      ),
-    ]
+    const filteredAuthors = $settings.savedAuthors.filter(filterForAuthors)
+    filteredNames = [...filteredNames, ...filteredAuthors]
     filteredValues = filteredNames
   }
 
-  // A method to save the input value to the settings and apply as assigned reviewer
-  const onInput = debounce(async (e: any): Promise<void> => {
+  function filterForAuthors(name: string) {
+    const lName = name.toLowerCase()
+    const lInput = inputValue.toLowerCase()
+    const notEqual = lName !== lInput
+    const including = lName.startsWith(lInput)
+    if (notEqual && including) return name
+  }
+
+  const onInput = debounce(async (e: any) => {
     autoCompleted = false
     save()
   }, 500)
@@ -59,7 +59,7 @@
 
 <div>
   <input title="Assigned Reviewer" type="text" bind:value={inputValue} on:input={onInput} />
-  {#if filteredValues.length > 0}
+  {#if filteredValues.length}
     <ul>
       {#each filteredValues as name, i}
         {#if i < 7 && !autoCompleted}

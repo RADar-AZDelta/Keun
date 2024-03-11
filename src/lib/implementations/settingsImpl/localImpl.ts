@@ -1,5 +1,5 @@
-import { dev } from '$app/environment'
-import type { ISettings, ISettingsImpl } from '$lib/components/Types'
+import { logWhenDev } from '@radar-azdelta-int/radar-utils'
+import type { ISettings, ISettingsImpl } from '$lib/Types'
 
 const defaultSettings: ISettings = {
   mapToMultipleConcepts: false,
@@ -12,13 +12,13 @@ const defaultSettings: ISettings = {
 
 export default class LocalImpl implements ISettingsImpl {
   async getSettings(): Promise<ISettings> {
-    if (dev) console.log('getSettings: Reading the settings from localstorage')
+    logWhenDev('getSettings: Reading the settings from localstorage')
     const localStorageSettings = await localStorage.getItem('settings')
     return localStorageSettings ? JSON.parse(localStorageSettings) : defaultSettings
   }
 
   async updateSettings(settings: ISettings): Promise<void> {
-    if (dev) console.log('updateSettings: Updating the settings to the localstorage')
-    await localStorage.setItem('settings', JSON.stringify(settings))
+    logWhenDev('updateSettings: Updating the settings to the localstorage')
+    localStorage.setItem('settings', JSON.stringify(settings))
   }
 }

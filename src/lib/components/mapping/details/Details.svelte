@@ -1,10 +1,10 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
-  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
   import debounce from 'lodash.debounce'
+  import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
   import Equivalence from '$lib/components/mapping/details/Equivalence.svelte'
   import AutocompleteInputSettings from '$lib/components/extra/AutocompleteInputSettings.svelte'
-  import type { AutoCompleteShortEventDetail, EquivalenceChangeEventDetail, IUsagiRow, MappingEvents } from '$lib/components/Types'
+  import type { AutoCompleteShortED, EquivalenceChangeED, IUsagiRow, MappingEvents } from '$lib/Types'
 
   export let usagiRow: IUsagiRow
 
@@ -12,34 +12,35 @@
 
   let show: boolean = false
   let reviewer: string = usagiRow?.assignedReviewer ?? ''
-  let comments: string = usagiRow?.comment ?? ''
-  let equivalence: string = usagiRow?.equivalence ?? 'EQUAL'
+  let comment: string = usagiRow?.comment ?? ''
 
-  const showDetail = (value: boolean) => (show = value)
+  const onEquivalenceChange = (e: CustomEvent<EquivalenceChangeED>) => dispatch('equivalenceChange', { ...e.detail })
+  const onInputComment = debounce(() => updateDetails(), 500)
 
-  async function onEquivalenceChange(e: CustomEvent<EquivalenceChangeEventDetail>) {
-    equivalence = e.detail.equivalence
-    dispatch('equivalenceChange', { equivalence })
-  }
-
-  const onInputComment = debounce(async (e: any): Promise<void> => {
-    updateDetails()
-  }, 500)
-
-  async function onReviewerChanged(e: CustomEvent<AutoCompleteShortEventDetail>) {
-    reviewer = e.detail.value
+  async function onReviewerChanged(e: CustomEvent<AutoCompleteShortED>) {
+    ;({ value: reviewer } = e.detail)
     updateDetails()
   }
 
-  async function updateDetails() {
-    dispatch('updateDetails', { reviewer, comments })
+  const updateDetails = () => dispatch('updateDetails', { reviewer, comment: comment.replace(/(\r\n|\n|\r)/gm, ' ') })
+  const hideDetail = () => (show = false)
+  const showDetail = () => (show = true)
+
+  async function reset() {
+    reviewer = usagiRow?.assignedReviewer ?? ''
+    comment = usagiRow?.comment ?? ''
+  }
+
+  $: {
+    usagiRow
+    reset()
   }
 </script>
 
 {#if show}
   <section class="container">
     <div class="head">
-      <button class="button" on:click={() => showDetail(false)}>
+      <button class="button" on:click={hideDetail}>
         <SvgIcon id="chevrons-right" />
       </button>
       <h2 class="title">Detail</h2>
@@ -52,13 +53,13 @@
       </div>
       <div class="comments-container">
         <p class="comments-title">Comments</p>
-        <textarea title="Comments" name="Comments" cols="28" rows="6" on:input={onInputComment} bind:value={comments} />
+        <textarea title="Comments" name="Comments" cols="28" rows="6" on:input={onInputComment} bind:value={comment} />
       </div>
     </div>
   </section>
 {:else}
   <div class="sidebar-left">
-    <button class="closed-bar" on:click={() => showDetail(true)}>
+    <button class="closed-bar" on:click={showDetail}>
       <SvgIcon id="chevrons-left" />
       {#each 'DETAIL' as letter, _}
         <p>{letter}</p>

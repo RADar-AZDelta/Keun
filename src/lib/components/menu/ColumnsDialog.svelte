@@ -1,9 +1,9 @@
 <script lang="ts">
-  import { dev } from '$app/environment'
   import { createEventDispatcher } from 'svelte'
-  import SvgIcon from '$lib/obsolete/SvgIcon.svelte'
+  import { logWhenDev } from '@radar-azdelta-int/radar-utils'
+  import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
   import { user } from '$lib/store'
-  import type { PageEvents } from '$lib/components/Types'
+  import type { PageEvents } from '$lib/Types'
 
   export let missing: Record<string, string>, cols: string[], file: File
 
@@ -12,30 +12,24 @@
   let dialog: HTMLDialogElement
 
   export const showDialog = () => dialog.showModal()
-
   export const closeDialog = () => dialog.close()
 
-  // A method to rename the columns to get a standardized version of the file
   async function fileUploadWithColumnChanges(): Promise<void> {
-    if (dev) console.log('fileUploadWithColumnChanges: The file is uploading and process the column changes')
+    logWhenDev('fileUploadWithColumnChanges: The file is uploading and process the column changes')
     if (!$user) return console.error('fileUploadWithColumnChanges: There is no author name set.')
-    // if (!($implementation === 'firebase' && $settings?.author?.roles?.includes('Admin')) && $databaseImpl) return
     var reader = new FileReader()
     reader.onload = processUpdatedColumns
     reader.readAsText(<Blob>file)
   }
 
-  // Read the file and update the columns
   async function processUpdatedColumns(this: FileReader, ev: ProgressEvent<FileReader>): Promise<void> {
-    if (dev) console.log('processUpdatedColumns: Update the given columns to the expected columns')
+    logWhenDev('processUpdatedColumns: Update the given columns to the expected columns')
     if (!ev.target?.result) return
     // Get the columns row of the file
     const fileContent = ev.target.result.toString()
     let columns = fileContent.substring(0, fileContent.indexOf('\n'))
-    for (let [newColumn, oldColumn] of Object.entries(missing)) {
-      // Replace the old columns with the standardized columns
-      columns = columns.replace(oldColumn, newColumn)
-    }
+    // Replace the old columns with the standardized columns
+    for (let [newColumn, oldColumn] of Object.entries(missing)) columns = columns.replace(oldColumn, newColumn)
     // Combine the columns and the rest of the file together
     const updatedFileContent = columns + fileContent.slice(fileContent.indexOf('\n'))
     const blob = new Blob([updatedFileContent], { type: 'text/csv' })
