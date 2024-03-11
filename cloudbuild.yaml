@@ -65,9 +65,9 @@ steps:
       - |
         git config --global user.email "toby.bostoen@azdelta.be"
         git config --global user.name "BostoenToby"
-        git clone -b site git@github.com:RADar-AZDelta/Keun.git temp_dir
-        cp -r public/* temp_dir/
-        cd temp_dir
+        cp -r public/* ../public
+        git checkout site
+        cp ../public ./public
         git add .
         git commit -m "Deploying build to site"
         git push origin site
