@@ -1,3 +1,8 @@
+availableSecrets:
+  secretManager:
+    - versionName: projects/249998037771/secrets/github-personal-access-token-keun/versions/latest
+      env: TF_VAR_github_personal_access_token
+
 steps:
   # Let Git recognize "/workspace" as a safe directory, otherwise it would throw the following error
   # Error: failed to get git context: exit status 128
@@ -60,6 +65,8 @@ steps:
 
   - name: 'gcr.io/cloud-builders/git'
     entrypoint: 'bash'
+    secretEnv:
+      - TF_VAR_github_personal_access_token
     args:
       - '-c'
       - |
@@ -67,7 +74,9 @@ steps:
         git config --global user.name "BostoenToby"
 
         git config --global credential.helper 'store --file=.git/credentials'
-        echo "https://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:x-oauth-basic@github.com" > .git/credentials
+        echo "https://$$TF_VAR_github_personal_access_token:x-oauth-basic@github.com" > .git/credentials
+
+        cat .git/credentials
 
         mkdir /public
         cp public/* /public
@@ -79,7 +88,7 @@ steps:
         git add .
         git status
         git commit -m "Deploying build to gh-pages"
-        git push origin gh-pages
+        git push origin gh-pages Username: BostoenToby Password: $$TF_VAR_github_personal_access_token
     # waitFor: ['Scan', 'Build']
     waitFor: ['Build']
     id: 'Push builded site to site branch'
