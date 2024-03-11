@@ -63,8 +63,14 @@ steps:
     args:
       - '-c'
       - |
+        GITHUB_TOKEN="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"
+
         git config --global user.email "toby.bostoen@azdelta.be"
         git config --global user.name "BostoenToby"
+
+        git config --global credential.helper 'store --file=.git/credentials'
+        echo "https://$GITHUB_TOKEN:x-oauth-basic@github.com" > .git/credentials
+
         mkdir /public
         cp public/* /public
         git checkout --orphan gh-pages
