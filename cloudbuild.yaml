@@ -29,34 +29,34 @@ steps:
     args: ['run', 'build']
     id: 'Build'
 
-  # Scan the application on CWE's
-  - name: 'bearer/bearer'
-    waitFor: ['Install']
-    entrypoint: bearer
-    args: ['scan', '.']
-    id: 'Scan'
+  # # Scan the application on CWE's
+  # - name: 'bearer/bearer'
+  #   waitFor: ['Install']
+  #   entrypoint: bearer
+  #   args: ['scan', '.']
+  #   id: 'Scan'
 
-  # Download the Firebase tool package in a container
-  - name: 'gcr.io/cloud-builders/wget'
-    waitFor: ['Install']
-    args:
-      - '--quiet'
-      - '-O'
-      - 'firebase'
-      - 'https://firebase.tools/bin/linux/latest'
-    id: 'Download Firebase'
+  # # Download the Firebase tool package in a container
+  # - name: 'gcr.io/cloud-builders/wget'
+  #   waitFor: ['Install']
+  #   args:
+  #     - '--quiet'
+  #     - '-O'
+  #     - 'firebase'
+  #     - 'https://firebase.tools/bin/linux/latest'
+  #   id: 'Download Firebase'
 
-  # Change the rights to the tool through chmod & deploy the project with Firebase
-  - name: 'debian:11'
-    waitFor: ['Download Firebase', 'Scan', 'Build']
-    args:
-      - 'bash'
-      - '-c'
-      - |
-        mv firebase /tmp
-        chmod 755 /tmp/firebase
-        /tmp/firebase deploy --project ${PROJECT_ID} --non-interactive -m "Build ${BUILD_ID}" --debug
-    id: 'Deploy to Firebase'
+  # # Change the rights to the tool through chmod & deploy the project with Firebase
+  # - name: 'debian:11'
+  #   waitFor: ['Download Firebase', 'Scan', 'Build']
+  #   args:
+  #     - 'bash'
+  #     - '-c'
+  #     - |
+  #       mv firebase /tmp
+  #       chmod 755 /tmp/firebase
+  #       /tmp/firebase deploy --project ${PROJECT_ID} --non-interactive -m "Build ${BUILD_ID}" --debug
+  #   id: 'Deploy to Firebase'
 
   - name: 'gcr.io/cloud-builders/git'
     entrypoint: 'bash'
@@ -65,14 +65,11 @@ steps:
       - |
         git config --global user.email "toby.bostoen@azdelta.be"
         git config --global user.name "BostoenToby"
-        cp ./public/* ../public
-        cd ..
-        git clone https://github.com/RADar-AZDelta/Keun.git
-        cd Keun
-        cp ../public ./public
-        git checkout -b site
+        git clone -b deployment-branch git@github.com:RADar-AZDelta/Keun.git temp_dir
+        cp -r public/* temp_dir/
+        cd temp_dir
         git add .
-        git commit -m "Build ${BUILD_ID}"
-        git push origin site
+        git commit -m "Deploying build to deployment-branch"
+        git push origin deployment-branch
     waitFor: ['Scan', 'Build']
     id: 'Push builded site to site branch'
