@@ -83,4 +83,3 @@ steps:
     # waitFor: ['Scan', 'Build']
     waitFor: ['Build']
     id: 'Push builded site to site branch'
-    secretEnv: ['GITHUB_TOKEN']
