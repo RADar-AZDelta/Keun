@@ -68,6 +68,7 @@ steps:
         mkdir /public
         cp -r public/* /public
         git checkout -b origin/site
+        git pull origin site --rebase
         cp /public ./public
         git add .
         git commit -m "Deploying build to site"
