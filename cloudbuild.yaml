@@ -65,8 +65,12 @@ steps:
       - |
         git config --global user.email "toby.bostoen@azdelta.be"
         git config --global user.name "BostoenToby"
+        cp ./public/* ../public
+        cd ..
+        git clone https://github.com/RADar-AZDelta/Keun.git
+        cd Keun
+        cp ../public ./public
         git checkout -b site
-        cp ./public/* ./
         git add .
         git commit -m "Build ${BUILD_ID}"
         git push origin site
