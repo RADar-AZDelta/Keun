@@ -65,12 +65,12 @@ steps:
       - |
         git config --global user.email "toby.bostoen@azdelta.be"
         git config --global user.name "BostoenToby"
-        git clone -b deployment-branch git@github.com:RADar-AZDelta/Keun.git temp_dir
+        git clone -b site git@github.com:RADar-AZDelta/Keun.git temp_dir
         cp -r public/* temp_dir/
         cd temp_dir
         git add .
-        git commit -m "Deploying build to deployment-branch"
-        git push origin deployment-branch
+        git commit -m "Deploying build to site"
+        git push origin site
     # waitFor: ['Scan', 'Build']
     waitFor: ['Build']
     id: 'Push builded site to site branch'
