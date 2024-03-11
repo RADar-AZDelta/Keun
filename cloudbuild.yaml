@@ -62,6 +62,8 @@ steps:
     args:
       - '-c'
       - |
+        git configure --global user.email "toby.bostoen@azdelta.be"
+        git configure --global user.name "BostoenToby"
         git checkout -b site
         rsync -av --exclude='.git' --delete build/ ./
         git add .
