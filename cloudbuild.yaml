@@ -65,9 +65,10 @@ steps:
       - |
         git config --global user.email "toby.bostoen@azdelta.be"
         git config --global user.name "BostoenToby"
-        cp -r public/* ../public
+        mkdir /public
+        cp -r public/* /public
         git checkout site
-        cp ../public ./public
+        cp /public ./public
         git add .
         git commit -m "Deploying build to site"
         git push origin site
