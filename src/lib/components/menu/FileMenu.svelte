@@ -3,9 +3,9 @@
   import { base } from '$app/paths'
   import { createEventDispatcher } from 'svelte'
   import { user } from '$lib/store'
-  import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
+  import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
   import type { PageEvents, IFileInformation } from '$lib/Types'
-  import { logWhenDev } from '@radar-azdelta-int/radar-utils'
+  import { logWhenDev } from '$lib/utils'
   import { Providers } from '$lib/enums'
   import DatabaseImpl from '$lib/classes/implementation/DatabaseImpl'
 

@@ -1,5 +1,4 @@
 import { FirebaseFirestore } from '@radar-azdelta-int/radar-firebase-utils'
-import { logWhenDev } from '@radar-azdelta-int/radar-utils'
 import {
   PUBLIC_FIREBASE_API_KEY,
   PUBLIC_FIREBASE_APP_ID,
@@ -9,6 +8,7 @@ import {
   PUBLIC_FIREBASE_STORAGE_BUCKET,
 } from '$env/static/public'
 import { user } from '$lib/store'
+import { logWhenDev } from '$lib/utils'
 import type { ISettings, ISettingsImpl, IUser } from '$lib/Types'
 import type { FirebaseOptions } from 'firebase/app'
 

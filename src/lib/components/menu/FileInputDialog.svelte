@@ -1,9 +1,11 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
-  import { Drop, SvgIcon, Spinner } from '@radar-azdelta-int/radar-svelte-components'
   import { user } from '$lib/store'
   import type { FileDropED, PageEvents } from '$lib/Types'
-  import { logWhenDev } from '@radar-azdelta-int/radar-utils'
+  import { logWhenDev } from '$lib/utils'
+  import Drop from '../extra/Drop.svelte'
+  import SvgIcon from '../extra/SvgIcon.svelte'
+  import Spinner from '../extra/Spinner.svelte'
 
   export let processing: boolean
 

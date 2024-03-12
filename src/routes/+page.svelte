@@ -11,12 +11,12 @@
   import FileChoiceDialog from '$lib/components/menu/FileChoiceDialog.svelte'
   import FileInputDialog from '$lib/components/menu/FileInputDialog.svelte'
   import { user } from '$lib/store'
-  import { Spinner } from '@radar-azdelta-int/radar-svelte-components'
   import type { SvelteComponent } from 'svelte'
   import type { FileUploadED } from '$lib/Types'
-  import { logWhenDev } from '@radar-azdelta-int/radar-utils'
+  import { logWhenDev } from '$lib/utils'
   import FileMenu from '$lib/components/menu/FileMenu.svelte'
   import DatabaseImpl from '$lib/classes/implementation/DatabaseImpl'
+  import Spinner from '$lib/components/extra/Spinner.svelte'
 
   let files: IFileInformation[] = []
   let file: File

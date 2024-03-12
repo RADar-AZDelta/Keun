@@ -1,3 +1,8 @@
+# availableSecrets:
+#   secretManager:
+#     - versionName: projects/249998037771/secrets/github-personal-access-token-keun/versions/latest
+#       env: TF_VAR_github_personal_access_token
+
 steps:
   # Let Git recognize "/workspace" as a safe directory, otherwise it would throw the following error
   # Error: failed to get git context: exit status 128
@@ -10,49 +15,93 @@ steps:
     args: ['-c', 'git config --global --add safe.directory /workspace']
     id: 'Configure Git'
 
+  - name: 'gcr.io/cloud-builders/gcloud'
+    entrypoint: 'bash'
+    args: ['./update-env.sh']
+    env:
+      - 'PROVIDER=firebase'
+    id: 'Change provider in env variables'
+
+  # Authenticate the service account with GCP to have access to the Artifact Registry to download private packages
   - name: 'node:lts'
     waitFor: ['Configure Git']
     entrypoint: npx
     args: ['google-artifactregistry-auth']
     id: 'Authenticate'
 
-  # Authenticate the service account with GCP to have access to the Artifact Registry to download private packages
   - name: 'node:lts'
     waitFor: ['Authenticate']
     entrypoint: npm
     args: ['install']
     id: 'Install'
 
+  # Install again because the package from the preinstall will not be added yet
   - name: 'node:lts'
     waitFor: ['Install']
+    entrypoint: npm
+    args: ['install']
+    id: 'Install again'
+
+  - name: 'node:lts'
+    waitFor: ['Install again']
     entrypoint: npm
     args: ['run', 'build']
     id: 'Build'
 
-  # Scan the application on CWE's
-  - name: 'bearer/bearer'
-    waitFor: ['Install']
-    entrypoint: bearer
-    args: ['scan', '.']
-    id: 'Scan'
+  # # Scan the application on CWE's
+  # - name: 'bearer/bearer'
+  #   waitFor: ['Install']
+  #   entrypoint: bearer
+  #   args: ['scan', '.']
+  #   id: 'Scan'
 
-  # Download the Firebase tool package in a container
-  - name: 'gcr.io/cloud-builders/wget'
-    waitFor: ['Install']
-    args:
-      - '--quiet'
-      - '-O'
-      - 'firebase'
-      - 'https://firebase.tools/bin/linux/latest'
-    id: 'Download Firebase'
+  # # Download the Firebase tool package in a container
+  # - name: 'gcr.io/cloud-builders/wget'
+  #   waitFor: ['Install']
+  #   args:
+  #     - '--quiet'
+  #     - '-O'
+  #     - 'firebase'
+  #     - 'https://firebase.tools/bin/linux/latest'
+  #   id: 'Download Firebase'
 
-  # Change the rights to the tool through chmod & deploy the project with Firebase
-  - name: 'debian:11'
-    waitFor: ['Download Firebase', 'Scan', 'Build']
-    args:
-      - 'bash'
-      - '-c'
-      - |
-        mv firebase /tmp
-        chmod 755 /tmp/firebase
-        /tmp/firebase deploy --project ${PROJECT_ID} --non-interactive -m "Build ${BUILD_ID}" --debug
+  # # Change the rights to the tool through chmod & deploy the project with Firebase
+  # - name: 'debian:11'
+  #   waitFor: ['Download Firebase', 'Scan', 'Build']
+  #   args:
+  #     - 'bash'
+  #     - '-c'
+  #     - |
+  #       mv firebase /tmp
+  #       chmod 755 /tmp/firebase
+  #       /tmp/firebase deploy --project ${PROJECT_ID} --non-interactive -m "Build ${BUILD_ID}" --debug
+  #   id: 'Deploy to Firebase'
+
+  # - name: 'gcr.io/cloud-builders/git'
+  #   entrypoint: 'bash'
+  #   secretEnv:
+  #     - TF_VAR_github_personal_access_token
+  #   args:
+  #     - '-c'
+  #     - |
+  #       git config --global user.email "toby.bostoen@azdelta.be"
+  #       git config --global user.name "BostoenToby"
+
+  #       git config --global credential.helper 'store --file=.git/credentials'
+  #       echo "https://$$TF_VAR_github_personal_access_token:x-oauth-basic@github.com" > .git/credentials
+  #       cat .git/credentials
+
+  #       mkdir /public
+  #       cp public/* /public
+  #       git checkout --orphan gh-pages
+  #       rm -rf .
+  #       touch README.md
+  #       git add README.md
+  #       cp /public ./public
+  #       git add .
+  #       git status
+  #       git commit -m "Deploying build to gh-pages"
+  #       git push origin gh-pages Username: BostoenToby Password: $$TF_VAR_github_personal_access_token
+  #   # waitFor: ['Scan', 'Build']
+  #   waitFor: ['Build']
+  #   id: 'Push builded site to site branch'

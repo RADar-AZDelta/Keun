@@ -1,9 +1,10 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { SvgIcon, clickOutside } from '@radar-azdelta-int/radar-svelte-components'
   import { user } from '$lib/store'
   import { Providers } from '$lib/enums'
   import AuthImpl from '$lib/classes/implementation/AuthImpl'
+  import SvgIcon from './SvgIcon.svelte'
+  import clickOutside from '$lib/actions/clickOutside'
 
   let userDialog: HTMLDialogElement
   let author: string | undefined | null = undefined
