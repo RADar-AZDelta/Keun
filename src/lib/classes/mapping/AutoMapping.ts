@@ -12,11 +12,13 @@ export default class AutoMapping {
   private static autoMappingPromise: Promise<void> | undefined
   private static signal: AbortSignal
   private static mappingUrl = PUBLIC_MAPPINGDATA_PATH
+  private static domain: string | null = null
   static previousPage: number
 
-  static async autoMapPage() {
+  static async autoMapPage(domain: string | null) {
     const autoMap = await Settings.getAutoMap()
     if (!autoMap) return
+    this.domain = domain
     if (this.autoMappingPromise) this.autoMappingAbortController.abort()
     this.autoMappingAbortController = new AbortController()
     this.signal = this.autoMappingAbortController.signal
@@ -24,7 +26,8 @@ export default class AutoMapping {
     this.autoMappingPromise = this.autoMapPageRows().then(this.enableTable)
   }
 
-  static async startAutoMappingRow(index: number) {
+  static async startAutoMappingRow(index: number, domain: string | null) {
+    this.domain = domain
     if (this.autoMappingPromise) this.autoMappingAbortController.abort()
     this.autoMappingAbortController = new AbortController()
     this.signal = this.autoMappingAbortController.signal
@@ -79,7 +82,9 @@ export default class AutoMapping {
   }
 
   private static async fetchFirstConcept(filter: string): Promise<IAthenaRow[] | undefined> {
-    const url = encodeURI(this.mappingUrl + `&page=1&pageSize=1&standardConcept=Standard&query=${filter}`)
+    let urlString = this.mappingUrl + `&page=1&pageSize=1&standardConcept=Standard&query=${filter}`
+    if (this.domain) urlString += `&domain=${this.domain}`
+    const url = encodeURI(urlString)
     const conceptsResult = await fetch(url)
     const conceptsData = await conceptsResult.json()
     if (!conceptsData.content?.length) return
