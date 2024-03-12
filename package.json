@@ -3,7 +3,6 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "preinstall": "node modify-package-json.js",
     "dev": "vite dev --host=127.0.0.1 --port=5180",
     "unlighthouse": "pnpm dlx unlighthouse --site https://radar-azdelta.github.io/Keun/",
     "build": "vite build",
