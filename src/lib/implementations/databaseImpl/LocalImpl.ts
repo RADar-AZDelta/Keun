@@ -93,7 +93,7 @@ export default class LocalImpl implements IDatabaseImpl {
     logWhenDev('uploadKeunFile: Uploading file to IndexedDB')
     await this.openDatabase()
     const { name } = file
-    const customName = `${name.split('.')[0]}_concepts.csv`
+    const customName = `${name.split('.')[0]}_concept.csv`
     const flaggedName = `${name.split('.')[0]}_flagged.csv`
     const customId = crypto.randomUUID()
     const fileString = await this.transformFileToString(file)
