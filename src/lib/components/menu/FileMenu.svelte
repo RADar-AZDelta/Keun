@@ -19,11 +19,13 @@
   $: userIsAdmin = $user?.roles?.includes('admin')
 
   // A method to send the user to the mappingtool
-  async function openMappingTool(fileId: string): Promise<void> {
+  async function openMappingTool(fileId: string, domain: string | null): Promise<void> {
     logWhenDev('openMappingTool: Navigating to the mapping tool')
     const cached = await DatabaseImpl.checkFileExistance(fileId)
     if (!cached) return
-    goto(`${base}/mapping?id=${fileId}`)
+    let url = `${base}/mapping?id=${fileId}`
+    if (domain) url += `&domain=${domain}`
+    goto(url)
   }
 
   async function downloadFiles(e: Event, id: string): Promise<void> {
@@ -49,10 +51,11 @@
 
 {#if $user && (localProvider || (firebaseProvider && (userIsUser || userIsAdmin)))}
   {#each files as file}
-    <button class="file-card" on:click={() => openMappingTool(file.id)}>
+    <button class="file-card" on:click={() => openMappingTool(file.id, file.domain)}>
       <div class="file-name-container">
         <SvgIcon id="excel" width="40px" height="40px" />
         <p class="file-name">{file?.name}</p>
+        <p class="file-domain">Domain: {file.domain ?? 'none'}</p>
       </div>
       {#if (firebaseProvider && userIsAdmin) || localProvider}
         <div>
@@ -90,6 +93,10 @@
 
   .file-name {
     font-size: 1rem;
+  }
+
+  .file-domain {
+    margin-left: 2rem;
   }
 
   .delete-file {

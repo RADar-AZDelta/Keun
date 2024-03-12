@@ -41,9 +41,9 @@ export default class DatabaseImpl {
     return await this.database.deleteKeunFile(id)
   }
 
-  static async uploadKeunFile(file: File) {
+  static async uploadKeunFile(file: File, domain: string | null) {
     await this.loadImpl()
-    return await this.database.uploadKeunFile(file)
+    return await this.database.uploadKeunFile(file, domain)
   }
 
   static async editKeunFile(id: string, blob: Blob) {

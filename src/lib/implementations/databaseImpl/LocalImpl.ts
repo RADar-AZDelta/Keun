@@ -86,10 +86,16 @@ export default class LocalImpl implements IDatabaseImpl {
     await this.openDatabase()
     const files: undefined | IDatabaseFile[] = await this.db!.getAll(true)
     if (!files) return []
-    return files.map(file => ({ id: file.id, name: file.name, customId: file.custom, custom: file.custom }))
+    return files.map(file => ({
+      id: file.id,
+      name: file.name,
+      customId: file.custom,
+      custom: file.custom,
+      domain: file.domain,
+    }))
   }
 
-  async uploadKeunFile(file: File) {
+  async uploadKeunFile(file: File, domain: string | null) {
     logWhenDev('uploadKeunFile: Uploading file to IndexedDB')
     await this.openDatabase()
     const { name } = file
@@ -106,6 +112,7 @@ export default class LocalImpl implements IDatabaseImpl {
       customId,
       flaggedId: flaggedName,
       flagged: flaggedName,
+      domain,
     }
     await this.db!.set(fileContent, id, true)
     const customBlob = new Blob([Config.customBlobInitial])
@@ -126,9 +133,9 @@ export default class LocalImpl implements IDatabaseImpl {
     await this.openDatabase()
     const fileInfo = await this.db?.get(id, true)
     if (!fileInfo) return
-    const { customId, custom, name, flagged, flaggedId } = fileInfo
+    const { customId, custom, name, flagged, flaggedId, domain } = fileInfo
     const fileString = await FileHelper.blobToString(blob)
-    const fileContent: IDatabaseFile = { id, name, content: fileString, customId, custom, flaggedId, flagged }
+    const fileContent: IDatabaseFile = { id, name, content: fileString, customId, custom, flaggedId, flagged, domain }
     await this.db?.set(fileContent, id, true)
   }
 
