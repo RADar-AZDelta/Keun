@@ -5,12 +5,6 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
-  '@radar-azdelta-int/radar-svelte-components':
-    specifier: 0.0.14
-    version: 0.0.14(svelte@4.2.11)
-  '@radar-azdelta-int/radar-utils':
-    specifier: 0.0.8
-    version: 0.0.8(svelte@4.2.11)
   '@radar-azdelta/svelte-athena-search':
     specifier: ^0.0.33
     version: 0.0.33(@sveltejs/vite-plugin-svelte@3.0.2)(svelte@4.2.11)(vite@5.1.4)
@@ -952,24 +946,6 @@ packages:
 
   /@protobufjs/utf8@1.1.0:
     resolution: {integrity: sha512-Vvn3zZrhQZkkBE8LSuW3em98c0FwgO4nxzv6OdSxPKJIEKY2bGbHn+mhGIPerzI4twdxaP8/0+06HBpwf345Lw==}
-    dev: false
-
-  /@radar-azdelta-int/radar-svelte-components@0.0.14(svelte@4.2.11):
-    resolution: {integrity: sha512-z+9bXyH2/Ncmc8cBrPvWEMMkEUzW+/hC/9WOw6XdB0/N1DuSmFBxhsob6Xy6XJs1sljIL2gu4ipHBBGcr84BJQ==, tarball: https://europe-west1-npm.pkg.dev/azd-dev-artifacts/azd-d-artifacts-art-euwe1-npmrepo/@radar-azdelta-int/radar-svelte-components/-/@radar-azdelta-int/radar-svelte-components-0.0.14.tgz}
-    peerDependencies:
-      svelte: ^4.0.0
-    dependencies:
-      '@radar-azdelta-int/radar-utils': 0.0.8(svelte@4.2.11)
-      lodash.debounce: 4.0.8
-      svelte: 4.2.11
-    dev: false
-
-  /@radar-azdelta-int/radar-utils@0.0.8(svelte@4.2.11):
-    resolution: {integrity: sha512-CNibbNnxF68g7DE4pUtahhH7vHPEc0WtG06Gz29h/ib4mBVrTdr3DCmKR3Or+IU9zrLqNrkfm+WMpNHzP3uJIA==, tarball: https://europe-west1-npm.pkg.dev/azd-dev-artifacts/azd-d-artifacts-art-euwe1-npmrepo/@radar-azdelta-int/radar-utils/-/@radar-azdelta-int/radar-utils-0.0.8.tgz}
-    peerDependencies:
-      svelte: ^4.0.0
-    dependencies:
-      svelte: 4.2.11
     dev: false
 
   /@radar-azdelta/svelte-athena-search@0.0.33(@sveltejs/vite-plugin-svelte@3.0.2)(svelte@4.2.11)(vite@5.1.4):

@@ -1,12 +1,12 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte'
-  import { reformatDate } from '@radar-azdelta-int/radar-utils'
   import { EditableCell } from '@radar-azdelta/svelte-datatable'
-  import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
+  import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
   import { Config } from '$lib/helperClasses/Config'
   import Usagi from '$lib/classes/usagi/Usagi'
   import type { IUsagiInfo, IUsagiRow, MappingEvents } from '$lib/Types'
   import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
+  import { reformatDate } from '$lib/utils'
 
   export let renderedRow: Record<string, any>, columns: IColumnMetaData[] | undefined, index: number
   export let currentVisibleRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>([])

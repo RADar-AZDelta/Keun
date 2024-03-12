@@ -1,7 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte'
-  import { logWhenDev } from '@radar-azdelta-int/radar-utils'
-  import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
+  import { logWhenDev } from '$lib/utils'
+  import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
   import { user } from '$lib/store'
   import type { PageEvents } from '$lib/Types'
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
+  import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
   import MappedRow from '$lib/classes/mappedRow/MappedRow'
   import type { IMappedRow, IUsagiRow } from '$lib/Types'
 

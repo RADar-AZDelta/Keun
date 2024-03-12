@@ -1,4 +1,4 @@
-import { logWhenDev } from '@radar-azdelta-int/radar-utils'
+import { logWhenDev } from '$lib/utils'
 import { user } from '$lib/store'
 import type { IAuthImpl } from '$lib/Types'
 

@@ -1,4 +1,4 @@
-import { logWhenDev } from '@radar-azdelta-int/radar-utils'
+import { logWhenDev } from '$lib/utils'
 import type { ISettings, ISettingsImpl } from '$lib/Types'
 
 const defaultSettings: ISettings = {

@@ -1,6 +1,7 @@
-import { FileHelper, blobToString, fileToBlob, logWhenDev, stringToFile } from '@radar-azdelta-int/radar-utils'
-import { IndexedDB } from '@radar-azdelta-int/radar-utils'
 import { Config } from '$lib/helperClasses/Config'
+import { logWhenDev } from '$lib/utils'
+import FileHelper from '$lib/helperClasses/FileHelper'
+import { IndexedDB } from '$lib/helperClasses/IndexedDB'
 import type { ICustomConceptCompact, IDatabaseFile, IDatabaseImpl, IFile, IFileInformation } from '$lib/Types'
 
 export default class LocalImpl implements IDatabaseImpl {
@@ -35,7 +36,7 @@ export default class LocalImpl implements IDatabaseImpl {
     const fileInfo: undefined | IDatabaseFile = await database.get(id, true, true)
     if (!fileInfo || !fileInfo.content) return undefined
     const { name, content, customId, flaggedId } = fileInfo
-    const file = await stringToFile(content, name)
+    const file = await FileHelper.stringToFile(content, name)
     const fileObj: IFile = { id, name: name, file, customId, flaggedId }
     return fileObj
   }
@@ -108,15 +109,15 @@ export default class LocalImpl implements IDatabaseImpl {
     }
     await this.db!.set(fileContent, id, true)
     const customBlob = new Blob([Config.customBlobInitial])
-    const customFileString = await blobToString(customBlob)
+    const customFileString = await FileHelper.blobToString(customBlob)
     const customFileContent = { id: customId, name: customName, content: customFileString }
     await this.openCustomDatabase()
     await this.customDb!.set(customFileContent, customId, true)
   }
 
   private async transformFileToString(file: File) {
-    const blob = await fileToBlob(file)
-    const fileString = await blobToString(blob)
+    const blob = await FileHelper.fileToBlob(file)
+    const fileString = await FileHelper.blobToString(blob)
     return fileString
   }
 
@@ -126,7 +127,7 @@ export default class LocalImpl implements IDatabaseImpl {
     const fileInfo = await this.db?.get(id, true)
     if (!fileInfo) return
     const { customId, custom, name, flagged, flaggedId } = fileInfo
-    const fileString = await blobToString(blob)
+    const fileString = await FileHelper.blobToString(blob)
     const fileContent: IDatabaseFile = { id, name, content: fileString, customId, custom, flaggedId, flagged }
     await this.db?.set(fileContent, id, true)
   }
@@ -137,7 +138,7 @@ export default class LocalImpl implements IDatabaseImpl {
     const fileInfo = await this.db?.get(id, true, true)
     if (!fileInfo) return
     const { customId, custom: name } = fileInfo
-    const customFileString = await blobToString(blob)
+    const customFileString = await FileHelper.blobToString(blob)
     const customFileContent = { id: customId, name, content: customFileString }
     await this.openCustomDatabase()
     await this.customDb?.set(customFileContent, customId, true)
@@ -148,7 +149,7 @@ export default class LocalImpl implements IDatabaseImpl {
     await this.openFlaggedDatabase()
     const fileInfo = await this.flaggedDb?.get(id, true)
     if (!fileInfo) return
-    const flaggedFileString = await blobToString(blob)
+    const flaggedFileString = await FileHelper.blobToString(blob)
     const flaggedFileContent = { id, name: fileInfo.name, content: flaggedFileString }
     await this.flaggedDb?.set(flaggedFileContent, id, true)
   }

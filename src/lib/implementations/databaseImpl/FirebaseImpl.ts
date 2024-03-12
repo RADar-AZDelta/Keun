@@ -1,4 +1,3 @@
-import { FileHelper } from '@radar-azdelta-int/radar-utils'
 import { FirebaseFirestore, FirebaseStorage } from '@radar-azdelta-int/radar-firebase-utils'
 import {
   PUBLIC_FIREBASE_API_KEY,
@@ -9,6 +8,7 @@ import {
   PUBLIC_FIREBASE_STORAGE_BUCKET,
 } from '$env/static/public'
 import { Config } from '$lib/helperClasses/Config'
+import FileHelper from '$lib/helperClasses/FileHelper'
 import type {
   ICustomConceptCompact,
   IDatabaseImpl,

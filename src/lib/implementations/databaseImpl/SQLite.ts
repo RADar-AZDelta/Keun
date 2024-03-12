@@ -1,5 +1,6 @@
-import { blobToString, downloadWithUrl, logWhenDev, stringToFile } from '@radar-azdelta-int/radar-utils'
 import { base } from '$app/paths'
+import FileHelper from '$lib/helperClasses/FileHelper'
+import { logWhenDev } from '$lib/utils'
 import type { IDatabaseImpl, IFile, IMessage } from '$lib/Types'
 
 export default class SQLiteImpl implements IDatabaseImpl {
@@ -21,7 +22,7 @@ export default class SQLiteImpl implements IDatabaseImpl {
     const customInfo = await this.performRequest(this.path + `?id=${id}&custom=true`)
     if (!customInfo) return
     const { name, content } = customInfo.details
-    const file = await stringToFile(content, name)
+    const file = await FileHelper.stringToFile(content, name)
     const fileObj: IFile = { id, file, name }
     return fileObj
   }
@@ -63,11 +64,11 @@ export default class SQLiteImpl implements IDatabaseImpl {
 
   async editFile(id: string, blob: Blob, customBlob?: Blob): Promise<void> {
     logWhenDev(`editFile: Editing the file with id ${id}`)
-    const fileString = await blobToString(blob)
+    const fileString = await FileHelper.blobToString(blob)
     const fileContent = { id, content: fileString }
     await this.performRequest(this.path, { method: 'PUT', body: JSON.stringify(fileContent) })
     if (!customBlob) return
-    const customFileString = await blobToString(customBlob)
+    const customFileString = await FileHelper.blobToString(customBlob)
     const customFileContent = { id, content: customFileString }
     await this.performRequest(this.path + '?custom=true', { method: 'PUT', body: JSON.stringify(customFileContent) })
   }
@@ -83,7 +84,7 @@ export default class SQLiteImpl implements IDatabaseImpl {
     const fileInfo = await this.performRequest(this.path + `?id=${id}`)
     if (!fileInfo || !fileInfo.details.content) return console.error('getFile: File not found')
     const { name, content } = fileInfo.details
-    const file = await stringToFile(content, name, 'text/csv')
+    const file = await FileHelper.stringToFile(content, name, 'text/csv')
     const needsPrefix = !file.name.endsWith('_usagi.csv')
     const updatedName = needsPrefix ? file.name.split('.')[0] + '_usagi.csv' : file.name
     await this.download(updatedName, file)
@@ -96,7 +97,7 @@ export default class SQLiteImpl implements IDatabaseImpl {
     if (!fileInfo || !fileInfo.details.content) return console.error('getFile: File not found')
     if (fileInfo.details.content.includes('0,test,test,test,test,S,123')) return
     const { name, content } = fileInfo.details
-    const file = await stringToFile(content, name, 'text/csv')
+    const file = await FileHelper.stringToFile(content, name, 'text/csv')
     const updatedName = file.name.split('.')[0] + '_concept.csv'
     await this.download(updatedName, file)
   }
@@ -108,7 +109,6 @@ export default class SQLiteImpl implements IDatabaseImpl {
   }
 
   private async download(name: string, file: File) {
-    const url = URL.createObjectURL(file)
-    await downloadWithUrl(url, name)
+    await FileHelper.downloadFile(file)
   }
 }

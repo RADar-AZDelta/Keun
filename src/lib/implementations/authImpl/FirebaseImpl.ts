@@ -1,10 +1,10 @@
-import { logWhenDev } from '@radar-azdelta-int/radar-utils'
 import {
   FirebaseAuth,
   userSessionStore,
   type FirebaseOptions,
   type UserSession,
 } from '@radar-azdelta-int/radar-firebase-utils'
+import { logWhenDev } from '$lib/utils'
 import { user } from '$lib/store'
 import {
   PUBLIC_FIREBASE_API_KEY,
