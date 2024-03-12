@@ -55,6 +55,7 @@
       <div class="file-name-container">
         <SvgIcon id="excel" width="40px" height="40px" />
         <p class="file-name">{file?.name}</p>
+        <p class="file-domain">Domain: {file.domain ?? 'none'}</p>
       </div>
       {#if (firebaseProvider && userIsAdmin) || localProvider}
         <div>
@@ -92,6 +93,10 @@
 
   .file-name {
     font-size: 1rem;
+  }
+
+  .file-domain {
+    margin-left: 2rem;
   }
 
   .delete-file {
