@@ -1,6 +1,6 @@
 import { writeFileSync } from 'fs'
 import { config } from 'dotenv'
-import packageJson from './package.json' with { type: 'json' }
+import packageJson from './package.json' assert { type: 'json' }
 
 const env = config().parsed
 
