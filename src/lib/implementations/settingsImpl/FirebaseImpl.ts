@@ -1,4 +1,4 @@
-import { FirebaseFirestore } from '@radar-azdelta-int/radar-firebase-utils'
+import FirebaseFirestore from '$lib/firebase/FirebaseFirestore'
 import {
   PUBLIC_FIREBASE_API_KEY,
   PUBLIC_FIREBASE_APP_ID,
