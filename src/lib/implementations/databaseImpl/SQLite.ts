@@ -48,7 +48,7 @@ export default class SQLiteImpl implements IDatabaseImpl {
   //   const customFileString = await blobToString(customBlob)
   //   const customFileContent = {
   //     id: fileId,
-  //     name: `${file.name.split('.')[0]}_concepts.csv`,
+  //     name: `${file.name.split('.')[0]}_concept.csv`,
   //     content: customFileString,
   //   }
   //   const blob = await fileToBlob(file)
