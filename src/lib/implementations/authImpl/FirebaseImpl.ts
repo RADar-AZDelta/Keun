@@ -1,9 +1,3 @@
-import {
-  FirebaseAuth,
-  userSessionStore,
-  type FirebaseOptions,
-  type UserSession,
-} from '@radar-azdelta-int/radar-firebase-utils'
 import { logWhenDev } from '$lib/utils'
 import { user } from '$lib/store'
 import {
@@ -16,6 +10,9 @@ import {
   PUBLIC_TENANT_ID,
 } from '$env/static/public'
 import type { IAuthImpl } from '$lib/Types'
+import type { FirebaseOptions } from 'firebase/app'
+import FirebaseAuth, { onlyReadableUserSessionStore } from '$lib/firebase/FirebaseAuth'
+import type { UserSession } from '$lib/firebase/Types'
 
 const firebaseConfig: FirebaseOptions = {
   apiKey: PUBLIC_FIREBASE_API_KEY,
@@ -55,6 +52,6 @@ export default class LocalImpl implements IAuthImpl {
   }
 
   private async getUser(): Promise<UserSession> {
-    return new Promise(resolve => userSessionStore.subscribe(user => resolve(user))())
+    return new Promise(resolve => onlyReadableUserSessionStore.subscribe(user => resolve(user))())
   }
 }
