@@ -12,6 +12,7 @@ export interface IFirestoreFile {
   customId: string
   flaggedId: string
   flaggedName: string
+  domain: string | null
 }
 
 export interface IDatabaseFile {
@@ -22,12 +23,14 @@ export interface IDatabaseFile {
   customId: string
   flaggedId: string
   flagged: string
+  domain: string | null
 }
 
 export interface IStorageMetadata {
   name: string
   customId: string
   flaggedId: string
+  domain: string
   [key: string]: string
 }
 
@@ -83,7 +86,11 @@ export interface ColumnsDialogShowED {
   currentColumns: string[]
   file: File | undefined
 }
-export type CheckForCacheED = IFileTemplate
+export interface CheckForCacheED {
+  file: File
+  domain: string | null
+}
+
 export type FileUpdatedColumnsED = IFileTemplate
 export type DownloadFilesED = IFileIdTemplate
 export type DeleteFilesED = IFileIdTemplate
@@ -371,6 +378,7 @@ export interface IFileInformation {
   name: string
   customId: string
   custom: string
+  domain: string | null
 }
 
 export interface IFileIds {
@@ -387,7 +395,7 @@ export interface IDatabaseImpl {
   checkFileExistance(id: string): Promise<undefined | IFileIds>
   checkForFileWithSameName(name: string): Promise<false | string>
   getFilesList(): Promise<IFileInformation[]>
-  uploadKeunFile(file: File): Promise<void>
+  uploadKeunFile(file: File, domain: string | null): Promise<void>
   editKeunFile(id: string, blob: Blob): Promise<void>
   editFlaggedFile(id: string, blob: Blob): Promise<void>
   editCustomKeunFile(id: string, blob: Blob): Promise<void>

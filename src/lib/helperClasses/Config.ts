@@ -11,6 +11,7 @@ export class Config {
   static customConceptInfo = config.customConceptInfo
   static equivalenceOptions = config.equivalenceOptions
   static filters = config.filters
+  static domains = config.filters.find(filter => filter.name === "Domain")?.options ?? []
   static tableOptions = config.tableOptions
   static colors = config.colors
   static usagiRowConfig = config.usagiRow
