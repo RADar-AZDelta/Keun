@@ -1,7 +1,7 @@
-availableSecrets:
-  secretManager:
-    - versionName: projects/249998037771/secrets/github-personal-access-token-keun/versions/latest
-      env: TF_VAR_github_personal_access_token
+# availableSecrets:
+#   secretManager:
+#     - versionName: projects/249998037771/secrets/github-personal-access-token-keun/versions/latest
+#       env: TF_VAR_github_personal_access_token
 
 steps:
   # Let Git recognize "/workspace" as a safe directory, otherwise it would throw the following error
