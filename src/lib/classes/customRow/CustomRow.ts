@@ -1,5 +1,5 @@
-import { reformatDate } from '@radar-azdelta-int/radar-utils'
 import Mapping from '$lib/classes/mapping/Mapping'
+import { reformatDate } from '$lib/utils'
 import CustomTable from '../tables/CustomTable'
 import MappedConcepts from '../general/MappedConcepts'
 import type { IAthenaRow, ICustomConcept, ICustomConceptCompact, ICustomConceptInput, IUsagiRow } from '$lib/Types'

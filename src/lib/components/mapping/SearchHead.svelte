@@ -4,7 +4,7 @@
   import ShowColumnsDialog from '$lib/components/mapping/ShowColumnsDialog.svelte'
   import type Query from 'arquero/dist/types/query/query'
   import type { IQueryResult, IUsagiRow, MappingEvents, ShowColumnsED } from '$lib/Types'
-  import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
+  import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
   import Table from '$lib/classes/tables/Table'
 
   export let selectedRow: IUsagiRow

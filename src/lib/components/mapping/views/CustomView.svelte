@@ -9,7 +9,7 @@
     MappingEvents,
   } from '$lib/Types'
   import type { UpdateErrorED } from '$lib/Types'
-  import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
+  import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
   import CustomRow from './CustomRow.svelte'
   import DatabaseImpl from '$lib/classes/implementation/DatabaseImpl'
 
