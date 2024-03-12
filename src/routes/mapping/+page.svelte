@@ -22,6 +22,7 @@
   import type { IUsagiRow, AutoMapRowED, RowSelectionED, NavigateRowED } from '$lib/Types'
 
   let file: File | undefined, customConceptsFile: File | undefined, flaggedConceptsFile: File | undefined
+  let selectedDomain: string | null = null
   let tableRendered: boolean = false
   let customTableRendered: boolean = false
   let customsExtracted: boolean = false
@@ -42,7 +43,7 @@
     globalAthenaFilter.filter = await translate(selectedRow.sourceName)
   }
 
-  const autoMapSingleRow = async (e: CustomEvent<AutoMapRowED>) => await AutoMapping.startAutoMappingRow(e.detail.index)
+  const autoMapSingleRow = async (e: CustomEvent<AutoMapRowED>) => await AutoMapping.startAutoMappingRow(e.detail.index, selectedDomain)
 
   async function selectRow(e: CustomEvent<RowSelectionED>) {
     await navigateRow(e)
@@ -66,7 +67,7 @@
     if (!tableRendered && !rendered) return
     tableRendered = true
     if (!customsExtracted) await extractCustomConcepts()
-    await AutoMapping.autoMapPage()
+    await AutoMapping.autoMapPage(selectedDomain)
   }
 
   async function approvePage() {
@@ -105,6 +106,7 @@
     if (filesLoaded) return
     const urlId = $page.url.searchParams.get('id')
     if (!urlId) return goto(`${base}/`)
+    selectedDomain = $page.url.searchParams.get('domain')
     selectedFileId = urlId
     if (!customFileId) await getCustomFileId()
     await readFile()

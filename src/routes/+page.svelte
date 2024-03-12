@@ -19,7 +19,7 @@
   import Spinner from '$lib/components/extra/Spinner.svelte'
 
   let files: IFileInformation[] = []
-  let file: File
+  let file: File, domain: string | null
   let cols: string[] = []
   let missing: Record<string, string> = {}
   let processing: boolean = false
@@ -29,7 +29,7 @@
 
   async function uploadFile() {
     logWhenDev('uploadFile: Uploading a file')
-    await DatabaseImpl.uploadKeunFile(file)
+    await DatabaseImpl.uploadKeunFile(file, domain)
     await getFiles()
     fileInputDialog.closeDialog()
   }
@@ -44,7 +44,7 @@
 
   async function checkForCache(e: CustomEvent<CheckForCacheED>) {
     logWhenDev('checkForCache: Checking for cache')
-    ;({ file } = e.detail)
+    ;({ file, domain } = e.detail)
     const fileWithSameName = await DatabaseImpl.checkForFileWithSameName(file.name)
     fileInputDialog.closeDialog()
     if (!fileWithSameName) return await uploadFile()
