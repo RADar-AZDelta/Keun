@@ -20,22 +20,30 @@ steps:
     args: ['./update-env.sh']
     env:
       - 'PROVIDER=firebase'
+    id: 'Change provider in env variables'
 
+  # Authenticate the service account with GCP to have access to the Artifact Registry to download private packages
   - name: 'node:lts'
     waitFor: ['Configure Git']
     entrypoint: npx
     args: ['google-artifactregistry-auth']
     id: 'Authenticate'
 
-  # Authenticate the service account with GCP to have access to the Artifact Registry to download private packages
   - name: 'node:lts'
     waitFor: ['Authenticate']
     entrypoint: npm
     args: ['install']
     id: 'Install'
 
+  # Install again because the package from the preinstall will not be added yet
   - name: 'node:lts'
     waitFor: ['Install']
+    entrypoint: npm
+    args: ['install']
+    id: 'Install again'
+
+  - name: 'node:lts'
+    waitFor: ['Install again']
     entrypoint: npm
     args: ['run', 'build']
     id: 'Build'
