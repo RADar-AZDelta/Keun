@@ -3,6 +3,7 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
+    "preinstall": "node modify-package-json.js",
     "dev": "vite dev --host=127.0.0.1 --port=5180",
     "unlighthouse": "pnpm dlx unlighthouse --site https://radar-azdelta.github.io/Keun/",
     "build": "vite build",
@@ -27,6 +28,7 @@
     "@types/lodash.debounce": "^4.0.9",
     "@typescript-eslint/eslint-plugin": "^6.11.0",
     "@typescript-eslint/parser": "^6.11.0",
+    "dotenv": "^16.4.5",
     "eslint": "^8.55.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-import": "^2.29.0",
@@ -45,7 +47,6 @@
   },
   "type": "module",
   "dependencies": {
-    "@radar-azdelta-int/radar-firebase-utils": "^0.0.21",
     "@radar-azdelta-int/radar-svelte-components": "0.0.14",
     "@radar-azdelta-int/radar-utils": "0.0.8",
     "@radar-azdelta/svelte-athena-search": "^0.0.33",
