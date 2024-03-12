@@ -1,12 +1,10 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte'
-  import { localStorageGetter } from '@radar-azdelta-int/radar-utils'
   import { Search } from '@radar-azdelta/svelte-athena-search'
   import SearchHead from '$lib/components/mapping/SearchHead.svelte'
   import CustomView from '$lib/components/mapping/views/CustomView.svelte'
   import Details from '$lib/components/mapping/details/Details.svelte'
   import MappedView from '$lib/components/mapping/views/MappedView.svelte'
-  import { SvgIcon, clickOutside } from '@radar-azdelta-int/radar-svelte-components'
   import AthenaActions from './views/AthenaActions.svelte'
   import { Config } from '$lib/helperClasses/Config'
   import type { IView } from '@radar-azdelta/svelte-athena-search'
@@ -14,6 +12,9 @@
   import type { EquivalenceChangeED, UpdateDetailsED } from '$lib/Types'
   import Mapping from '$lib/classes/mapping/Mapping'
   import Table from '$lib/classes/tables/Table'
+  import clickOutside from '$lib/actions/clickOutside'
+  import SvgIcon from '../extra/SvgIcon.svelte'
+  import { localStorageGetter } from '$lib/utils'
 
   export let selectedRow: IUsagiRow, selectedRowIndex: number
   export let globalAthenaFilter: { column: string; filter: string | undefined }

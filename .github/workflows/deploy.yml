@@ -20,11 +20,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Setup authentication
-        uses: google-github-actions/auth@v1
-        with:
-          service_account: ${{ secrets.GCP_SA_MAIL }}
-
       - name: Install pnpm
         uses: pnpm/action-setup@v2
         with:
@@ -35,9 +30,6 @@ jobs:
         with:
           node-version: 18
           cache: pnpm
-
-      - name: Authenticate
-        run: npx google-artifactregistry-auth
 
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile

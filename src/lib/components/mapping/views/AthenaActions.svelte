@@ -1,6 +1,6 @@
 <script lang="ts">
   import { PUBLIC_ATHENA_DETAIL } from '$env/static/public'
-  import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
+  import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
   import { Config } from '$lib/helperClasses/Config'
   import Athena from '$lib/classes/athena/Athena'
   import { mappedToConceptIds, user } from '$lib/store'

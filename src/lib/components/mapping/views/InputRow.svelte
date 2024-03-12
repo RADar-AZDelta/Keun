@@ -7,7 +7,7 @@
   import type Query from 'arquero/dist/types/query/query'
   import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
   import type { ICustomConcept, ICustomConceptInput, MappingEvents } from '$lib/Types'
-  import { SvgIcon } from '@radar-azdelta-int/radar-svelte-components'
+  import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
   import { Config } from '$lib/helperClasses/Config'
 
   export let renderedRow: Record<string, any>,
