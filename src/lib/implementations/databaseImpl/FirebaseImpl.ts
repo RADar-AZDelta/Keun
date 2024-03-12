@@ -144,7 +144,7 @@ export default class FirebaseImpl implements IDatabaseImpl {
   }
 
   private async uploadCustomFile(id: string, name: string, flaggedId: string) {
-    const customName = `${name.split('.')[0]}_concepts.csv`
+    const customName = `${name.split('.')[0]}_concept.csv`
     const customFile = await this.blobToFile(new Blob([Config.customBlobInitial]), customName)
     const customMetaData: IStorageCustomMetadata = { customMetadata: { name: customName, customId: id, flaggedId } }
     await this.storage.uploadFileStorage(`${this.storageCustomColl}/${id}`, customFile, customMetaData)
