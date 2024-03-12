@@ -6,12 +6,14 @@
   import Drop from '../extra/Drop.svelte'
   import SvgIcon from '../extra/SvgIcon.svelte'
   import Spinner from '../extra/Spinner.svelte'
+  import { Config } from '$lib/helperClasses/Config'
 
   export let processing: boolean
 
   const dispatch = createEventDispatcher<PageEvents>()
 
   let dialog: HTMLDialogElement, file: File | undefined
+  let selectedDomain: string = 'none'
   let currentColumns: string[] = []
   let missingColumns: Record<string, string> = {}
 
@@ -69,7 +71,7 @@
 
   async function checkForCache() {
     if (!file || !$user.uid) return
-    dispatch('checkForCache', { file })
+    dispatch('checkForCache', { file, domain: selectedDomain === 'none' ? null : selectedDomain })
   }
 </script>
 
@@ -91,6 +93,15 @@
         </label>
       </Drop>
     </div>
+    <div class="domain-container">
+      <p class="domain-title">Domain:</p>
+      <select class="domain-select" name="domains" id="domains" bind:value={selectedDomain}>
+        <option value="none" selected>No domain</option>
+        {#each Config.domains as domain}
+          <option value={domain}>{domain}</option>
+        {/each}
+      </select>
+    </div>
     <button class="upload" on:click={checkForCache} disabled={file ? false : true || processing}>Upload</button>
     {#if processing}
       <Spinner />
@@ -99,6 +110,19 @@
 </dialog>
 
 <style>
+  .domain-container {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 1rem auto;
+  }
+
+  .domain-select {
+    border: 1px solid lightgray;
+    border-radius: 5px;
+    padding: 0.2rem 0.5rem;
+  }
+
   .file-dialog {
     width: 80%;
     height: 80%;
