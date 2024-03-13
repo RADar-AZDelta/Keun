@@ -28,10 +28,10 @@ export default class LocalImpl implements IAuthImpl {
 
   async logIn(provider: string): Promise<void> {
     logWhenDev('logIn: Logging in via Firebase')
-    await this.auth.logIn(provider ?? 'microsoft')
-    const loggedInUser = await this.getUser()
-    if (!loggedInUser) return
-    const { uid, name, roles } = loggedInUser
+    const userCred = await this.auth.logIn(provider ?? 'microsoft')
+    const firebaseUser = userCred
+    if (!firebaseUser) return
+    const { uid, name, roles } = firebaseUser
     user.set({ uid, name, roles })
   }
 
