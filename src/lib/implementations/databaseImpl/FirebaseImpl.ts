@@ -67,12 +67,16 @@ export default class FirebaseImpl implements IDatabaseImpl {
   private async downloadCustomFile(customId: string) {
     const customFile = await this.readFileFromCollection(customId, this.storageCustomColl)
     if (!customFile || !customFile.file) return
+    const customString = await FileHelper.blobToString(customFile.file)
+    if(!customString || customString.includes(',,,,,,,,,')) return
     await FileHelper.downloadFile(customFile.file)
   }
 
   private async downloadFlaggedFile(flaggedId: string) {
     const flaggedFile = await this.readFileFromCollection(flaggedId, this.storageFlaggedColl)
     if (!flaggedFile || !flaggedFile.file) return
+    const flaggedString = await FileHelper.blobToString(flaggedFile.file)
+    if(!flaggedString || flaggedString.includes(',,,,,,,,,,,,,,,,,,,,,,,')) return
     await FileHelper.downloadFile(flaggedFile.file)
   }
 

@@ -5,6 +5,7 @@ import type Query from 'arquero/dist/types/query/query'
 import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
 import type { IMappedRow, IMappedRows, IQueryResult, IUsagiRow } from '$lib/Types'
 import type DataTable from '@radar-azdelta/svelte-datatable'
+import DatabaseImpl from '../implementation/DatabaseImpl'
 
 export default class Table {
   static table: DataTable
@@ -93,6 +94,12 @@ export default class Table {
       .toObject()
     const flaggedConceptsResult = await this.executeQueryOnTable(flaggedConceptsQuery)
     return flaggedConceptsResult.queriedData
+  }
+
+  static async syncFile(id: string) {
+    const blob = await this.getBlob()
+    if(!blob) return
+    await DatabaseImpl.editKeunFile(id, blob)
   }
 
   static async getTableRow(index: number) {
