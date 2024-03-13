@@ -59,6 +59,7 @@ export default class FirebaseImpl implements IDatabaseImpl {
   async downloadFiles(id: string): Promise<void> {
     const file = await this.readFileFromCollection(id, this.storageCollection)
     if (!file || !file.file) return
+    if (!file.name.includes('_usagi.csv')) file.name = `${file.name.split('.')[0]}_usagi.csv`
     await FileHelper.downloadFile(file.file)
     await this.downloadFlaggedFile(file.flaggedId)
     await this.downloadCustomFile(file.customId)

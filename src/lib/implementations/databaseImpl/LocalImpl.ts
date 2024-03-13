@@ -54,6 +54,7 @@ export default class LocalImpl implements IDatabaseImpl {
     await this.openDatabase()
     const file = await this.getFileFromDatabase(this.db, id)
     if (!file || !file.file) return
+    if (!file.name.includes('_usagi.csv')) file.name = `${file.name.split('_usagi')[0]}_usagi.csv`
     await FileHelper.downloadFile(file.file)
     const { customId, flaggedId } = file
     return { customId, flaggedId }
