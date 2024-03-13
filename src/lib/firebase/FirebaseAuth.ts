@@ -3,9 +3,10 @@ import { getAuth, GoogleAuthProvider, OAuthProvider, signInWithPopup, signOut, o
 import Firebase from './Firebase.js'
 import FirebaseFirestore from './FirebaseFirestore.js'
 import type { FirebaseOptions } from 'firebase/app'
-import type { Auth, UserCredential, User, ParsedToken } from 'firebase/auth'
 import { sleep } from '$lib/utils.js'
+import type { Auth, User, ParsedToken } from 'firebase/auth'
 import type { IAuthProviders, IRole, UserSession } from './Types.js'
+import type { IUser } from '$lib/Types.js'
 
 const userSessionStore = writable<UserSession>()
 export const onlyReadableUserSessionStore = { subscribe: userSessionStore.subscribe }
@@ -27,12 +28,15 @@ export default class FirebaseAuth extends Firebase {
     this.authChange()
   }
 
-  async logIn(provider: string): Promise<UserCredential | void> {
+  async logIn(provider: string): Promise<IUser | void> {
     const authProvider = await this.getAuthProvider(provider)
     const userCred = await signInWithPopup(this.firebaseAuth, authProvider)
-    if (!userCred.user) return userCred
+    if (!userCred.user) return
     const { token, claims } = await userCred.user.getIdTokenResult(true)
     await this.setToken(token, claims.exp)
+    const { roles } = await this.getRoleFromFirestore(userCred.user)
+    const { uid, displayName: name } = userCred.user
+    return { uid, name, roles }
   }
 
   private async getAuthProvider(provider: string) {
