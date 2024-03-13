@@ -2,6 +2,8 @@ import { Config } from '$lib/helperClasses/Config'
 import type { IUsagiRow } from '$lib/Types'
 import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
 import type DataTable from '@radar-azdelta/svelte-datatable'
+import DatabaseImpl from '../implementation/DatabaseImpl'
+import Table from './Table'
 
 export default class FlaggedTable {
   static table: DataTable
@@ -41,5 +43,15 @@ export default class FlaggedTable {
 
   static async getBlob() {
     return await this.table.getBlob()
+  }
+
+  static async syncFile(id: string) {
+    const concepts = await Table.extractFlaggedConcepts()
+    if (!concepts.length) return
+    await this.removeAllTableRows()
+    await this.insertTableRows(concepts)
+    const blob = await this.getBlob()
+    if (!blob) return
+    await DatabaseImpl.editFlaggedFile(id, blob)
   }
 }
