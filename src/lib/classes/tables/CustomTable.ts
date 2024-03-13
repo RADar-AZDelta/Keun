@@ -5,6 +5,7 @@ import Table from './Table'
 import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
 import type { ICustomConceptInput, ICustomQueryResult, IUsagiRow } from '$lib/Types'
 import type DataTable from '@radar-azdelta/svelte-datatable'
+import DatabaseImpl from '../implementation/DatabaseImpl'
 
 export default class CustomTable {
   static table: DataTable
@@ -81,6 +82,12 @@ export default class CustomTable {
     await this.deleteCustomTableRows([0])
     this.firstRowIsEmpty = false
     this.customTableWasFilled = false
+  }
+
+  static async syncFile(id: string) {
+    const blob = await this.getBlob()
+    if (!blob) return
+    await DatabaseImpl.editCustomKeunFile(id, blob)
   }
 
   static async getCustomTableRow(index: number) {
