@@ -16,7 +16,7 @@
   import CustomTable from '$lib/classes/tables/CustomTable'
   import Table from '$lib/classes/tables/Table'
   import DatabaseImpl from '$lib/classes/implementation/DatabaseImpl'
-  // import FlaggedTable from '$lib/classes/tables/FlaggedTable'
+  import FlaggedTable from '$lib/classes/tables/FlaggedTable'
   import type { SvelteComponent } from 'svelte'
   import type { ITableOptions } from '@radar-azdelta/svelte-datatable'
   import type { IUsagiRow, AutoMapRowED, RowSelectionED, NavigateRowED } from '$lib/Types'
@@ -43,7 +43,8 @@
     globalAthenaFilter.filter = await translate(selectedRow.sourceName)
   }
 
-  const autoMapSingleRow = async (e: CustomEvent<AutoMapRowED>) => await AutoMapping.startAutoMappingRow(e.detail.index, selectedDomain)
+  const autoMapSingleRow = async (e: CustomEvent<AutoMapRowED>) =>
+    await AutoMapping.startAutoMappingRow(e.detail.index, selectedDomain)
 
   async function selectRow(e: CustomEvent<RowSelectionED>) {
     await navigateRow(e)
@@ -114,31 +115,12 @@
   }
 
   async function syncFile() {
-    try {
-      const blob = await Table.getBlob()
-      if (!blob) return
-      await DatabaseImpl.editKeunFile(selectedFileId, blob)
-      const customBlob = await CustomTable.getBlob()
-      if (customBlob) await DatabaseImpl.editCustomKeunFile(selectedFileId, customBlob)
-      // await insertFlaggedRows()
-      // const flaggedBlob = await FlaggedTable.getBlob()
-      // if (flaggedBlob) await DatabaseImpl.editFlaggedFile(selectedFileId, flaggedBlob)
-    } catch (e) {
-      console.error(e)
-      throw e
-    }
+    await Table.syncFile(selectedFileId)
+    await CustomTable.syncFile(selectedFileId)
+    await FlaggedTable.syncFile(selectedFileId)
   }
 
   const customTableRenderedComplete = () => (customTableRendered = true)
-
-  // async function insertFlaggedRows() {
-  //   const concepts = await extractFlaggedConcepts()
-  //   if (!concepts.length) return
-  //   await FlaggedTable.removeAllTableRows()
-  //   await FlaggedTable.insertTableRows(concepts)
-  // }
-
-  // const extractFlaggedConcepts = async () => await Table.extractFlaggedConcepts()
 
   $: {
     if ($abortAutoMapping) abortAutoMap()
@@ -218,14 +200,14 @@
     />
   </div>
 
-  <!-- <div class="hidden">
+  <div class="hidden">
     <DataTable
       data={flaggedConceptsFile}
       options={Config.flaggedTableOptions}
       modifyColumnMetadata={FlaggedTable.modifyColumnMetadata}
       bind:this={FlaggedTable.table}
     />
-  </div> -->
+  </div>
 {/if}
 
 <style>
