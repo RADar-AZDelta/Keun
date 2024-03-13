@@ -43,23 +43,53 @@ export default class LocalImpl implements IDatabaseImpl {
 
   async downloadFiles(id: string): Promise<void> {
     logWhenDev(`downloadFiles: Downloading files with id ${id} from the database`)
+    const file = await this.downloadFile(id)
+    if (!file) return
+    const { customId, flaggedId } = file
+    await this.downloadCustomFile(customId)
+    await this.downloadFlaggedFile(flaggedId)
+  }
+
+  private async downloadFile(id: string) {
     await this.openDatabase()
     const file = await this.getFileFromDatabase(this.db, id)
     if (!file || !file.file) return
     await FileHelper.downloadFile(file.file)
-    const isCustomFileNotEmpty = await this.checkIfCustomFileIsNotEmpty(file.customId)
+    const { customId, flaggedId } = file
+    return { customId, flaggedId }
+  }
+
+  private async downloadCustomFile(id: string) {
+    const isCustomFileNotEmpty = await this.checkIfCustomFileIsNotEmpty(id)
     if (!isCustomFileNotEmpty) return
-    const customFile = await this.getFileFromDatabase(this.customDb, file.customId)
+    const customFile = await this.getFileFromDatabase(this.customDb, id)
     if (!customFile || !customFile.file) return
     await FileHelper.downloadFile(customFile.file)
+  }
+
+  private async downloadFlaggedFile(id: string) {
+    const isFlaggedFileNotEmpty = await this.checkIfFlaggedFileIsNotEmpty(id)
+    if (!isFlaggedFileNotEmpty) return
+    const flaggedFile = await this.getFileFromDatabase(this.flaggedDb, id)
+    if (!flaggedFile || !flaggedFile.file) return
+    await FileHelper.downloadFile(flaggedFile.file)
   }
 
   private async checkIfCustomFileIsNotEmpty(id: string) {
     await this.openCustomDatabase()
     const fileInfo: undefined | IDatabaseFile = await this.customDb?.get(id, true)
     if (!fileInfo) return false
-    const content = fileInfo.content
+    const { content } = fileInfo
     if (!content || content.includes(',,,,,,,,,')) return false
+    return true
+  }
+
+  private async checkIfFlaggedFileIsNotEmpty(id: string) {
+    await this.openFlaggedDatabase()
+    const fileInfo: undefined | IDatabaseFile = await this.flaggedDb?.get(id, true)
+    if (!fileInfo) return false
+    const { content } = fileInfo
+    if (!content || content.includes(',,,,,,,,,,,,,,,,,,,,,,,')) return false
     return true
   }
 
@@ -102,6 +132,7 @@ export default class LocalImpl implements IDatabaseImpl {
     const customName = `${name.split('.')[0]}_concept.csv`
     const flaggedName = `${name.split('.')[0]}_flagged.csv`
     const customId = crypto.randomUUID()
+    const flaggedId = crypto.randomUUID()
     const fileString = await this.transformFileToString(file)
     const id = crypto.randomUUID()
     const fileContent: IDatabaseFile = {
@@ -110,16 +141,21 @@ export default class LocalImpl implements IDatabaseImpl {
       content: fileString,
       custom: customName,
       customId,
-      flaggedId: flaggedName,
+      flaggedId,
       flagged: flaggedName,
       domain,
     }
     await this.db!.set(fileContent, id, true)
     const customBlob = new Blob([Config.customBlobInitial])
+    const flaggedBlob = new Blob([Config.flaggedBlobInitial])
     const customFileString = await FileHelper.blobToString(customBlob)
+    const flaggedFileString = await FileHelper.blobToString(flaggedBlob)
     const customFileContent = { id: customId, name: customName, content: customFileString }
+    const flaggedFileContent = { id: flaggedId, name: flaggedName, content: flaggedFileString }
     await this.openCustomDatabase()
     await this.customDb!.set(customFileContent, customId, true)
+    await this.openFlaggedDatabase()
+    await this.flaggedDb!.set(flaggedFileContent, flaggedId, true)
   }
 
   private async transformFileToString(file: File) {
@@ -153,12 +189,14 @@ export default class LocalImpl implements IDatabaseImpl {
 
   async editFlaggedFile(id: string, blob: Blob): Promise<void> {
     logWhenDev(`editFlaggedFile: Editing the flagged file with id ${id}`)
-    await this.openFlaggedDatabase()
-    const fileInfo = await this.flaggedDb?.get(id, true)
+    await this.openDatabase()
+    const fileInfo = await this.db?.get(id, true, true)
     if (!fileInfo) return
+    const { flaggedId, flagged: name } = fileInfo
     const flaggedFileString = await FileHelper.blobToString(blob)
-    const flaggedFileContent = { id, name: fileInfo.name, content: flaggedFileString }
-    await this.flaggedDb?.set(flaggedFileContent, id, true)
+    const flaggedFileContent = { id: flaggedId, name, content: flaggedFileString }
+    await this.openFlaggedDatabase()
+    await this.flaggedDb?.set(flaggedFileContent, flaggedId, true)
   }
 
   async deleteKeunFile(id: string) {
