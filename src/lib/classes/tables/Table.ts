@@ -96,9 +96,24 @@ export default class Table {
     return flaggedConceptsResult.queriedData
   }
 
+  static async prepareFile() {
+    const unmappedRowsQuery = query()
+      .filter((r: any) => !r.mappingStatus && !r.conceptId)
+      .toObject()
+    const unmappedRows = await this.executeQueryOnTable(unmappedRowsQuery)
+    const { indices, queriedData } = unmappedRows
+    for (let i = 0; i < indices.length; i++) {
+      const index = indices[i]
+      const row = queriedData[i]
+      row.conceptId = 0
+      row.mappingStatus = 'UNCHECKED'
+      await this.updateTableRow(index, row)
+    }
+  }
+
   static async syncFile(id: string) {
     const blob = await this.getBlob()
-    if(!blob) return
+    if (!blob) return
     await DatabaseImpl.editKeunFile(id, blob)
   }
 

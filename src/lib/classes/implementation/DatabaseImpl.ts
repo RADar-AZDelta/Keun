@@ -81,6 +81,10 @@ export default class DatabaseImpl {
     return await this.database.getFlaggedFile(id)
   }
 
+  static async prepareFile() {
+    await this.loadImpl()
+  }
+
   private static async loadImpl() {
     if (this.database) return
     if (this.databaseImplementation === Providers.Firebase)

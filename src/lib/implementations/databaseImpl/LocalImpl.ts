@@ -54,6 +54,7 @@ export default class LocalImpl implements IDatabaseImpl {
     await this.openDatabase()
     const file = await this.getFileFromDatabase(this.db, id)
     if (!file || !file.file) return
+    if (!file.name.includes('_usagi.csv')) file.name = `${file.name.split('_usagi')[0]}_usagi.csv`
     await FileHelper.downloadFile(file.file)
     const { customId, flaggedId } = file
     return { customId, flaggedId }
@@ -129,6 +130,8 @@ export default class LocalImpl implements IDatabaseImpl {
     logWhenDev('uploadKeunFile: Uploading file to IndexedDB')
     await this.openDatabase()
     const { name } = file
+    const fileNameHasUsagiSequal = file.name.endsWith('_usagi.csv')
+    const fileName = !fileNameHasUsagiSequal ? `${file.name.split('.')[0]}_usagi.csv` : file.name
     const customName = `${name.split('.')[0]}_concept.csv`
     const flaggedName = `${name.split('.')[0]}_flagged.csv`
     const customId = crypto.randomUUID()
@@ -137,7 +140,7 @@ export default class LocalImpl implements IDatabaseImpl {
     const id = crypto.randomUUID()
     const fileContent: IDatabaseFile = {
       id,
-      name,
+      name: fileName,
       content: fileString,
       custom: customName,
       customId,
