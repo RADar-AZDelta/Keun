@@ -32,7 +32,6 @@ export default class CustomTable {
   }
 
   static async extractCustomConcepts() {
-    if (this.customTableWasFilled) return
     const columnsAreAdded = await this.checkIfColumnsAreAdded()
     if (!columnsAreAdded) return
     const customQuery = query()
@@ -66,6 +65,8 @@ export default class CustomTable {
       valid_end_date: '2099-12-31',
       invalid_reason: '',
     }
+    const { concept_name, concept_class_id, vocabulary_id, domain_id } = custom
+    await DatabaseImpl.addCustomConcept({ concept_name, concept_class_id, vocabulary_id, domain_id })
     await this.insertCustomTableRow(custom)
   }
 
