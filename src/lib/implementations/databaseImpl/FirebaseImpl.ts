@@ -59,6 +59,7 @@ export default class FirebaseImpl implements IDatabaseImpl {
   async downloadFiles(id: string): Promise<void> {
     const file = await this.readFileFromCollection(id, this.storageCollection)
     if (!file || !file.file) return
+    if (!file.name.includes('_usagi.csv')) file.name = `${file.name.split('.')[0]}_usagi.csv`
     await FileHelper.downloadFile(file.file)
     await this.downloadFlaggedFile(file.flaggedId)
     await this.downloadCustomFile(file.customId)
@@ -68,7 +69,7 @@ export default class FirebaseImpl implements IDatabaseImpl {
     const customFile = await this.readFileFromCollection(customId, this.storageCustomColl)
     if (!customFile || !customFile.file) return
     const customString = await FileHelper.blobToString(customFile.file)
-    if(!customString || customString.includes(',,,,,,,,,')) return
+    if (!customString || customString.includes(',,,,,,,,,')) return
     await FileHelper.downloadFile(customFile.file)
   }
 
@@ -76,7 +77,7 @@ export default class FirebaseImpl implements IDatabaseImpl {
     const flaggedFile = await this.readFileFromCollection(flaggedId, this.storageFlaggedColl)
     if (!flaggedFile || !flaggedFile.file) return
     const flaggedString = await FileHelper.blobToString(flaggedFile.file)
-    if(!flaggedString || flaggedString.includes(',,,,,,,,,,,,,,,,,,,,,,,')) return
+    if (!flaggedString || flaggedString.includes(',,,,,,,,,,,,,,,,,,,,,,,')) return
     await FileHelper.downloadFile(flaggedFile.file)
   }
 
@@ -110,7 +111,7 @@ export default class FirebaseImpl implements IDatabaseImpl {
           customId: fileInfo.customId,
           custom: '',
           flaggedId: fileInfo.flaggedId,
-          domain: fileInfo.domain
+          domain: fileInfo.domain,
         })
     }
     return fileNames
@@ -137,22 +138,35 @@ export default class FirebaseImpl implements IDatabaseImpl {
     const fileId = crypto.randomUUID()
     const customId = crypto.randomUUID()
     const flaggedId = crypto.randomUUID()
-    await this.uploadFile(fileId, file, customId, flaggedId, domain)
+    const fileNameHasUsagiSequal = file.name.endsWith('_usagi.csv')
+    const fileName = !fileNameHasUsagiSequal ? `${file.name.split('.')[0]}_usagi.csv` : file.name
+    await this.uploadFile(fileId, fileName, file, customId, flaggedId, domain)
     const customName = await this.uploadCustomFile(customId, file.name, flaggedId, domain)
     const flaggedName = await this.uploadFlaggedFile(flaggedId, file.name, customId, domain)
-    const fileData = { name: file.name, customId, custom: customName, flaggedId, flaggedName, domain }
+    const fileData = { name: fileName, customId, custom: customName, flaggedId, flaggedName, domain }
     await this.firestore.updateToFirestoreIfNotExist(this.firestoreFileColl, fileId, fileData)
   }
 
-  private async uploadFile(id: string, file: File, customId: string, flaggedId: string, domain: string | null) {
-    const metaData: IStorageCustomMetadata = { customMetadata: { name: file.name, customId, flaggedId, domain: domain! } }
+  private async uploadFile(
+    id: string,
+    name: string,
+    file: File,
+    customId: string,
+    flaggedId: string,
+    domain: string | null,
+  ) {
+    const metaData: IStorageCustomMetadata = {
+      customMetadata: { name, customId, flaggedId, domain: domain! },
+    }
     await this.storage.uploadFileStorage(`${this.storageCollection}/${id}`, file, metaData)
   }
 
   private async uploadCustomFile(id: string, name: string, flaggedId: string, domain: string | null) {
     const customName = `${name.split('.')[0]}_concept.csv`
     const customFile = await this.blobToFile(new Blob([Config.customBlobInitial]), customName)
-    const customMetaData: IStorageCustomMetadata = { customMetadata: { name: customName, customId: id, flaggedId, domain: domain! } }
+    const customMetaData: IStorageCustomMetadata = {
+      customMetadata: { name: customName, customId: id, flaggedId, domain: domain! },
+    }
     await this.storage.uploadFileStorage(`${this.storageCustomColl}/${id}`, customFile, customMetaData)
     return customName
   }
@@ -160,7 +174,9 @@ export default class FirebaseImpl implements IDatabaseImpl {
   private async uploadFlaggedFile(id: string, name: string, customId: string, domain: string | null) {
     const flaggedName = `${name.split('.')[0]}_flagged.csv`
     const flaggedFile = await this.blobToFile(new Blob([Config.flaggedBlobInitial]), flaggedName)
-    const customMetaData: IStorageCustomMetadata = { customMetadata: { name: flaggedName, customId, flaggedId: id, domain: domain! } }
+    const customMetaData: IStorageCustomMetadata = {
+      customMetadata: { name: flaggedName, customId, flaggedId: id, domain: domain! },
+    }
     await this.storage.uploadFileStorage(`${this.storageFlaggedColl}/${id}`, flaggedFile, customMetaData)
     return flaggedName
   }
@@ -170,7 +186,9 @@ export default class FirebaseImpl implements IDatabaseImpl {
     if (!fileData) return
     const { name, customId, flaggedId, domain } = fileData
     const file = await this.blobToFile(blob, name)
-    const metaData: IStorageCustomMetadata = { customMetadata: { name: file.name, customId, flaggedId, domain: domain! } }
+    const metaData: IStorageCustomMetadata = {
+      customMetadata: { name: file.name, customId, flaggedId, domain: domain! },
+    }
     await this.storage.uploadFileStorage(`${this.storageCollection}/${id}`, file, metaData)
   }
 
@@ -188,7 +206,9 @@ export default class FirebaseImpl implements IDatabaseImpl {
     if (!fileData) return
     const { custom: name, customId, flaggedId, domain } = fileData
     const file = await this.blobToFile(blob, name)
-    const metaData: IStorageCustomMetadata = { customMetadata: { name: file.name, customId, flaggedId, domain: domain! } }
+    const metaData: IStorageCustomMetadata = {
+      customMetadata: { name: file.name, customId, flaggedId, domain: domain! },
+    }
     await this.storage.uploadFileStorage(`${this.storageCustomColl}/${customId}`, file, metaData)
   }
 
