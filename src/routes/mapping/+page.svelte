@@ -17,6 +17,7 @@
   import Table from '$lib/classes/tables/Table'
   import DatabaseImpl from '$lib/classes/implementation/DatabaseImpl'
   import FlaggedTable from '$lib/classes/tables/FlaggedTable'
+  import MappedConcepts from '$lib/classes/general/MappedConcepts'
   import type { SvelteComponent } from 'svelte'
   import type { ITableOptions } from '@radar-azdelta/svelte-datatable'
   import type { IUsagiRow, AutoMapRowED, RowSelectionED, NavigateRowED } from '$lib/Types'
@@ -89,6 +90,7 @@
   async function downloadPage() {
     await syncFile()
     await DatabaseImpl.downloadFiles(selectedFileId)
+    await MappedConcepts.resetMappedConceptsBib()
     goto(`${base}/`)
   }
 
@@ -144,6 +146,7 @@
       cancel()
       await syncFile()
       syncingComplete = true
+      await MappedConcepts.resetMappedConceptsBib()
       return goto(to!.url)
     }
   })
