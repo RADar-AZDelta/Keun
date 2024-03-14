@@ -1,22 +1,43 @@
+import Settings from './Settings'
 import { mappedToConceptIds } from '$lib/store'
 import type { IMappedRows, IMappedRowsConcept } from '$lib/Types'
 
 export default class MappedConcepts {
+  static async resetMappedConceptsBib() {
+    mappedToConceptIds.update(concepts => concepts = {})
+  }
+  
   static async updateMappedConceptsBib(updatedConcept: IMappedRows) {
-    mappedToConceptIds.update(concepts => (concepts = this.addMappedConceptsToBib(concepts, updatedConcept)))
+    const multipleMapping = await Settings.getMappingToMultiple()
+    mappedToConceptIds.update(
+      concepts => (concepts = this.addMappedConceptsToBib(concepts, updatedConcept, multipleMapping)),
+    )
   }
 
   static async deleteConceptInMappedConceptsBib(sourceCode: string, conceptId: number) {
     mappedToConceptIds.update(concepts => (concepts = this.deleteMappedConceptsInBib(concepts, sourceCode, conceptId)))
   }
 
-  private static addMappedConceptsToBib(currentConcepts: IMappedRows, updatedConcepts: IMappedRows) {
+  private static addMappedConceptsToBib(
+    currentConcepts: IMappedRows,
+    updatedConcepts: IMappedRows,
+    multipleMapping: boolean,
+  ) {
     for (let [sourceCode, conceptIds] of Object.entries(updatedConcepts))
-      currentConcepts = this.addMappedConceptToBib(currentConcepts, sourceCode, conceptIds)
+      currentConcepts = this.addMappedConceptToBib(currentConcepts, sourceCode, conceptIds, multipleMapping)
     return currentConcepts
   }
 
-  private static addMappedConceptToBib(currentConcepts: IMappedRows, sourceCode: string, concepts: IMappedRowsConcept) {
+  private static addMappedConceptToBib(
+    currentConcepts: IMappedRows,
+    sourceCode: string,
+    concepts: IMappedRowsConcept,
+    multipleMapping: boolean,
+  ) {
+    if (currentConcepts[sourceCode] && !multipleMapping) {
+      const lastKey = Object.keys(currentConcepts[sourceCode]).at(-1)
+      if (lastKey) delete currentConcepts[sourceCode][lastKey]
+    }
     if (!currentConcepts[sourceCode]) {
       currentConcepts[sourceCode] = concepts
       return currentConcepts
