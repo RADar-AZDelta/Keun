@@ -138,7 +138,8 @@ export default class FirebaseImpl implements IDatabaseImpl {
     const fileId = crypto.randomUUID()
     const customId = crypto.randomUUID()
     const flaggedId = crypto.randomUUID()
-    const fileName = `${file.name.split('.')[0]}_usagi.csv`
+    const fileNameHasUsagiSequal = file.name.endsWith('_usagi.csv')
+    const fileName = !fileNameHasUsagiSequal ? `${file.name.split('.')[0]}_usagi.csv` : file.name
     await this.uploadFile(fileId, fileName, file, customId, flaggedId, domain)
     const customName = await this.uploadCustomFile(customId, file.name, flaggedId, domain)
     const flaggedName = await this.uploadFlaggedFile(flaggedId, file.name, customId, domain)

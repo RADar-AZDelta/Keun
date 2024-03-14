@@ -55,7 +55,6 @@
   const translate = async (text: string) => await BergamotTranslator.translate(text, $settings.language)
 
   async function extractCustomConcepts() {
-    if (!customTableRendered) return
     await CustomTable.extractCustomConcepts()
     customsExtracted = true
   }
@@ -74,7 +73,7 @@
     if (!tableRendered && !rendered) return
     tableRendered = true
     if (!tablePrepared) await prepareFile()
-    if (!customsExtracted) await extractCustomConcepts()
+    if (!customsExtracted && rendered) await extractCustomConcepts()
     await AutoMapping.autoMapPage(selectedDomain)
   }
 
