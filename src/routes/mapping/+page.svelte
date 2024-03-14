@@ -26,6 +26,7 @@
   let tableRendered: boolean = false
   let customTableRendered: boolean = false
   let customsExtracted: boolean = false
+  let tablePrepared: boolean = false
   let tableOptions: ITableOptions = { ...Config.tableOptions, id: $page.url.searchParams.get('id') ?? '' }
   let currentVisibleRows: Map<number, IUsagiRow> = new Map<number, IUsagiRow>()
   let selectedRow: IUsagiRow, selectedRowIndex: number
@@ -64,9 +65,15 @@
     if (rows) currentVisibleRows = rows
   }
 
+  async function prepareFile() {
+    await Table.prepareFile()
+    tablePrepared = true
+  }
+
   async function autoMapPage(rendered: boolean = false) {
     if (!tableRendered && !rendered) return
     tableRendered = true
+    if (!tablePrepared) await prepareFile()
     if (!customsExtracted) await extractCustomConcepts()
     await AutoMapping.autoMapPage(selectedDomain)
   }
