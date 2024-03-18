@@ -41,6 +41,7 @@ export default class CustomTable {
     if (!concepts?.indices?.length) return
     const testRow = await this.getCustomTableRow(0)
     if (!testRow?.domain_id) await this.deleteCustomTableRows([0])
+    await this.deleteFullTable()
     for (let concept of concepts.queriedData) await this.addCustomConceptToTable(concept)
     await this.deleteFirstEmptyConceptIfNeeded()
   }
@@ -66,6 +67,7 @@ export default class CustomTable {
       invalid_reason: '',
     }
     const { concept_name, concept_class_id, vocabulary_id, domain_id } = custom
+    // TODO: this will overwrite all custom concepts, optimize this in the future for less requests to the database
     await DatabaseImpl.addCustomConcept({ concept_name, concept_class_id, vocabulary_id, domain_id })
     await this.insertCustomTableRow(custom)
   }
@@ -83,6 +85,12 @@ export default class CustomTable {
     await this.deleteCustomTableRows([0])
     this.firstRowIsEmpty = false
     this.customTableWasFilled = false
+  }
+
+  private static async deleteFullTable() {
+    const numberOfRowsQuery = query().toObject()
+    const numberOfRows = await this.executeQueryOnCustomTable(numberOfRowsQuery)
+    await this.deleteCustomTableRows(numberOfRows.indices)
   }
 
   static async syncFile(id: string) {
