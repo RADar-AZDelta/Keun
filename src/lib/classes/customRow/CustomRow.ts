@@ -34,7 +34,7 @@ export default class CustomRow {
     const customConcept: ICustomConceptInput = {
       ...this.customRow,
       concept_id: 0,
-      concept_code: '',
+      concept_code: this.usagiRow.sourceCode,
       valid_start_date: reformatDate(),
       valid_end_date: '2099-12-31',
       invalid_reason: '',
@@ -53,7 +53,7 @@ export default class CustomRow {
       vocabularyId: vocabulary_id,
       conceptClassId: concept_class_id,
       standardConcept: '',
-      conceptCode: this.usagiRow.sourceCode,
+      conceptCode: this.usagiRow.sourceName,
       validStartDate: reformatDate(),
       validEndDate: '2099-12-31',
       invalidReason: '',

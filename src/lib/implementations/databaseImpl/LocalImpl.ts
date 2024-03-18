@@ -238,6 +238,23 @@ export default class LocalImpl implements IDatabaseImpl {
     await this.customConceptsDb?.set(customConcept, recordName, true)
   }
 
+  async updateCustomConcept(customConcept: ICustomConceptCompact, existingCustomConcept: ICustomConceptCompact) {
+    logWhenDev('updateCustomConcept: Update a custom concept in IndexedDB')
+    await this.openConceptsDatabase()
+    const { concept_name, concept_class_id, domain_id, vocabulary_id } = customConcept
+    const {
+      concept_name: name,
+      concept_class_id: classId,
+      domain_id: domain,
+      vocabulary_id: vocab,
+    } = existingCustomConcept
+    const oldName = `${name}-${domain.replaceAll('/', '')}-${classId.replaceAll('/', '')}-${vocab}`
+    const recordName = `${concept_name}-${domain_id.replaceAll('/', '')}-${concept_class_id.replaceAll('/', '')}-${vocabulary_id}`
+    await this.customConceptsDb?.set(customConcept, recordName, oldName === recordName)
+    if (oldName === recordName) return
+    await this.customConceptsDb?.remove(oldName, true)
+  }
+
   async reset() {
     await this.openDatabase()
     await this.db!.deleteDatabase()
