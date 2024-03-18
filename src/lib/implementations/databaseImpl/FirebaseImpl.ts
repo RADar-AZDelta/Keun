@@ -262,4 +262,10 @@ export default class FirebaseImpl implements IDatabaseImpl {
     if (!concept) return false
     return true
   }
+
+  async reset() {
+    const fileIds = await this.getFilesFromFirestore()
+    for (const id of fileIds) await this.deleteKeunFile(id)
+    return []
+  }
 }

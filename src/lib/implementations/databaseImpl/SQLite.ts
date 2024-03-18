@@ -92,6 +92,10 @@ export default class SQLiteImpl implements IDatabaseImpl {
     await this.deleteFile(id)
   }
 
+  async reset() {
+    return []
+  }
+
   private async downloadCustomFile(fileId: string) {
     const fileInfo = await this.performRequest(this.path + `?id=${fileId}&custom=true`)
     if (!fileInfo || !fileInfo.details.content) return console.error('getFile: File not found')

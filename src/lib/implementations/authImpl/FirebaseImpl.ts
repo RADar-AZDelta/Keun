@@ -9,9 +9,9 @@ import {
   PUBLIC_FIREBASE_STORAGE_BUCKET,
   PUBLIC_TENANT_ID,
 } from '$env/static/public'
+import FirebaseAuth, { onlyReadableUserSessionStore } from '$lib/firebase/FirebaseAuth'
 import type { IAuthImpl } from '$lib/Types'
 import type { FirebaseOptions } from 'firebase/app'
-import FirebaseAuth, { onlyReadableUserSessionStore } from '$lib/firebase/FirebaseAuth'
 import type { UserSession } from '$lib/firebase/Types'
 
 const firebaseConfig: FirebaseOptions = {

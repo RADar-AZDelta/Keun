@@ -1,11 +1,11 @@
 import { query } from 'arquero'
 import { Config } from '$lib/helperClasses/Config'
 import { reformatDate } from '$lib/utils'
+import DatabaseImpl from '../implementation/DatabaseImpl'
 import Table from './Table'
 import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
 import type { ICustomConceptInput, ICustomQueryResult, IUsagiRow } from '$lib/Types'
 import type DataTable from '@radar-azdelta/svelte-datatable'
-import DatabaseImpl from '../implementation/DatabaseImpl'
 
 export default class CustomTable {
   static table: DataTable
