@@ -238,6 +238,16 @@ export default class LocalImpl implements IDatabaseImpl {
     await this.customConceptsDb?.set(customConcept, recordName, true)
   }
 
+  async reset() {
+    await this.openDatabase()
+    await this.db!.deleteDatabase()
+    await this.openCustomDatabase()
+    await this.customDb!.deleteDatabase()
+    await this.openFlaggedDatabase()
+    await this.flaggedDb!.deleteDatabase()
+    return []
+  }
+
   private async openDatabase() {
     const open = await this.isOpen(this.db)
     if (open) return

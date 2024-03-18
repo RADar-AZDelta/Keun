@@ -23,7 +23,7 @@ export default class MultipleMapping extends CommonMapping {
   }
 
   private static async checkIfTheCurrentRowIsUnmapped() {
-    if (this.usagiRow.mappingStatus === 'UNMAPPED') return true
+    if (this.usagiRow.mappingStatus === 'UNCHECKED') return true
     return false
   }
 

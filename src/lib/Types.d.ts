@@ -403,6 +403,7 @@ export interface IDatabaseImpl {
   getCustomConcepts(): Promise<any>
   addCustomConcept(customConcept: ICustomConceptCompact): Promise<any>
   checkIfCustomConceptAlreadyExists(conceptInput: ICustomConceptCompact): Promise<boolean>
+  reset(): Promise<IFileInformation[]>
 }
 
 export interface IAuthImpl {

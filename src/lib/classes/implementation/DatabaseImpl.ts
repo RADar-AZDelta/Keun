@@ -81,8 +81,9 @@ export default class DatabaseImpl {
     return await this.database.getFlaggedFile(id)
   }
 
-  static async prepareFile() {
+  static async reset() {
     await this.loadImpl()
+    return await this.database.reset()
   }
 
   private static async loadImpl() {

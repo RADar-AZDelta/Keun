@@ -76,6 +76,11 @@
     height: 40px !important;
   }
 
+  .header-button:hover {
+    background-color: lightgray;
+    cursor: pointer;
+  }
+
   .user-dialog {
     border-radius: 10px;
     border: none;
