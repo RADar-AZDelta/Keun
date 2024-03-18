@@ -53,10 +53,10 @@ export default class CustomTable {
   }
 
   private static async addCustomConceptToTable(concept: IUsagiRow) {
-    const { conceptId, sourceName, conceptName, className, domainId, vocabularyId } = concept
+    const { conceptId, sourceCode, conceptName, className, domainId, vocabularyId } = concept
     const custom: ICustomConceptInput = {
       concept_id: conceptId ?? 0,
-      concept_code: sourceName,
+      concept_code: sourceCode,
       concept_name: conceptName ?? '',
       concept_class_id: className ?? '',
       domain_id: domainId ?? '',
