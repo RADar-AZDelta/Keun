@@ -1,8 +1,8 @@
 import { query, startAt, endAt, orderBy, getCountFromServer } from 'firebase/firestore'
 import { getDoc, getDocs, deleteDoc, updateDoc, setDoc } from 'firebase/firestore'
 import { DocumentSnapshot, Firestore, QueryConstraint, collection, doc, getFirestore } from 'firebase/firestore'
-import type { FirebaseError, FirebaseOptions } from 'firebase/app'
 import Firebase from './Firebase.js'
+import type { FirebaseError, FirebaseOptions } from 'firebase/app'
 import type { IMessage } from './Types.js'
 
 export default class FirebaseFirestore extends Firebase {

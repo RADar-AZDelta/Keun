@@ -72,7 +72,7 @@ export default class AutoMapping {
     const concepts = await this.fetchFirstConcept(filter)
     if (!concepts) return
     const athenaInfo: IAthenaInfo = { athenaRow: concepts[0], usagiRow: row, usagiRowIndex: index }
-    await Mapping.mapRow(athenaInfo, 'EQUAL', 'UNMAPPED')
+    await Mapping.mapRow(athenaInfo, 'EQUAL', 'UNCHECKED')
   }
 
   private static async getTranslatedSourceName(sourceName: string) {

@@ -1,9 +1,9 @@
 import { Config } from '$lib/helperClasses/Config'
+import DatabaseImpl from '../implementation/DatabaseImpl'
+import Table from './Table'
 import type { IUsagiRow } from '$lib/Types'
 import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
 import type DataTable from '@radar-azdelta/svelte-datatable'
-import DatabaseImpl from '../implementation/DatabaseImpl'
-import Table from './Table'
 
 export default class FlaggedTable {
   static table: DataTable

@@ -128,6 +128,14 @@ export class IndexedDB {
     })
   }
 
+  async deleteDatabase(): Promise<void> {
+    return new Promise(async resolve => {
+      const db = await this.db
+      indexedDB.deleteDatabase(db.name)
+      resolve()
+    })
+  }
+
   async close(): Promise<void> {
     return new Promise(async resolve => {
       const db = await this.db

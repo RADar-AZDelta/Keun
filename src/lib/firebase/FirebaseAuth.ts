@@ -1,9 +1,9 @@
 import { writable } from 'svelte/store'
 import { getAuth, GoogleAuthProvider, OAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth'
+import { sleep } from '$lib/utils.js'
 import Firebase from './Firebase.js'
 import FirebaseFirestore from './FirebaseFirestore.js'
 import type { FirebaseOptions } from 'firebase/app'
-import { sleep } from '$lib/utils.js'
 import type { Auth, User, ParsedToken } from 'firebase/auth'
 import type { IAuthProviders, IRole, UserSession } from './Types.js'
 import type { IUser } from '$lib/Types.js'
@@ -32,8 +32,6 @@ export default class FirebaseAuth extends Firebase {
     const authProvider = await this.getAuthProvider(provider)
     const userCred = await signInWithPopup(this.firebaseAuth, authProvider)
     if (!userCred.user) return
-    const { token, claims } = await userCred.user.getIdTokenResult(true)
-    await this.setToken(token, claims.exp)
     const { roles } = await this.getRoleFromFirestore(userCred.user)
     const { uid, displayName: name } = userCred.user
     return { uid, name, roles }
@@ -47,14 +45,6 @@ export default class FirebaseAuth extends Firebase {
 
   async logOut() {
     await signOut(this.firebaseAuth)
-    await this.setToken()
-  }
-
-  private async setToken(token?: string, expiration?: string) {
-    const headers = { 'Content-Type': 'application/json;charset=utf-8', Authorization: token ?? '' }
-    const body = JSON.stringify({ token, expiration })
-    const options: RequestInit = { ...headers, mode: 'cors', method: 'POST', body }
-    // await fetch('/api/token', options)
   }
 
   private decodeToken(user: User, token: string, claims?: IRole): UserSession {
@@ -83,9 +73,8 @@ export default class FirebaseAuth extends Firebase {
       }
       const { token, claims } = await user.getIdTokenResult(false)
       this.refreshTokenTrigger(user, claims, userSessionStore.set)
-      const roles = await this.getRoleFromFirestore(user).catch(err => ({ roles: [] }))
+      const roles = await this.getRoleFromFirestore(user).catch(() => ({ roles: [] }))
       userSessionStore.set(this.decodeToken(user, token, roles))
-      await this.setToken(token, claims.exp)
       this._resolve()
     })
   }
