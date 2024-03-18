@@ -36,27 +36,27 @@ steps:
     id: 'Install'
 
   - name: 'node:lts'
-    waitFor: ['Install again']
+    waitFor: ['Install']
     entrypoint: npm
     args: ['run', 'build']
     id: 'Build'
 
-  # # Scan the application on CWE's
-  # - name: 'bearer/bearer'
-  #   waitFor: ['Install']
-  #   entrypoint: bearer
-  #   args: ['scan', '.']
-  #   id: 'Scan'
+  # Scan the application on CWE's
+  - name: 'bearer/bearer'
+    waitFor: ['Install']
+    entrypoint: bearer
+    args: ['scan', '.']
+    id: 'Scan'
 
-  # # Download the Firebase tool package in a container
-  # - name: 'gcr.io/cloud-builders/wget'
-  #   waitFor: ['Install']
-  #   args:
-  #     - '--quiet'
-  #     - '-O'
-  #     - 'firebase'
-  #     - 'https://firebase.tools/bin/linux/latest'
-  #   id: 'Download Firebase'
+  # Download the Firebase tool package in a container
+  - name: 'gcr.io/cloud-builders/wget'
+    waitFor: ['Install']
+    args:
+      - '--quiet'
+      - '-O'
+      - 'firebase'
+      - 'https://firebase.tools/bin/linux/latest'
+    id: 'Download Firebase'
 
   # Change the rights to the tool through chmod & deploy the project with Firebase
   - name: 'debian:11'
