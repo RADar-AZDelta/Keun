@@ -1,12 +1,12 @@
-import Settings from './Settings'
 import { mappedToConceptIds } from '$lib/store'
+import Settings from './Settings'
 import type { IMappedRows, IMappedRowsConcept } from '$lib/Types'
 
 export default class MappedConcepts {
   static async resetMappedConceptsBib() {
-    mappedToConceptIds.update(concepts => concepts = {})
+    mappedToConceptIds.set({})
   }
-  
+
   static async updateMappedConceptsBib(updatedConcept: IMappedRows) {
     const multipleMapping = await Settings.getMappingToMultiple()
     mappedToConceptIds.update(

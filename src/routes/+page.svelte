@@ -78,6 +78,8 @@
     uploadFile()
   }
 
+  const reset = async () => (files = await DatabaseImpl.reset())
+
   const setProcessing = async (e: CustomEvent<ProcessingED>) => ({ processing } = e.detail)
 
   $: {
@@ -113,7 +115,10 @@
   <section class="file-selection">
     <section class="file-container">
       <div class="file-menu">
-        <h1 class="title">Files to map</h1>
+        <div class="title-container">
+          <h1 class="title">Files to map</h1>
+          <button class="reset" title="Remove all the files" on:click={reset}>Reset</button>
+        </div>
         <div class="file-list">
           <FileMenu bind:files on:processing={setProcessing} on:getFiles={getFiles} />
         </div>
@@ -155,8 +160,22 @@
     flex-direction: column;
   }
 
-  .title {
-    padding: 0 1rem 1rem 1rem;
+  .title-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0.5rem 1rem;
+  }
+
+  .reset {
+    background-color: #f6f6f6;
+    border: 1px solid #d8d8d8;
+    border-radius: 5px;
+  }
+
+  .reset:hover {
+    background-color: lightgray;
+    cursor: pointer;
   }
 
   .file-list {

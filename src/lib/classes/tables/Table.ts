@@ -1,11 +1,11 @@
 import { query } from 'arquero'
 import { Config } from '$lib/helperClasses/Config'
 import MappedConcepts from '../general/MappedConcepts'
+import DatabaseImpl from '../implementation/DatabaseImpl'
 import type Query from 'arquero/dist/types/query/query'
 import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
 import type { IMappedRow, IMappedRows, IQueryResult, IUsagiRow } from '$lib/Types'
 import type DataTable from '@radar-azdelta/svelte-datatable'
-import DatabaseImpl from '../implementation/DatabaseImpl'
 
 export default class Table {
   static table: DataTable
