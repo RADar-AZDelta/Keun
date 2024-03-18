@@ -16,6 +16,11 @@ export default class DatabaseImpl {
     await this.database.addCustomConcept(concept)
   }
 
+  static async updateCustomConcept(concept: ICustomConceptCompact, existingConcept: ICustomConceptCompact) {
+    await this.loadImpl()
+    await this.database.updateCustomConcept(concept, existingConcept)
+  }
+
   static async getCustomConcepts() {
     await this.loadImpl()
     return await this.database.getCustomConcepts()

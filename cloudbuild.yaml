@@ -35,47 +35,40 @@ steps:
     args: ['install']
     id: 'Install'
 
-  # Install again because the package from the preinstall will not be added yet
   - name: 'node:lts'
     waitFor: ['Install']
-    entrypoint: npm
-    args: ['install']
-    id: 'Install again'
-
-  - name: 'node:lts'
-    waitFor: ['Install again']
     entrypoint: npm
     args: ['run', 'build']
     id: 'Build'
 
-  # # Scan the application on CWE's
-  # - name: 'bearer/bearer'
-  #   waitFor: ['Install']
-  #   entrypoint: bearer
-  #   args: ['scan', '.']
-  #   id: 'Scan'
+  # Scan the application on CWE's
+  - name: 'bearer/bearer'
+    waitFor: ['Install']
+    entrypoint: bearer
+    args: ['scan', '.']
+    id: 'Scan'
 
-  # # Download the Firebase tool package in a container
-  # - name: 'gcr.io/cloud-builders/wget'
-  #   waitFor: ['Install']
-  #   args:
-  #     - '--quiet'
-  #     - '-O'
-  #     - 'firebase'
-  #     - 'https://firebase.tools/bin/linux/latest'
-  #   id: 'Download Firebase'
+  # Download the Firebase tool package in a container
+  - name: 'gcr.io/cloud-builders/wget'
+    waitFor: ['Install']
+    args:
+      - '--quiet'
+      - '-O'
+      - 'firebase'
+      - 'https://firebase.tools/bin/linux/latest'
+    id: 'Download Firebase'
 
-  # # Change the rights to the tool through chmod & deploy the project with Firebase
-  # - name: 'debian:11'
-  #   waitFor: ['Download Firebase', 'Scan', 'Build']
-  #   args:
-  #     - 'bash'
-  #     - '-c'
-  #     - |
-  #       mv firebase /tmp
-  #       chmod 755 /tmp/firebase
-  #       /tmp/firebase deploy --project ${PROJECT_ID} --non-interactive -m "Build ${BUILD_ID}" --debug
-  #   id: 'Deploy to Firebase'
+  # Change the rights to the tool through chmod & deploy the project with Firebase
+  - name: 'debian:11'
+    waitFor: ['Download Firebase', 'Scan', 'Build']
+    args:
+      - 'bash'
+      - '-c'
+      - |
+        mv firebase /tmp
+        chmod 755 /tmp/firebase
+        /tmp/firebase deploy --project ${PROJECT_ID} --non-interactive -m "Build ${BUILD_ID}" --debug
+    id: 'Deploy to Firebase'
 
   # - name: 'gcr.io/cloud-builders/git'
   #   entrypoint: 'bash'

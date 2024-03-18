@@ -63,7 +63,9 @@
 
   async function addCustomConcept(e: CustomEvent<CustomConceptAddedED>) {
     const { concept } = e.detail
-    data = [...data, concept]
+    const first = data[0]
+    const rest = data.slice(1)
+    data = [first, concept, ...rest]
   }
 
   onMount(() => {

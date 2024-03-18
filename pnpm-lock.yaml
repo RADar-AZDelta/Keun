@@ -9,8 +9,8 @@ dependencies:
     specifier: ^0.0.33
     version: 0.0.33(@sveltejs/vite-plugin-svelte@3.0.2)(svelte@4.2.11)(vite@5.1.4)
   '@radar-azdelta/svelte-datatable':
-    specifier: ^0.0.72
-    version: 0.0.72(svelte@4.2.11)
+    specifier: ^0.0.73
+    version: 0.0.73(svelte@4.2.11)
   arquero:
     specifier: ^5.2.0
     version: 5.4.0
@@ -983,6 +983,22 @@ packages:
     peerDependencies:
       svelte: ^4.0.0
     dependencies:
+      arquero: 5.4.0
+      comlink: 4.4.1
+      esm-env: 1.0.0
+      lodash.debounce: 4.0.8
+      lodash.isequal: 4.5.0
+      svelte: 4.2.11
+    transitivePeerDependencies:
+      - encoding
+    dev: false
+
+  /@radar-azdelta/svelte-datatable@0.0.73(svelte@4.2.11):
+    resolution: {integrity: sha512-7ECMRVh8ShiXSjSh2LCj+2qlVISUS/u0ROCliZVlbBxux0WX3THP6Uvb/BojYpqNU9CJzP2WNCpQJuIzBU/fqw==}
+    peerDependencies:
+      svelte: ^4.0.0
+    dependencies:
+      '@radar-azdelta/svelte-datatable': 0.0.72(svelte@4.2.11)
       arquero: 5.4.0
       comlink: 4.4.1
       esm-env: 1.0.0

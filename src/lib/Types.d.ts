@@ -402,6 +402,7 @@ export interface IDatabaseImpl {
   deleteKeunFile(id: string): Promise<void>
   getCustomConcepts(): Promise<any>
   addCustomConcept(customConcept: ICustomConceptCompact): Promise<any>
+  updateCustomConcept(customConcept: ICustomConceptCompact, existingCustomConcept: ICustomConceptCompact): Promise<void>
   checkIfCustomConceptAlreadyExists(conceptInput: ICustomConceptCompact): Promise<boolean>
   reset(): Promise<IFileInformation[]>
 }
