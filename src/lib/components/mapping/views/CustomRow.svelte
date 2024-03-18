@@ -2,7 +2,7 @@
   import { createEventDispatcher, onMount } from 'svelte'
   import { mappedToConceptIds, settings, user } from '$lib/store'
   import AutocompleteInput from '$lib/components/extra/AutocompleteInput.svelte'
-  import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
+  import { EditableCell, type IColumnMetaData } from '@radar-azdelta/svelte-datatable'
   import type { ICustomConceptCompact, IUsagiRow, MappingEvents } from '$lib/Types'
   import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
   import { Config } from '$lib/helperClasses/Config'
@@ -18,7 +18,6 @@
 
   const inputAvailableColumns = ['concept_name', 'concept_class_id', 'domain_id', 'vocabulary_id']
   const colSuggestions: Record<string, string[]> = Config.customConceptInfo
-  let action: string | undefined = undefined
   let columnInputs: Record<string, string> = { domain_id: '', concept_class_id: '' }
   let row: CustomRow
 
@@ -44,11 +43,12 @@
     dispatch('updateError', { error: '' })
   }
 
-  async function inputValidation() {
+  async function inputValidation(row?: ICustomConceptCompact) {
     const emptyProperties = []
-    for (let [property, value] of Object.entries(inputRow)) if (!value) emptyProperties.push(property)
+    const rowToCheck = row ?? inputRow
+    for (let [property, value] of Object.entries(rowToCheck)) if (!value) emptyProperties.push(property)
     if (emptyProperties.length) return `The following properties can't be empty: ${emptyProperties}`
-    const { concept_class_id, domain_id } = inputRow
+    const { concept_class_id, domain_id } = rowToCheck
     if (!colSuggestions['domain_id'].includes(domain_id)) return 'The domain must be one of the suggested values'
     if (!colSuggestions['concept_class_id'].includes(concept_class_id))
       return 'The className must be one of the suggested values'
@@ -68,6 +68,22 @@
   const unapproveRow = async () => await row.mapCustomConcept('UNAPPROVED', equivalence)
   const approveRow = async () => {}
 
+  async function updateCustomConcept(e: CustomEvent, columnId: string) {
+    const value = e.detail
+    const row = { ...renderedRow, ...{ [columnId]: value } }
+    const error = await inputValidation(row)
+    if (error) {
+      dispatch('updateError', { error })
+      return (renderedRow[columnId] = renderedRow[columnId])
+    }
+    const { concept_name, concept_class_id, domain_id, vocabulary_id } = renderedRow
+    const existingConcept = { concept_name, concept_class_id, domain_id, vocabulary_id }
+    renderedRow[columnId] = value
+    const { concept_name: name, concept_class_id: classId, domain_id: domain, vocabulary_id: vocab } = renderedRow
+    const newConcept = { concept_name: name, concept_class_id: classId, domain_id: domain, vocabulary_id: vocab }
+    await DatabaseImpl.updateCustomConcept(newConcept, existingConcept)
+  }
+
   $: {
     if ($settings.vocabularyIdCustomConcept) updateVocab()
   }
@@ -82,7 +98,7 @@
 
 {#if columns}
   {#if originalIndex === 0}
-    <button on:click={onClickAdd}><SvgIcon id="save" /></button>
+    <td><button on:click={onClickAdd}><SvgIcon id="save" /></button></td>
     {#each columns as column, _}
       <td>
         <div class="cell-container">
@@ -140,7 +156,9 @@
       </div>
     </td>
     {#each columns as column, _}
-      <td><p>{renderedRow[column.id]}</p></td>
+      <td>
+        <EditableCell value={renderedRow[column.id]} on:valueChanged={e => updateCustomConcept(e, column.id)} />
+      </td>
     {/each}
   {/if}
 {/if}

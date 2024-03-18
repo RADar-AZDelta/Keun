@@ -253,6 +253,21 @@ export default class FirebaseImpl implements IDatabaseImpl {
     await this.firestore.writeToFirestore(this.firestoreCustomConceptsColl, recordName, customConcept)
   }
 
+  async updateCustomConcept(customConcept: ICustomConceptCompact, existingCustomConcept: ICustomConceptCompact) {
+    const { concept_name, concept_class_id, domain_id, vocabulary_id } = customConcept
+    const {
+      concept_name: name,
+      concept_class_id: classId,
+      domain_id: domain,
+      vocabulary_id: vocab,
+    } = existingCustomConcept
+    const oldName = `${name}-${domain.replaceAll('/', '')}-${classId.replaceAll('/', '')}-${vocab}`
+    const recordName = `${concept_name}-${domain_id.replaceAll('/', '')}-${concept_class_id.replaceAll('/', '')}-${vocabulary_id}`
+    await this.firestore.writeToFirestore(this.firestoreCustomConceptsColl, recordName, customConcept)
+    if(oldName === recordName) return
+    await this.firestore.deleteDocumentFirestore(this.firestoreCustomConceptsColl, oldName)
+  }
+
   async checkIfCustomConceptAlreadyExists(conceptInput: ICustomConceptCompact) {
     const { concept_name, concept_class_id, domain_id, vocabulary_id } = conceptInput
     const recordName = `${concept_name}-${domain_id.replaceAll('/', '')}-${concept_class_id.replaceAll('/', '')}-${vocabulary_id}`
