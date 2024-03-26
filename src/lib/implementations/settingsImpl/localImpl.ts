@@ -1,4 +1,5 @@
 import { logWhenDev } from '$lib/utils'
+import { PUBLIC_VOCABULARY } from '$env/static/public'
 import type { ISettings, ISettingsImpl } from '$lib/Types'
 
 const defaultSettings: ISettings = {
@@ -6,7 +7,7 @@ const defaultSettings: ISettings = {
   autoMap: false,
   language: 'en',
   savedAuthors: [],
-  vocabularyIdCustomConcept: '',
+  vocabularyIdCustomConcept: PUBLIC_VOCABULARY,
   popupSidesShowed: { filters: true, details: true },
 }
 

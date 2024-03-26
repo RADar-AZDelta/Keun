@@ -12,7 +12,7 @@
 
   let show: boolean = false
   let reviewer: string = usagiRow?.assignedReviewer ?? ''
-  let comment: string = usagiRow?.comment ?? ''
+  let comment: string = usagiRow?.comment ? transformComment(usagiRow.comment) : ''
 
   const onEquivalenceChange = (e: CustomEvent<EquivalenceChangeED>) => dispatch('equivalenceChange', { ...e.detail })
   const onInputComment = debounce(() => updateDetails(), 500)
@@ -22,13 +22,20 @@
     updateDetails()
   }
 
-  const updateDetails = () => dispatch('updateDetails', { reviewer, comment: comment.replace(/(\r\n|\n|\r)/gm, ' ') })
+  const updateDetails = () => {
+    const updatedComment = comment.replaceAll(/\n/g, '/n')
+    dispatch('updateDetails', { reviewer, comment: updatedComment })
+  }
   const hideDetail = () => (show = false)
   const showDetail = () => (show = true)
 
   async function reset() {
     reviewer = usagiRow?.assignedReviewer ?? ''
-    comment = usagiRow?.comment ?? ''
+    comment = usagiRow?.comment ? transformComment(usagiRow.comment) : ''
+  }
+
+  function transformComment(comment: string) {
+    return comment.replaceAll('/n', '\n')
   }
 
   $: {
@@ -142,6 +149,7 @@
     resize: none;
     border-radius: 10px;
     width: 90%;
+    white-space: pre-wrap;
   }
 
   textarea:hover {
