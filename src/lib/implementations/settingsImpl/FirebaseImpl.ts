@@ -6,6 +6,7 @@ import {
   PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
   PUBLIC_FIREBASE_PROJECT_ID,
   PUBLIC_FIREBASE_STORAGE_BUCKET,
+  PUBLIC_VOCABULARY,
 } from '$env/static/public'
 import { user } from '$lib/store'
 import { logWhenDev } from '$lib/utils'
@@ -17,7 +18,7 @@ const defaultSettings: ISettings = {
   autoMap: false,
   language: 'en',
   savedAuthors: [],
-  vocabularyIdCustomConcept: '',
+  vocabularyIdCustomConcept: PUBLIC_VOCABULARY,
   popupSidesShowed: { filters: true, details: true },
 }
 
