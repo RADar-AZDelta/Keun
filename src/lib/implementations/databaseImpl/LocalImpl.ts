@@ -222,6 +222,15 @@ export default class LocalImpl implements IDatabaseImpl {
     return true
   }
 
+  async checkForCustomConceptWithSameName(name: string): Promise<boolean> {
+    logWhenDev('checkForCustomConceptWithSameName: Check if a custom concept with the same name already exists')
+    await this.openConceptsDatabase()
+    const keys = await this.customConceptsDb?.keys(true)
+    if (!keys) return false
+    for (let key of keys) if (key.startsWith(`${name}-`)) return true
+    return false
+  }
+
   async getCustomConcepts(): Promise<any> {
     logWhenDev('getCustomConcepts: Get custom concepts from IndexedDB')
     await this.openConceptsDatabase()
