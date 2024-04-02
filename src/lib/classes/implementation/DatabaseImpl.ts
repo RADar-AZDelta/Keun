@@ -11,6 +11,11 @@ export default class DatabaseImpl {
     return await this.database.checkIfCustomConceptAlreadyExists(row)
   }
 
+  static async checkForCustomConceptWithSameName(name: string) {
+    await this.loadImpl()
+    return await this.database.checkForCustomConceptWithSameName(name)
+  }
+
   static async addCustomConcept(concept: ICustomConceptCompact) {
     await this.loadImpl()
     await this.database.addCustomConcept(concept)

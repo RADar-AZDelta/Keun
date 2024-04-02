@@ -48,7 +48,20 @@
     const rowToCheck = row ?? inputRow
     for (let [property, value] of Object.entries(rowToCheck)) if (!value) emptyProperties.push(property)
     if (emptyProperties.length) return `The following properties can't be empty: ${emptyProperties}`
-    const { concept_class_id, domain_id } = rowToCheck
+    const { concept_class_id, domain_id, concept_name } = rowToCheck
+    if (!colSuggestions['domain_id'].includes(domain_id)) return 'The domain must be one of the suggested values'
+    if (!colSuggestions['concept_class_id'].includes(concept_class_id))
+      return 'The className must be one of the suggested values'
+    const customConceptWithNameExists = await DatabaseImpl.checkForCustomConceptWithSameName(concept_name)
+    if (customConceptWithNameExists) return 'There already exists a custom concept with the same name'
+  }
+
+  async function updateValidation(row?: ICustomConceptCompact) {
+    const emptyProperties = []
+    const rowToCheck = row ?? inputRow
+    for (let [property, value] of Object.entries(rowToCheck)) if (!value) emptyProperties.push(property)
+    if (emptyProperties.length) return `The following properties can't be empty: ${emptyProperties}`
+    const { concept_class_id, domain_id, concept_name } = rowToCheck
     if (!colSuggestions['domain_id'].includes(domain_id)) return 'The domain must be one of the suggested values'
     if (!colSuggestions['concept_class_id'].includes(concept_class_id))
       return 'The className must be one of the suggested values'
@@ -71,7 +84,7 @@
   async function updateCustomConcept(e: CustomEvent, columnId: string) {
     const value = e.detail
     const row = { ...renderedRow, ...{ [columnId]: value } }
-    const error = await inputValidation(row)
+    const error = await updateValidation(row)
     if (error) {
       dispatch('updateError', { error })
       return (renderedRow[columnId] = renderedRow[columnId])
@@ -156,7 +169,7 @@
       </div>
     </td>
     {#each columns as column, _}
-      <td>
+      <td title={renderedRow[column.id]}>
         <EditableCell value={renderedRow[column.id]} on:valueChanged={e => updateCustomConcept(e, column.id)} />
       </td>
     {/each}
