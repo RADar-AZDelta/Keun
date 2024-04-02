@@ -1,3 +1,4 @@
+import { where } from 'firebase/firestore'
 import FirebaseFirestore from '$lib/firebase/FirebaseFirestore'
 import FirebaseStorage from '$lib/firebase/FirebaseStorage'
 import {
@@ -264,7 +265,7 @@ export default class FirebaseImpl implements IDatabaseImpl {
     const oldName = `${name}-${domain.replaceAll('/', '')}-${classId.replaceAll('/', '')}-${vocab}`
     const recordName = `${concept_name}-${domain_id.replaceAll('/', '')}-${concept_class_id.replaceAll('/', '')}-${vocabulary_id}`
     await this.firestore.writeToFirestore(this.firestoreCustomConceptsColl, recordName, customConcept)
-    if(oldName === recordName) return
+    if (oldName === recordName) return
     await this.firestore.deleteDocumentFirestore(this.firestoreCustomConceptsColl, oldName)
   }
 
@@ -276,6 +277,14 @@ export default class FirebaseImpl implements IDatabaseImpl {
     const concept = conceptDocument.data()
     if (!concept) return false
     return true
+  }
+
+  async checkForCustomConceptWithSameName(name: string) {
+    const constraints = [where('concept_name', '==', name)]
+    const documents = await this.firestore.executeFilterQueryFirestore(this.firestoreCustomConceptsColl, constraints)
+    if (!documents) return false
+    const concepts = documents.docs.map(doc => doc.data())
+    return concepts.length > 0
   }
 
   async reset() {

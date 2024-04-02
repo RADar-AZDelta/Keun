@@ -404,6 +404,7 @@ export interface IDatabaseImpl {
   addCustomConcept(customConcept: ICustomConceptCompact): Promise<any>
   updateCustomConcept(customConcept: ICustomConceptCompact, existingCustomConcept: ICustomConceptCompact): Promise<void>
   checkIfCustomConceptAlreadyExists(conceptInput: ICustomConceptCompact): Promise<boolean>
+  checkForCustomConceptWithSameName(name: string): Promise<boolean>
   reset(): Promise<IFileInformation[]>
 }
 
