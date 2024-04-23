@@ -10,7 +10,7 @@
   } from '$lib/Types'
   import type { UpdateErrorED } from '$lib/Types'
   import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
-  import CustomRow from './CustomRow.svelte'
+  import CustomRow from './customRow/CustomRow.svelte'
   import DatabaseImpl from '$lib/classes/implementation/DatabaseImpl'
 
   export let selectedRow: IUsagiRow, selectedRowIndex: number, equivalence: string

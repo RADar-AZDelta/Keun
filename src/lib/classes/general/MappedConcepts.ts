@@ -14,8 +14,14 @@ export default class MappedConcepts {
     )
   }
 
-  static async deleteConceptInMappedConceptsBib(sourceCode: string, conceptId: number) {
-    mappedToConceptIds.update(concepts => (concepts = this.deleteMappedConceptsInBib(concepts, sourceCode, conceptId)))
+  static async deleteConceptInMappedConceptsBib(
+    sourceCode: string,
+    conceptName?: string | null,
+    conceptId?: number | null,
+    custom: boolean = false,
+  ) {
+    if (!custom) mappedToConceptIds.update(con => (con = this.deleteMappedConceptsInBib(con, sourceCode, conceptId)))
+    else mappedToConceptIds.update(con => (con = this.deleteMappedCustomConceptsInBib(con, sourceCode, conceptName)))
   }
 
   private static addMappedConceptsToBib(
@@ -47,10 +53,25 @@ export default class MappedConcepts {
     return currentConcepts
   }
 
-  private static deleteMappedConceptsInBib(currentConcepts: IMappedRows, sourceCode: string, conceptId: number) {
+  private static deleteMappedConceptsInBib(
+    currentConcepts: IMappedRows,
+    sourceCode: string,
+    conceptId?: number | null,
+  ) {
     const currentRow = currentConcepts[sourceCode]
-    if (!currentRow) return currentConcepts
+    if (!currentRow || !conceptId) return currentConcepts
     delete currentRow[conceptId]
+    return currentConcepts
+  }
+
+  private static deleteMappedCustomConceptsInBib(
+    currentConcepts: IMappedRows,
+    sourceCode: string,
+    conceptName?: string | null,
+  ) {
+    const currentRow = currentConcepts[sourceCode]
+    if (!currentRow || !conceptName) return currentConcepts
+    delete currentRow[`custom-${conceptName}`]
     return currentConcepts
   }
 
