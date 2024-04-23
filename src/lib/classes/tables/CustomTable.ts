@@ -4,8 +4,9 @@ import { reformatDate } from '$lib/utils'
 import DatabaseImpl from '../implementation/DatabaseImpl'
 import Table from './Table'
 import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
-import type { ICustomConceptInput, ICustomQueryResult, IUsagiRow } from '$lib/Types'
+import type { ICustomConceptCompact, ICustomConceptInput, ICustomQueryResult, IUsagiRow } from '$lib/Types'
 import type DataTable from '@radar-azdelta/svelte-datatable'
+import type Query from 'arquero/dist/types/query/query'
 
 export default class CustomTable {
   static table: DataTable
@@ -119,8 +120,31 @@ export default class CustomTable {
     await this.table.insertRows([row])
   }
 
+  static async updateCustomTableRow(oldRow: ICustomConceptCompact, newRow: ICustomConceptCompact) {
+    await this.throwIfTableNotInitialized()
+    const index = await this.getRowIndex(oldRow)
+    if (index < 0 || index === undefined || index === null) return
+    await this.table.updateRows(new Map([[index, newRow]]))
+  }
+
+  private static async getRowIndex(row: ICustomConceptCompact) {
+    const { concept_name, domain_id, vocabulary_id, concept_class_id } = row
+    const params = { concept_name, domain_id, vocabulary_id, concept_class_id }
+    const indexQuery = (<Query>query().params(params))
+      .filter(
+        (r: any, p: any) =>
+          r.concept_name === p.concept_name &&
+          r.domain_id === p.domain_id &&
+          r.vocabulary_id === p.vocabulary_id &&
+          r.concept_class_id === p.concept_class_id,
+      )
+      .toObject()
+    const indexResult = await this.executeQueryOnCustomTable(indexQuery)
+    return indexResult.indices[0]
+  }
+
   static async getBlob() {
-    await this.throwIfTableNotInitialized().catch(() => console.error('THIS GIVES ERRORS'))
+    await this.throwIfTableNotInitialized()
     return await this.table.getBlob()
   }
 

@@ -14,9 +14,9 @@ export default class UsagiRowDelete {
 
   static async deleteRow(usagiInfo: IUsagiInfo) {
     await this.updateVars(usagiInfo)
+    await this.deleteFromMappedConceptIds()
     if (this.usagiRow['ADD_INFO:customConcept']) await this.deleteCustomConcept()
     await this.determineToResetOrDeleteRow()
-    await this.deleteFromMappedConceptIds()
   }
 
   private static async updateVars({ usagiRow, usagiRowIndex }: IUsagiInfo) {
@@ -108,7 +108,7 @@ export default class UsagiRowDelete {
   }
 
   private static async deleteFromMappedConceptIds() {
-    if (!this.usagiRow.conceptId) return
-    await MappedConcepts.deleteConceptInMappedConceptsBib(this.usagiRow.sourceCode, this.usagiRow.conceptId)
+    const custom = this.usagiRow['ADD_INFO:customConcept'] ?? false
+    await MappedConcepts.deleteConceptInMappedConceptsBib(this.usagiRow.sourceCode, this.usagiRow.conceptName, this.usagiRow.conceptId, custom)
   }
 }

@@ -86,6 +86,15 @@ export default class Table {
     return row
   }
 
+  static async getAllMappedRowsToConcept(conceptName: string) {
+    const params = { conceptName }
+    const rowsQuery = (<Query>query().params(params))
+      .filter((r: any, p: any) => r.conceptName === p.conceptName)
+      .toObject()
+    const queryResult = await this.executeQueryOnTable(rowsQuery)
+    return queryResult
+  }
+
   static async extractFlaggedConcepts() {
     const columnsWereAdded = await this.checkIfTableConceptsAreWithNewColumns()
     if (!columnsWereAdded) return []
