@@ -1,4 +1,7 @@
 import { PUBLIC_CLOUD_DATABASE_IMPLEMENTATION } from '$env/static/public'
+import CustomTable from '$lib/classes/tables/CustomTable'
+import Mapping from '$lib/classes/mapping/Mapping'
+import Table from '$lib/classes/tables/Table'
 import { Providers } from '$lib/enums'
 import type { ICustomConceptCompact, IDatabaseImpl } from '$lib/Types'
 
@@ -24,6 +27,13 @@ export default class DatabaseImpl {
   static async updateCustomConcept(concept: ICustomConceptCompact, existingConcept: ICustomConceptCompact) {
     await this.loadImpl()
     await this.database.updateCustomConcept(concept, existingConcept)
+    await CustomTable.updateCustomTableRow(existingConcept, concept)
+    const result = await Table.getAllMappedRowsToConcept(existingConcept.concept_name)
+    for (let i = 0; i < result.queriedData.length; i++) {
+      const usagiRow = result.queriedData[i]
+      const index = result.indices[i]
+      await Mapping.updateRowMappingToUpdatedCustom(usagiRow, index, concept)
+    }
   }
 
   static async getCustomConcepts() {

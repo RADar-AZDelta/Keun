@@ -32,6 +32,9 @@
     if (result) return (renderedRow[columnId] = renderedRow[columnId])
     const { concept_name, concept_class_id, domain_id, vocabulary_id } = renderedRow
     const existingConcept = { concept_name, concept_class_id, domain_id, vocabulary_id }
+    if (columnId === 'concept_name') 
+      $mappedToConceptIds[usagiRow.sourceCode][`custom-${value}`] =
+        $mappedToConceptIds[usagiRow.sourceCode]?.[`custom-${renderedRow.concept_name}`]
     renderedRow[columnId] = value
     const { concept_name: name, concept_class_id: classId, domain_id: domain, vocabulary_id: vocab } = renderedRow
     const newConcept = { concept_name: name, concept_class_id: classId, domain_id: domain, vocabulary_id: vocab }
