@@ -1,8 +1,9 @@
+import Usagi from '$lib/classes/usagi/Usagi'
+import Table from '$lib/classes/tables/Table'
+import Settings from '$lib/classes/general/Settings'
 import SingleMapping from '$lib/classes/mapping/SingleMapping'
 import MultipleMapping from '$lib/classes/mapping/MultipleMapping'
-import Table from '../tables/Table'
-import Settings from '../general/Settings'
-import type { IAthenaInfo, IMappingExtra } from '$lib/Types'
+import type { IAthenaInfo, ICustomConceptCompact, IMappingExtra, IUsagiRow } from '$lib/Types'
 
 export default class Mapping {
   static async updateMappingInfo(index: number, mappingInfo: IMappingExtra) {
@@ -13,5 +14,14 @@ export default class Mapping {
     const mapToMultipleConcepts = await Settings.getMappingToMultiple()
     if (mapToMultipleConcepts) await MultipleMapping.multipleMapping(athenaInfo, action, equivalence, custom)
     else await SingleMapping.singleMapping(athenaInfo, action, equivalence, custom)
+  }
+
+  static async updateRowMappingToUpdatedCustom(usagiRow: IUsagiRow, index: number, newCustom: ICustomConceptCompact) {
+    const { concept_name, concept_class_id, domain_id, vocabulary_id } = newCustom
+    const row = new Usagi(usagiRow, index)
+    await row.updatePropertyValue('conceptName', concept_name)
+    await row.updatePropertyValue('className', concept_class_id)
+    await row.updatePropertyValue('domainId', domain_id)
+    await row.updatePropertyValue('vocabularyId', vocabulary_id)
   }
 }
