@@ -8,17 +8,19 @@
   import { logWhenDev } from '$lib/utils'
   import { Providers } from '$lib/enums'
   import DatabaseImpl from '$lib/classes/implementation/DatabaseImpl'
+  import Confirm from '$lib/components/extra/Confirm.svelte'
 
   export let files: IFileInformation[]
 
   const dispatch = createEventDispatcher<PageEvents>()
+  let confirmDialog: HTMLDialogElement
+  let fileToDelete = { id: '', name: '' }
 
   $: firebaseProvider = DatabaseImpl.databaseImplementation === Providers.Firebase
   $: localProvider = DatabaseImpl.databaseImplementation === Providers.Local
   $: userIsUser = $user?.roles?.includes('user')
   $: userIsAdmin = $user?.roles?.includes('admin')
 
-  // A method to send the user to the mappingtool
   async function openMappingTool(fileId: string, domain: string | null): Promise<void> {
     logWhenDev('openMappingTool: Navigating to the mapping tool')
     const cached = await DatabaseImpl.checkFileExistance(fileId)
@@ -28,26 +30,34 @@
     goto(url)
   }
 
-  async function downloadFiles(e: Event, id: string): Promise<void> {
-    await stopPropagation(e)
+  async function downloadFiles(id: string): Promise<void> {
     if (!id) return
     await DatabaseImpl.downloadFiles(id)
     dispatch('getFiles')
   }
 
-  // Send a request to the parent to delete the files with the corresponding id
-  async function deleteFiles(e: Event, id: string): Promise<void> {
-    await stopPropagation(e)
+  async function deleteFiles(e: CustomEvent): Promise<void> {
+    const { id } = e.detail
     dispatch('processing', { processing: true })
     if (id) await DatabaseImpl.deleteKeunFile(id)
     dispatch('getFiles')
     dispatch('processing', { processing: false })
   }
 
-  async function stopPropagation(e: Event) {
-    if (e && e.stopPropagation) e.stopPropagation()
+  async function confirmFileDeletion(file: IFileInformation) {
+    const { id, name } = file
+    fileToDelete = { id, name }
+    confirmDialog.showModal()
   }
 </script>
+
+<Confirm
+  bind:dialog={confirmDialog}
+  title={fileToDelete.name}
+  approveDispatch="delete"
+  props={{ id: fileToDelete.id }}
+  on:delete={deleteFiles}
+/>
 
 {#if $user && (localProvider || (firebaseProvider && (userIsUser || userIsAdmin)))}
   {#each files as file}
@@ -59,8 +69,12 @@
       </div>
       {#if (firebaseProvider && userIsAdmin) || localProvider}
         <div>
-          <button class="download-file" on:click={e => downloadFiles(e, file.id)}><SvgIcon id="download" /></button>
-          <button class="delete-file" on:click={e => deleteFiles(e, file.id)}><SvgIcon id="x" /></button>
+          <button class="download-file" on:click|stopPropagation={() => downloadFiles(file.id)}>
+            <SvgIcon id="download" />
+          </button>
+          <button class="delete-file" on:click|stopPropagation={() => confirmFileDeletion(file)}>
+            <SvgIcon id="x" />
+          </button>
         </div>
       {/if}
     </button>
