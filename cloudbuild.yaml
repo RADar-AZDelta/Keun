@@ -45,7 +45,7 @@ steps:
   - name: 'bearer/bearer'
     waitFor: ['Install']
     entrypoint: bearer
-    args: ['scan', '.']
+    args: ['scan', './src']
     id: 'Scan'
 
   # Download the Firebase tool package in a container

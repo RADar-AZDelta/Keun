@@ -32,7 +32,6 @@ export default class CustomValidation {
     const { domain_id } = this.input
     const validDomains = Config.customConceptInfo['domain_id']
     if (validDomains.includes(domain_id)) return
-    console.log('CURRENT DOMAIN ', domain_id, ' AND VALIDS ', validDomains)
     this.error = true
     throw new Error('The domain must be one of the suggested values')
   }
