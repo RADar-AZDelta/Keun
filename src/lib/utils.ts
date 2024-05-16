@@ -36,7 +36,7 @@ export function reformatDate(date: Date = new Date()) {
 }
 
 export function logWhenDev(message: string) {
-  if (dev) console.log(message)
+  // if (dev) console.log(message)
 }
 
 export const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
