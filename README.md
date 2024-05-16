@@ -23,6 +23,10 @@ Therefore we decided to make a modern web variant of Usagi:
 - Uses [Athena](https://athena.ohdsi.org/) in the background
 - Translation are done by [Bergamot](https://browser.mt/): machine translation done locally in your browser
 
+# Tutorial
+
+https://github.com/RADar-AZDelta/Keun/assets/71939691/6bced370-81fe-4c89-afde-48acb28d7450
+
 # Setup
 
 If you want to setup Keun locally on your own device you will need to provide some information in the .env file. The following values are required
@@ -76,46 +80,11 @@ PUBLIC_FIREBASE_APP_ID=
 
 The values for Firebase can be found when creating a Firebase project.
 
-##### SQLite implementation
-
-THIS IMPLEMENTATION IS STILL UNDER DEVELOPMENT
-
-This implementation uses a local SQLite database. This implementation is created to simulate how someone could use Keun with a relational database. You could easily upscale from a SQLite implementation to a SQL implementation.
-
-To use the SQLite implementation, set the following values in the .env file:
-
-```bash
-PUBLIC_CLOUD_DATABASE_IMPLEMENTATION='sqlite'
-PUBLIC_CLOUD_AUTH_IMPLEMENTATION='sqlite'
-```
-
 ##### Combination
 
 You could combine multiple cloud implementations according to your wishes. You could for example authenticate through Firebase & use a SQL implementation to save the data.
 
 Feel free to create other cloud implementations through a pull request!
-
-# Usage
-
-### Menu
-
-##### Add a file to Keun
-
-##### Download a file
-
-##### Delete a file
-
-### Mapping
-
-##### Mapping to an existing concept
-
-##### Mapping to a custom concept
-
-##### Actions on a row
-
-##### Automap
-
-##### Map to multiple concepts
 
 # License
 

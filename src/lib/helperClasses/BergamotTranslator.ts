@@ -1,6 +1,7 @@
 // @ts-expect-error There is an error with this package because this type is not exported correctly
 import { LatencyOptimisedTranslator } from '@browsermt/bergamot-translator/translator.js'
 import { browser, dev } from '$app/environment'
+import { PUBLIC_CLOUD_DATABASE_IMPLEMENTATION } from '$env/static/public'
 
 export class BergamotTranslator {
   static translator: LatencyOptimisedTranslator | undefined
@@ -20,10 +21,16 @@ export class BergamotTranslator {
   }
 
   private static async setup() {
-    const registryUrl = dev ? 'bergamot/dev-registry.json' : '/Keun/bergamot/registry.json'
+    const registryUrl = await this.getRegistryUrl()
     BergamotTranslator.translator = new LatencyOptimisedTranslator(
       { workers: 1, batchSize: 1, registryUrl, html: true },
       undefined,
     )
+  }
+
+  private static async getRegistryUrl () {
+    if(dev) return 'bergamot/dev-registry.json'
+    if(PUBLIC_CLOUD_DATABASE_IMPLEMENTATION === 'none') return '/Keun/bergamot/local-registry.json'
+    return 'bergamot/registry.json'
   }
 }
