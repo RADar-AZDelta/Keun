@@ -95,7 +95,7 @@ export default class CustomTable {
   }
 
   static async syncFile(id: string) {
-    const blob = await this.getBlob()
+    const blob = await this.getBlob().catch(e => undefined)
     if (!blob) return
     await DatabaseImpl.editCustomKeunFile(id, blob)
   }
