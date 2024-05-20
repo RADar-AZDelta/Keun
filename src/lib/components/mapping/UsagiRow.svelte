@@ -42,6 +42,7 @@
   }
 
   async function setCurrentRow() {
+    currentVisibleRows.set(index, renderedRow)
     const usagiInfo: IUsagiInfo = { usagiRow: <IUsagiRow>renderedRow, usagiRowIndex: index }
     if (!usagiRow) await createUsagiRow()
     await updateUsagiRow(usagiInfo)
@@ -51,7 +52,6 @@
 
   $: {
     renderedRow, index
-    currentVisibleRows.set(index, renderedRow)
     setPreset()
     setCurrentRow()
   }

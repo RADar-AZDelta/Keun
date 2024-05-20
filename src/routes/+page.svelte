@@ -17,6 +17,7 @@
   import FileMenu from '$lib/components/menu/FileMenu.svelte'
   import DatabaseImpl from '$lib/classes/implementation/DatabaseImpl'
   import Spinner from '$lib/components/extra/Spinner.svelte'
+  import { Providers } from '$lib/enums'
 
   let files: IFileInformation[] = []
   let file: File, domain: string | null
@@ -117,7 +118,9 @@
       <div class="file-menu">
         <div class="title-container">
           <h1 class="title">Files to map</h1>
-          <button class="reset" title="Remove all the files" on:click={reset}>Reset</button>
+          {#if DatabaseImpl.databaseImplementation !== Providers.Firebase}
+            <button class="reset" title="Remove all the files" on:click={reset}>Reset</button>
+          {/if}
         </div>
         <div class="file-list">
           <FileMenu bind:files on:processing={setProcessing} on:getFiles={getFiles} />
