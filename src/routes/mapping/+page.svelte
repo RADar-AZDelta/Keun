@@ -79,6 +79,7 @@
   }
 
   async function approvePage() {
+    console.log('CURRENT VISIBLE ROWS ', currentVisibleRows.keys())
     for (let [index, row] of currentVisibleRows) await approveRow(row, index)
   }
 
@@ -152,6 +153,10 @@
   })
 
   onMount(() => load())
+
+  $: {
+    console.log("CURRENT VISIBLE ROWS ", currentVisibleRows)
+  }
 </script>
 
 <svelte:head>

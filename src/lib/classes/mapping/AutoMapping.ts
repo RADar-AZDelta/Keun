@@ -94,11 +94,13 @@ export default class AutoMapping {
   static async abortAutoMap() {
     if (this.autoMappingPromise) this.autoMappingAbortController.abort()
     abortAutoMapping.set(false)
-    const autoMappingTriggered = await this.checkIfTheAutomappingIsTriggered()
-    if (!autoMappingTriggered) return
-    this.enableTable()
     const pag = await Table.getTablePagination()
-    if (this.previousPage !== pag.currentPage) return new Map<number, IUsagiRow>()
+    const newRows = this.previousPage !== pag.currentPage ? new Map<number, IUsagiRow>() : undefined
+    this.previousPage = pag.currentPage ?? this.previousPage
+    const autoMappingTriggered = await this.checkIfTheAutomappingIsTriggered()
+    if (!autoMappingTriggered) return newRows
+    this.enableTable()
+    return newRows
   }
 
   private static async checkIfTheAutomappingIsTriggered() {
