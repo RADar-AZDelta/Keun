@@ -1,0 +1,195 @@
+{
+  "additionalColumns": {
+    "matchScore": 0,
+    "statusSetBy": null,
+    "statusSetOn": 0,
+    "mappingType": null,
+    "comment": null,
+    "createdBy": null,
+    "createdOn": 0,
+    "assignedReviewer": null,
+    "equivalence": null,
+    "ADD_INFO:approvedBy": null,
+    "ADD_INFO:approvedOn": null,
+    "ADD_INFO:numberOfConcepts": null,
+    "ADD_INFO:customConcept": null,
+    "mappingStatus": null
+  },
+  "columnsCustomConcept": [
+    {
+      "id": "concept_id",
+      "label": "id"
+    },
+    {
+      "id": "concept_code",
+      "label": "code"
+    },
+    {
+      "id": "concept_name",
+      "label": "name"
+    },
+    {
+      "id": "concept_class_id",
+      "label": "className"
+    },
+    {
+      "id": "domain_id",
+      "label": "domain"
+    },
+    {
+      "id": "vocabulary_id",
+      "label": "vocabulary"
+    },
+    {
+      "id": "standard_concept"
+    },
+    {
+      "id": "valid_start_date"
+    },
+    {
+      "id": "valid_end_date"
+    },
+    {
+      "id": "invalid_reason"
+    }
+  ],
+  "columnsMapped": [
+    {
+      "id": "sourceCode"
+    },
+    {
+      "id": "sourceName"
+    },
+    {
+      "id": "conceptId"
+    },
+    {
+      "id": "conceptName"
+    },
+    {
+      "id": "customConcept"
+    }
+  ],
+  "columnsUsagi": [
+    {
+      "id": "sourceCode",
+      "visible": true,
+      "editable": false
+    },
+    {
+      "id": "sourceName",
+      "visible": true,
+      "editable": false
+    },
+    {
+      "id": "sourceFrequency",
+      "visible": false,
+      "editable": false
+    },
+    {
+      "id": "conceptId",
+      "visible": true,
+      "editable": false
+    },
+    {
+      "id": "sourceAutoAssignedConceptIds",
+      "visible": false,
+      "editable": false
+    },
+    {
+      "id": "conceptName",
+      "visible": true,
+      "editable": false
+    },
+    {
+      "id": "mappingStatus",
+      "visible": true,
+      "editable": false
+    },
+    {
+      "id": "domainId",
+      "visible": false,
+      "editable": false
+    },
+    {
+      "id": "vocabularyId",
+      "visible": false,
+      "editable": false
+    },
+    {
+      "id": "className",
+      "visible": false,
+      "editable": false
+    },
+    {
+      "id": "matchScore",
+      "visible": false,
+      "editable": false
+    },
+    {
+      "id": "equivalence",
+      "visible": false,
+      "editable": false
+    },
+    {
+      "id": "statusSetBy",
+      "visible": false,
+      "editable": false
+    },
+    {
+      "id": "statusSetOn",
+      "visible": false,
+      "editable": false
+    },
+    {
+      "id": "mappingType",
+      "visible": false,
+      "editable": false
+    },
+    {
+      "id": "comment",
+      "visible": true,
+      "editable": true
+    },
+    {
+      "id": "createdBy",
+      "visible": false,
+      "editable": false
+    },
+    {
+      "id": "createdOn",
+      "visible": false,
+      "editable": false
+    },
+    {
+      "id": "assignedReviewer",
+      "visible": false,
+      "editable": true
+    },
+    {
+      "id": "ADD_INFO:approvedBy",
+      "visible": false,
+      "editable": false
+    },
+    {
+      "id": "ADD_INFO:approvedOn",
+      "visible": false,
+      "editable": false
+    },
+    {
+      "id": "ADD_INFO:numberOfConcepts",
+      "visible": false,
+      "editable": false
+    },
+    {
+      "id": "ADD_INFO:customConcept",
+      "visible": false,
+      "editable": false
+    },
+    {
+      "id": "ADD_INFO:lastAthenaFilter",
+      "visible": false,
+      "editable": true
+    }
+  ]
+}

@@ -1,12 +1,10 @@
 <script lang="ts">
   import { base } from '$app/paths'
+  import type { ISvgIconProps } from '$lib/interfaces/Types'
 
-  export let href: string = `${base}/icons.svg`
-  export let id: string
-  export let width: string = '16px'
-  export let height: string = '16px'
+  let { href = `${base}/icons.svg`, id, width = '16px', height = '16px' }: ISvgIconProps = $props()
 </script>
 
-<svg class={$$props.class} {width} {height}>
+<svg {width} {height}>
   <use href="{href}#{id}" />
 </svg>

@@ -1,23 +1,25 @@
 <script lang="ts">
   import { base } from '$app/paths'
   import { page } from '$app/stores'
-  import Manual from '$lib/components/extra/Manual.svelte'
   import Header from '$lib/components/extra/Header.svelte'
   import Settings from '$lib/components/extra/Settings.svelte'
   import User from '$lib/components/extra/User.svelte'
-  import { settings, user } from '$lib/store'
-  import '$lib/table.scss'
+  import '$lib/styles/table.scss'
   import '@radar-azdelta/svelte-datatable/style'
-  import SettingsImpl from '$lib/classes/implementation/SettingsImpl'
+  import { createSettings, createUser } from '$lib/stores/runes.svelte'
+  import SettingsImpl from '$lib/helpers/Settings'
+
+  let user = createUser()
+  let settings = createSettings()
 
   async function retrieveSettings() {
     const storedSettings = await SettingsImpl.getSettings()
-    if (storedSettings) $settings = storedSettings
+    if (storedSettings) settings.update(storedSettings)
   }
 
-  $: {
-    if ($user) retrieveSettings()
-  }
+  $effect(() => {
+    if (user.value) retrieveSettings()
+  })
 </script>
 
 <main>
@@ -30,8 +32,7 @@
     </ul>
     {#if $page.url.pathname.substring($page.url.pathname.lastIndexOf('/')) !== 'registration'}
       <div class="header-buttons-container" id="settings">
-        <Manual href="/README.md?raw" />
-        {#if $settings}
+        {#if settings.value}
           <Settings />
           <User />
         {/if}

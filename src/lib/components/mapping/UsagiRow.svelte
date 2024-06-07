@@ -1,34 +1,37 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount } from 'svelte'
   import { EditableCell } from '@radar-azdelta/svelte-datatable'
-  import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
-  import { Config } from '$lib/helperClasses/Config'
-  import Usagi from '$lib/classes/usagi/Usagi'
-  import type { IUsagiInfo, IUsagiRow, MappingEvents } from '$lib/Types'
-  import type { IColumnMetaData } from '@radar-azdelta/svelte-datatable'
-  import { reformatDate } from '$lib/utils'
+  import Config from '$lib/helpers/Config'
+  import Usagi from '$lib/helpers/usagi/Usagi'
+  import { reformatDate } from '$lib/helpers/utils'
+  import type { IUsagiRowProps, IUsagiInfo, IUsagiRow } from '$lib/interfaces/Types'
+  import SvgIcon from '../extra/SvgIcon.svelte'
 
-  export let renderedRow: Record<string, any>, columns: IColumnMetaData[] | undefined, index: number
-  export let currentVisibleRows: Map<number, Record<string, any>> = new Map<number, Record<string, any>>([])
-  export let disabled: boolean
+  let {
+    renderedRow,
+    columns,
+    index,
+    currentVisibleRows = $bindable(new Map<number, Record<string, any>>([])),
+    disabled,
+    rowSelection,
+    autoMapRow,
+  }: IUsagiRowProps = $props()
 
-  const dispatch = createEventDispatcher<MappingEvents>()
   let usagiRow: Usagi
-  let color: string = 'inherit'
+  let color: string = $state('inherit')
   const width = '10px'
   const height = '10px'
 
-  const mapRow = () => dispatch('rowSelection', { row: renderedRow as IUsagiRow, index })
+  const mapRow = () => rowSelection(renderedRow as IUsagiRow, index)
   const approveRow = async () => await usagiRow.approveRow()
   const flagRow = async () => await usagiRow.flagRow()
   const unapproveRow = async () => await usagiRow.unapproveRow()
   const deleteRow = async () => await usagiRow.deleteRow()
-  const updateValue = async (e: CustomEvent, column: string) => await usagiRow.updatePropertyValue(column, e.detail)
+  const updateValue = async (value: string, column: string) => await usagiRow.updatePropertyValue(column, value)
   const updateUsagiRow = async (usagiInfo: IUsagiInfo) => await usagiRow.updateUsagiRow(usagiInfo)
-  const onClickAutoMap = async () => dispatch('autoMapRow', { index, sourceName: renderedRow.sourceName })
+  const onClickAutoMap = async () => autoMapRow(index, renderedRow.sourceName)
 
   async function getColors() {
-    const color = (<Record<string, string>>Config.colors)[renderedRow.mappingStatus]
+    const color = Config.colors[renderedRow.mappingStatus]
     if (!color) return 'inherit'
     return color
   }
@@ -42,44 +45,45 @@
   }
 
   async function setCurrentRow() {
-    currentVisibleRows.set(index, renderedRow)
-    const usagiInfo: IUsagiInfo = { usagiRow: <IUsagiRow>renderedRow, usagiRowIndex: index }
+    const usagiInfo: IUsagiInfo = { usagiRow: renderedRow as IUsagiRow, usagiRowIndex: index }
     if (!usagiRow) await createUsagiRow()
     await updateUsagiRow(usagiInfo)
   }
 
-  const createUsagiRow = async () => (usagiRow = new Usagi(<IUsagiRow>renderedRow, index))
+  const createUsagiRow = async () => (usagiRow = new Usagi(renderedRow as IUsagiRow, index))
 
-  $: {
-    renderedRow, index
+  $effect(() => {
+    renderedRow
+    index
+    currentVisibleRows.set(index, renderedRow)
     setPreset()
     setCurrentRow()
-  }
+  })
 
-  onMount(() => {
-    usagiRow = new Usagi(<IUsagiRow>renderedRow, index)
+  $effect(() => {
+    usagiRow = new Usagi(renderedRow as IUsagiRow, index)
   })
 </script>
 
 <td class="actions-cell" style={`background-color: ${color}`}>
   <div class="actions-grid">
-    <button on:click={mapRow} title="Map" {disabled}><SvgIcon id="search" {width} {height} /></button>
-    <button on:click={deleteRow} title="Delete" {disabled}><SvgIcon id="eraser" {width} {height} /></button>
-    <button on:click={onClickAutoMap} title="Automap" {disabled}>AUTO</button>
+    <button onclick={mapRow} title="Map" {disabled}><SvgIcon id="search" {width} {height} /></button>
+    <button onclick={deleteRow} title="Delete" {disabled}><SvgIcon id="eraser" {width} {height} /></button>
+    <button onclick={onClickAutoMap} title="Automap" {disabled}>AUTO</button>
     <p>{renderedRow['ADD_INFO:numberOfConcepts'] > 1 ? renderedRow['ADD_INFO:numberOfConcepts'] : ''}</p>
-    <button on:click={approveRow} title="Approve" {disabled}><SvgIcon id="check" {width} {height} /></button>
-    <button on:click={flagRow} title="Flag" {disabled}><SvgIcon id="flag" {width} {height} /></button>
-    <button on:click={unapproveRow} title="Unapprove" {disabled}><SvgIcon id="x" {width} {height} /></button>
+    <button onclick={approveRow} title="Approve" {disabled}><SvgIcon id="check" {width} {height} /></button>
+    <button onclick={flagRow} title="Flag" {disabled}><SvgIcon id="flag" {width} {height} /></button>
+    <button onclick={unapproveRow} title="Unapprove" {disabled}><SvgIcon id="x" {width} {height} /></button>
   </div>
 </td>
 {#each columns || [] as column (column.id)}
   {@const { id } = column}
   {@const value = renderedRow[id]}
-  <td on:dblclick={mapRow} class="cell" style={`background-color: ${color}`} title={value}>
+  <td ondblclick={mapRow} class="cell" style={`background-color: ${color}`} title={value}>
     {#if Config.usagiRowConfig.dateCells.includes(id)}
       <p>{reformatDate(new Date(value))}</p>
     {:else if Config.usagiRowConfig.editableCells.includes(id)}
-      <EditableCell {value} on:valueChanged={e => updateValue(e, id)} />
+      <EditableCell {value} changeValue={(value: string) => updateValue(value, column.id)} />
     {:else}
       <p>{value ?? ''}</p>
     {/if}

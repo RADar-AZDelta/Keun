@@ -1,23 +1,13 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount } from 'svelte'
   import DataTable, { type IColumnMetaData, type ITableOptions } from '@radar-azdelta/svelte-datatable'
-  import type {
-    CustomConceptAddedED,
-    ICustomConceptCompact,
-    IUsagiRow,
-    MapCustomConceptED,
-    MappingEvents,
-  } from '$lib/Types'
-  import type { UpdateErrorED } from '$lib/Types'
+  import CustomRow from '$lib/components/mapping/views/customRow/CustomRow.svelte'
+  import Database from '$lib/helpers/Database'
+  import type { ICustomViewProps, ICustomConceptCompact } from '$lib/interfaces/Types'
   import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
-  import CustomRow from './customRow/CustomRow.svelte'
-  import DatabaseImpl from '$lib/classes/implementation/DatabaseImpl'
 
-  export let selectedRow: IUsagiRow, selectedRowIndex: number, equivalence: string
+  let { selectedRow, selectedRowIndex, equivalence }: ICustomViewProps = $props()
 
-  const dispatch = createEventDispatcher<MappingEvents>()
-
-  let data: ICustomConceptCompact[] = []
+  let data: ICustomConceptCompact[] = $state([])
   const columns: IColumnMetaData[] = [
     {
       id: 'concept_name',
@@ -37,7 +27,7 @@
     },
   ]
 
-  let errorMessage: string = ''
+  let errorMessage: string | undefined = $state()
   const options: ITableOptions = {
     actionColumn: true,
     id: 'createCustomConcepts',
@@ -46,29 +36,30 @@
     rowsPerPage: 15,
   }
 
-  async function mapCustomConcept(e: CustomEvent<MapCustomConceptED>) {
-    const { concept, action } = e.detail
-    dispatch('customMappingInput', { row: concept, action })
+  // async function mapCustomConcept(e: CustomEvent<MapCustomConceptED>) {
+  //   const { concept, action } = e.detail
+  //   customMappingInput(concept, action)
+  // }
+
+  const deleteError = () => (errorMessage = undefined)
+
+  async function updateError(error: string | undefined) {
+    errorMessage = error
   }
 
-  const deleteError = () => (errorMessage = '')
-
-  const updateError = (e: CustomEvent<UpdateErrorED>) => (errorMessage = e.detail.error)
-
   async function getAllCustomConcepts() {
-    const customConcepts: ICustomConceptCompact[] = await DatabaseImpl.getCustomConcepts()
+    const customConcepts: ICustomConceptCompact[] = (await Database.getCustomConcepts()) as ICustomConceptCompact[]
     const inputRow = { concept_name: '', domain_id: '', vocabulary_id: '', concept_class_id: '' }
     data = [inputRow, ...customConcepts]
   }
 
-  async function addCustomConcept(e: CustomEvent<CustomConceptAddedED>) {
-    const { concept } = e.detail
+  async function addCustomConcept(concept: ICustomConceptCompact) {
     const first = data[0]
     const rest = data.slice(1)
     data = [first, concept, ...rest]
   }
 
-  onMount(() => {
+  $effect(() => {
     getAllCustomConcepts()
   })
 </script>
@@ -76,27 +67,24 @@
 <div class="custom-concept-container">
   <h2 class="custom-concept-title">Create a custom concept</h2>
   <DataTable {data} {columns} {options}>
-    <CustomRow
-      slot="default"
-      let:columns
-      let:renderedRow
-      let:originalIndex
-      {renderedRow}
-      {columns}
-      {originalIndex}
-      usagiRow={selectedRow}
-      usagiRowIndex={selectedRowIndex}
-      {equivalence}
-      on:updateError={updateError}
-      on:customConceptAdded={addCustomConcept}
-      on:mapCustomConcept={mapCustomConcept}
-    />
+    {#snippet rowChild(renderedRow: any, originalIndex: any, index: any, columns: any, option: any)}
+      <CustomRow
+        {renderedRow}
+        {columns}
+        {originalIndex}
+        usagiRow={selectedRow}
+        usagiRowIndex={selectedRowIndex}
+        {equivalence}
+        {updateError}
+        {addCustomConcept}
+      />
+    {/snippet}
   </DataTable>
 
   {#if errorMessage}
     <div class="errormessage">
       <p>{errorMessage}</p>
-      <button class="errormessage-button" on:click={deleteError}><SvgIcon id="x" /></button>
+      <button class="errormessage-button" onclick={deleteError}><SvgIcon id="x" /></button>
     </div>
   {/if}
 </div>

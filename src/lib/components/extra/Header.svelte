@@ -1,5 +1,5 @@
 <div class="logo-holder">
-  <div class="logo" />
+  <div class="logo"></div>
   <div class="logo-text text-bold">K</div>
   <div class="logo-text text-light">E</div>
   <div class="logo-text text-light">U</div>

@@ -1,26 +1,25 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte'
   import Dialog from './Dialog.svelte'
   import SvgIcon from './SvgIcon.svelte'
+  import type { IConfirmProps } from '$lib/interfaces/Types'
 
-  export let title: string, dialog: HTMLDialogElement, approveDispatch: string
-  export let props: object | undefined = undefined
+  let { dialog = $bindable(), title, approveId, approveProps, approve: approveMethod }: IConfirmProps = $props()
 
-  const dispatch = createEventDispatcher()
-
-  const cancel = () => dialog.close()
+  const cancel = () => dialog?.close()
 
   async function approve() {
-    dialog.close()
-    dispatch(approveDispatch, props)
+    dialog?.close()
+    approveMethod(approveId, approveProps)
   }
 </script>
 
 <Dialog bind:dialog height="30%" width="30%" title="Confirm deletion of {title}">
-  <div slot="buttons" class="buttons-container">
-    <button class="approve" on:click={approve}><SvgIcon id="check" /></button>
-    <button class="delete" on:click={cancel}><SvgIcon id="x" /></button>
-  </div>
+  {#snippet buttonsChildren()}
+    <div class="buttons-container">
+      <button class="approve" onclick={approve}><SvgIcon id="check" /></button>
+      <button class="delete" onclick={cancel}><SvgIcon id="x" /></button>
+    </div>
+  {/snippet}
 </Dialog>
 
 <style>

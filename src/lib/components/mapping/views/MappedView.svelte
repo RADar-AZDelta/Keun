@@ -1,30 +1,41 @@
 <script lang="ts">
   import DataTable, { type ITableOptions } from '@radar-azdelta/svelte-datatable'
-  import { mappedToConceptIds } from '$lib/store'
-  import MappedRow from './MappedRow.svelte'
-  import Table from '$lib/classes/tables/Table'
-  import { Config } from '$lib/helperClasses/Config'
-  import type { IMappedRow, IUsagiRow } from '$lib/Types'
+  import MappedRow from '$lib/components/mapping/views/MappedRow.svelte'
+  import Table from '$lib/helpers/tables/Table'
+  import Config from '$lib/helpers/Config'
+  import { createMappedToConceptIds } from '$lib/stores/runes.svelte'
+  import type { IMappedViewProps, IMappedRow } from '$lib/interfaces/Types'
 
-  export let selectedRow: IUsagiRow
+  let { selectedRow }: IMappedViewProps = $props()
 
-  let mappedData: (IMappedRow | object)[] = [{}]
+  let mappedToConceptIds = createMappedToConceptIds()
+  let mappedData: (IMappedRow | object)[] = $state([{}])
   let options: ITableOptions = { actionColumn: true, id: 'mappedConcepts' }
 
   async function loadMappedConcepts() {
     if (!selectedRow.sourceCode) return
-    mappedData = await Table.getAllMappedConcepts(selectedRow.sourceCode)
+    const res = await Table.getAllMappedConcepts(selectedRow.sourceCode)
+    // TODO: check to optimize this
+    await pushRows(res)
   }
 
-  $: {
-    $mappedToConceptIds, selectedRow
-    loadMappedConcepts()
+  async function pushRows(rows: (object | IMappedRow)[]) {
+    mappedData.splice(0, mappedData.length)
+    for (let row of rows) mappedData.push(row)
   }
+
+  $effect(() => {
+    mappedToConceptIds.value
+    selectedRow
+    loadMappedConcepts()
+  })
 </script>
 
 <div class="table">
   <DataTable data={mappedData} columns={Config.columnsMapped} {options}>
-    <MappedRow slot="default" let:renderedRow {renderedRow} usagiRow={selectedRow} />
+    {#snippet rowChild(renderedRow: any)}
+      <MappedRow {renderedRow} usagiRow={selectedRow} />
+    {/snippet}
   </DataTable>
 </div>
 

@@ -1,23 +1,27 @@
 <script lang="ts">
   import SvgIcon from './SvgIcon.svelte'
+  import type { IDialogProps } from '$lib/interfaces/Types'
 
-  export let dialog: HTMLDialogElement, width: string | number, height: string | number
-  export let title: string | undefined = undefined
+  let { dialog = $bindable(), width, height, title, children, buttonsChildren }: IDialogProps = $props()
 
-  const outClick = () => dialog.close()
+  const outClick = () => dialog?.close()
 </script>
 
 <dialog class="dialog" bind:this={dialog} style="width: {width}; height: {height};">
   <div class="dialog-container">
-    <button class="close-dialog" on:click={outClick}><SvgIcon id="x" /></button>
+    <button class="close-dialog" onclick={outClick}><SvgIcon id="x" /></button>
     {#if title}
       <h3 class="title">{title}</h3>
     {/if}
-    <div class="slot">
-      <slot />
+    <div class="slot-container">
+      {#if children}
+        {@render children()}
+      {/if}
     </div>
     <div class="buttons">
-      <slot name="buttons" />
+      {#if buttonsChildren}
+        {@render buttonsChildren()}
+      {/if}
     </div>
   </div>
 </dialog>
@@ -57,7 +61,7 @@
     margin-bottom: 0;
   }
 
-  .slot {
+  .slot-container {
     flex: 1 1 auto;
     overflow-y: auto;
   }
