@@ -1,52 +1,48 @@
 <script lang="ts">
-  import type {
-    CheckForCacheED,
-    ColumnsDialogShowED,
-    DeleteFilesED,
-    FileUpdatedColumnsED,
-    IFileInformation,
-    ProcessingED,
-  } from '$lib/Types'
   import ColumnsDialog from '$lib/components/menu/ColumnsDialog.svelte'
   import FileChoiceDialog from '$lib/components/menu/FileChoiceDialog.svelte'
   import FileInputDialog from '$lib/components/menu/FileInputDialog.svelte'
-  import { user } from '$lib/store'
-  import type { SvelteComponent } from 'svelte'
-  import type { FileUploadED } from '$lib/Types'
-  import { logWhenDev } from '$lib/utils'
   import FileMenu from '$lib/components/menu/FileMenu.svelte'
-  import DatabaseImpl from '$lib/classes/implementation/DatabaseImpl'
+  import Database from '$lib/helpers/Database'
+  import type { SvelteComponent } from 'svelte'
+  import type { IFileInformation } from '$lib/interfaces/Types'
+  import { dev } from '$app/environment'
+  import { createUser } from '$lib/stores/runes.svelte'
   import Spinner from '$lib/components/extra/Spinner.svelte'
-  import { Providers } from '$lib/enums'
 
-  let files: IFileInformation[] = []
-  let file: File, domain: string | null
-  let cols: string[] = []
-  let missing: Record<string, string> = {}
-  let processing: boolean = false
-  let possibleEditingFileId: string | undefined = undefined
+  let files: IFileInformation[] = $state([])
+  let file: File | undefined = $state(undefined)
+  let domain: string | null = $state(null)
+  let cols: string[] = $state([])
+  let missing: Record<string, string> = $state({})
+  let processing: boolean = $state(false)
+  let possibleEditingFileId: string | undefined = $state(undefined)
 
   let fileInputDialog: SvelteComponent, columnDialog: SvelteComponent, locationDialog: SvelteComponent
+  let user = createUser()
 
   async function uploadFile() {
-    logWhenDev('uploadFile: Uploading a file')
-    await DatabaseImpl.uploadKeunFile(file, domain)
+    if (dev) console.log('uploadFile: Uploading a file')
+    if (!file) return
+    await Database.uploadKeunFile(file, domain)
     await getFiles()
     fileInputDialog.closeDialog()
   }
 
   const openFileInputDialog = async () => fileInputDialog.showDialog()
 
-  async function openColumnDialog(e: CustomEvent<ColumnsDialogShowED>) {
-    if (e.detail.file) ({ file } = e.detail)
-    ;({ missingColumns: missing, currentColumns: cols } = e.detail)
+  async function openColumnDialog(missingColumns: Record<string, string>, currentColumns: string[], newFile: File | undefined) {
+    missing = missingColumns
+    cols = currentColumns
+    if (newFile) file = newFile
     columnDialog.showDialog()
   }
 
-  async function checkForCache(e: CustomEvent<CheckForCacheED>) {
-    logWhenDev('checkForCache: Checking for cache')
-    ;({ file, domain } = e.detail)
-    const fileWithSameName = await DatabaseImpl.checkForFileWithSameName(file.name)
+  async function checkForCache(newFile: File, newDomain: string | null) {
+    if (dev) console.log('checkForCache: Checking for cache')
+    file = newFile
+    domain = newDomain
+    const fileWithSameName = await Database.checkForFileWithSameName(file.name)
     fileInputDialog.closeDialog()
     if (!fileWithSameName) return await uploadFile()
     possibleEditingFileId = fileWithSameName
@@ -54,63 +50,49 @@
   }
 
   async function getFiles() {
-    logWhenDev('getFiles: Get all the files in the database')
-    const getFilesRes = await DatabaseImpl.getFilesList()
+    if (dev) console.log('getFiles: Get all the files in the database')
+    const getFilesRes = await Database.getFilesList()
     if (getFilesRes) files = getFilesRes
   }
 
-  async function deleteFiles(e: CustomEvent<DeleteFilesED>) {
-    logWhenDev('deleteFile: Deleting a file')
+  async function deleteFiles(fileId: string | undefined) {
+    if (dev) console.log('deleteFile: Deleting a file')
     processing = true
-    const { id: fileId } = e.detail
-    if (fileId) await DatabaseImpl.deleteKeunFile(fileId)
+    if (fileId) await Database.deleteKeunFile(fileId)
     processing = false
-    logWhenDev('deleteFile: File has been deleted')
+    if (dev) console.log('deleteFile: File has been deleted')
   }
 
-  async function reUploadFile(e: CustomEvent<FileUploadED>) {
-    await deleteFiles(e)
+  async function reUploadFile(id: string | undefined) {
+    await deleteFiles(id)
     await uploadFile()
     possibleEditingFileId = undefined
   }
 
-  async function updateFileColumns(e: CustomEvent<FileUpdatedColumnsED>) {
-    ;({ file } = e.detail)
+  async function updateFileColumns(newFile: File) {
+    file = newFile
     uploadFile()
   }
 
-  const reset = async () => (files = await DatabaseImpl.reset())
-
-  const setProcessing = async (e: CustomEvent<ProcessingED>) => ({ processing } = e.detail)
-
-  $: {
-    if ($user) getFiles()
+  async function setProcessing(process: boolean) {
+    processing = process
   }
+
+  $effect(() => {
+    if (user.value) getFiles()
+  })
 </script>
 
 <svelte:head>
   <title>Keun</title>
-  <meta
-    name="description"
-    content="Keun is a mapping tool to map concepts to OMOP concepts. It's a web based modern variant of Usagi."
-  />
+  <meta name="description" content="Keun is a mapping tool to map concepts to OMOP concepts. It's a web based modern variant of Usagi." />
 </svelte:head>
 
-<FileChoiceDialog
-  bind:processing
-  on:fileUpload={reUploadFile}
-  currentFileId={possibleEditingFileId}
-  bind:this={locationDialog}
-/>
+<FileChoiceDialog bind:processing fileUpload={reUploadFile} currentFileId={possibleEditingFileId} bind:this={locationDialog} />
 
-<FileInputDialog
-  bind:processing
-  on:columnsDialogShow={openColumnDialog}
-  on:checkForCache={checkForCache}
-  bind:this={fileInputDialog}
-/>
+<FileInputDialog bind:processing columnsDialogShow={openColumnDialog} {checkForCache} bind:this={fileInputDialog} />
 
-<ColumnsDialog {missing} {cols} {file} on:fileUpdateColumns={updateFileColumns} bind:this={columnDialog} />
+<ColumnsDialog {missing} {cols} {file} uploadFile={updateFileColumns} bind:this={columnDialog} />
 
 <main class="files-screen">
   <section class="file-selection">
@@ -118,17 +100,14 @@
       <div class="file-menu">
         <div class="title-container">
           <h1 class="title">Files to map</h1>
-          {#if DatabaseImpl.databaseImplementation !== Providers.Firebase}
-            <button class="reset" title="Remove all the files" on:click={reset}>Reset</button>
-          {/if}
         </div>
         <div class="file-list">
-          <FileMenu bind:files on:processing={setProcessing} on:getFiles={getFiles} />
+          <FileMenu {files} {setProcessing} />
         </div>
         {#if processing}
           <Spinner />
         {/if}
-        <button on:click={openFileInputDialog} class="file-add">+ Add file</button>
+        <button onclick={openFileInputDialog} class="file-add">+ Add file</button>
       </div>
     </section>
   </section>
@@ -170,20 +149,9 @@
     margin: 0.5rem 1rem;
   }
 
-  .reset {
-    background-color: #f6f6f6;
-    border: 1px solid #d8d8d8;
-    border-radius: 5px;
-  }
-
-  .reset:hover {
-    background-color: lightgray;
-    cursor: pointer;
-  }
-
   .file-list {
     flex: 1 1 auto;
-    overflow-y: auto;
+    overflow-y: hidden;
   }
 
   .file-add {

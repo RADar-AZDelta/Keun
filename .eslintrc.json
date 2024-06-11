@@ -6,7 +6,7 @@
   "ignorePatterns": ["*.cjs", "src/app.d.ts"],
   "parserOptions": {
     "sourceType": "module",
-    "ecmaVersion": 2020
+    "ecmaVersion": "latest"
   },
   "rules": {
     "quotes": ["error", "single"],

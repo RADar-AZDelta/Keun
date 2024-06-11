@@ -1,30 +1,38 @@
 <script lang="ts">
-  import { abortAutoMapping, settings, triggerAutoMapping } from '$lib/store'
-  import Switch from '$lib/components/extra/Switch.svelte'
-  import { Config } from '$lib/helperClasses/Config'
-  import SettingsImpl from '$lib/classes/implementation/SettingsImpl'
-  import clickOutside from '$lib/actions/clickOutside'
   import SvgIcon from './SvgIcon.svelte'
+  import Config from '$lib/helpers/Config'
+  import Settings from '$lib/helpers/Settings'
+  import clickOutside from '$lib/actions/clickOutside'
+  import Switch from '$lib/components/extra/Switch.svelte'
+  import { createAbortAutoMapping, createSettings, createTriggerAutoMapping } from '$lib/stores/runes.svelte'
 
-  let savedAutomapping: boolean, possibleOutclick: boolean, settingsDialog: HTMLDialogElement
+  let settings = createSettings()
+  let abortAutoMapping = createAbortAutoMapping()
+  let triggerAutoMapping = createTriggerAutoMapping()
+  let savedAutomapping: boolean = $state(false)
+  let possibleOutclick: boolean = $state(false)
+  let settingsDialog: HTMLDialogElement | undefined = $state(undefined)
 
-  const closeDialog = () => settingsDialog.close()
+  const closeDialog = () => settingsDialog?.close()
 
   async function openDialog() {
-    savedAutomapping = $settings.autoMap
-    settingsDialog.showModal()
+    savedAutomapping = settings.value.autoMap
+    settingsDialog?.showModal()
     possibleOutclick = true
   }
 
   async function saveSettings() {
-    await SettingsImpl.updateSettings($settings)
-    const automappingChanged = $settings.autoMap && savedAutomapping !== $settings.autoMap
-    savedAutomapping = $settings.autoMap
-    if (automappingChanged) $triggerAutoMapping = savedAutomapping = true
+    await Settings.updateSettings(settings.value)
+    const automappingChanged = settings.value.autoMap && savedAutomapping !== settings.value.autoMap
+    savedAutomapping = settings.value.autoMap
+    if (automappingChanged) {
+      triggerAutoMapping.update(true)
+      savedAutomapping = true
+    }
   }
 
   async function abort() {
-    if (!$settings.autoMap && savedAutomapping !== $settings.autoMap) $abortAutoMapping = true
+    if (!settings.value.autoMap && savedAutomapping !== settings.value.autoMap) abortAutoMapping.update(true)
   }
 
   async function outClick() {
@@ -36,38 +44,52 @@
 
   async function changeAutoMapping() {
     abort()
-    if (!SettingsImpl.settingsRetrievedFromStorage) return
+    if (!Settings.settingsRetrievedFromStorage) return
     saveSettings()
   }
 
-  $: {
-    $settings.autoMap
-    changeAutoMapping()
+  async function updateSettingsInput(e: any, id: string) {
+    const value = e.target.value
+    updateSettings(id, value)
   }
+
+  async function updateSettings(prop: string, value: any) {
+    settings.updateProp(prop, value)
+  }
+
+  $effect(() => {
+    settings.value.autoMap
+    changeAutoMapping()
+  })
 </script>
 
-<button title="Settings-Keun" on:click={openDialog} class="header-button"><SvgIcon id="settings" /></button>
+<button title="Settings-Keun" onclick={openDialog} class="header-button"><SvgIcon id="settings" /></button>
 
 <dialog bind:this={settingsDialog} class="settings-dialog">
-  <div class="settings-container" use:clickOutside on:outClick={outClick}>
+  <div class="settings-container" use:clickOutside onoutClick={outClick}>
     {#if settings}
-      <button class="close-dialog" on:click={outClick}><SvgIcon id="x" /></button>
+      <button class="close-dialog" onclick={outClick}><SvgIcon id="x" /></button>
       <section class="settings">
         <h2 class="title">Settings</h2>
         <div class="options">
-          <Switch name="Map to multiple concepts?" bind:checked={$settings.mapToMultipleConcepts} />
-          <Switch name="Automatic mapping?" bind:checked={$settings.autoMap} />
+          <Switch id="mapToMultipleConcepts" name="Map to multiple concepts?" checked={settings.value.mapToMultipleConcepts} updateValue={updateSettings} />
+          <Switch id="autoMap" name="Automatic mapping?" checked={settings.value.autoMap} updateValue={updateSettings} />
           <div class="option">
             <p>Language of source CSV</p>
-            <select name="language" id="language" bind:value={$settings.language}>
+            <select name="language" id="language" value={settings.value.language} onchange={(e: Event) => updateSettingsInput(e, 'language')}>
               {#each Object.keys(Config.languages) as lang, _}
-                <option value={lang} selected={lang === $settings.language}>{Config.languages[lang]}</option>
+                <option value={lang} selected={lang === settings.value.language}>{Config.languages[lang]}</option>
               {/each}
             </select>
           </div>
           <div class="option">
             <p>Default vocabulary ID for custom concepts</p>
-            <input type="text" placeholder="local ID e.g. AZDELTA" bind:value={$settings.vocabularyIdCustomConcept} />
+            <input
+              type="text"
+              placeholder="local ID e.g. AZDELTA"
+              value={settings.value.vocabularyIdCustomConcept}
+              onchange={(e: Event) => updateSettingsInput(e, 'vocabularyIdCustomConcept')}
+            />
           </div>
         </div>
       </section>

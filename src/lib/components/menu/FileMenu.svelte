@@ -1,148 +1,47 @@
 <script lang="ts">
-  import { goto } from '$app/navigation'
-  import { base } from '$app/paths'
-  import { createEventDispatcher } from 'svelte'
-  import { user } from '$lib/store'
-  import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
-  import type { PageEvents, IFileInformation } from '$lib/Types'
-  import { logWhenDev } from '$lib/utils'
-  import { Providers } from '$lib/enums'
-  import DatabaseImpl from '$lib/classes/implementation/DatabaseImpl'
-  import Confirm from '$lib/components/extra/Confirm.svelte'
+  import PaginationIntegrated from '$lib/components/extra/PaginationIntegrated.svelte'
+  import File from '$lib/components/menu/File.svelte'
+  import Database from '$lib/helpers/Database'
+  import { createUser } from '$lib/stores/runes.svelte'
+  import Confirm from '../extra/Confirm.svelte'
+  import type { IFileMenuProps } from '$lib/interfaces/Types'
 
-  export let files: IFileInformation[]
+  let { files = $bindable(), setProcessing }: IFileMenuProps = $props()
 
-  const dispatch = createEventDispatcher<PageEvents>()
-  let confirmDialog: HTMLDialogElement
-  let fileToDelete = { id: '', name: '' }
+  let user = createUser()
 
-  $: firebaseProvider = DatabaseImpl.databaseImplementation === Providers.Firebase
-  $: localProvider = DatabaseImpl.databaseImplementation === Providers.Local
-  $: userIsUser = $user?.roles?.includes('user')
-  $: userIsAdmin = $user?.roles?.includes('admin')
+  let confirmDialog: HTMLDialogElement | undefined = $state(undefined)
+  let fileToDelete = $state({ id: '', name: '' })
 
-  async function openMappingTool(fileId: string, domain: string | null): Promise<void> {
-    logWhenDev('openMappingTool: Navigating to the mapping tool')
-    const cached = await DatabaseImpl.checkFileExistance(fileId)
-    if (!cached) return
-    let url = `${base}/mapping?id=${fileId}`
-    if (domain) url += `&domain=${domain}`
-    goto(url)
+  async function deleteFiles(approveId: string, props?: any | undefined): Promise<void> {
+    if (!props || approveId !== 'delete') return
+    await setProcessing(true)
+    if (props?.id) {
+      await Database.deleteKeunFile(props.id)
+      files = files.filter(file => file.id !== props.id)
+    }
+    await setProcessing(false)
   }
 
-  async function downloadFiles(id: string): Promise<void> {
-    if (!id) return
-    await DatabaseImpl.downloadFiles(id)
-    dispatch('getFiles')
-  }
-
-  async function deleteFiles(e: CustomEvent): Promise<void> {
-    const { id } = e.detail
-    dispatch('processing', { processing: true })
-    if (id) await DatabaseImpl.deleteKeunFile(id)
-    dispatch('getFiles')
-    dispatch('processing', { processing: false })
-  }
-
-  async function confirmFileDeletion(file: IFileInformation) {
-    const { id, name } = file
+  async function confirmFileDeletion(id: string, name: string) {
     fileToDelete = { id, name }
-    confirmDialog.showModal()
+    confirmDialog?.showModal()
   }
 </script>
 
-<Confirm
-  bind:dialog={confirmDialog}
-  title={fileToDelete.name}
-  approveDispatch="delete"
-  props={{ id: fileToDelete.id }}
-  on:delete={deleteFiles}
-/>
+<Confirm bind:dialog={confirmDialog} title={fileToDelete.name} approveProps={{ id: fileToDelete.id }} approveId="delete" approve={deleteFiles} />
 
-{#if $user && (localProvider || (firebaseProvider && (userIsUser || userIsAdmin)))}
-  {#each files as file}
-    <button class="file-card" on:click={() => openMappingTool(file.id, file.domain)}>
-      <div class="file-name-container">
-        <SvgIcon id="excel" width="40px" height="40px" />
-        <p class="file-name">{file?.name}</p>
-        <p class="file-domain">Domain: {file.domain ?? 'none'}</p>
-      </div>
-      {#if (firebaseProvider && userIsAdmin) || localProvider}
-        <div>
-          <button class="download-file" on:click|stopPropagation={() => downloadFiles(file.id)}>
-            <SvgIcon id="download" />
-          </button>
-          <button class="delete-file" on:click|stopPropagation={() => confirmFileDeletion(file)}>
-            <SvgIcon id="x" />
-          </button>
-        </div>
-      {/if}
-    </button>
-  {/each}
-{:else}
-  <p class="rights-error">You do not have sufficient rights, contact an admin please.</p>
+{#if user.value}
+  <PaginationIntegrated total={files.length} perPageOptions={[5, 10]} perPage={5}>
+    {#snippet child(start: number, end: number)}
+      {#each files.slice(start, end) as file (file.id)}
+        <File {...file} {confirmFileDeletion} />
+      {/each}
+    {/snippet}
+  </PaginationIntegrated>
 {/if}
 
 <style>
-  .file-card {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 1rem;
-    border: none;
-    background-color: inherit;
-  }
-
-  .file-card:hover,
-  .file-card:focus {
-    background-color: lightgray;
-  }
-
-  .file-name-container {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-  }
-
-  .file-name {
-    font-size: 1rem;
-  }
-
-  .file-domain {
-    margin-left: 2rem;
-  }
-
-  .delete-file {
-    border: none;
-    background-color: inherit;
-  }
-
-  .delete-file:hover {
-    background-color: #ff7f7f;
-  }
-
-  .delete-file:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px #e67f7f;
-    background-color: #ff7f7f;
-  }
-
-  .download-file {
-    border: none;
-    background-color: inherit;
-  }
-
-  .download-file:hover {
-    background-color: #80c3d8;
-  }
-
-  .download-file:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px #71bbd4;
-    background-color: #80c3d8;
-  }
-
   .rights-error {
     text-align: center;
     margin: 0 0 1rem 0;

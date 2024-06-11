@@ -1,67 +1,57 @@
 <script lang="ts">
-  import { onMount } from 'svelte'
-  import { user } from '$lib/store'
-  import { Providers } from '$lib/enums'
-  import AuthImpl from '$lib/classes/implementation/AuthImpl'
   import SvgIcon from './SvgIcon.svelte'
+  import Auth from '$lib/helpers/Auth.svelte'
   import clickOutside from '$lib/actions/clickOutside'
+  import { createUser } from '$lib/stores/runes.svelte'
 
-  let userDialog: HTMLDialogElement
-  let author: string | undefined | null = undefined
-  let backupAuthor: string | undefined | null = undefined
+  let userDialog: HTMLDialogElement | undefined = $state(undefined)
+  let author = $state<string>('')
+  let user = createUser()
 
   function closeDialog(): void {
-    if (!$user) return
-    userDialog.close()
+    if (!user.value) return
+    userDialog?.close()
   }
 
   function openDialog(): void {
-    if (AuthImpl.authImplementation === Providers.Local || !AuthImpl.authImplementation)
-      author = backupAuthor = $user.name
-    userDialog.showModal()
+    userDialog?.showModal()
   }
 
   async function login(): Promise<void> {
-    await AuthImpl.logIn(author ?? undefined)
-    backupAuthor = author
+    await Auth.logIn(author)
     closeDialog()
   }
 
   const cancelLogIn = closeDialog
 
-  $: {
-    if (!$user?.name && userDialog) userDialog.showModal()
-    else if ($user?.name) userDialog.close()
-  }
+  $effect(() => {
+    Auth.getAuthor()
+  })
 
-  onMount(() => AuthImpl.getAuthor())
+  $effect(() => {
+    if (!user.value && userDialog) userDialog.showModal()
+    else if (user.value) userDialog?.close()
+  })
 </script>
 
-<!-- <button title="Author" aria-label="User button" on:click={openDialog} class="header-button"> -->
-<button title="Author" aria-label="User button" on:click={openDialog} class="header-button">
-  <p>{$user?.name ?? ''}</p>
+<button title="Author" aria-label="User button" onclick={openDialog} class="header-button">
+  <p>{user.value ?? ''}</p>
   <SvgIcon id="user" />
 </button>
 
 <dialog bind:this={userDialog} class="user-dialog">
-  <div class="user-container" use:clickOutside on:outClick={closeDialog}>
-    <button class="close-dialog" on:click={closeDialog} disabled={!$user ? true : false}>
+  <div class="user-container" use:clickOutside onoutClick={closeDialog}>
+    <button class="close-dialog" onclick={closeDialog} disabled={!user.value ? true : false}>
       <SvgIcon id="x" />
     </button>
-    {#if AuthImpl.authImplementation === Providers.Firebase}
-      <section class="author">
-        <button on:click={login}>Microsoft</button>
-      </section>
-    {:else}
-      <section class="author">
-        <h2 class="title">Who is the author?</h2>
-        <input id="author" type="text" placeholder="John Wick" bind:value={author} />
-        <div class="buttons-container">
-          <button class="cancel" on:click={cancelLogIn} disabled={author == undefined ? true : false}> Cancel </button>
-          <button class="save" on:click={login} disabled={author == undefined ? true : false}> Save </button>
-        </div>
-      </section>
-    {/if}
+    <section class="author">
+      <h2 class="title">Who is the author?</h2>
+      <input id="author" type="text" placeholder="John Wick" bind:value={author} />
+      <div class="buttons-container">
+        <button class="cancel" onclick={cancelLogIn} disabled={author == undefined ? true : false}> Cancel </button>
+        <button class="save" onclick={login} disabled={author == undefined ? true : false}> Save </button>
+      </div>
+    </section>
   </div>
 </dialog>
 
