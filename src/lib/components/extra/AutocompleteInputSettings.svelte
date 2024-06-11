@@ -1,39 +1,40 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte'
-  import { settings } from '$lib/store'
-  import debounce from 'lodash.debounce'
-  import type { ICustomEvents } from '$lib/Types'
-  import SettingsImpl from '$lib/classes/implementation/SettingsImpl'
+  import Settings from '$lib/helpers/Settings'
+  import { createSettings } from '$lib/stores/runes.svelte'
+  import { debounce } from '$lib/helpers/utils'
+  import type { IAutoCompleteSettingsProps } from '$lib/interfaces/Types'
 
-  let inputValue: string, value: string
-  let filteredValues: string[] = []
-  let autoCompleted: boolean = false
+  let { autoComplete }: IAutoCompleteSettingsProps = $props()
 
-  const dispatch = createEventDispatcher<ICustomEvents>()
+  let settings = createSettings()
+  let inputValue: string = $state('')
+  let value: string = $state('')
+  let filteredValues: string[] = $state([])
+  let autoCompleted: boolean = $state(false)
 
-  const updateSettings = async () => await SettingsImpl.updateSettings($settings)
+  const updateSettings = async () => await Settings.updateSettings(settings.value)
 
   function save(): void {
     value = inputValue
-    if (!$settings.savedAuthors) $settings.savedAuthors = []
-    if (!$settings.savedAuthors.includes(inputValue)) {
-      $settings.savedAuthors.push(inputValue)
+    if (!settings.value.savedAuthors) settings.updateProp('savedAuthors', [])
+    if (!settings.value.savedAuthors.includes(inputValue)) {
+      settings.updateProp('savedAuthors', [...settings.value.savedAuthors, inputValue])
       updateSettings()
     }
-    dispatch('autoCompleteShort', { value })
+    autoComplete(value)
   }
 
   function onClickAutoComplete(e: Event): void {
     inputValue = (e.target as HTMLLIElement).id
     save()
-    filterNames()
+    filterNames(inputValue)
     autoCompleted = true
   }
 
-  function filterNames(): void | string[] {
+  function filterNames(inputValue: string): void | string[] {
     let filteredNames: string[] = []
-    if (!inputValue || !$settings.savedAuthors) return (filteredValues = filteredNames)
-    const filteredAuthors = $settings.savedAuthors.filter(filterForAuthors)
+    if (!inputValue || !settings.value.savedAuthors) return (filteredValues = filteredNames)
+    const filteredAuthors = settings.value.savedAuthors.filter(filterForAuthors)
     filteredNames = [...filteredNames, ...filteredAuthors]
     filteredValues = filteredNames
   }
@@ -51,20 +52,19 @@
     save()
   }, 500)
 
-  $: {
-    inputValue
-    filterNames()
-  }
+  $effect(() => {
+    filterNames(inputValue)
+  })
 </script>
 
 <div>
-  <input title="Assigned Reviewer" type="text" bind:value={inputValue} on:input={onInput} />
+  <input title="Assigned Reviewer" type="text" bind:value={inputValue} oninput={onInput} />
   {#if filteredValues.length}
     <ul>
       {#each filteredValues as name, i}
         {#if i < 7 && !autoCompleted}
-          <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
-          <li id={name} on:click={onClickAutoComplete} on:keydown={onClickAutoComplete}>{name}</li>
+          <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+          <li id={name} onclick={onClickAutoComplete} onkeydown={onClickAutoComplete}>{name}</li>
         {/if}
       {/each}
     </ul>

@@ -1,0 +1,39 @@
+{
+  "colors": {
+    "APPROVED": "hsl(156, 100%, 35%)",
+    "FLAGGED": "hsl(54, 89%, 64%)",
+    "SEMI-APPROVED": "hsl(84, 100%, 70%)",
+    "UNAPPROVED": "hsl(8, 100%, 59%)"
+  },
+  "languages": {
+    "nl": "Dutch",
+    "en": "English",
+    "de": "German",
+    "fr": "French",
+    "it": "Italian",
+    "es": "Spanish"
+  },
+  "usagiRow": {
+    "dateCells": ["statusSetOn", "createdOn", "ADD_INFO:approvedOn"],
+    "editableCells": ["comment"]
+  },
+  "athenaViews": [
+    { "name": "custom concept", "value": "custom", "viewSlot": 1 },
+    { "name": "mapped concepts", "value": "mapped", "viewSlot": 2 }
+  ],
+  "customBlobInitial": "concept_id,concept_name,domain_id,vocabulary_id,concept_class_id,standard_concept,concept_code,valid_start_date,valid_end_date,invalid_reason\n,,,,,,,,,",
+  "flaggedBlobInitial": "sourceCode,sourceName,sourceFrequency,conceptId,sourceAutoAssignedConceptIds,conceptName,mappingStatus,domainId,vocabularyId,className,matchScore,equivalence,statusSetBy,statusSetOn,mappingType,comment,createdBy,createdOn,assignedReviewer,ADD_INFO:approvedBy,ADD_INFO:approvedOn,ADD_INFO:numberOfConcepts,ADD_INFO:customConcept,ADD_INFO:lastAthenaFilter\n,,,,,,,,,,,,,,,,,,,,,,,",
+  "equivalenceOptions": ["EQUAL", "EQUIVALENT", "WIDER", "NARROWER", "INEXACT", "UNMATCHED", "UNREVIEWED"],
+  "limitedFilters": [
+    {
+      "name": "Concept",
+      "value": "Standard",
+      "options": []
+    },
+    {
+      "name": "Validity",
+      "value": "Valid",
+      "options": []
+    }
+  ]
+}

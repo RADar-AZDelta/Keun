@@ -1,102 +1,106 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount } from 'svelte'
   import { Search } from '@radar-azdelta/svelte-athena-search'
   import SearchHead from '$lib/components/mapping/SearchHead.svelte'
   import CustomView from '$lib/components/mapping/views/CustomView.svelte'
   import Details from '$lib/components/mapping/details/Details.svelte'
   import MappedView from '$lib/components/mapping/views/MappedView.svelte'
-  import AthenaActions from './views/AthenaActions.svelte'
-  import { Config } from '$lib/helperClasses/Config'
+  import AthenaActions from '$lib/components/mapping/views/AthenaActions.svelte'
+  import Config from '$lib/helpers/Config'
   import type { IView } from '@radar-azdelta/svelte-athena-search'
-  import type { IMappedRow, IUsagiRow, MappingEvents, NavigateRowED } from '$lib/Types'
-  import type { EquivalenceChangeED, UpdateDetailsED } from '$lib/Types'
-  import Mapping from '$lib/classes/mapping/Mapping'
-  import Table from '$lib/classes/tables/Table'
+  import Mapping from '$lib/helpers/mapping/Mapping'
+  import Table from '$lib/helpers/tables/Table'
+  import { localStorageGetter } from '$lib/helpers/utils'
   import clickOutside from '$lib/actions/clickOutside'
+  import type { IAthenaSearchProps } from '$lib/interfaces/Types'
   import SvgIcon from '../extra/SvgIcon.svelte'
-  import { localStorageGetter } from '$lib/utils'
 
-  export let selectedRow: IUsagiRow, selectedRowIndex: number
-  export let globalAthenaFilter: { column: string; filter: string | undefined }
+  let { selectedRow, selectedRowIndex, globalAthenaFilter = $bindable(), navigateRow }: IAthenaSearchProps = $props()
 
-  const dispatch = createEventDispatcher<MappingEvents>()
   const views: IView[] = Config.athenaViews
 
-  let dialog: HTMLDialogElement
-  let mappedData: (IMappedRow | object)[] = [{}]
-  let equivalence: string = 'EQUAL'
+  let dialog: HTMLDialogElement | undefined = $state()
+  let equivalence: string = $state('EQUAL')
   let activatedAthenaFilters = new Map<string, string[]>([['standardConcept', ['Standard']]])
 
-  async function onUpdateDetails(e: CustomEvent<UpdateDetailsED>) {
-    const { comment, reviewer: assignedReviewer } = e.detail
-    const updatedProperties = { comment, assignedReviewer }
+  async function updateDetails(reviewer: string, comment: string) {
+    const updatedProperties = { comment, assignedReviewer: reviewer }
     await Mapping.updateMappingInfo(selectedRowIndex, updatedProperties)
   }
 
-  const equivalenceChange = (e: CustomEvent<EquivalenceChangeED>) => (equivalence = e.detail.equivalence)
+  async function equivalenceChange(value: string) {
+    equivalence = value
+  }
 
   async function getAllMappedToConcepts() {
     if (!selectedRow?.sourceCode) return
     await Table.saveAllMappedConcepts(selectedRow.sourceCode)
   }
 
-  async function fillMappedTable() {
-    if (!selectedRow?.sourceCode) return
-    mappedData = await Table.getAllMappedConcepts(selectedRow.sourceCode)
-  }
-
-  const onNavigateRow = (e: CustomEvent<NavigateRowED>) => dispatch('navigateRow', { ...e.detail })
-
-  const closeDialog = () => dialog.close()
+  const closeDialog = () => dialog?.close()
 
   export async function showDialog(): Promise<void> {
-    dialog.showModal()
-    fillMappedTable()
+    dialog?.showModal()
   }
 
   function EscapeListener(e: KeyboardEvent) {
     if (e.key === 'Escape') closeDialog()
   }
 
-  const addKeyListener = () => dialog.addEventListener('keydown', EscapeListener)
+  const addKeyListener = () => dialog?.addEventListener('keydown', EscapeListener)
 
-  onMount(() => {
+  $effect(() => {
     const savedFilters = localStorageGetter('AthenaFilters')
     activatedAthenaFilters = savedFilters ?? new Map<string, string[]>([['standardConcept', ['Standard']]])
   })
 
-  $: {
-    if (dialog) addKeyListener
-  }
+  $effect(() => {
+    if (dialog) addKeyListener()
+  })
 
-  $: {
+  $effect(() => {
     selectedRowIndex
     getAllMappedToConcepts()
-    fillMappedTable()
-  }
+  })
+
+  $effect(() => {
+    // Small hack to rerender table because on init of Search comp, it searches athena without filter
+    globalAthenaFilter.filter = (globalAthenaFilter.filter ?? 'tes').toString()
+  })
 </script>
 
 <dialog bind:this={dialog} class="athena-dialog">
-  <div class="dialog-container" use:clickOutside on:outClick={closeDialog}>
-    <button class="close-dialog" on:click={closeDialog}><SvgIcon id="x" /></button>
+  <div class="dialog-container" use:clickOutside onoutClick={closeDialog}>
+    <button class="close-dialog" onclick={closeDialog}><SvgIcon id="x" /></button>
     <section class="search-container">
-      <Search {views} bind:globalFilter={globalAthenaFilter} showFilters={true}>
-        <div slot="action-athena" let:renderedRow class="actions-grid">
-          <AthenaActions {renderedRow} {selectedRow} {selectedRowIndex} {equivalence} />
-        </div>
-        <div slot="upperSlot">
-          <SearchHead {selectedRow} on:navigateRow={onNavigateRow} />
-        </div>
-        <div slot="slotView1">
-          <CustomView {selectedRow} {selectedRowIndex} {equivalence} />
-        </div>
-        <div slot="slotView2">
-          <MappedView {selectedRow} />
-        </div>
-        <div slot="rightSlot">
-          <Details usagiRow={selectedRow} on:updateDetails={onUpdateDetails} on:equivalenceChange={equivalenceChange} />
-        </div>
-      </Search>
+      {#if selectedRow}
+        <Search {views} bind:globalFilter={globalAthenaFilter} showFilters={true} limitedFilters={Config.limitedFilters}>
+          {#snippet actionChild(renderedRow: any)}
+            <div class="actions-grid">
+              <AthenaActions {renderedRow} {selectedRow} {selectedRowIndex} {equivalence} />
+            </div>
+          {/snippet}
+          {#snippet upperChild()}
+            <div>
+              <SearchHead {selectedRow} index={selectedRowIndex} {navigateRow} />
+            </div>
+          {/snippet}
+          {#snippet firstView()}
+            <div>
+              <CustomView {selectedRow} {selectedRowIndex} {equivalence} />
+            </div>
+          {/snippet}
+          {#snippet secondView()}
+            <div>
+              <MappedView {selectedRow} />
+            </div>
+          {/snippet}
+          {#snippet rightChild()}
+            <div>
+              <Details usagiRow={selectedRow} update={updateDetails} equivalenceUpdate={equivalenceChange} />
+            </div>
+          {/snippet}
+        </Search>
+      {/if}
     </section>
   </div>
 </dialog>
