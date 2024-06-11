@@ -1,6 +1,6 @@
+import { defineConfig } from 'vite'
 import { sveltekit } from '@sveltejs/kit/vite'
 import { viteStaticCopy } from 'vite-plugin-static-copy'
-import { defineConfig } from 'vitest/config'
 
 export default defineConfig({
   plugins: [
@@ -22,24 +22,12 @@ export default defineConfig({
       ],
     }),
   ],
-  test: {
-    include: ['src/**/*.{test,spec}.{js,ts}'],
-  },
-  server: {
-    fs: {
-      allow: ['..'],
-    },
-  },
   css: {
     preprocessorOptions: {
       scss: {},
     },
   },
   optimizeDeps: {
-    exclude: [
-      '@radar-azdelta/svelte-datatable',
-      '@browsermt/bergamot-translator',
-      '@radar-azdelta/svelte-athena-search',
-    ],
+    exclude: ['@radar-azdelta/svelte-datatable', '@browsermt/bergamot-translator', '@radar-azdelta/svelte-athena-search'],
   },
 })

@@ -11,11 +11,8 @@ vite.config.ts.timestamp-*
 /static/log.txt
 /static/testing-images/upload.png
 /static/testing-images/download.png
-files.db
 bearer
 public
-.firebase
 errorLogs.txt
-*.sqlite3
 /public
 /scripts/src/group.json

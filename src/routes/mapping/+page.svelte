@@ -1,59 +1,75 @@
 <script lang="ts">
   import { base } from '$app/paths'
   import { page } from '$app/stores'
-  import { onMount } from 'svelte'
   import { beforeNavigate, goto } from '$app/navigation'
   import DataTable from '@radar-azdelta/svelte-datatable'
-  import { disableActions } from '$lib/store'
-  import { BergamotTranslator } from '$lib/helperClasses/BergamotTranslator'
-  import { settings, triggerAutoMapping } from '$lib/store'
-  import { abortAutoMapping } from '$lib/store'
+  import BergamotTranslator from '$lib/helpers/BergamotTranslator'
   import UsagiRow from '$lib/components/mapping/UsagiRow.svelte'
   import AthenaSearch from '$lib/components/mapping/AthenaSearch.svelte'
-  import AutoMapping from '$lib/classes/mapping/AutoMapping'
-  import { Config } from '$lib/helperClasses/Config'
-  import Usagi from '$lib/classes/usagi/Usagi'
-  import CustomTable from '$lib/classes/tables/CustomTable'
-  import Table from '$lib/classes/tables/Table'
-  import DatabaseImpl from '$lib/classes/implementation/DatabaseImpl'
-  import FlaggedTable from '$lib/classes/tables/FlaggedTable'
-  import MappedConcepts from '$lib/classes/general/MappedConcepts'
+  import AutoMapping from '$lib/helpers/mapping/AutoMapping'
+  import Config from '$lib/helpers/Config'
+  import Usagi from '$lib/helpers/usagi/Usagi'
+  import CustomTable from '$lib/helpers/tables/CustomTable'
+  import Table from '$lib/helpers/tables/Table'
+  import FlaggedTable from '$lib/helpers/tables/FlaggedTable'
+  import MappedConcepts from '$lib/helpers/general/MappedConcepts'
   import type { SvelteComponent } from 'svelte'
   import type { ITableOptions } from '@radar-azdelta/svelte-datatable'
-  import type { IUsagiRow, AutoMapRowED, RowSelectionED, NavigateRowED } from '$lib/Types'
+  import type { IUsagiRow } from '$lib/interfaces/Types'
+  import Database from '$lib/helpers/Database'
+  import { createAbortAutoMapping, createDisableActions, createSettings, createTriggerAutoMapping } from '$lib/stores/runes.svelte'
 
-  let file: File | undefined, customConceptsFile: File | undefined, flaggedConceptsFile: File | undefined
-  let selectedDomain: string | null = null
-  let tableRendered: boolean = false
-  let customTableRendered: boolean = false
-  let customsExtracted: boolean = false
-  let tablePrepared: boolean = false
+  let settings = createSettings()
+  let file: File | undefined = $state()
+  let customConceptsFile: File | undefined = $state()
+  let flaggedConceptsFile: File | undefined = $state()
+  let selectedDomain: string | null = $state(null)
+  let tableRendered: boolean = $state(false)
+  let customTableRendered: boolean = $state(false)
+  let customsExtracted: boolean = $state(false)
+  let tablePrepared: boolean = $state(false)
   let tableOptions: ITableOptions = { ...Config.tableOptions, id: $page.url.searchParams.get('id') ?? '' }
-  let currentVisibleRows: Map<number, IUsagiRow> = new Map<number, IUsagiRow>()
-  let selectedRow: IUsagiRow, selectedRowIndex: number
-  let search: SvelteComponent
-  let globalAthenaFilter: { column: string; filter: string | undefined } = { column: 'all', filter: undefined }
-  let filesLoaded: boolean = false
-  let syncingComplete: boolean = false
+  let currentVisibleRows: Map<number, IUsagiRow> = $state(new Map<number, IUsagiRow>())
+  let selectedRow: IUsagiRow | undefined = $state()
+  let selectedRowIndex: number = $state(0)
+  let search: SvelteComponent | undefined = $state()
+  let globalAthenaFilter: { column: string; filter: string | undefined } = $state({ column: 'all', filter: undefined })
+  let filesLoaded: boolean = $state(false)
+  let syncingComplete: boolean = $state(false)
+  let disableActions = createDisableActions()
+  let abortAutoMapping = createAbortAutoMapping()
+  let triggerAutoMapping = createTriggerAutoMapping()
 
   let customFileId: string | undefined = undefined
   let flaggedFileId: string | undefined = undefined
   let selectedFileId: string
 
-  async function navigateRow(e: CustomEvent<NavigateRowED>) {
-    ;({ row: selectedRow, index: selectedRowIndex } = e.detail)
+  async function navigateRow(row: IUsagiRow, index: number) {
+    selectedRow = row
+    selectedRowIndex = index
     globalAthenaFilter.filter = await translate(selectedRow.sourceName)
   }
 
-  const autoMapSingleRow = async (e: CustomEvent<AutoMapRowED>) =>
-    await AutoMapping.startAutoMappingRow(e.detail.index, selectedDomain)
-
-  async function selectRow(e: CustomEvent<RowSelectionED>) {
-    await navigateRow(e)
-    search.showDialog()
+  async function updateCurrentVisibleRows(currentPage: number, rowsPerPage: number) {
+    currentVisibleRows.clear()
   }
 
-  const translate = async (text: string) => await BergamotTranslator.translate(text, $settings.language)
+  async function autoMapSingleRow(index: number, sourceName: string) {
+    await AutoMapping.startAutoMappingRow(index, selectedDomain)
+  }
+
+  async function selectRow(row: IUsagiRow, index: number) {
+    await navigateRow(row, index)
+    search?.showDialog()
+  }
+
+  const translate = async (text: string) => await BergamotTranslator.translate(text, settings.value.language)
+
+  // async function extractCustomConcepts() {
+  //   const result = await CustomTable.extractCustomConcepts().catch(() => console.log("FUCK"))
+  //   console.log("RES ", result)
+  //   customsExtracted = result ?? false
+  // }
 
   async function extractCustomConcepts() {
     await CustomTable.extractCustomConcepts()
@@ -61,6 +77,7 @@
   }
 
   async function abortAutoMap() {
+    if (!tableRendered) return
     const rows = await AutoMapping.abortAutoMap()
     if (rows) currentVisibleRows = rows
   }
@@ -74,12 +91,10 @@
     if (!tableRendered && !rendered) return
     tableRendered = true
     if (!tablePrepared) await prepareFile()
-    if (!customsExtracted && rendered) await extractCustomConcepts()
     await AutoMapping.autoMapPage(selectedDomain)
   }
 
   async function approvePage() {
-    console.log('CURRENT VISIBLE ROWS ', currentVisibleRows.keys())
     for (let [index, row] of currentVisibleRows) await approveRow(row, index)
   }
 
@@ -90,23 +105,23 @@
 
   async function downloadPage() {
     await syncFile()
-    await DatabaseImpl.downloadFiles(selectedFileId)
+    await Database.downloadFiles(selectedFileId)
     await MappedConcepts.resetMappedConceptsBib()
     goto(`${base}/`)
   }
 
   async function readFile() {
     if (!selectedFileId) return
-    const keunFile = await DatabaseImpl.getKeunFile(selectedFileId)
-    const customKeunFile = await DatabaseImpl.getCustomKeunFile(customFileId ?? '')
-    const flaggedFile = await DatabaseImpl.getFlaggedFile(flaggedFileId ?? '')
+    const keunFile = await Database.getKeunFile(selectedFileId)
+    const customKeunFile = await Database.getCustomKeunFile(customFileId ?? '')
+    const flaggedFile = await Database.getFlaggedFile(flaggedFileId ?? '')
     if (keunFile && keunFile?.file) file = keunFile.file
     if (customKeunFile && customKeunFile?.file) customConceptsFile = customKeunFile.file
     if (flaggedFile && flaggedFile?.file) flaggedConceptsFile = flaggedFile.file
   }
 
   async function getCustomFileId() {
-    const cached = await DatabaseImpl.checkFileExistance(selectedFileId)
+    const cached = await Database.checkFileExistance(selectedFileId)
     if (!cached) return
     customFileId = cached.customId
     flaggedFileId = cached.flaggedId
@@ -129,18 +144,22 @@
     await FlaggedTable.syncFile(selectedFileId)
   }
 
-  const customTableRenderedComplete = () => (customTableRendered = true)
-
-  $: {
-    if ($abortAutoMapping) abortAutoMap()
+  const customTableRenderedComplete = () => {
+    if (customTableRendered) return
+    customTableRendered = true
+    extractCustomConcepts()
   }
 
-  $: {
-    if ($triggerAutoMapping) {
+  $effect(() => {
+    if (abortAutoMapping.value) abortAutoMap()
+  })
+
+  $effect(() => {
+    if (triggerAutoMapping.value) {
       autoMapPage()
-      $triggerAutoMapping = false
+      triggerAutoMapping.update(false)
     }
-  }
+  })
 
   beforeNavigate(async ({ to, cancel, type }) => {
     if (!syncingComplete) {
@@ -152,56 +171,44 @@
     }
   })
 
-  onMount(() => load())
-
-  $: {
-    console.log("CURRENT VISIBLE ROWS ", currentVisibleRows)
-  }
+  $effect(() => {
+    load()
+  })
 </script>
 
 <svelte:head>
   <title>Keun</title>
-  <meta
-    name="description"
-    content="Keun is a mapping tool to map concepts to OMOP concepts. It's a web based modern variant of Usagi."
-  />
+  <meta name="description" content="Keun is a mapping tool to map concepts to OMOP concepts. It's a web based modern variant of Usagi." />
 </svelte:head>
 
 {#if file}
-  <button on:click={syncFile}>Save</button>
-  <button on:click={downloadPage}>Download</button>
-  <button on:click={approvePage}>Approve page</button>
+  <button onclick={syncFile}>Save</button>
+  <button onclick={downloadPage}>Download</button>
+  <button onclick={approvePage}>Approve page</button>
   <DataTable
     data={file}
     bind:this={Table.table}
     options={tableOptions}
-    on:rendering={abortAutoMap}
-    on:renderingComplete={() => autoMapPage(true)}
+    rendering={abortAutoMap}
+    rendered={() => autoMapPage(true)}
     modifyColumnMetadata={Table.modifyColumnMetadata}
+    paginationChanged={updateCurrentVisibleRows}
   >
-    <UsagiRow
-      slot="default"
-      let:renderedRow
-      let:columns
-      let:originalIndex
-      {renderedRow}
-      {columns}
-      index={originalIndex}
-      disabled={$disableActions}
-      bind:currentVisibleRows
-      on:rowSelection={selectRow}
-      on:autoMapRow={autoMapSingleRow}
-    />
+    {#snippet rowChild(renderedRow: any, originalIndex: any, index: any, columns: any, option: any)}
+      <UsagiRow
+        {renderedRow}
+        {columns}
+        index={originalIndex}
+        disabled={disableActions.value}
+        bind:currentVisibleRows
+        rowSelection={selectRow}
+        autoMapRow={autoMapSingleRow}
+      />
+    {/snippet}
   </DataTable>
 
-  {#if $settings}
-    <AthenaSearch
-      {selectedRow}
-      {selectedRowIndex}
-      bind:globalAthenaFilter
-      on:navigateRow={navigateRow}
-      bind:this={search}
-    />
+  {#if settings.value}
+    <AthenaSearch {selectedRow} {selectedRowIndex} bind:globalAthenaFilter {navigateRow} bind:this={search} />
   {/if}
 
   <div class="hidden">
@@ -209,7 +216,7 @@
       data={customConceptsFile}
       options={Config.customTableOptions}
       modifyColumnMetadata={CustomTable.modifyColumnMetadata}
-      on:renderingComplete={customTableRenderedComplete}
+      rendered={customTableRenderedComplete}
       bind:this={CustomTable.table}
     />
   </div>

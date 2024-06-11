@@ -1,12 +1,10 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte'
-  import { logWhenDev } from '$lib/utils'
-  import SvgIcon from '$lib/components/extra/SvgIcon.svelte'
-  import type { PageEvents } from '$lib/Types'
+  import { dev } from '$app/environment'
+  import SvgIcon from '../extra/SvgIcon.svelte'
+  import type { IFileChoiceDialogProps } from '$lib/interfaces/Types'
 
-  export let processing: boolean, currentFileId: string | undefined
+  let { processing = $bindable(), currentFileId, fileUpload }: IFileChoiceDialogProps = $props()
 
-  const dispatch = createEventDispatcher<PageEvents>()
   let dialog: HTMLDialogElement
 
   export const showDialog = () => dialog.showModal()
@@ -15,19 +13,19 @@
   const mapCachedFile = async () => closeDialog()
 
   async function uploadFile(): Promise<void> {
-    logWhenDev(`uploadFile: Upload the file instead of using the cached version.`)
-    dispatch('fileUpload', { id: currentFileId })
+    if (dev) console.log(`uploadFile: Upload the file instead of using the cached version.`)
+    fileUpload(currentFileId)
     closeDialog()
   }
 </script>
 
 <dialog class="location-dialog" bind:this={dialog}>
   <div class="location-container">
-    <button on:click={closeDialog} class="close-dialog" disabled={processing}><SvgIcon id="x" /></button>
+    <button onclick={closeDialog} class="close-dialog" disabled={processing}><SvgIcon id="x" /></button>
     <h2 class="dialog-title">Do you want to use this file or the cached version of this file?</h2>
     <div class="button-choices">
-      <button on:click={uploadFile}>File</button>
-      <button on:click={mapCachedFile}>Cached version</button>
+      <button onclick={uploadFile}>File</button>
+      <button onclick={mapCachedFile}>Cached version</button>
     </div>
   </div>
 </dialog>

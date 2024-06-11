@@ -34,57 +34,7 @@ If you want to setup Keun locally on your own device you will need to provide so
 ```bash
 PUBLIC_MAPPINGDATA_PATH= This is the route to the API for your concepts
 PUBLIC_ATHENA_DETAIL= This is the detail page of concepts
-
-PUBLIC_CLOUD_DATABASE_IMPLEMENTATION=
-PUBLIC_CLOUD_AUTH_IMPLEMENTATION=
 ```
-
-The PUBLIC_CLOUD_DATABASE_IMPLEMENTATION is the implementation used to store the data. This is for the file data, settings, ...
-
-The PUBLIC_CLOUD_AUTH_IMPLEMENTATION is the implementation used for authentication. At the moment, there is only a Firebase auth implementation. The local implementation let's the user put in his name, but that's all.
-
-At the moment there are three implementations made.
-
-##### Local implementation
-
-There is the local implementation, that runs on Github Pages, which uses the browser IndexedDB as database. The files & the settings are written to this database with the principle of cache. Once the file is downloaded, it will be deleted from IndexedDB.
-
-To use the local implementation, you'll need to set the following values in the .env file:
-
-```bash
-PUBLIC_CLOUD_DATABASE_IMPLEMENTATION='none'
-PUBLIC_CLOUD_AUTH_IMPLEMENTATION='none'
-```
-
-##### Firebase implementation
-
-THIS IMPLEMENTATION IS STILL UNDER DEVELOPMENT
-
-There is an implementation made to use Firebase with Keun. This will use Firestore & Storage from Firebase. You can even host the Keun application on Firebase, but this will need to be configured through the firebase.json with your own firestore & storage rules.
-
-With Firebase you can also enable authentication. Change the firebase.ts file according to the auth provider you'll use.
-
-To implement the Firebase environment, add the following values to your .env file:
-
-```bash
-PUBLIC_CLOUD_DATABASE_IMPLEMENTATION='firebase'
-PUBLIC_CLOUD_AUTH_IMPLEMENTATION='firebase'
-
-PUBLIC_FIREBASE_AUTH_DOMAIN=
-PUBLIC_FIREBASE_DATABASE_URL=
-PUBLIC_FIREBASE_PROJECT_ID=
-PUBLIC_FIREBASE_STORAGE_BUCKET=
-PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
-PUBLIC_FIREBASE_APP_ID=
-```
-
-The values for Firebase can be found when creating a Firebase project.
-
-##### Combination
-
-You could combine multiple cloud implementations according to your wishes. You could for example authenticate through Firebase & use a SQL implementation to save the data.
-
-Feel free to create other cloud implementations through a pull request!
 
 # License
 

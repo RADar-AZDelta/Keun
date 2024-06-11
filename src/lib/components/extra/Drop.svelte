@@ -1,17 +1,15 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte'
+  import type { IDropProps } from '$lib/interfaces/Types'
 
-  export let extensions: string[]
+  let { extensions, children, fileDrop }: IDropProps = $props()
 
-  const dispatch = createEventDispatcher()
+  let showLayer: boolean = $state(false)
 
-  let showLayer: boolean = false
-
-  function onDragEnter(e: DragEvent): void {
+  function onDragEnter(): void {
     if (!showLayer) showLayer = true
   }
 
-  function onDragLeave(e: DragEvent): void {
+  function onDragLeave(): void {
     if (showLayer) showLayer = false
   }
 
@@ -27,26 +25,28 @@
     const extension = file.name.split('.').pop()
     // Check if the extension is allowed, check the file for missing columns
     if (!extension || !extensions.includes(extension) || !file) return alert('The file is not allowed')
-    dispatch('drop', { file })
+    await fileDrop(file)
     showLayer = false
   }
+
+  const dragOver = async (event: DragEvent) => event.preventDefault()
 </script>
 
-<!-- svelte-ignore a11y-no-static-element-interactions -->
-<div class="container" on:dragenter={onDragEnter}>
-  <slot />
+<!-- svelte-ignore a11y_no_static_element_interactions -->
+<div class="container" ondragenter={onDragEnter}>
+  {@render children()}
 </div>
 
 {#if showLayer}
-  <!-- svelte-ignore a11y-no-static-element-interactions -->
-  <div class="layer" on:dragleave={onDragLeave} on:drop|preventDefault={dropHandler} on:dragover|preventDefault />
+  <!-- svelte-ignore a11y_no_static_element_interactions -->
+  <div class="layer" ondragleave={onDragLeave} ondrop={dropHandler} ondragover={dragOver}></div>
 {/if}
 
 <style>
   .container {
     width: 100%;
     height: 100%;
-    background-color: var(--color);
+    background-color: lightgray;
   }
 
   .layer {

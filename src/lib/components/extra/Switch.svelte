@@ -1,12 +1,19 @@
 <script lang="ts">
-  export let name: string, checked: boolean
+  import type { ISwitchProps } from '$lib/interfaces/Types'
+
+  let { id, name, checked = $bindable(), updateValue }: ISwitchProps = $props()
+
+  async function change(e: any) {
+    const value = e.target.checked
+    if (updateValue) updateValue(id, value)
+  }
 </script>
 
 <div class="option">
   <p class="title">{name}</p>
   <div class="switch">
-    <input class="switch-input" id={name} type="checkbox" bind:checked />
-    <label class="switch-label" for={name} />
+    <input class="switch-input" id={name} type="checkbox" bind:checked onchange={change} />
+    <label class="switch-label" for={name}></label>
   </div>
 </div>
 
