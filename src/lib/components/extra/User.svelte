@@ -25,6 +25,10 @@
   const cancelLogIn = closeDialog
 
   $effect(() => {
+    Auth.getAuthor()
+  })
+
+  $effect(() => {
     if (!user.value && userDialog) userDialog.showModal()
     else if (user.value) userDialog?.close()
   })

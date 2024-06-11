@@ -20,7 +20,7 @@ export default class Settings {
 
   static async getSettings() {
     if (dev) console.log('getSettings: Reading the settings from LocalStorage')
-    const localStorageSettings = await localStorage.getItem('settings')
+    const localStorageSettings = localStorage.getItem('settings')
     return localStorageSettings ? JSON.parse(localStorageSettings) : defaultSettings
   }
 }

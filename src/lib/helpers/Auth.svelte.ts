@@ -11,8 +11,12 @@ export default class Auth {
     user.update(name)
   }
 
-  static async getAuthor() {
+  static getAuthor() {
     if (dev) console.log('getAuthor: Get the saved author from localStorage')
+    if (!user.value) {
+      const storageUser = localStorage.getItem('author')
+      if (storageUser) user.update(storageUser)
+    }
     const retrievedUser = user.value
     if (!retrievedUser) return null
     return retrievedUser

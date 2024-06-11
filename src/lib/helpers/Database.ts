@@ -107,7 +107,7 @@ export default class Database {
     const fileInfo: undefined | IDatabaseFile = await database.get(id, true, true)
     if (!fileInfo || !fileInfo.content) return undefined
     const { name, content, customId, flaggedId } = fileInfo
-    const file = await FileHelper.stringToFile(content, name)
+    const file = await FileHelper.stringToFile('\ufeff' + content, name, 'text/csv; charset=utf-8')
     const fileObj: IFile = { id, name: name, file, customId, flaggedId }
     return fileObj
   }
