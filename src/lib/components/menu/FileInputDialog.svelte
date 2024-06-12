@@ -6,7 +6,7 @@
   import SvgIcon from '../extra/SvgIcon.svelte'
   import Drop from '../extra/Drop.svelte'
   import Spinner from '../extra/Spinner.svelte'
-    import { createUser } from '$lib/stores/runes.svelte'
+  import { createUser } from '$lib/stores/runes.svelte'
 
   let { processing = $bindable(), checkForCache, columnsDialogShow }: IFileInputDialogProps = $props()
 
@@ -37,9 +37,9 @@
     // Check if the extension is allowed, check the file for missing columns
     if (!extension || !allowedExtensions.includes(extension)) return
     file = inputFiles[0]
-    // reader.readAsText(file)
-    await Reader.readFileAsText(file)
-    await checkForMissingColumns(Reader.content)
+    const res = await Reader.readFileAsText(file)
+    if (!res) return
+    await checkForMissingColumns(res.toString())
   }
 
   async function checkForMissingColumns(content: string | undefined) {
@@ -61,8 +61,9 @@
 
   async function fileDrop(newFile: File) {
     file = newFile
-    await Reader.readFileAsText(file)
-    await checkForMissingColumns(Reader.content)
+    const res = await Reader.readFileAsText(file)
+    if (!res) return
+    await checkForMissingColumns(res.toString())
   }
 
   async function cacheCheck() {

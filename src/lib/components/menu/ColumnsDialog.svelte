@@ -16,8 +16,9 @@
   async function fileUploadWithColumnChanges(): Promise<void> {
     if (!user.value) return console.error('fileUploadWithColumnChanges: There is no author name set.')
     if (!file) return
-    await Reader.readFileAsText(file)
-    await processUpdatedColumns(Reader.content)
+    const res = await Reader.readFileAsText(file)
+    if (!res) return
+    await processUpdatedColumns(res.toString())
   }
 
   async function processUpdatedColumns(content: string | undefined): Promise<void> {
