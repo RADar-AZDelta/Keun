@@ -22,7 +22,7 @@ const config = {
   kit: {
     adapter: staticAdapter({ fallback: 'index.html', pages: 'public', assets: 'public', precompress: false }),
     paths: {
-      base: process.argv.includes('dev') ? '' : '/Keun'
+      base: process.argv.includes('dev') ? '' : '/Keun',
     },
     alias: {
       $lib: 'src/lib',
