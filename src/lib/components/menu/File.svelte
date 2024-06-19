@@ -25,8 +25,6 @@
     return url
   }
 
-  const download = async () => await Database.downloadFiles(id)
-
   const deleteFile = async () => await confirmFileDeletion(id, name)
 </script>
 
@@ -37,7 +35,6 @@
     <p class="file-domain">Domain: {domain ?? 'none'}</p>
   </button>
   <div class="action-container">
-    <button class="download-file" onclick={download}><SvgIcon id="download" /></button>
     <button class="delete-file" onclick={deleteFile}><SvgIcon id="x" /></button>
   </div>
 </div>

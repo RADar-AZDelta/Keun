@@ -9,11 +9,11 @@ dependencies:
     specifier: ^0.4.9
     version: 0.4.9
   '@radar-azdelta/svelte-athena-search':
-    specifier: ^0.0.43
-    version: 0.0.43(@sveltejs/vite-plugin-svelte@3.1.1)(svelte@5.0.0-next.151)(vite@5.1.4)
+    specifier: ^0.0.44
+    version: 0.0.44(@sveltejs/vite-plugin-svelte@3.1.1)(svelte@5.0.0-next.151)(vite@5.1.4)
   '@radar-azdelta/svelte-datatable':
-    specifier: ^0.0.86
-    version: 0.0.86(@sveltejs/vite-plugin-svelte@3.1.1)(svelte@5.0.0-next.151)(vite@5.1.4)
+    specifier: ^0.0.87
+    version: 0.0.87(@sveltejs/vite-plugin-svelte@3.1.1)(svelte@5.0.0-next.151)(vite@5.1.4)
   arquero:
     specifier: ^5.2.0
     version: 5.4.0
@@ -406,8 +406,8 @@ packages:
   /@polka/url@1.0.0-next.24:
     resolution: {integrity: sha512-2LuNTFBIO0m7kKIQvvPHN6UE63VjpmL9rnEEaOOaiSPbZK+zUOYIzBAWcED+3XYzhYsd/0mD57VdxAEqqV52CQ==}
 
-  /@radar-azdelta/svelte-athena-search@0.0.43(@sveltejs/vite-plugin-svelte@3.1.1)(svelte@5.0.0-next.151)(vite@5.1.4):
-    resolution: {integrity: sha512-FzbMdU0defYbVEi8nkwtenCgBW07+bgxDZkZGlCIpx68W7gOhukx/9Ut9Inm9RZfYoCHn1+pY2xHtA71Soo3Kw==}
+  /@radar-azdelta/svelte-athena-search@0.0.44(@sveltejs/vite-plugin-svelte@3.1.1)(svelte@5.0.0-next.151)(vite@5.1.4):
+    resolution: {integrity: sha512-/xi8FKYy/GJXvRn2YT9oiIwRYmP7quUEmbwPrWjTOHjjf0wrkbSzKdJm3lTQoZOyiMCctgrJJJwHjmJ6lCTedg==}
     dependencies:
       '@radar-azdelta/svelte-datatable': 0.0.84(@sveltejs/vite-plugin-svelte@3.1.1)(svelte@5.0.0-next.151)(vite@5.1.4)
       '@sveltejs/kit': 2.5.10(@sveltejs/vite-plugin-svelte@3.1.1)(svelte@5.0.0-next.151)(vite@5.1.4)
@@ -432,8 +432,8 @@ packages:
       - vite
     dev: false
 
-  /@radar-azdelta/svelte-datatable@0.0.86(@sveltejs/vite-plugin-svelte@3.1.1)(svelte@5.0.0-next.151)(vite@5.1.4):
-    resolution: {integrity: sha512-D5ao7PoF00r4kjECcXsybm67J2tK7x/OIpjEfCYHoJwFYwIRPTC9JmX2k9U03HG8JizLSN2wgF3Obk2KHB588A==}
+  /@radar-azdelta/svelte-datatable@0.0.87(@sveltejs/vite-plugin-svelte@3.1.1)(svelte@5.0.0-next.151)(vite@5.1.4):
+    resolution: {integrity: sha512-Zh7rhSuJiMgEDwLjiCH/Dsz+UZO/f+nQgrGhFJsoL+keSjFwGJXx6AGX5oxHdrMFGpJlvKWtAg5TVrN3CNRyiA==}
     dependencies:
       '@sveltejs/kit': 2.5.10(@sveltejs/vite-plugin-svelte@3.1.1)(svelte@5.0.0-next.151)(vite@5.1.4)
       arquero: 5.4.0
