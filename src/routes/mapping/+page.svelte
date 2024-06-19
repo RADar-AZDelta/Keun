@@ -21,12 +21,8 @@
 
   let settings = createSettings()
   let file: File | undefined = $state()
-  let customConceptsFile: File | undefined = $state()
-  let flaggedConceptsFile: File | undefined = $state()
   let selectedDomain: string | null = $state(null)
   let tableRendered: boolean = $state(false)
-  let customTableRendered: boolean = $state(false)
-  let customsExtracted: boolean = $state(false)
   let tablePrepared: boolean = $state(false)
   let tableOptions: ITableOptions = { ...Config.tableOptions, id: $page.url.searchParams.get('id') ?? '' }
   let currentVisibleRows: Map<number, IUsagiRow> = $state(new Map<number, IUsagiRow>())
@@ -39,9 +35,6 @@
   let disableActions = createDisableActions()
   let abortAutoMapping = createAbortAutoMapping()
   let triggerAutoMapping = createTriggerAutoMapping()
-
-  let customFileId: string | undefined = undefined
-  let flaggedFileId: string | undefined = undefined
   let selectedFileId: string
 
   async function navigateRow(row: IUsagiRow, index: number) {
@@ -50,7 +43,7 @@
     globalAthenaFilter.filter = await translate(selectedRow.sourceName)
   }
 
-  async function updateCurrentVisibleRows(currentPage: number, rowsPerPage: number) {
+  async function updateCurrentVisibleRows() {
     currentVisibleRows.clear()
   }
 
@@ -64,17 +57,6 @@
   }
 
   const translate = async (text: string) => await BergamotTranslator.translate(text, settings.value.language)
-
-  // async function extractCustomConcepts() {
-  //   const result = await CustomTable.extractCustomConcepts().catch(() => console.log("FUCK"))
-  //   console.log("RES ", result)
-  //   customsExtracted = result ?? false
-  // }
-
-  async function extractCustomConcepts() {
-    await CustomTable.extractCustomConcepts()
-    customsExtracted = true
-  }
 
   async function abortAutoMap() {
     if (!tableRendered) return
@@ -104,8 +86,8 @@
   }
 
   async function downloadPage() {
-    await syncFile()
-    await Database.downloadFiles(selectedFileId)
+    const { customBlob, flaggedBlob } = await syncFile()
+    await Database.downloadFiles(selectedFileId, flaggedBlob, customBlob)
     await MappedConcepts.resetMappedConceptsBib()
     goto(`${base}/`)
   }
@@ -113,41 +95,31 @@
   async function readFile() {
     if (!selectedFileId) return
     const keunFile = await Database.getKeunFile(selectedFileId)
-    const customKeunFile = await Database.getCustomKeunFile(customFileId ?? '')
-    const flaggedFile = await Database.getFlaggedFile(flaggedFileId ?? '')
     if (keunFile && keunFile?.file) file = keunFile.file
-    if (customKeunFile && customKeunFile?.file) customConceptsFile = customKeunFile.file
-    if (flaggedFile && flaggedFile?.file) flaggedConceptsFile = flaggedFile.file
-  }
-
-  async function getCustomFileId() {
-    const cached = await Database.checkFileExistance(selectedFileId)
-    if (!cached) return
-    customFileId = cached.customId
-    flaggedFileId = cached.flaggedId
   }
 
   async function load() {
+    await reset()
     if (filesLoaded) return
     const urlId = $page.url.searchParams.get('id')
     if (!urlId) return goto(`${base}/`)
     selectedDomain = $page.url.searchParams.get('domain')
     selectedFileId = urlId
-    if (!customFileId) await getCustomFileId()
     await readFile()
     filesLoaded = true
   }
 
-  async function syncFile() {
-    await Table.syncFile(selectedFileId)
-    await CustomTable.syncFile(selectedFileId)
-    await FlaggedTable.syncFile(selectedFileId)
+  async function reset() {
+    selectedRow = undefined
+    selectedRowIndex = 0
+    await updateCurrentVisibleRows()
   }
 
-  const customTableRenderedComplete = () => {
-    if (customTableRendered) return
-    customTableRendered = true
-    extractCustomConcepts()
+  async function syncFile() {
+    await Table.syncFile(selectedFileId)
+    const customBlob = await CustomTable.syncFile()
+    const flaggedBlob = await FlaggedTable.syncFile()
+    return { customBlob, flaggedBlob }
   }
 
   $effect(() => {
@@ -212,22 +184,11 @@
   {/if}
 
   <div class="hidden">
-    <DataTable
-      data={customConceptsFile}
-      options={Config.customTableOptions}
-      modifyColumnMetadata={CustomTable.modifyColumnMetadata}
-      rendered={customTableRenderedComplete}
-      bind:this={CustomTable.table}
-    />
+    <DataTable data={Config.initialTable} columns={Config.columnsCustomConcept} options={Config.customTableOptions} bind:this={CustomTable.table} />
   </div>
 
   <div class="hidden">
-    <DataTable
-      data={flaggedConceptsFile}
-      options={Config.flaggedTableOptions}
-      modifyColumnMetadata={FlaggedTable.modifyColumnMetadata}
-      bind:this={FlaggedTable.table}
-    />
+    <DataTable data={Config.initialTable} columns={Config.columnsUsagi} options={Config.flaggedTableOptions} bind:this={FlaggedTable.table} />
   </div>
 {/if}
 

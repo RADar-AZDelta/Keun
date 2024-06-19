@@ -22,10 +22,6 @@ export interface IDatabaseFile {
   id: string
   name: string
   content: string
-  custom: string
-  customId: string
-  flaggedId: string
-  flagged: string
   domain: string | null
 }
 
@@ -246,8 +242,8 @@ export interface ICustomConceptInput {
   domain_id: string
   vocabulary_id: string
   standard_concept: string
-  valid_start_date: string
-  valid_end_date: string
+  valid_start_date: number
+  valid_end_date: number
   invalid_reason: string
 }
 
@@ -267,8 +263,8 @@ export interface ICustomConcept {
   conceptClassId: string
   standardConcept: string
   conceptCode: string
-  validStartDate: string
-  validEndDate: string
+  validStartDate: number
+  validEndDate: number
   invalidReason: string
 }
 
@@ -295,8 +291,6 @@ export interface IFile {
   id: string
   name: string
   file?: File
-  customId: string
-  flaggedId: string
   content?: string
 }
 

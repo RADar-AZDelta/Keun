@@ -1,7 +1,6 @@
 import { query } from 'arquero'
 import Config from '$lib/helpers/Config'
 import Table from '$lib/helpers/tables/Table'
-import CustomTable from '$lib/helpers/tables/CustomTable'
 import MappedConcepts from '$lib/helpers/general/MappedConcepts'
 import type Query from 'arquero/dist/types/query/query'
 import type { IExtraUsagiCols, IUsagiAllExtra, IUsagiInfo, IUsagiRow } from '$lib/interfaces/Types'
@@ -15,37 +14,12 @@ export default class UsagiRowDelete {
   static async deleteRow(usagiInfo: IUsagiInfo) {
     await this.updateVars(usagiInfo)
     await this.deleteFromMappedConceptIds()
-    if (this.usagiRow['ADD_INFO:customConcept']) await this.deleteCustomConcept()
     await this.determineToResetOrDeleteRow()
   }
 
   private static async updateVars({ usagiRow, usagiRowIndex }: IUsagiInfo) {
     this.usagiRow = usagiRow
     this.usagiRowIndex = usagiRowIndex
-  }
-
-  private static async deleteCustomConcept() {
-    const index = await this.getCustomConceptIndex()
-    if (!index) return
-    await CustomTable.deleteCustomTableRows([index])
-  }
-
-  private static async getCustomConceptIndex() {
-    const params = {
-      concept_name: this.usagiRow.conceptName,
-      domain_id: this.usagiRow.domainId,
-      vocabulary_id: this.usagiRow.vocabularyId,
-      concept_class_id: this.usagiRow.className,
-    }
-    const indexQuery = (<Query>query().params(params))
-      .filter(
-        (r: any, p: any) =>
-          r.concept_name === p.concept_name && r.domain_id === p.domain_id && r.vocabulary_id === p.vocabulary_id && r.concept_class_id === p.concept_class_id,
-      )
-      .toObject()
-    const queryResult = await CustomTable.executeQueryOnCustomTable(indexQuery)
-    if (!queryResult.indices.length) return
-    return queryResult.indices[0]
   }
 
   private static async getNumberOfConcepts() {

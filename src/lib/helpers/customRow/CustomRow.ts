@@ -1,8 +1,6 @@
-import { reformatDate } from '$lib/helpers/utils'
-import CustomTable from '$lib/helpers/tables/CustomTable'
 import MappedConcepts from '$lib/helpers/general/MappedConcepts'
 import Mapping from '$lib/helpers/mapping/Mapping'
-import type { IAthenaRow, ICustomConcept, ICustomConceptCompact, ICustomConceptInput, IUsagiRow } from '$lib/interfaces/Types'
+import type { IAthenaRow, ICustomConcept, ICustomConceptCompact, IUsagiRow } from '$lib/interfaces/Types'
 
 export default class CustomRow {
   customRow: ICustomConceptCompact
@@ -16,31 +14,15 @@ export default class CustomRow {
   }
 
   async mapCustomConcept(action: string, equivalence: string) {
-    const customConcept = await this.addDetailToCustomConcept()
     const concept = await this.createCustomConcept()
     const transformedConcept = await this.transformCustomConceptToAthenaFormat(concept, equivalence)
     const rowMappingInfo = { usagiRow: this.usagiRow, usagiRowIndex: this.usagiRowIndex, athenaRow: transformedConcept }
-    await CustomTable.deleteFirstEmptyConceptIfNeeded()
-    await CustomTable.insertCustomTableRow(customConcept)
     await Mapping.mapRow(rowMappingInfo, equivalence, action, true)
     await MappedConcepts.updateMappedConceptsBib({
       [this.usagiRow.sourceCode]: {
         [`custom-${this.customRow.concept_name}`]: action,
       },
     })
-  }
-
-  private async addDetailToCustomConcept() {
-    const customConcept: ICustomConceptInput = {
-      ...this.customRow,
-      concept_id: 0,
-      concept_code: this.usagiRow.sourceCode,
-      valid_start_date: reformatDate(),
-      valid_end_date: '2099-12-31',
-      invalid_reason: '',
-      standard_concept: '',
-    }
-    return customConcept
   }
 
   private async createCustomConcept() {
@@ -54,8 +36,8 @@ export default class CustomRow {
       conceptClassId: concept_class_id,
       standardConcept: '',
       conceptCode: this.usagiRow.sourceName,
-      validStartDate: reformatDate(),
-      validEndDate: '2099-12-31',
+      validStartDate: Number(new Date()),
+      validEndDate: Number(new Date('2099-12-31')),
       invalidReason: '',
     }
     return concept
