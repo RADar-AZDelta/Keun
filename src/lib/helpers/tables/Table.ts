@@ -107,6 +107,16 @@ export default class Table {
     return flaggedConceptsResult.queriedData
   }
 
+  static async extractCustomConceptIds() {
+    const columnsWereAdded = await this.checkIfTableConceptsAreWithNewColumns()
+    if (!columnsWereAdded) return []
+    const customConceptsQuery = query()
+      .filter((r: any) => r['ADD_INFO:customConcept'])
+      .toObject()
+    const customConceptsResult = await this.executeQueryOnTable(customConceptsQuery)
+    return customConceptsResult.queriedData
+  }
+
   static async prepareFile() {
     const unmappedRowsQuery = query()
       .filter((r: any) => !r.mappingStatus && !r.conceptId)

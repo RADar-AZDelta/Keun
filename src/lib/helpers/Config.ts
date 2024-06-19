@@ -27,4 +27,5 @@ export default class Config {
   static equivalenceOptions = smallConfig.equivalenceOptions
   static defaultSettings: ISettings = defaultSettings
   static limitedFilters = smallConfig.limitedFilters
+  static initialTable = [{}]
 }
