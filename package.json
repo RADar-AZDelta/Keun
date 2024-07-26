@@ -40,7 +40,7 @@
   "type": "module",
   "dependencies": {
     "@browsermt/bergamot-translator": "^0.4.9",
-    "@radar-azdelta/svelte-athena-search": "^0.0.48",
+    "@radar-azdelta/svelte-athena-search": "^0.0.49",
     "@radar-azdelta/svelte-datatable": "^0.0.89",
     "arquero": "^5.4.1"
   }
