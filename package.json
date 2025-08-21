@@ -34,7 +34,7 @@
     "tslib": "^2.6.3",
     "typescript": "^5.5.3",
     "vite": "^5.3.3",
-    "vite-plugin-static-copy": "^0.17.1",
+    "vite-plugin-static-copy": "^2.3.2",
     "vitest": "^1.6.0"
   },
   "type": "module",
